@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOT App — guia de instalação</title>
+<style>
+body{font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px 16px 60px;color:#15211d}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 8px;color:#0f6b5c;border-bottom:1px solid #dde3e0;padding-bottom:4px}
+ol li{margin:6px 0}code,kbd{background:#eef1f0;border-radius:5px;padding:1px 5px;font-size:13.5px}
+.box{background:#fdf1e2;border:1px solid #f2c48d;border-radius:10px;padding:10px 12px;margin:12px 0}
+.ok{background:#e3f1ed;border-color:#9ccfc1}.sub{color:#5d6b66}
+</style></head><body>
+<h1>SOT · Visita + Evolução — instalação</h1>
+<p class="sub">Feito uma vez, por alguém logado na conta <b>equipersot@gmail.com</b>. Tempo: ~25 minutos. Custo: zero.</p>
+
+<div class="box"><b>Antes de começar:</b> a conta equipersot precisa ter acesso de <b>leitor</b> ao Google Doc “Internograma HCI” (peça ao dono do documento para compartilhar). E troque a senha da conta, já que ela foi escrita numa conversa.</div>
+
+<h2>Parte 1 — Google Cloud (libera o login com Google)</h2>
+<ol>
+<li>Entre em <code>console.cloud.google.com</code> logado no equipersot. Aceite os termos.</li>
+<li>No topo, <b>Selecionar projeto → Novo projeto</b>. Nome: <code>SOT App</code> → Criar. Confirme que ele está selecionado.</li>
+<li>Menu ☰ → <b>APIs e serviços → Biblioteca</b> → procure <b>Google Drive API</b> → <b>Ativar</b>.</li>
+<li>Menu ☰ → <b>APIs e serviços → Tela de consentimento OAuth</b> (pode aparecer como “Google Auth Platform”) → <b>Começar</b>:
+  <ul>
+  <li>Nome do app: <code>SOT App</code> · E-mail de suporte: equipersot@gmail.com</li>
+  <li>Público: <b>Externo</b></li>
+  <li>Dados de contato: equipersot@gmail.com → Criar</li>
+  </ul></li>
+<li>Em <b>Público</b> (Audience) → <b>Usuários de teste → Adicionar usuários</b> → <code>equipersot@gmail.com</code> → Salvar. <span class="sub">(Deixe o app em “Teste”; não precisa publicar.)</span></li>
+<li>Em <b>Acesso a dados</b> (Data access) → <b>Adicionar ou remover escopos</b> → marque:
+  <ul><li><code>.../auth/drive.file</code> (criar e editar os arquivos do app)</li><li><code>.../auth/drive.readonly</code> (ler o internograma)</li></ul> → Atualizar → Salvar.</li>
+<li>Em <b>Clientes</b> (ou Credenciais) → <b>Criar cliente</b> → Tipo: <b>Aplicativo da Web</b> → Nome: <code>SOT App web</code>.<br>
+  Em <b>Origens JavaScript autorizadas</b> adicione o endereço da Parte 2, só o domínio, ex.: <code>https://equipersot.github.io</code> → Criar.</li>
+<li>Copie o <b>ID do cliente</b> (termina em <code>.apps.googleusercontent.com</code>). Você vai colar no <code>config.js</code>.</li>
+</ol>
+
+<h2>Parte 2 — Publicar o app (GitHub Pages)</h2>
+<ol>
+<li>Crie uma conta em <code>github.com</code> com o e-mail equipersot (o nome de usuário vira o endereço; ex.: <code>equipersot</code>).</li>
+<li><b>New repository</b> → nome <code>sot-app</code> → <b>Public</b> → Create. <span class="sub">(O código fica visível, mas não tem nenhum dado de paciente. Os dados ficam só no Drive e nos aparelhos.)</span></li>
+<li><b>Add file → Upload files</b> → arraste <b>todos</b> os arquivos desta pasta (index.html, evo.html, sync.js, config.js, sw.js, manifest.webmanifest, icon-192.png, icon-512.png) → Commit.</li>
+<li>Abra <code>config.js</code> no GitHub → ✏️ editar → cole o ID do cliente em <code>CLIENT_ID: '...'</code> → Commit.</li>
+<li><b>Settings → Pages</b> → Source: <b>Deploy from a branch</b> → Branch <b>main</b> / <b>(root)</b> → Save. Em 1–2 min aparece o endereço: <code>https://equipersot.github.io/sot-app/</code></li>
+<li>Se o nome de usuário do GitHub for outro, volte à Parte 1, passo 7, e ajuste a origem autorizada.</li>
+</ol>
+
+<h2>Parte 3 — Usar no celular e no PC</h2>
+<ol>
+<li>Abra o endereço no Chrome (Android) ou Safari (iPhone) → menu → <b>Adicionar à tela inicial</b>. No PC, abra no Chrome e salve nos favoritos ou instale (ícone ⊕ na barra).</li>
+<li>Aba <b>⚙ Internograma → Conectar ao Google</b> → escolha <b>equipersot@gmail.com</b>.</li>
+<li>Vai aparecer <b>“O Google não verificou este app”</b>. É esperado num app interno em teste: <b>Avançado → Acessar SOT App</b> → permita o acesso ao Drive.</li>
+<li>Escreva <b>seu nome</b> no campo da mesma tela (fica registrado em cada alteração e foto).</li>
+<li><b>Atualizar do Google Doc</b> → a lista de pacientes aparece. Pronto.</li>
+</ol>
+
+<div class="box ok"><b>Como funciona no dia a dia</b>
+<ul>
+<li>Tudo é salvo <b>no aparelho a cada toque</b>. Sem internet, o app continua funcionando e mostra “📴 … aguardando envio”; quando a rede volta, ele envia sozinho.</li>
+<li>O app abre mesmo sem internet (depois de aberto uma vez com rede).</li>
+<li>O login com Google dura cerca de 1 hora. Quando expirar, a barra fica “🔑 toque para reconectar”. Nada se perde enquanto isso.</li>
+<li>No Drive do equipersot é criada a pasta <b>SOT App - Visitas</b>: <code>pacientes/</code> (um arquivo por paciente), <code>fotos/</code> (por paciente) e <code>backups/</code> (uma cópia completa por dia, por aparelho).</li>
+<li>Dois residentes no mesmo paciente: em cada item vale a alteração mais recente, e as pendências se somam.</li>
+<li><b>Backup manual:</b> ⚙ → Baixar backup. Para restaurar: ⚙ → Restaurar backup (mescla, não apaga).</li>
+</ul></div>
+
+<h2>Segurança</h2>
+<ul>
+<li>O link sozinho não mostra nenhum dado: é preciso fazer login com a conta da equipe.</li>
+<li>Os dados ficam guardados no navegador do aparelho. Use bloqueio de tela no celular. Ao trocar de aparelho ou emprestar o PC: ⚙ → <b>Apagar tudo deste aparelho</b> (a cópia no Drive continua).</li>
+<li>As fotos não vão para a galeria do celular quando tiradas pelo botão 📸 do app.</li>
+</ul>
+
+<h2>Atualizar o app no futuro</h2>
+<ol><li>Substitua os arquivos no GitHub (Upload files).</li><li>Em <code>sw.js</code>, troque <code>var V = 'sot-v1'</code> por <code>'sot-v2'</code> (e assim por diante). Isso força os celulares a baixarem a versão nova.</li><li><b>Não</b> sobrescreva o <code>config.js</code> (ele tem o seu ID do cliente).</li></ol>
+</body></html>

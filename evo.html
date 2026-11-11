@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><script>window.__EMBED=true</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evolução Diária — Atualizador</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#1b2430; --muted:#5d6b7c; --line:#dde3ea;
+    --accent:#1f6feb; --accent-ink:#fff;
+    --pend:#b7791f; --pend-bg:#fdf3dd;
+    --keep:#2f855a; --keep-bg:#e3f4ea;
+    --chg:#1f5fbf; --chg-bg:#e2ecfb;
+    --auto:#6b46c1; --auto-bg:#ede7fb;
+    --warn:#b42318; --warn-bg:#fdecea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#11161d; --card:#19202a; --ink:#e6ebf1; --muted:#97a3b3; --line:#2b3542;
+      --accent:#4c8dff; --accent-ink:#0b1220;
+      --pend:#f0b54a; --pend-bg:#3a2e14;
+      --keep:#5fd08f; --keep-bg:#163225;
+      --chg:#79a8ff; --chg-bg:#18284a;
+      --auto:#b39cff; --auto-bg:#2a2148;
+      --warn:#ff8a7a; --warn-bg:#3a1a17;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px;font-weight:600}
+  .sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .spacer{flex:1}
+  textarea{width:100%;min-height:260px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:12px;
+    background:var(--bg);color:var(--ink);font:14px/1.55 "IBM Plex Mono",ui-monospace,monospace}
+  button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:7px 13px;border-radius:8px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+  button.small{font-size:12.5px;padding:3px 9px}
+  input[type=number],input[type=text],select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);
+    border-radius:7px;background:var(--bg);color:var(--ink)}
+  input[type=number]{width:64px}
+  input.date{width:118px;font-family:"IBM Plex Mono",monospace}
+  label.inl{color:var(--muted);font-size:14px;display:flex;gap:6px;align-items:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:4px 0 12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .progress{font-size:14px;font-weight:500}
+  .bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0 14px}
+  .bar>div{height:100%;background:var(--keep);width:0;transition:width .2s}
+  #view{position:relative;white-space:pre-wrap;font:14.5px/1.85 "IBM Plex Mono",ui-monospace,monospace;
+    border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--bg);min-height:120px}
+  .f{border-radius:4px;padding:1px 3px;cursor:pointer;border-bottom:2px solid;outline-offset:2px}
+  .f.pend{background:var(--pend-bg);border-color:var(--pend)}
+  .f.keep{background:var(--keep-bg);border-color:var(--keep)}
+  .f.chg{background:var(--chg-bg);border-color:var(--chg)}
+  .f.auto{background:var(--auto-bg);border-color:var(--auto)}
+  .f.open{outline:2px solid var(--accent)}
+  .f.rxoff{border:1.5px dashed var(--chg);color:var(--chg);background:transparent;font-size:13px;margin-left:8px;padding:0 6px}
+  .g{border-bottom:2px dotted var(--auto)}
+  .prot{color:var(--muted)}
+  #pop{position:absolute;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;min-width:250px;max-width:360px;
+    font-family:"IBM Plex Sans",system-ui,sans-serif;white-space:normal;display:none}
+  #pop h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  #pop .opts{display:flex;flex-direction:column;gap:4px;max-height:270px;overflow:auto}
+  #pop .opts button{text-align:left;padding:6px 9px}
+  #pop .opts button.cur{border-color:var(--keep);background:var(--keep-bg)}
+  #pop .other{display:flex;gap:6px;margin-top:8px}
+  #pop .other input{flex:1;min-width:0}
+  #pop .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .hidden{display:none !important}
+  details{font-size:14px}
+  details summary{cursor:pointer;color:var(--muted)}
+  .terms{columns:2 260px;font-size:13px;color:var(--muted);margin-top:10px}
+  .terms div{break-inside:avoid;margin-bottom:8px}
+  .terms b{color:var(--ink);font-weight:500}
+  #custom{min-height:110px}
+  .note{font-size:13px;color:var(--muted)}
+  .toast{font-size:13px;color:var(--keep);margin-left:6px}
+  .tools{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:14px}
+  .tools .why{font-size:12.5px;color:var(--muted)}
+  #alerts{margin:0 0 12px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  #alerts li{background:var(--warn-bg);color:var(--ink);border-left:3px solid var(--warn);padding:6px 10px;border-radius:6px;font-size:13.5px}
+  #alerts li.ok{background:transparent;border-left-color:var(--keep);color:var(--muted)}
+  #alerts li.info{background:var(--auto-bg);border-left-color:var(--auto)}
+  .warnbar{background:var(--pend-bg);border:1px solid var(--pend);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:14px}
+  #spellList{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+  #spellList div{display:flex;gap:10px;align-items:center;font-size:13.5px}
+  #spellList code{font-family:"IBM Plex Mono",monospace}
+  #summary{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px}
+  #summary h5{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  #summary ul{margin:0;padding-left:18px}
+  #summary li{margin:2px 0}
+  #summary .none{color:var(--muted)}
+  kbd{font:11.5px "IBM Plex Mono",monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--card);color:var(--muted);margin-right:6px}
+  .keys{font-size:12.5px;color:var(--muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .keys kbd{margin-right:3px}
+  @media (hover:none) and (pointer:coarse){ .keys, #pop kbd{display:none} }
+  #help{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:50}
+  #help .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;max-width:560px;width:92%;max-height:86vh;overflow:auto;font-size:14px}
+  #help table{border-collapse:collapse;width:100%}
+  #help td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  #help td:first-child{white-space:nowrap}
+  #help h3{margin:12px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  #pop .atb{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+  #pop .atb .item{display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:4px}
+  #pop .atb .item span{flex:1}
+  #pop input.date{width:104px}
+  body.embed h1, body.embed .sub, body.embed #btnNext, body.embed #btnExample{display:none}
+  body.embed .wrap{padding-top:12px}
+  #alerts li.red{background:var(--warn-bg);border-left:4px solid var(--warn);font-weight:600}
+  .vbox{border:1px solid var(--auto);background:var(--auto-bg);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:13.5px}
+  .vbox ul{margin:6px 0 0;padding-left:4px;list-style:none}
+  .vbox li{margin:2px 0}
+  .vbox li.chg b{color:var(--chg)} .vbox li.keep{color:var(--muted)} .vbox li.miss{color:var(--warn)} .vbox li.conf{color:var(--pend)}
+  .vbox .vobs{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .vbox .vwarn{margin-top:6px;color:var(--warn);font-weight:600}
+  .f.ins{background:var(--chg-bg);border-color:var(--chg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Evolução diária — atualizador</h1>
+  <p class="sub">Cole a evolução anterior. O app marca o que costuma mudar, calcula PO e dias pelas datas de cada linha e você clica só no que mudou de fato. Datas, HMA, comorbidades, medicações, alergias, HD, radiografias anteriores e conduta nunca são alteradas.</p>
+
+  <!-- PASSO 1 -->
+  <div class="card" id="step1">
+    <div class="row" style="margin-bottom:10px">
+      <strong>1. Evolução anterior</strong>
+      <span class="spacer"></span>
+      <button id="btnExample">Carregar exemplo</button>
+    </div>
+    <p class="note" id="embedHint" style="margin:0 0 8px;color:var(--pend)"></p>
+    <textarea id="input" placeholder="Cole aqui a evolução anterior…"></textarea>
+    <div class="row" style="margin-top:12px">
+      <label class="inl">Data desta evolução <input type="text" class="date" id="evalDate" inputmode="numeric" placeholder="dd/mm/aaaa"></label>
+      <label class="inl" title="Usado só para contagens que não têm data na mesma linha">Dias desde a evolução anterior (contagens sem data) <input type="number" id="days" value="1" min="0" max="365"></label>
+      <span class="spacer"></span>
+      <button class="primary" id="btnAnalyze">Analisar texto</button>
+    </div>
+  </div>
+
+  <!-- PASSO 2 -->
+  <div class="card hidden" id="step2">
+    <div class="tools">
+      <label class="inl">Sexo do paciente
+        <select id="sex"><option value="f">Feminino</option><option value="m">Masculino</option><option value="">Não ajustar</option></select>
+      </label>
+      <span class="why" id="sexWhy"></span>
+      <span class="spacer"></span>
+      <label class="inl">Acentuação
+        <select id="accent"><option value="mirror">Manter como no texto</option><option value="correct">Corrigir</option></select>
+      </label>
+      <label class="inl">Data <input type="text" class="date" id="evalDate2" inputmode="numeric"></label>
+    </div>
+    <div class="warnbar hidden" id="draftBar" style="margin:0 0 12px">Rascunho desta aba restaurado. <button class="small" id="btnDiscard">Descartar e começar de novo</button></div>
+    <div id="visitBox" class="vbox hidden"></div>
+    <ul id="alerts"></ul>
+    <div class="row">
+      <strong>2. Revise os campos</strong>
+      <span class="spacer"></span>
+      <span class="progress" id="progress"></span>
+    </div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--pend)"></i>a revisar</span>
+      <span><i class="dot" style="background:var(--keep)"></i>mantido</span>
+      <span><i class="dot" style="background:var(--chg)"></i>alterado</span>
+      <span><i class="dot" style="background:var(--auto)"></i>calculado pela data / concordância</span>
+      <span><i class="dot" style="background:var(--muted)"></i>seção protegida</span>
+    </div>
+    <div id="view"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="btnBack">← Editar texto</button>
+      <button id="btnKeepAll" title="Marca como mantidos todos os campos ainda não revisados">Manter pendentes</button>
+      <button id="btnUndo" title="Desfazer a última alteração (Ctrl+Z)">↶ Desfazer</button>
+      <button id="btnRevert" title="Volta ao texto colado, descartando todas as alterações">Reverter tudo</button>
+      <span class="spacer"></span>
+      <button id="btnNext" title="Usa o texto atual como base e avança a data em 1 dia">Usar como base do dia seguinte</button>
+      <button class="primary" id="btnCopy">Copiar evolução</button><span class="toast" id="toast"></span>
+    </div>
+    <div class="keys" id="keysBar">
+      <span><kbd>N</kbd>/<kbd>↓</kbd> próximo pendente</span><span><kbd>M</kbd> manter</span><span><kbd>1</kbd>–<kbd>9</kbd> escolher opção</span>
+      <span><kbd>Enter</kbd> abrir</span><span><kbd>R</kbd> RX</span><span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> copiar</span><span><kbd>?</kbd> todos os atalhos</span>
+    </div>
+    <div id="summary"></div>
+    <div class="warnbar hidden" id="copyWarn">
+      <span id="copyWarnText"></span>
+      <div class="row" style="margin-top:6px"><button class="small" id="btnCopyAnyway">Copiar mesmo assim</button><button class="small" id="btnCopyCancel">Voltar e revisar</button></div>
+    </div>
+    <textarea id="fallback" class="hidden" style="min-height:160px;margin-top:10px" readonly></textarea>
+    <details id="spell" style="margin-top:14px">
+      <summary id="spellSum">Revisão ortográfica</summary>
+      <p class="note" style="margin:6px 0 0">Só sugestões, fora das seções protegidas. Nada muda sem o seu clique.</p>
+      <div id="spellList"></div>
+    </details>
+    <p class="note" style="margin:10px 0 0">Clique num trecho marcado para trocar, digitar outro ou confirmar que se mantém. Tab navega, Enter abre, Esc fecha.</p>
+  </div>
+
+  <!-- TERMOS -->
+  <div class="card">
+    <details>
+      <summary>Meus termos e seções protegidas</summary>
+      <p class="note">Um grupo por linha: <code>Nome: opção 1 | opção 2 | opção 3</code>. Ficam salvos só neste navegador.</p>
+      <textarea id="custom" placeholder="Ex.: Tração: tração cutânea mantida | tração cutânea retirada"></textarea>
+      <p class="note" style="margin-top:12px">Seções protegidas: já são protegidos os títulos padrão (HMA, AP, CMB, MUC, alergias, HD, RX, conduta/CD, entre outros — com ou sem “#”). Para proteger outros títulos, escreva-os aqui, separados por vírgula:</p>
+      <input type="text" id="protKeys" style="width:100%">
+      <div class="row" style="margin-top:8px"><button id="btnResetProt" class="small">Limpar títulos extras</button><span class="spacer"></span><button id="btnSaveCustom">Salvar</button><span class="toast" id="toastCustom"></span></div>
+    </details>
+    <details style="margin-top:10px">
+      <summary>Termos que o app já reconhece</summary>
+      <div class="terms" id="termsList"></div>
+    </details>
+  </div>
+</div>
+
+<div id="help" class="hidden" role="dialog" aria-label="Atalhos de teclado"><div class="box">
+  <div class="row"><strong>Atalhos de teclado</strong><span class="spacer"></span><button class="small" id="helpClose">Fechar (Esc)</button></div>
+  <h3>Revisão dos campos</h3>
+  <table>
+    <tr><td><kbd>N</kbd> ou <kbd>↓</kbd></td><td>Próximo campo pendente</td></tr>
+    <tr><td><kbd>↑</kbd></td><td>Campo pendente anterior</td></tr>
+    <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Próximo / anterior campo (qualquer)</td></tr>
+    <tr><td><kbd>M</kbd></td><td>Manter o campo e ir ao próximo pendente</td></tr>
+    <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Escolher a opção nº 1–9 do campo e ir ao próximo pendente</td></tr>
+    <tr><td><kbd>Enter</kbd> / <kbd>Espaço</kbd></td><td>Abrir o menu do campo</td></tr>
+  </table>
+  <h3>Dentro do menu</h3>
+  <table>
+    <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Escolher a opção numerada</td></tr>
+    <tr><td><kbd>0</kbd></td><td>Manter o anterior</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd> + <kbd>Enter</kbd></td><td>Navegar e escolher</td></tr>
+    <tr><td><kbd>O</kbd></td><td>Digitar outro texto</td></tr>
+    <tr><td><kbd>A</kbd></td><td>Dia de antibiótico (no campo de antibioticoterapia)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Fechar</td></tr>
+  </table>
+  <h3>Gerais</h3>
+  <table>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Copiar evolução (na tela inicial: analisar)</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Desfazer / refazer</td></tr>
+    <tr><td><kbd>R</kbd></td><td>RX de hoje / nova seção de RX</td></tr>
+    <tr><td><kbd>Shift</kbd>+<kbd>M</kbd></td><td>Manter todos os pendentes</td></tr>
+    <tr><td><kbd>E</kbd></td><td>Voltar para editar o texto</td></tr>
+    <tr><td><kbd>?</kbd></td><td>Mostrar / esconder esta lista</td></tr>
+  </table>
+  <p class="note">Os atalhos não funcionam enquanto o cursor estiver numa caixa de digitação.</p>
+</div></div>
+<datalist id="abxList"></datalist>
+<script>
+/* =====================================================================
+   GLOSSÁRIO
+   ===================================================================== */
+const BUILTIN = [
+  // estado geral / consciência
+  ["Acompanhante (masc.)", ["acompanhado","desacompanhado"]],
+  ["Acompanhante (fem.)", ["acompanhada","desacompanhada"]],
+  ["Estado geral", ["BEG","REG","MEG"]],
+  ["Estado geral (extenso)", ["bom estado geral","regular estado geral","mau estado geral"]],
+  ["Despertar (masc.)", ["acordado","sonolento","sedado"]],
+  ["Despertar (fem.)", ["acordada","sonolenta","sedada"]],
+  ["Consciência (masc.)", ["lúcido e orientado em tempo e espaço","lúcido e desorientado em tempo e espaço","desorientado em tempo e espaço","lúcido e orientado","lúcido e desorientado","confuso","agitado"]],
+  ["Consciência (fem.)", ["lúcida e orientada em tempo e espaço","lúcida e desorientada em tempo e espaço","desorientada em tempo e espaço","lúcida e orientada","lúcida e desorientada","confusa","agitada"]],
+  ["Delirium", ["sem sinais de delirium","com sinais de delirium","desorientado no período noturno","desorientada no período noturno","agitado no período noturno","agitada no período noturno"]],
+  ["Queixas", ["sem queixas agudas no momento","queixando-se de dor leve","queixando-se de dor moderada","queixando-se de dor intensa","queixando-se de náuseas","sem queixas"]],
+  ["Hemodinâmica", ["hemodinamicamente estável","hemodinamicamente estável sem DVA","hemodinamicamente estável com DVA","hemodinamicamente instável","hemodinamicamente instável com DVA"],
+    {tail:"(?:\\s+(?:com|sem)\\s+(?:DVA|droga\\s+vasoativa|drogas\\s+vasoativas))?"}],
+  ["Via aérea / ventilação", ["em IOT+VM","em IOT+VM+sedação","em TQT+VM","em TQT em ar ambiente","em ventilação espontânea","extubado","extubada"]],
+  ["Respiratório", ["eupneico em ar ambiente","eupneica em ar ambiente","dispneico","dispneica","em cateter nasal de O2"]],
+  ["Hidratação / coloração", ["corado e hidratado","corada e hidratada","hipocorado","hipocorada","desidratado","desidratada"]],
+  ["Febre", ["afebril","febril","nega febre","refere febre"]],
+  ["Dor", ["nega queixas álgicas","sem queixas álgicas","nega dor","refere dor leve","refere dor moderada","refere dor intensa"]],
+  ["Controle da dor", ["controlada com analgesia","parcialmente controlada com analgesia","refratária à analgesia"]],
+  ["Dieta", ["boa aceitação da dieta","aceitando bem a dieta","aceitação regular da dieta","aceitação parcial da dieta","baixa aceitação da dieta","recusando a dieta","em jejum","estar em jejum","dieta zero","dieta por sonda nasogástrica","dieta por sonda nasoenteral","dieta por SNG","dieta por SNE","dieta por gastrostomia","nutrição parenteral"],
+    {tail:"(?:\\s+(?:por\\s+)?(?:via\\s+oral|VO))?(?:\\s+prescrita)?"}],
+  ["Urina", ["urina clara","urina concentrada","urina turva","urina de aspecto turvo","piúria","hematúria"]],
+  ["Placa de hidrocoloide", ["com placa de hidrocoloide","em uso de placa de hidrocoloide","placa de hidrocoloide íntegra","placa de hidrocoloide descolada","sem placa de hidrocoloide"]],
+  ["Mudança de decúbito", ["mudança de decúbito de 2/2h","mantendo mudança de decúbito","sem mudança de decúbito"]],
+  ["Sono", ["noite tranquila","noite agitada","sono preservado","insônia"]],
+  ["Eliminações", ["eliminações presentes","eliminações ausentes","eliminações parcialmente presentes"]],
+  ["Diurese", ["diurese presente","diurese ausente","diurese espontânea","diurese reduzida","diurese por SVD","diurese presente em SVD","diurese reduzida em SVD","diurese em fralda","diurese presente em fralda"],
+    {tail:"(?:\\s+(?:em|por|via)\\s+(?:SVD|SVA|sonda\\s+vesical(?:\\s+de\\s+demora)?|fralda|coletor|dispositivo\\s+urin[áa]rio))?"}],
+  ["Evacuação", ["evacuações preservadas","evacuações presentes","evacuações ausentes","evacuação presente","evacuação ausente","hábito intestinal preservado"]],
+  ["Sonda vesical", ["em uso de sonda vesical de demora","sonda vesical de demora retirada","em uso de SVD","SVD mantida","SVD retirada","sem SVD"]],
+  ["Acesso venoso", ["acesso venoso periférico pérvio","acesso venoso periférico sem sinais flogísticos","acesso venoso periférico com sinais flogísticos","acesso venoso periférico retirado","AVP pérvio","AVP retirado"]],
+  ["Decúbito / posição", ["decúbito dorsal horizontal (DDH)","decúbito lateral direito (DLD)","decúbito lateral esquerdo (DLE)","decúbito dorsal horizontal","decúbito lateral direito","decúbito lateral esquerdo","decúbito elevado","sentado no leito","sentada no leito","sentado em poltrona","sentada em poltrona"]],
+  ["Decúbito (sigla)", ["DDH","DLD","DLE"]],
+  ["Mobilidade / chegada", ["deambulando","deambulando com auxílio","deambulando sem auxílio","deambulando com muletas","deambulando com andador","em cadeira de rodas","em maca","restrito ao leito","restrita ao leito"]],
+  ["Lesão por pressão", ["sem lesões por pressão","sem lesão por pressão","lesão por pressão em região sacral","lesão por pressão em calcâneo direito","lesão por pressão em calcâneo esquerdo","lesão por pressão em calcâneo","lesão por pressão em região trocantérica","lesão por pressão em região glútea","lesão por pressão em região occipital"]],
+
+  // exame geral curto
+  ["Aparelho respiratório", ["MV presente bilateralmente sem RA","MV presente bilateralmente com roncos","MV presente bilateralmente com crepitações","MV diminuído em bases"]],
+  ["Aparelho cardiovascular", ["BRNF 2T sem sopros","BRNF 2T","BRNF 2T com sopro","BRIF 2T"]],
+  ["Abdome", ["abdome flácido, indolor, RHA presentes","abdome flácido, indolor à palpação","abdome distendido","abdome doloroso à palpação"]],
+
+  // relato / ambulatório
+  ["Local da avaliação", ["avalio paciente em leito de UTI","avalio paciente em leito UTI","avalio paciente em sala vermelha","avalio paciente em sala amarela","avalio paciente em amb ortopedia curativo","avalio paciente em amb ortopedia","avalio paciente em ambulatório de ortopedia","avalio paciente em ambulatório","avalio paciente em leito de enfermaria","avalio paciente em pronto-socorro","avalio paciente em sala de gesso","avalio paciente em sala de curativo","avalio paciente em internação"]],
+  ["Secreção (relato)", ["nega saída de secreção","refere saída de secreção serosa","refere saída de secreção sero-hemática","refere saída de secreção purulenta"]],
+  ["Fisioterapia", ["refere realização de fisioterapia conforme orientado","refere realização parcial de fisioterapia","nega realização de fisioterapia","ainda não iniciou fisioterapia"]],
+  ["Carga", ["nega manter carga em membro","refere manter carga em membro","mantendo carga parcial em membro","mantendo carga total em membro"]],
+  ["Demais segmentos", ["nega queixas em demais segmentos","refere queixas em demais segmentos"]],
+  ["Orientações", ["seguindo orientações médicas","seguindo parcialmente orientações médicas","não seguindo orientações médicas"]],
+  ["Antibiótico", ["realizou antibioticoterapia conforme orientado","realizou antibioticoterapia conforme","em uso de antibioticoterapia conforme orientado","em uso de antibioticoterapia","antibioticoterapia finalizada","sem uso de antibioticoterapia"]],
+  ["Heparina", ["em uso de heparina","sem uso de heparina","heparina suspensa"]],
+  ["Enoxaparina", ["em uso de enoxaparina","sem uso de enoxaparina","enoxaparina suspensa"]],
+  ["Anticoagulação", ["em uso de terapia anticoagulante","sem uso de terapia anticoagulante","terapia anticoagulante suspensa"]],
+  ["Troca de curativo", ["realizando troca de curativos diários","realizando troca de curativos diária","realizando troca de curativos em dias alternados","realizando troca de curativo","não realizando troca de curativo"]],
+  ["Cuidados com imobilização", ["realizando cuidados com a tala","realizando cuidados com o gesso","realizando cuidados com o fixador","não realizando cuidados com a tala","não realizando cuidados com o gesso","não realizando cuidados com o fixador"]],
+  ["Sedestação", ["sedestando conforme orientado","sedestando com auxílio","ainda não sedestando"]],
+  ["Movimentação em bloco", ["mantendo-se em movimentação em bloco conforme orientado","não mantendo movimentação em bloco"]],
+
+  // ferida / curativo
+  ["Ferida operatória", ["ferida operatória limpa e seca","ferida operatória com secreção serosa","ferida operatória com secreção sero-hemática","ferida operatória com secreção sanguinolenta","ferida operatória com secreção purulenta","ferida operatória com hiperemia","ferida operatória com deiscência"]],
+  ["FO (sigla)", ["FO limpa e seca","FO com secreção serosa","FO com secreção sero-hemática","FO com secreção sanguinolenta","FO com secreção purulenta","FO com hiperemia","FO com deiscência"]],
+  ["Bordas", ["bordas coaptadas","bordas com hiperemia","bordas com deiscência parcial"]],
+  ["Curativo", ["curativo oclusivo","curativo oclusivo limpo e seco","curativo oclusivo com sujidade serosa","curativo oclusivo com sujidade sero-hemática","curativo oclusivo com sujidade sanguinolenta","curativo limpo e seco","curativo com sujidade serosa","curativo com sujidade sanguinolenta","curativo saturado"]],
+  ["Curativo a vácuo", ["curativo a vácuo funcionante","curativo a vácuo não funcionante","curativo a vácuo com vazamento","terapia por pressão negativa funcionante","terapia por pressão negativa não funcionante"]],
+  ["Enxerto", ["enxerto viável","enxerto com boa integração","enxerto com perda parcial","enxerto com sofrimento"]],
+  ["Retalho", ["retalho viável","retalho com sofrimento","retalho com congestão venosa","retalho com sinais de isquemia"]],
+  ["Aspecto ao retirar curativo", ["ao retirar, bom estado","ao retirar, com hiperemia local","ao retirar, com edema local","ao retirar, com sujidade"]],
+  ["Pontos", ["pontos íntegros sem deiscências","pontos íntegros","deiscência parcial de pontos","pontos retirados"]],
+  ["Secreção", ["sem saída de secreção ativa ou passiva","com saída de secreção serosa","com saída de secreção sero-hemática","com saída de secreção sanguinolenta","com saída de secreção purulenta","com saída de secreção serosa à expressão"]],
+  ["Sinais flogísticos", ["sem sinais flogísticos","com sinais flogísticos","com hiperemia perincisional","com calor local"]],
+  ["Dor à palpação", ["leve dor à palpação","moderada dor à palpação","intensa dor à palpação","sem dor à palpação"]],
+  ["Dreno", ["dreno sem débito","dreno com débito seroso","dreno com débito sero-hemático","dreno com débito sanguinolento","dreno retirado"]],
+  ["Dreno de Portovac", ["dreno de Portovac sem débito","dreno de Portovac com débito seroso","dreno de Portovac com débito sero-hemático","dreno de Portovac com débito sanguinolento","dreno de Portovac retirado"]],
+
+  // membro
+  ["ADM e mobilidade", ["preservadas e indolor","preservadas","reduzidas devido à imobilização","reduzidas devido à dor","levemente reduzidas devido ao PO","moderadamente reduzidas devido ao PO","importantemente reduzidas devido ao PO","levemente reduzidas","moderadamente reduzidas","importantemente reduzidas"],
+    {before:"ADM\\s+E\\s+MOBI\\p{L}*\\s+", tail:"(?:\\s+devido\\s+[^,.;\\n]*)?"}],
+  ["ADM / mobilidade", ["levemente reduzidas","moderadamente reduzidas","importantemente reduzidas"]],
+  ["Edema", ["sem edema","edema leve","edema moderado","edema importante","edema em regressão","edema mantido","edema em piora"]],
+  ["Flictenas", ["sem flictenas","com flictenas","flictenas íntegras","flictenas rotas"]],
+  ["Equimose", ["sem equimose","equimose em resolução","equimose extensa"]],
+  ["Hematoma", ["sem hematoma","hematoma em resolução","hematoma tenso"]],
+  ["Compartimentos", ["compartimentos livres","compartimentos tensos","compartimentos com tensão aumentada"]],
+  ["Extensão passiva", ["sem dor à extensão passiva dos dedos","dor à extensão passiva dos dedos"]],
+  ["Perfusão", ["perfusão periférica preservada","perfusão periférica lentificada"]],
+  ["Pulsos", ["pulsos presentes e simétricos","pulsos palpáveis","pulsos diminuídos","pulsos ausentes"]],
+  ["Sensibilidade", ["sensibilidade preservada","sensibilidade alterada","hipoestesia"]],
+  ["Motricidade", ["motricidade preservada","motricidade alterada","déficit motor"]],
+  ["Neurovascular", ["sem déficits neurovasculares","sem déficit neurovascular","com déficit neurovascular"]],
+  ["Neurovascular (curto)", ["neurovascular preservado","neurovascular alterado"]],
+  ["TEC", ["TEC < 3 segundos","TEC > 3 segundos"]],
+  ["Panturrilhas", ["panturrilhas livres","panturrilhas empastadas"]],
+  ["Imobilização (estado)", ["tala gessada bem posicionada","tala íntegra","gesso íntegro","imobilização íntegra","imobilização frouxa","imobilização danificada"]],
+
+  // dispositivos
+  ["Posicionamento (masc.)", ["bem posicionado","posicionado corretamente","normoposicionado","normo posicionado","mal posicionado"]],
+  ["Posicionamento (fem.)", ["bem posicionada","posicionada corretamente","normoposicionada","normo posicionada","mal posicionada"]],
+  ["Posicionamento e fixação (plural)", ["normoposicionados e firmes","normoposicionados, fixos e firmes","normoposicionados e frouxos","mal posicionados e firmes","mal posicionados e frouxos"]],
+  ["Posicionamento e fixação (singular)", ["normoposicionado e firme","normoposicionado e frouxo","mal posicionado e firme","mal posicionado e frouxo"]],
+  ["Posicionamento (plural)", ["bem posicionados","posicionados corretamente","normoposicionados","normo posicionados","mal posicionados"]],
+  ["Conservação", ["bom estado de conservação","regular estado de conservação","mau estado de conservação","péssimo estado de conservação"]],
+  ["Fixação (plural)", ["fixos e firmes","fixos, firmes","frouxos","soltos","com mobilidade"]],
+  ["Fixação (singular)", ["fixo e firme","fixo, firme","frouxo","solto"]],
+  ["Secreção em pertuitos", ["sem saída de secreção ativa ou passiva em seus pertuitos","com saída de secreção serosa em seus pertuitos","com saída de secreção sero-hemática em seus pertuitos","com saída de secreção purulenta em seus pertuitos","com hiperemia em seus pertuitos"]],
+  ["Secreção em fios / pinos", ["sem saída de secreção em seus pontos","sem saída de secreção em seus orifícios","com saída de secreção serosa em seus pontos","com saída de secreção sero-hemática em seus pontos","com saída de secreção purulenta em seus pontos","com hiperemia em seus pontos","sem saída de secreção","com saída de secreção serosa","com saída de secreção purulenta"]],
+  ["Fixador externo", ["fixador externo estável","fixador externo instável","fixador externo com conexões firmes","fixador externo com conexões frouxas"]],
+];
+for(const a of ["radial","ulnar","braquial","femoral","poplíteo","pedioso","tibial posterior"])
+  BUILTIN.push(["Pulso "+a, [`pulso ${a} palpável`,`pulso ${a} presente`,`pulso ${a} diminuído`,`pulso ${a} ausente`]]);
+for(const n of ["radial","mediano","ulnar","axilar","musculocutâneo","fibular","fibular comum","fibular profundo","fibular superficial","tibial","sural","safeno"])
+  BUILTIN.push(["Nervo "+n, [`sensibilidade preservada em território do nervo ${n}`,`hipoestesia em território do nervo ${n}`,`parestesia em território do nervo ${n}`,`anestesia em território do nervo ${n}`]]);
+
+const IMOB = [
+  "tala axilopalmar","tala AP","tala antebraquiopalmar","tala ABP","tala luva","tala luva com inclusão do polegar",
+  "tala em pinça de confeiteiro","pinça de confeiteiro","tala inguinomaleolar","tala IM","tala inguinopodálica",
+  "tala suropodálica","tala bota","tala metálica","tala digital","tala de Stack",
+  "gesso axilopalmar","gesso AP","gesso antebraquiopalmar","gesso ABP","gesso luva","gesso luva com inclusão do polegar",
+  "gesso suropodálico","bota gessada","gesso inguinopodálico","gesso inguinomaleolar","gesso pelvipodálico","gesso tipo Sarmiento",
+  "brace","brace de joelho","brace de Sarmiento","bota imobilizadora","robofoot","tipoia","tipoia americana","Velpeau","imobilizador de ombro",
+  "imobilizador em oito","imobilizador de joelho","brace articulado de joelho","órtese de punho",
+  "colar cervical","colar Philadelphia","colete Jewett","colete TLSO","colete de Putti","colete de Boston","halo-colete",
+  "tração cutânea","tração esquelética","fixador externo"
+];
+BUILTIN.push(["Imobilização em uso", [...IMOB.map(x=>"em uso de "+x),"em uso de brace em membro inferior direito","em uso de brace em membro inferior esquerdo","em uso de tala","em uso de gesso","em uso de imobilizador","sem uso de imobilização"]]);
+BUILTIN.push(["Tipo de imobilização", IMOB]);
+
+const VITALS = [
+  ["PA (mmHg)", /\bPA\s*[:=]?\s*(\d{2,3}\s*[x×\/]\s*\d{2,3})/gid],
+  ["FC (bpm)", /\bFC\s*[:=]?\s*(\d{2,3})/gid],
+  ["FR (irpm)", /\bFR\s*[:=]?\s*(\d{1,2})/gid],
+  ["Temperatura (°C)", /\b(?:Tax|Temp|T\.ax|Tº|T°)\s*[:=]?\s*(\d{2}(?:[.,]\d)?)/gid],
+  ["SatO2 (%)", /\b(?:SatO2|SpO2|Sat|SO2)\s*[:=]?\s*(\d{2,3})/gid],
+  ["Glicemia capilar", /\b(?:HGT|Dextro|DX|Glicemia capilar)\s*[:=]?\s*(\d{2,3})/gid],
+  ["Débito do dreno (mL)", /\bd[ée]bito\D{0,25}?(\d{1,4})\s*m[lL]/gid],
+  ["Força muscular (0–5)", /\bfor[çc]a(?:\s+muscular)?(?:\s+grau)?\s*[:=]?\s*([0-5][+-]?)(?!\d|\/\s*5\b)/gid, {scale:5, kind:"forca"}],
+  // escore sensitivo por dermátomo (0 = ausente, 1 = alterado, 2 = normal): "DERMATOMO SENSITIVO DE C5 ESQ 2 E DIR 2"
+  ["Sensibilidade (0–2) ESQ", /(?<=DERMAT[ÓO]MOS?\s+(?:SENSITIVOS?\s+)?(?:DE\s+)?([CTLS]\d{1,2})\b[^\n]{0,30}?\bESQ(?:UERD[OA])?\.?\s*[:=]?\s*)([0-2])(?![\d\/])/gid, {scale:2, kind:"sens", side:"ESQ"}],
+  ["Sensibilidade (0–2) DIR", /(?<=DERMAT[ÓO]MOS?\s+(?:SENSITIVOS?\s+)?(?:DE\s+)?([CTLS]\d{1,2})\b[^\n]{0,40}?\bDIR(?:EIT[OA])?\.?\s*[:=]?\s*)([0-2])(?![\d\/])/gid, {scale:2, kind:"sens", side:"DIR"}],
+  ["Estágio da lesão por pressão", /les[ãa]o\s+por\s+press[ãa]o[^\n.]{0,45}?(?:est[áa]gio|grau)\s*([1-4])/gid],
+];
+
+/* ---------- Contagens (PO, dias, semanas…) ---------- */
+const NB = "(?<![A-Za-zÀ-ÿ\\d\\/,.])";       // não pode vir colado em letra (L4, T12, D12) nem em data
+const ABX = "ATB|ANTIBI[A-Za-zÀ-ÿ]*|CEFAZOLINA|CEFALOTINA|CEFUROXIMA|CEFTRIAXONA|CEFEPIME|CEFALEXINA|CEFTAZIDIMA|OXACILINA|AMPICILINA|AMOXICILINA|CLAVULANATO|PENICILINA|PIPERACILINA|TAZOBACTAM|TAZOCIN|MEROPENEM|ERTAPENEM|IMIPENEM|VANCOMICINA|TEICOPLANINA|LINEZOLIDA|DAPTOMICINA|CLINDAMICINA|GENTAMICINA|AMICACINA|CIPROFLOXACINO|LEVOFLOXACINO|MOXIFLOXACINO|METRONIDAZOL|SULFAMETOXAZOL|BACTRIM|RIFAMPICINA|DOXICICLINA|POLIMIXINA|AZITROMICINA|TIGECICLINA";
+const R = (s,f="gid") => new RegExp(s,f);
+const COUNTERS = [
+  // pós-operatório: PO n = dias desde a cirurgia (POI = 0)
+  {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*(?:DPO|PO)\\b(?!\\s*I\\b)")},
+  {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R("\\b(?:DPO|PO)\\s*(\\d{1,2})\\b(?![\\/\\d])")},
+  {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*P[ÓO]S[-\\s]?OPERAT[ÓO]RIO(?!\\s+IMEDIATO)")},
+  {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIA\\s+D[EO]\\s+P[ÓO]S[-\\s]?OPERAT[ÓO]RIO")},
+  // contagens em que o dia do evento é o dia 1
+  {label:"Dia de fratura / evento (nD)", kind:"d1", cat:"event", re:R(NB+"(\\d{1,2})\\s?D\\b(?=\\s+(?:D[EAO]\\s+)?(?:FRATURA|TRAUMA|QUEDA|ACIDENTE|LES[ÃA]O|LUXA[ÇC][ÃA]O|ENTORSE|EVOLU|SINTOMA|DOR))")},
+  {label:"Dia de internação (nD)", kind:"d1", cat:"intern", re:R(NB+"(\\d{1,2})\\s?D\\b(?=\\s+(?:D[EAO]\\s+)?INTERNA)")},
+  {label:"Dia de antibiótico (Dn)", kind:"d1", cat:"atb", re:R("\\bD(\\d{1,2})\\b(?=\\s*(?:D[EO]\\s+|[-–:]\\s*|\\(\\s*)?(?:"+ABX+"))")},
+  {label:"Dia de antibiótico (Dn)", kind:"d1", cat:"atb", re:R("(?:"+ABX+")\\s*[-–:(]?\\s*\\bD(\\d{1,2})\\b")},
+  {label:"Dia de internação", kind:"d1", cat:"intern", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIA\\s+D[EO]\\s+INTERNA[ÇC][ÃA]O")},
+  {label:"Dia de antibiótico", kind:"d1", cat:"atb", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIA\\s+D[EO]\\s+(?:ANTIBI\\S*|ATB)")},
+  {label:"Dia de internação (DIH)", kind:"days", cat:"intern", re:R("\\bDIH\\s*(\\d{1,2})\\b")},
+  {label:"Dia de internação (DIH)", kind:"days", cat:"intern", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIH\\b")},
+  // número ausente: "PÓS OPERATÓRIO … (05/11/2026)", "D FRATURA … (04/11/2026)", "D VANCOMICINA Di 05/11/2026"
+  {label:"Dia de pós-operatório (inserido)", kind:"po", cat:"surg", missing:true, re:/(?<=^[ \t]*)((?:[°º][ \t]*)?P[ÓO]S)(?=[-\s]?OPERAT[ÓO]RIO(?!\s+IMEDIATO))/gimd},
+  {label:"Dia de fratura / evento (inserido)", kind:"d1", cat:"event", missing:true, re:/(?<=^[ \t]*)(D)(?=\s+(?:D[EAO]\s+)?(?:FRATURA|TRAUMA|QUEDA|ACIDENTE|LES[ÃA]O|LUXA[ÇC][ÃA]O|ENTORSE))/gimd},
+  {label:"Dia de internação (inserido)", kind:"d1", cat:"intern", missing:true, re:/(?<=^[ \t]*)(D)(?=\s+(?:D[EAO]\s+)?INTERNA)/gimd},
+  {label:"Dia de antibiótico (inserido)", kind:"d1", cat:"atb", missing:true, after:true, re:R("\\b(D)(?=\\s+(?:D[EO]\\s+)?(?:"+ABX+")\\b)")},
+  {label:"Dia de antibiótico (inserido)", kind:"d1", cat:"atb", missing:true, prefixD:true, re:R("(?<=^[ \\t]*)((?:"+ABX+"))(?=\\b[^\\n]*?(?:\\bDI\\b|IN[ÍI]CIO)[^\\n]*?\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})","gimd")},
+  // genérico: "5D PERDA DE FORÇA … 05/11/2026" — qualquer motivo, no início da linha e com data na mesma linha
+  {label:"Dia de evolução (nD)", kind:"d1", cat:"any", re:/(?<=^[ \t#>*-]*)(\d{1,2})\s?D(?=\s+[A-Za-zÀ-ÿ][^\n]*?\d{1,2}\/\d{1,2}\/\d{2,4})/gimd},
+  {label:"Dia de evolução (inserido)", kind:"d1", cat:"any", missing:true, re:/(?<=^[ \t#>*-]*)(D)(?=\s+[A-Za-zÀ-ÿ][^\n]*?\d{1,2}\/\d{1,2}\/\d{2,4})/gmd},
+  // tempo decorrido com unidade (retornos)
+  {label:"Tempo decorrido", unit:true, re:R(NB+"(\\d{1,3})\\s+(SEMANAS?|MESES|M[ÊE]S|DIAS?)(?=\\s+(?:D[EAO]\\s+|AP[ÓO]S\\s+(?:[AO]\\s+)?)?(?:PO\\b|P[ÓO]S|FRATURA|TRAUMA|CIRURGIA|PROCEDIMENTO|QUEDA|ACIDENTE|LES[ÃA]O|EVOLU))")},
+];
+const POI_RES = [
+  {re:/\bPOI\b(?:\s*\(\s*P[ÓO]S[-\s]?OPERAT[ÓO]RIO\s+IMEDIATO\s*\))?(\s+(?:P[ÓO]S[-\s]?)?(OPERAT[ÓO]RIO))?/gi, op:m=>m[2]||null, long:false},
+  {re:/\bP[ÓO]S[-\s]?OPERAT[ÓO]RIO\s+IMEDIATO\b/gi, op:()=>null, long:true},
+  {re:/\bPO\s+IMEDIATO\b/gi, op:()=>null, long:false},
+];
+
+/* ---------- Gênero ---------- */
+const STEMS = new Set(["acordad","sonolent","sedad","lucid","orientad","desorientad","confus","agitad","eupneic","dispneic","taquipneic","bradipneic",
+  "corad","hipocorad","descorad","hidratad","desidratad","acompanhad","desacompanhad","restrit","sentad","deitad","encaminhad","internad",
+  "anicteric","icteric","acianotic","cianotic","colaborativ","cooperativ","calm","emagrecid","ansios","queixos","prostrad","obnubilad",
+  "comatos","intubad","traqueostomizad","acamad","palid","operad","submetid","admitid","idos"]);
+const FEM_MARKERS = /\b(SRA|SENHORA|GESTANTE|PU[ÉE]RPERA)\b/gi;
+
+/* ---------- Ortografia ---------- */
+const ACCENT_FIX = Object.fromEntries(("saida:saída,flogisticos:flogísticos,flogistico:flogístico,flogisticas:flogísticas,lucido:lúcido,lucida:lúcida,fisico:físico,"+
+ "cirurgica:cirúrgica,cirurgico:cirúrgico,propria:própria,femur:fêmur,umero:úmero,tibia:tíbia,fibula:fíbula,clavicula:clavícula,escapula:escápula,"+
+ "calcaneo:calcâneo,acetabulo:acetábulo,maleolo:maléolo,olecrano:olécrano,integros:íntegros,integro:íntegro,integra:íntegra,integras:íntegras,"+
+ "deiscencias:deiscências,deiscencia:deiscência,algicas:álgicas,algica:álgica,espontanea:espontânea,operatorio:operatório,operatoria:operatória,"+
+ "profilatica:profilática,necessario:necessário,ortopedico:ortopédico,ortopedica:ortopédica,ambulatorio:ambulatório,diaria:diária,diario:diário,"+
+ "medicas:médicas,medico:médico,medica:médica,hematica:hemática,hematico:hemático,periferica:periférica,simetricos:simétricos,estavel:estável,"+
+ "instavel:instável,deficit:déficit,deficits:déficits,analgesico:analgésico,antibiotico:antibiótico,hipotese:hipótese,diagnostico:diagnóstico,"+
+ "pessimo:péssimo,gluteo:glúteo,osseo:ósseo,ossea:óssea,decubito:decúbito,palpaveis:palpáveis,palpavel:palpável,suropodalica:suropodálica,"+
+ "suropodalico:suropodálico,inguinopodalica:inguinopodálica,inguinopodalico:inguinopodálico,pelvipodalico:pelvipodálico,auxilio:auxílio,"+
+ "osteossintese:osteossíntese,artroplastia:artroplastia,proximal:proximal,radiografia:radiografia,exposicao:exposição,reducao:redução,"+
+ "orientacoes:orientações,secrecao:secreção,regiao:região,lesao:lesão,lesoes:lesões,pressao:pressão,palpacao:palpação,conservacao:conservação,"+
+ "eliminacoes:eliminações,evacuacoes:evacuações,evacuacao:evacuação,internacao:internação,aceitacao:aceitação,imobilizacao:imobilização,"+
+ "realizacao:realização,movimentacao:movimentação,obstetrico:obstétrico,clinico:clínico,clinica:clínica,cronico:crônico,cronica:crônica,"+
+ "hemodinamico:hemodinâmico,neurologico:neurológico,patologico:patológico,polegar:polegar,trocanterica:trocantérica,diafise:diáfise,"+
+ "diafisaria:diafisária,epifise:epífise,metafise:metáfise,metafisaria:metafisária,fisaria:fisária,radio:rádio,ulna:ulna,tornozelo:tornozelo,"+
+ "pe:pé,maos:mãos,mao:mão,joelho:joelho,quadril:quadril,coluna:coluna,vertebra:vértebra,vertebras:vértebras,lombar:lombar,toracica:torácica,"+
+ "toracico:torácico,cervical:cervical,sacral:sacral,periodo:período,noturno:noturno,voce:você,agua:água,proxima:próxima,proximo:próximo,"+
+ "util:útil,inicio:início,termino:término,obito:óbito,cateter:cateter,silicone:silicone,ate:até,apos:após,ja:já,tambem:também,nao:não,sao:são,"+
+ "membros:membros,saidas:saídas,flictena:flictena,equimotico:equimótico,hiperemico:hiperêmico,eritematoso:eritematoso,purulento:purulento")
+ .split(",").map(p=>p.split(":")).filter(([a,b])=>a!==b));
+// "radio" e "pe" são ambíguos fora de contexto ortopédico; ficam como sugestão
+const TYPOS = {mobildiade:"mobilidade",mobilidae:"mobilidade",ampliude:"amplitude",amplitue:"amplitude",reavaaliacao:"reavaliação",
+  philadelphiaa:"Philadelphia",filadelfia:"Philadelphia",kisschner:"Kirschner",kischner:"Kirschner",kirchner:"Kirschner",kirshner:"Kirschner",
+  kirschiner:"Kirschner",kirchiner:"Kirschner",shanz:"Schanz",schans:"Schanz",chanz:"Schanz",shantz:"Schanz",jewet:"Jewett",juett:"Jewett",
+  velpo:"Velpeau",velpeu:"Velpeau",sarmento:"Sarmiento",portovaque:"Portovac",flogistcos:"flogísticos",deicencia:"deiscência",deicencias:"deiscências",
+  descencia:"deiscência",queixsa:"queixas",queixsas:"queixas",proximala:"proximal",eupineico:"eupneico",eupineica:"eupneica",hemodinamicamenta:"hemodinamicamente",orientao:"orientado",enfermria:"enfermaria"};
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const $ = id=>document.getElementById(id);
+const CLASSES = {a:"[aáàâã]",e:"[eéê]",i:"[ií]",o:"[oóôõ]",u:"[uúü]",c:"[cç]"};
+const strip = s => s.normalize("NFD").replace(/\p{M}/gu,"").normalize("NFC");
+const norm = s => strip(s).toLowerCase().replace(/[\s\-]+/g,"");
+const esc = s => s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const isUpper = s => s===s.toUpperCase() && s!==s.toLowerCase();
+function toPattern(s){
+  let out="";
+  for(const ch of s.normalize("NFC")){
+    const base = strip(ch).toLowerCase();
+    if(ch===" ") out+="\\s+";
+    else if(ch==="-") out+="[-\\s]?";
+    else if(CLASSES[base]) out+=CLASSES[base];
+    else out+=ch.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");
+  }
+  return out;
+}
+function matchCase(orig, opt){
+  if(orig.length>3 && isUpper(orig)) return opt.toUpperCase();
+  if(orig[0] && orig[0]!==orig[0].toLowerCase() && !isUpper(orig) && opt[0]===opt[0].toLowerCase())
+    return opt[0].toUpperCase()+opt.slice(1);
+  return opt;
+}
+function applyCase(model, w){
+  if(isUpper(model)) return w.toUpperCase();
+  if(model===model.toLowerCase()) return w.toLowerCase();
+  if(model[0]===model[0].toUpperCase()) return w[0].toUpperCase()+w.slice(1).toLowerCase();
+  return w;
+}
+/* datas (sempre em UTC para evitar erro de fuso/horário de verão) */
+function parseBR(s){
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/); if(!m) return null;
+  let y=+m[3]; if(m[3].length===2) y+=2000;
+  const d=new Date(Date.UTC(y,+m[2]-1,+m[1]));
+  return d.getUTCMonth()===+m[2]-1 && d.getUTCDate()===+m[1] ? d : null;
+}
+const p2 = v=>String(v).padStart(2,"0");
+const fmtBR = d => `${p2(d.getUTCDate())}/${p2(d.getUTCMonth()+1)}/${d.getUTCFullYear()}`;
+function todayUTC(){ const n=new Date(); return new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())); }
+const diffDays = (a,b) => Math.round((b-a)/864e5);
+function monthsDiff(a,b){ let m=(b.getUTCFullYear()-a.getUTCFullYear())*12+(b.getUTCMonth()-a.getUTCMonth()); if(b.getUTCDate()<a.getUTCDate()) m--; return m; }
+const addDays = (d,n) => new Date(d.getTime()+n*864e5);
+
+/* =====================================================================
+   PREFERÊNCIAS LOCAIS
+   ===================================================================== */
+const LS_KEY="evolucao-termos-v1", LS_PROT="evolucao-protegidas-v2", LS_ACC="evolucao-acentos-v1";
+const lsGet=(k,d)=>{ try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } };
+const lsSet=(k,v)=>{ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } };
+const PROT_DEFAULT = "HMA, HDA, AP, ANTECEDENTES PESSOAIS, HÁBITOS, CIRURGIAS OU INTERNAÇÕES, CD, CMB, COMORBIDADES, MUC, MEDICAÇÕES, ALERGIA, ANTECEDENTES, HD, HIPÓTESE DIAGNÓSTICA, HIPÓTESE, DIAGNÓSTICO, CID, PROCEDIMENTO, CIRURGIA REALIZADA, RADIOGRAFIA, RX, RAIO-X, RAIO X, TC, TOMOGRAFIA, RESSONÂNCIA, EXAMES, LABORATÓRIO, CONDUTA, PLANO";
+const OPEN_HEADINGS = ["EF","EXAME","AVALIO","EVOLU","SUBJETIVO","OBJETIVO","S:","O:","MEMBRO","AO EXAME","IMPRESSAO","IMPRESSÃO"];
+const RX_HEAD = /^(RADIOGRAFIA|RX|RAIO)/;
+// títulos padrão sempre valem; os do usuário são somados a eles
+const loadProt = () => { const u=lsGet(LS_PROT,""); return u && u!==PROT_DEFAULT ? PROT_DEFAULT+", "+u : PROT_DEFAULT; };
+function parseCustom(txt){
+  return txt.split("\n").map(l=>l.trim()).filter(Boolean).map((l,i)=>{
+    let name="Meu termo "+(i+1), rest=l;
+    const c=l.indexOf(":"); if(c>-1 && c<40){ name=l.slice(0,c).trim(); rest=l.slice(c+1); }
+    const opts=rest.split("|").map(s=>s.trim()).filter(Boolean);
+    return opts.length>=2 ? [name,opts] : null;
+  }).filter(Boolean);
+}
+const allGroups = () => [...parseCustom(lsGet(LS_KEY,"")), ...BUILTIN];
+
+/* =====================================================================
+   ESTADO
+   ===================================================================== */
+let segs=[], EVAL=todayUTC(), NDAYS=1, SEX="", SEXWHY="", ACCENT=lsGet(LS_ACC,"mirror");
+let TEXT_HAS_ACCENTS=true, TEXT_WORDS=new Map(), copyConfirmed=false, SRC="", HIST=[], SPELLFIXED=0;
+
+/* acentuação: espelha a grafia do texto do usuário */
+function styleText(orig, opt){
+  const c = matchCase(orig, opt);
+  if(ACCENT==="correct") return c;
+  if(!TEXT_HAS_ACCENTS) return strip(c);
+  const local = new Map(); for(const w of orig.match(/\p{L}+/gu)||[]) local.set(norm(w), w);
+  return c.replace(/\p{L}+/gu, w=>{ const o = local.get(norm(w)) ?? TEXT_WORDS.get(norm(w)); return o ? applyCase(w,o) : w; });
+}
+
+/* gênero */
+function genderOf(w){
+  const b=strip(w).toLowerCase(); let stem, suf;
+  if(/[oa]s$/.test(b)){ stem=b.slice(0,-2); suf=b.slice(-2); } else if(/[oa]$/.test(b)){ stem=b.slice(0,-1); suf=b.slice(-1); } else return null;
+  return STEMS.has(stem) ? (suf[0]==="a"?"f":"m") : null;
+}
+function genderWord(w, sex){
+  const g=genderOf(w); if(!g || g===sex) return w;
+  const b=strip(w).toLowerCase(); const i = w.length - (/[oa]s$/.test(b)?2:1);
+  const t = sex==="f"?"a":"o";
+  return w.slice(0,i) + (w[i]===w[i].toUpperCase()?t.toUpperCase():t) + w.slice(i+1);
+}
+const ART = {f:{o:"a",do:"da",ao:"à"}, m:{a:"o",da:"do","à":"ao"}};
+function convGender(str, sex){
+  if(!sex) return str;
+  str = str.replace(/(?<!\p{L})(o|a|do|da|ao|à)(\s+paciente)(?!\p{L})/giu, (m,a,rest)=>{
+    const t = ART[sex][a.toLowerCase()]; return t ? applyCase(a.length>1||isUpper(a)?a:(isUpper(rest)?"X":a), t)+rest : m; });
+  return str.replace(/\p{L}+/gu, (w,off,full)=> /conforme\s+$/i.test(full.slice(Math.max(0,off-12),off)) ? w : genderWord(w,sex));
+}
+const gend = s => convGender(s, SEX);
+
+/* =====================================================================
+   SEÇÕES PROTEGIDAS
+   ===================================================================== */
+const upS = s => strip(s).toUpperCase();
+function startsKey(line,key){
+  const L=upS(line).replace(/^[#>*\s]+/,""), K=upS(key).trim(); if(!K || !L.startsWith(K)) return false;
+  const nx=L.charAt(K.length); return !nx || !/[A-Z0-9]/.test(nx);
+}
+function protectedBlocks(text){
+  const keys = loadProt().split(/[,;\n]/).map(s=>s.trim()).filter(Boolean);
+  const blocks=[]; let cur=null, off=0, prevBlank=false;
+  for(const line of text.split("\n")){
+    const t=line.trim(), lead=line.length-line.trimStart().length;
+    if(/^[-–—_=]{3,}$/.test(t)) cur=null;
+    else if(t && keys.some(k=>startsKey(t,k))){
+      const U=upS(t).replace(/^[#>*\s]+/,"");
+      cur={start:off+lead,end:off+line.trimEnd().length,rx:RX_HEAD.test(U),conduta:/^(CONDUTA|PLANO|CD)\b/.test(U),
+           sticky:/^(HMA|HDA|HISTORIA|CONDUTA|PLANO|CD|AP|ANTECEDENTES)\b/.test(U)};
+      blocks.push(cur);
+      // "HD: fratura de …" com conteúdo na mesma linha protege só aquela linha
+      if(/^(HD|HIPOTESE|DIAGNOSTICO|CID)\b[^:\n]{0,25}:\s*\S/.test(U)) cur=null;
+    }
+    // HMA e conduta só terminam em "---", noutro título protegido ou num título do exame depois de linha em branco
+    else if(t && OPEN_HEADINGS.some(k=>startsKey(t,k)) && (!cur || !cur.sticky || prevBlank)) cur=null;
+    else if(cur && t) cur.end=off+line.trimEnd().length;
+    prevBlank = !t;
+    off+=line.length+1;
+  }
+  blocks.forEach(b=>{ b.upper=isUpper(text.slice(b.start,b.end)); });
+  return blocks;
+}
+
+/* =====================================================================
+   DATAS DO TEXTO E CONTAGENS
+   ===================================================================== */
+const DATE_RE = /(?<![\d\/])(\d{1,2}\/\d{1,2}\/(?:\d{4}|\d{2}))(?![\d\/])/g;
+const ABX_RE_U = new RegExp("\\b(?:"+upS(ABX)+")");
+const CATS = ["surg","event","atb","intern"];
+let DATES=[], GLOBAL={}, BADDATES=[], INPATIENT=false;
+function classifyWindow(w){
+  const u=upS(w);
+  return {
+    isStart:/\bDI\b|\bD\.I\b|INICI|DATA INICIAL|DESDE/.test(u),
+    isEnd:/\bDF\b|\bD\.F\b|\bFIM\b|TERMINO|DATA FINAL|PREVIS|\bATE\b|SUSPENS/.test(u),
+    cats:{
+      surg:/CIRURG|PROCEDIMENTO|OPERAD|OPERATORI|\bPOI?\b|\bDPO\b|OSTEOSS|ARTROPLAS|ARTRODES|FIXAC|ARTROSCOP|AMPUTA|DESBRID|TENORRAF|ENXERT/.test(u),
+      atb:ABX_RE_U.test(u),
+      event:/FRATURA|TRAUMA|QUEDA|ACIDENTE|LESAO|LUXACAO|ENTORSE|\bQPA\b|TORCAO/.test(u),
+      intern:/INTERNA|ADMISS|\bDIH\b/.test(u),
+    }};
+}
+function scanDates(text){
+  DATES=[]; BADDATES=[]; let off=0;
+  for(const line of text.split("\n")){
+    let prev=0;
+    for(const m of line.matchAll(DATE_RE)){
+      const d=parseBR(m[1]);
+      if(!d) BADDATES.push(m[1]);
+      else DATES.push({pos:off+m.index,stop:off+m.index+m[0].length,str:m[1],date:d,line:line.trim(),...classifyWindow(line.slice(prev,m.index))});
+      prev=m.index+m[0].length;
+    }
+    off+=line.length+1;
+  }
+  GLOBAL={};
+  for(const c of CATS){
+    const ds=DATES.filter(x=>x.cats[c] && !x.isEnd);
+    const uniq=[...new Map(ds.map(x=>[x.date.getTime(),x])).values()];
+    GLOBAL[c] = uniq.length===1 ? {date:uniq[0].date,str:uniq[0].str,global:true,src:uniq[0].line}
+              : uniq.length>1 ? {ambiguous:true,list:uniq.map(x=>x.str)} : null;
+  }
+}
+function findRef(text, s, e, cat, lo, hi){
+  const ls=text.lastIndexOf("\n",s-1)+1; let le=text.indexOf("\n",e); if(le<0) le=text.length;
+  const inChunk=DATES.filter(x=>x.pos>=lo && x.stop<=hi);
+  const endD=inChunk.find(x=>x.isEnd);
+  const endRef=endD?{date:endD.date,str:endD.str}:null;
+  const rank=x=> cat==="any" || x.cats[cat] ? 0 : Object.values(x.cats).some(Boolean) ? 9 : 1;
+  const cand=inChunk.filter(x=>!x.isEnd && rank(x)<9)
+    .sort((a,b)=>rank(a)-rank(b) || (cat==="atb"?(b.isStart-a.isStart):0) || Math.abs(a.pos-e)-Math.abs(b.pos-e));
+  if(cand.length) return {date:cand[0].date,str:cand[0].str,endRef};
+  const lineHasDates=DATES.some(x=>x.pos>=ls && x.stop<=le);
+  if(/_{1,2}\s*\/\s*_{1,2}\s*\/\s*_{2,4}/.test(text.slice(lo,hi))) return {placeholder:true,endRef};
+  if(lineHasDates) return {otherOnLine:true,endRef};
+  const g=cat==="any"?null:GLOBAL[cat]; if(g) return {...g,endRef};
+  return null;
+}
+const UNITS = {weeks:["semana","semanas"], months:["mês","meses"], days:["dia","dias"]};
+function unitKind(w){ const u=upS(w); return u.startsWith("SEMANA")?"weeks":u.startsWith("ME")?"months":"days"; }
+function unitCat(after){ const u=upS(after); return /^\s*(D[EAO]\s+)?(FRATURA|TRAUMA|QUEDA|ACIDENTE|LESAO)/.test(u)?"event":"surg"; }
+const LIMITS = {surg:60, event:90, atb:42, intern:120};
+function computeCounter(s){
+  if(s.manual) return;
+  let n, note; s.days=null; s.flag="";
+  const r=s.ref;
+  if(r && r.date){
+    const d=diffDays(r.date, EVAL);
+    if(d<0){ s.value=s.orig; s.state="pend"; s.note=`A data de referência (${r.str}) é posterior à data desta evolução — conferir.`; s.flag="future"; return; }
+    n = s.kind==="po"||s.kind==="poi"||s.kind==="days" ? d : s.kind==="d1" ? d+1 : s.kind==="weeks" ? Math.floor(d/7) : monthsDiff(r.date, EVAL);
+    s.days=d; s.state="auto";
+    note = r.global ? `Calculado pela data ${r.str}, encontrada em outra linha: “${r.src}”.` : `Calculado pela data ${r.str} (evolução de ${fmtBR(EVAL)}).`;
+    if(r.global) s.flag="global";
+    if(r.endRef){
+      const de=diffDays(r.endRef.date, EVAL);
+      if(de>0){ s.flag="ended"; note+=` A data final (${r.endRef.str}) já passou.`; }
+      else if(de===0) note+=` Hoje é o último dia previsto (${r.endRef.str}).`;
+    }
+  } else {
+    s.flag="nodate";
+    const why = r&&r.ambiguous ? `Mais de uma data possível no texto (${r.list.join(", ")}).`
+             : r&&r.otherOnLine ? "A data desta linha pertence a outro item (ex.: outro antibiótico)."
+             : r&&r.placeholder ? "Data em branco (__/__/____)."
+             : "Sem data de referência.";
+    if(s.missing){ s.value=s.orig; s.state="pend"; s.note=why+" Coloque a data (dd/mm/aaaa) para o app inserir o número."; return; }
+    if(s.kind==="weeks"||s.kind==="months"){ s.value=s.orig; s.state="pend"; s.note=why+" Conferir manualmente."; return; }
+    n = (s.kind==="poi"?0:s.num) + NDAYS; s.state="pend";
+    note = `${why} Foi somado ${NDAYS} dia(s) — conferir.`;
+  }
+  const v = fmtCounter(s,n);
+  if(v===null){ s.value=s.orig; s.state="pend"; s.note="Resultado seria o dia da cirurgia (POI) — conferir a data."; return; }
+  s.value=v; s.note=note;
+}
+function fmtCounter(s,n){
+  if(s.missing){
+    if(s.prefixD) return `D${n} ${s.orig}`;
+    if(s.kind==="po"){
+      if(n===0) return matchCase(isUpper(s.orig)?"XXXX":"x","poi");
+      return /^[°º]/.test(s.orig) ? `${n}${s.orig}` : `${n}° ${s.orig}`;
+    }
+    return s.after ? `${s.orig}${n}` : `${n}${s.orig}`;
+  }
+  if(s.kind==="poi"){
+    if(n===0) return s.orig;
+    if(s.opWord) return `${n}° ${styleText(s.opWord,"pós")} ${s.opWord}`;
+    if(s.long) return `${n}° ${styleText(s.orig,"pós operatório")}`;
+    return `${n}° ${matchCase(s.orig.length>3?s.orig:"XXXX","po")}`;
+  }
+  if(s.unitWord){ const [sg,pl]=UNITS[s.kind]; return `${n} ${styleText(s.unitWord, n===1?sg:pl)}`; }
+  if(s.kind==="po" && n===0) return null;
+  return String(n);
+}
+/* trecho descritivo da linha (p/ diferenciar várias fraturas/cirurgias no resumo e alertas) */
+function lineCtx(text,s,e){
+  const ls=text.lastIndexOf("\n",s-1)+1; let le=text.indexOf("\n",e); if(le<0) le=text.length;
+  let t=(text.slice(ls,s)+" "+text.slice(e,le)).replace(DATE_RE,"").replace(/[()]/g," ").replace(/\b(OPERAT[ÓO]RIO|P[ÓO]S|PO|DE|DA|DO|D[IF])\b/gi," ").replace(/\s+/g," ").trim();
+  t=t.replace(/^[\s\-–,;:]+|[\s\-–,;:]+$/g,"").replace(/^D\b\s*/i,"");
+  if(!/\p{L}{3}/u.test(t)) return "";
+  return t.length>38 ? t.slice(0,38)+"…" : t;
+}
+/* identifica grupo muscular / dermátomo e lado de um campo numérico */
+function numCtx(text,s,cfg,m){
+  if(!cfg) return "";
+  if(cfg.kind==="sens") return `${m[1].toUpperCase()} ${cfg.side}`;
+  const ls=text.lastIndexOf("\n",s-1)+1, before=text.slice(ls,s);
+  let side=""; for(const x of before.matchAll(/\b(ESQUERD[OA]|DIREIT[OA]|ESQ|DIR)\b/gi)) side=/^E/i.test(x[1])?"ESQ":"DIR";
+  const grp=before.replace(/^[\s\-–•*]+/,"").split(/\b(?:ESQUERD|DIREIT|FOR[ÇC]A)/i)[0].replace(/[\/,;:]+\s*$/,"").trim();
+  const t=(grp.length>32?grp.slice(0,32)+"…":grp)+(side?" "+side:"");
+  return t.trim();
+}
+function collectCounters(text){
+  const list=[];
+  for(const c of COUNTERS) for(const m of text.matchAll(c.re)){
+    const s=m.indices[1][0], e=c.unit?m.indices[2][1]:m.indices[1][1];
+    list.push({s,e,seg:{type:"counter",label:c.label,kind:c.unit?unitKind(m[2]):c.kind,cat:c.unit?unitCat(text.slice(e,e+40)):c.cat,
+      orig:text.slice(s,e),num:parseInt(m[1]),unitWord:c.unit?m[2]:null,missing:!!c.missing,after:!!c.after,prefixD:!!c.prefixD,manual:false,ctx:lineCtx(text,s,e)}});
+  }
+  for(const P of POI_RES) for(const m of text.matchAll(P.re)){
+    const s=m.index, e=s+m[0].length;
+    list.push({s,e,seg:{type:"counter",label:"Dia de pós-operatório",kind:"poi",cat:"surg",orig:m[0],num:0,opWord:P.op(m),long:P.long,manual:false,ctx:lineCtx(text,s,e)}});
+  }
+  // cada contagem usa só as datas do seu “trecho” da linha (até a próxima contagem)
+  for(const c of list){
+    const ls=text.lastIndexOf("\n",c.s-1)+1; let le=text.indexOf("\n",c.e); if(le<0) le=text.length;
+    const others=list.filter(o=>o!==c && o.s>=ls && o.e<=le && (o.e<=c.s || o.s>=c.e));
+    const lo=Math.max(ls, ...others.filter(o=>o.e<=c.s).map(o=>o.e));
+    const hi=Math.min(le, ...others.filter(o=>o.s>=c.e).map(o=>o.s));
+    c.seg.ref=findRef(text,c.s,c.e,c.seg.cat,lo,hi);
+    computeCounter(c.seg);
+  }
+  return list;
+}
+
+/* =====================================================================
+   ANÁLISE
+   ===================================================================== */
+function prepText(text){
+  TEXT_HAS_ACCENTS = /[áéíóúâêôãõàü]/i.test(text);
+  TEXT_WORDS = new Map(); for(const w of text.match(/\p{L}+/gu)||[]){ const k=norm(w); if(!TEXT_WORDS.has(k)) TEXT_WORDS.set(k,w); }
+  scanDates(text);
+  INPATIENT = /LEITO|ENFERMARIA|INTERNAD|INTERNACAO|\bDIH\b|SALA (AMARELA|VERMELHA)/.test(upS(text)) && !/AMBULAT|\bAMB\b/.test(upS(text));
+}
+function analyze(text){
+  text = text.normalize("NFC"); SRC=text; HIST=[]; SPELLFIXED=0;
+  prepText(text);
+  const cands=[];
+  const add=(start,end,prio,seg)=>cands.push({start,end,prio,seg});
+  for(const c of collectCounters(text)) add(c.s,c.e,0,c.seg);
+  for(const [label,re,cfg] of VITALS) for(const m of text.matchAll(re)){
+    const g = cfg&&cfg.kind==="sens" ? 2 : 1;
+    const [s,e]=m.indices[g];
+    add(s,e,1,{type:"num",label,orig:m[g],value:m[g],state:"pend",scale:cfg&&cfg.scale,nkind:cfg&&cfg.kind,ctx:numCtx(text,s,cfg,m)});
+  }
+  for(const [name,opts,cfg] of allGroups()){
+    const sorted=[...opts].sort((a,b)=>b.length-a.length);
+    const re=new RegExp((cfg&&cfg.before?"(?<="+cfg.before+")":"")+"(?<![\\p{L}\\p{N}])(?:"+sorted.map(toPattern).join("|")+")(?![\\p{L}\\p{N}])"+(cfg&&cfg.tail||""),"giu");
+    for(const m of text.matchAll(re)){
+      const idx=opts.findIndex(o=>norm(o)===norm(m[0]));
+      add(m.index,m.index+m[0].length,2,{type:"opt",label:name,opts,orig:m[0],cur:idx,raw:m[0],state:"pend"});
+    }
+  }
+  for(const m of text.matchAll(/(?<!\p{L})(?:(?:o|a|do|da|ao|à)\s+paciente|\p{L}+)(?!\p{L})/giu)){
+    const w=m[0]; const isArt=/paciente$/i.test(w);
+    if(!isArt && !genderOf(w)) continue;
+    if(!isArt && /conforme\s+$/i.test(text.slice(Math.max(0,m.index-12),m.index))) continue;
+    add(m.index,m.index+w.length,5,{type:"gw",orig:w});
+  }
+
+  const blocks=protectedBlocks(text);
+  const inProt=c=>blocks.some(b=>c.start<b.end && c.end>b.start);
+  const kept=cands.filter(c=>!inProt(c));
+  for(const b of blocks){
+    kept.push({start:b.start,end:b.end,prio:-1,seg:{type:"prot",value:text.slice(b.start,b.end)}});
+    if(b.rx) kept.push({start:b.end,end:b.end,prio:3,seg:{type:"rx",label:"Radiografia de hoje",upper:b.upper,date:fmtBR(EVAL),opt:null,value:"",state:"off"}});
+  }
+  if(!blocks.some(b=>b.rx)){
+    // sem seção de RX: botão para criar a seção antes da conduta (ou no fim do texto)
+    const cd=blocks.find(b=>b.conduta), letters=text.replace(/[^\p{L}]/gu,""), upper=letters.length>0 && (letters.replace(/[^\p{Lu}]/gu,"").length/letters.length)>0.8;
+    const at = cd ? cd.start : text.trimEnd().length;
+    const sepBefore = cd ? /(^|\n)[ \t]*[-–—_=]{3,}[ \t]*\n[ \t]*$/.test(text.slice(0,at)) : false;
+    kept.push({start:at,end:at,prio:3,before:true,seg:{type:"rx",newSection:true,atEnd:!cd,sepBefore,label:"Nova seção de radiografia",upper,date:fmtBR(EVAL),opt:null,value:"",state:"off"}});
+  }
+  kept.sort((a,b)=>a.start-b.start || (b.before?1:0)-(a.before?1:0) || (b.end-b.start)-(a.end-a.start) || a.prio-b.prio);
+  segs=[]; let pos=0;
+  for(const c of kept){
+    if(c.start<pos) continue;
+    if(c.start>pos) segs.push({type:"text",value:text.slice(pos,c.start)});
+    segs.push(c.seg); pos=c.end;
+  }
+  if(pos<text.length) segs.push({type:"text",value:text.slice(pos)});
+
+  if(ACCENT==="correct") segs.forEach(s=>{ if(s.type==="opt" && s.cur>-1) s.raw=matchCase(s.orig,s.opts[s.cur]); });
+  detectSex(text, blocks);
+}
+
+function detectSex(text, blocks){
+  const ex=text.match(/\bSEXO\s*[:\-]?\s*(FEMININO|MASCULINO|F|M)\b/i);
+  if(ex){ SEX=ex[1][0].toUpperCase()==="F"?"f":"m"; SEXWHY=`pelo campo "${ex[0]}"`; return; }
+  let f=0,m=0; const fw=[],mw=[];
+  const inProt=i=>blocks.some(b=>i>=b.start && i<b.end);
+  for(const x of text.matchAll(/\p{L}+/gu)){
+    if(/conforme\s+$/i.test(text.slice(Math.max(0,x.index-12),x.index))) continue;
+    const g=genderOf(x[0]); if(!g) continue;
+    const w=inProt(x.index)?10:1;
+    if(g==="f"){ f+=w; if(w>1||fw.length<1) fw.unshift(x[0]); } else { m+=w; if(w>1||mw.length<1) mw.unshift(x[0]); }
+  }
+  for(const x of text.matchAll(FEM_MARKERS)){ f+=10; fw.unshift(x[0]); }
+  for(const x of text.matchAll(/\b(a|da|à)\s+paciente\b/gi)){ f+=3; fw.push(x[0]); }
+  for(const x of text.matchAll(/\b(o|do|ao)\s+paciente\b/gi)){ m+=3; mw.push(x[0]); }
+  if(f===m){ SEX=""; SEXWHY="não foi possível detectar — escolha"; return; }
+  SEX = f>m?"f":"m";
+  SEXWHY = `detectado por "${(f>m?fw:mw)[0]}"`;
+}
+
+/* valores finais */
+const ABX_LIST=["cefazolina","cefalotina","cefuroxima","ceftriaxona","cefepime","ceftazidima","oxacilina","clindamicina","vancomicina","teicoplanina",
+  "gentamicina","amicacina","ciprofloxacino","levofloxacino","piperacilina-tazobactam","meropenem","ertapenem","linezolida","daptomicina","metronidazol",
+  "sulfametoxazol-trimetoprima","rifampicina","amoxicilina-clavulanato","ampicilina-sulbactam","cefalexina","doxiciclina","penicilina cristalina","polimixina B"];
+function atbItemText(s,a){
+  const di=parseBR(a.di), n=di?diffDays(di,EVAL)+1:null, up=s.orig.length>3&&isUpper(s.orig);
+  return `D${n!=null&&n>0?n:"?"} ${up?a.drug.toUpperCase():a.drug}${a.di?` Di ${a.di}`:""}${a.df?` - Df ${a.df}`:""}`;
+}
+const atbSuffix = s => s.atb&&s.atb.length ? ` (${s.atb.map(a=>atbItemText(s,a)).join("; ")})` : "";
+function segValue(s){
+  if(s.type==="opt") return gend(s.raw)+atbSuffix(s);
+  if(s.type==="gw") return gend(s.orig);
+  return s.value;
+}
+const outputText = () => segs.map(segValue).join("");
+function displayOpt(s,o){ return gend(styleText(s.orig,o)); }
+/* lista de opções exibida (mesma ordem dos números 1–9) */
+function optList(s){
+  const seen=new Set(), out=[];
+  for(const o of s.opts){ const d=displayOpt(s,o); if(seen.has(norm(d))) continue; seen.add(norm(d)); out.push(d); }
+  const prev=gend(s.orig); if(!seen.has(norm(prev))) out.push(prev);
+  return out;
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+const view=$("view"); let pop, openIdx=-1;
+function render(focusIdx){
+  let h="";
+  segs.forEach((s,i)=>{
+    const v=segValue(s);
+    if(s.type==="text") h+=esc(v);
+    else if(s.type==="prot") h+=`<span class="prot" title="Seção protegida — não é alterada">${esc(v)}</span>`;
+    else if(s.type==="gw") h+= v===s.orig ? esc(v) : `<span class="g" title="Concordância de gênero (era: ${esc(s.orig)})">${esc(v)}</span>`;
+    else if(s.type==="rx") h+= s.state==="off" ? `<span class="f rxoff" data-i="${i}" tabindex="0" role="button">${s.newSection?"+ Seção de RX":"+ RX de hoje"}</span>${s.newSection&&!s.atEnd?"\n":""}`
+                                               : `<span class="f chg" data-i="${i}" tabindex="0" role="button" title="Radiografia de hoje">${esc(v)}</span>`;
+    else h+=`<span class="f ${s.state}" data-i="${i}" tabindex="0" role="button" title="${esc(s.label+(s.ctx?" ("+s.ctx+")":"")+(s.note?" — "+s.note:""))}">${esc(v)}</span>`;
+  });
+  view.innerHTML=h+'<div id="pop"></div>'; pop=$("pop"); openIdx=-1;
+  updateProgress(); renderSpell(); renderAlerts(); renderSummary(); saveDraft();
+  if(focusIdx!=null){ const el=view.querySelector(`[data-i="${focusIdx}"]`); el && el.focus({preventScroll:true}); }
+}
+const reviewable = s => s.type==="opt"||s.type==="num"||(s.type==="counter"&&s.flag);
+function updateProgress(){
+  const fields=segs.filter(reviewable);
+  const done=fields.filter(s=>s.state!=="pend").length, chg=fields.filter(s=>s.state==="chg").length;
+  const auto=segs.filter(s=>s.type==="counter"&&s.state==="auto").length;
+  const g=segs.filter(s=>s.type==="gw"&&segValue(s)!==s.orig).length + segs.filter(s=>s.type==="opt"&&gend(s.raw)!==s.raw).length;
+  $("progress").textContent = fields.length
+    ? `${done} de ${fields.length} revisados · ${chg} alterados${auto?` · ${auto} calculados pela data`:""}${g?` · ${g} ajustes de gênero`:""}`
+    : "Nenhum campo reconhecido — adicione termos próprios abaixo";
+  $("barFill").style.width = fields.length?(100*done/fields.length)+"%":"0";
+}
+
+/* =====================================================================
+   ALERTAS DE INCOERÊNCIA
+   ===================================================================== */
+function renderAlerts(){
+  const A=[];
+  const free=segs.map(s=>s.type==="prot"?"\n":segValue(s)).join("");
+  const t=" "+strip(free).toLowerCase().replace(/\s+/g," ")+" ";
+  const has=re=>re.test(t);
+  const num=lbl=>{ const s=segs.find(x=>x.type==="num"&&x.label.startsWith(lbl)); return s?s.value:null; };
+
+  if(has(/(ferida operatoria|\bfo\b) limpa e seca/) && has(/(com saida de secrecao|fo com secrecao|ferida operatoria com secrecao)/))
+    A.push("Ferida operatória descrita como limpa e seca, mas há saída de secreção no texto.");
+  if(has(/nega saida de secrecao/) && has(/com saida de secrecao|refere saida de secrecao/))
+    A.push("Relato nega saída de secreção, mas o exame descreve saída de secreção.");
+  const T=num("Temperatura"); const tv=T?parseFloat(T.replace(",",".")):NaN;
+  if(!isNaN(tv)){
+    if(tv>=37.8 && has(/\bafebril\b|nega febre/)) A.push(`Temperatura ${T} °C com “afebril/nega febre” no texto.`);
+    if(tv<37.5 && has(/\bfebril\b/)) A.push(`“Febril” no texto com temperatura ${T} °C.`);
+  }
+  const sat=parseInt(num("SatO2")); if(sat && sat<92 && has(/eupneic[oa] em ar ambiente/)) A.push(`SatO2 ${sat}% com “eupneico em ar ambiente”.`);
+  const pa=num("PA"); const sys=pa?parseInt(pa):NaN; const fc=parseInt(num("FC"));
+  if(has(/hemodinamicamente estavel/) && ((sys && sys<90) || (fc && fc>120))) A.push(`“Hemodinamicamente estável” com ${sys<90?"PA sistólica "+sys:"FC "+fc}.`);
+  if(has(/eliminacoes presentes/) && has(/diurese ausente|evacuac\w* ausente/)) A.push("“Eliminações presentes”, mas diurese ou evacuação ausente.");
+  if(has(/eliminacoes ausentes/) && has(/diurese (presente|espontanea)/) && has(/evacuac\w* (presente|preservada)/)) A.push("“Eliminações ausentes”, mas diurese e evacuações presentes.");
+  if(has(/(nega|sem) queixas algicas|nega dor\b|sem queixas agudas/) && has(/refere dor|queixando-se de dor/)) A.push("Texto nega dor e também refere dor.");
+  if(has(/\bdeambulando\b/) && has(/restrit[oa] ao leito/)) A.push("“Deambulando” e “restrito ao leito” no mesmo texto.");
+  if(has(/\bsedad[oa]\b/) && has(/lucid[oa] e orientad/)) A.push("“Sedado” junto com “lúcido e orientado”.");
+  if(has(/dreno( de portovac)? retirado/) && has(/dreno( de portovac)? (com|sem) debito/)) A.push("Dreno descrito como retirado e também com/sem débito.");
+  if(has(/pontos retirados/) && has(/pontos integros/)) A.push("“Pontos retirados” e “pontos íntegros” no mesmo texto.");
+  if(has(/sem edema/) && has(/edema (leve|moderado|importante|em )/)) A.push("“Sem edema” e grau de edema no mesmo texto.");
+  if(has(/antibioticoterapia finalizada|sem uso de antibioticoterapia/) && (has(/em uso de antibioticoterapia/) || segs.some(s=>s.type==="counter"&&/antibi/i.test(s.label))))
+    A.push("Antibiótico descrito como finalizado/sem uso, mas há uso ou contagem de dias de antibiótico.");
+  if(has(/sem uso de heparina|heparina suspensa/) && has(/em uso de heparina/)) A.push("Heparina descrita como em uso e suspensa/sem uso.");
+  if(has(/compartimentos tensos|dor a extensao passiva dos dedos/) && !has(/sem dor a extensao passiva/)) A.push("Sinais de síndrome compartimental descritos — conferir conduta.");
+
+  // gênero
+  const mW=[],fW=[];
+  for(const x of free.matchAll(/\p{L}+/gu)){
+    if(/conforme\s+$/i.test(free.slice(Math.max(0,x.index-12),x.index))) continue;
+    const g=genderOf(x[0]); if(g==="m") mW.push(x[0]); if(g==="f") fW.push(x[0]);
+  }
+  if(mW.length && fW.length) A.push(`Concordância de gênero misturada: ${[...new Set(fW)].slice(0,3).join(", ")} × ${[...new Set(mW)].slice(0,3).join(", ")}. Escolha o sexo do paciente acima.`);
+
+  // lateralidade e segmento
+  A.push(...lateralityCheck(free));
+
+  // contagens e datas
+  const C=segs.filter(s=>s.type==="counter");
+  const nod=C.filter(s=>s.flag==="nodate"&&s.state==="pend").map(s=>`${s.label}${s.ctx?" — "+s.ctx:""}: “${s.orig.trim()}”`);
+  if(nod.length) A.push(`Contagem sem data de referência (${nod.join(", ")}): confira. Coloque a data (dd/mm/aaaa) na mesma linha para o cálculo automático.`);
+  const fut=C.filter(s=>s.flag==="future").map(s=>s.ref.str);
+  if(fut.length) A.push(`Data de referência posterior à data desta evolução (${fut.join(", ")}).`);
+  for(const s of C.filter(s=>s.flag==="ended")) A.push(`${s.label}${s.ctx?" — "+s.ctx:""}: “${s.value}” com data final em ${s.ref.endRef.str} já ultrapassada — conferir se foi prorrogado ou suspenso.`);
+  if(INPATIENT) for(const s of C) if(s.days!=null && !s.manual && s.days>(LIMITS[s.cat]||90)){
+    const yr = s.ref.date.getUTCFullYear()!==EVAL.getUTCFullYear() ? ` O ano (${s.ref.date.getUTCFullYear()}) é diferente do ano atual.` : "";
+    A.push(`Paciente internado com contagem de ${s.days} dias (“${s.value}”${s.ctx?" — "+s.ctx:""}, data ${s.ref.str}) — data ou ano digitado errado?${yr}`);
+  }
+  for(const s of segs) if(s.type==="opt" && s.atb) for(const a of s.atb){ const df=parseBR(a.df||""); if(df && diffDays(df,EVAL)>0) A.push(`${a.drug}: data final (${a.df}) já ultrapassada — conferir se foi prorrogado ou suspenso.`); }
+  const worse=segs.filter(s=>s.type==="num"&&s.scale!=null&&s.state==="chg"&&parseInt(s.value)<parseInt(s.orig));
+  if(worse.length) A.push(`Piora neurológica registrada (${worse.map(s=>`${s.ctx||s.label}: ${s.orig}→${s.value}`).join("; ")}) — conferir e comunicar se necessário.`);
+  const reps=SPELL.filter(x=>x.seg!=null);
+  if(reps.length) A.push(`Texto repetido após campo alterado (${reps.map(x=>`“…${x.from.trim()}”`).join(", ")}) — veja “Revisão ortográfica” para remover com um clique.`);
+  if(BADDATES.length) A.push(`Data impossível no texto: ${[...new Set(BADDATES)].join(", ")} — conferir.`);
+  const INFO=[];
+  for(const s of C.filter(s=>s.flag==="global"&&s.state==="auto")) INFO.push(`“${s.value}” calculado pela data ${s.ref.str} encontrada em outra linha (“${s.ref.src.slice(0,70)}${s.ref.src.length>70?"…":""}”).`);
+
+  const XR = window.extraAlerts ? window.extraAlerts(free) : {red:[],warn:[],info:[]};
+  A.push(...XR.warn); INFO.push(...XR.info);
+  $("alerts").innerHTML = XR.red.map(a=>`<li class="red">🚩 ${esc(a)}</li>`).join("")
+    + (A.length ? A.map(a=>`<li>⚠ ${esc(a)}</li>`).join("") : XR.red.length ? "" : `<li class="ok">✓ Nenhuma incoerência encontrada.</li>`)
+    + INFO.map(a=>`<li class="info">ℹ ${esc(a)}</li>`).join("");
+}
+
+/* lateralidade: fratura × procedimento × exame físico */
+const SURG_KW=/\bPOI?\b|\bDPO\b|OPERATORI|OSTEOSS|ARTROPLAS|ARTRODES|CIRURG|PROCEDIMENTO|FIXAC|ARTROSCOP|TENORRAF|AMPUTA|\bRAFI\b/;
+const EVT_KW=/FRATURA|LUXACAO|LESAO|TRAUMA|ENTORSE|RUPTURA|\bQPA\b|QUEDA/;
+const UPPER_KW=/UMERO|\bRADIO\b|\bULNA|CLAVICULA|ESCAPULA|OMBRO|COTOVELO|PUNHO|\bMAO\b|METACARP|ANTEBRACO|\bBRACO\b|OLECRANO|ESCAFOIDE|MEMBRO SUPERIOR|\bMS[DE]\b/;
+const LOWER_KW=/FEMUR|FEMORAL|TIBIA|FIBULA|PATELA|JOELHO|TORNOZELO|\bPE\b|CALCANEO|QUADRIL|ACETABULO|MALEOL|METATARS|TALUS|PILAO|PLATO|COXA|\bPERNA\b|MEMBRO INFERIOR|\bMI[DE]\b|TROCANT/;
+function sidesOf(u){
+  u=u.replace(/DECUBITO LATERAL (DIREITO|ESQUERDO)|\bDL[DE]\b/g,"");
+  const s=new Set(); if(/\bDIREIT[OA]S?\b|\bM[SI]D\b/.test(u)) s.add("D"); if(/\bESQUERD[OA]S?\b|\bM[SI]E\b/.test(u)) s.add("E"); return s;
+}
+function regionsOf(u){ const s=new Set(); if(UPPER_KW.test(u)) s.add("superior"); if(LOWER_KW.test(u)) s.add("inferior"); return s; }
+function lateralityCheck(free){
+  const out=[], SIDE={D:"DIREITO",E:"ESQUERDO"}, REG={superior:"superior",inferior:"inferior"};
+  const all=outputText().split("\n").map(upS), freeL=free.split(/[\n.;]/).map(upS);
+  const skip=u=>/BILATERA|PREVI|ANTIG|ANTECED|CONTRALATERA/.test(u);
+  const EXAM_HEAD=/^\s*(MEMBRO\s+(SUPERIOR|INFERIOR)|M[SI][DE]\b|(OMBRO|COTOVELO|PUNHO|MAO|QUADRIL|JOELHO|TORNOZELO|PE|COXA|PERNA|ANTEBRACO|BRACO)\s+(DIREIT|ESQUERD))/;
+  // pares (membro, lado) de cada fratura/lesão e de cada procedimento — um por linha
+  const evt=[], proc=[];
+  for(const u of all){
+    if(skip(u) || EXAM_HEAD.test(u)) continue;
+    const isP=SURG_KW.test(u), isE=EVT_KW.test(u); if(!isP && !isE) continue;
+    const sd=[...sidesOf(u)], rg=[...regionsOf(u)];
+    if(sd.length!==1) continue;                       // linha sem lado ou com os dois lados: não dá para afirmar
+    const p={side:sd[0], reg:rg.length===1?rg[0]:null, txt:u.trim().slice(0,60)};
+    (isP?proc:evt).push(p);
+  }
+  // pares do exame físico
+  const ex=[];
+  for(const line of free.split("\n").map(upS)){
+    if(!EXAM_HEAD.test(line)) continue;
+    const head=line.split(":")[0].slice(0,50), sd=[...sidesOf(head)], r=[...regionsOf(head)];
+    if(sd.length===1) ex.push({side:sd[0], reg:r.length===1?r[0]:null});
+  }
+  for(const u of freeL){
+    if(EXAM_HEAD.test(u)) continue;
+    if(skip(u) || SURG_KW.test(u) || EVT_KW.test(u) || /SEM ALTERAC|NORMAL/.test(u)) continue;
+    const r=[...regionsOf(u)]; if(!r.length && !/\bM[SI][DE]\b/.test(u)) continue;
+    const sd=[...sidesOf(u)]; if(sd.length!==1) continue;
+    ex.push({side:sd[0], reg:r.length===1?r[0]:null});
+  }
+  const refs=[...evt,...proc];
+  const regsRef=new Set(refs.map(p=>p.reg).filter(Boolean));
+  // 1) fratura × procedimento no mesmo membro com lados diferentes
+  for(const r of ["superior","inferior"]){
+    const es=new Set(evt.filter(p=>p.reg===r).map(p=>p.side)), ps=new Set(proc.filter(p=>p.reg===r).map(p=>p.side));
+    if(es.size===1 && ps.size===1 && [...es][0]!==[...ps][0])
+      out.push(`Membro ${r}: fratura do lado ${SIDE[[...es][0]]}, mas procedimento do lado ${SIDE[[...ps][0]]} — conferir lateralidade.`);
+  }
+  // 2) exame de um membro/lado que não corresponde a nenhuma fratura/procedimento
+  const seen=new Set();
+  for(const e of ex){
+    const key=e.reg+e.side; if(seen.has(key)) continue; seen.add(key);
+    if(e.reg){
+      const same=refs.filter(p=>p.reg===e.reg);
+      if(same.length && !same.some(p=>p.side===e.side))
+        out.push(`Exame físico do membro ${e.reg} ${SIDE[e.side]}, mas a fratura/procedimento do membro ${e.reg} é do lado ${SIDE[same[0].side]} — conferir lateralidade.`);
+      else if(!same.length && regsRef.size && refs.every(p=>p.reg))
+        out.push(`Exame físico do membro ${e.reg} ${SIDE[e.side]}, mas não há fratura/procedimento registrado em membro ${e.reg} — conferir.`);
+    } else if(refs.length && !refs.some(p=>p.side===e.side)){
+      out.push(`O exame físico descreve o lado ${SIDE[e.side]}, mas as fraturas/procedimentos são do lado ${SIDE[refs[0].side]} — conferir lateralidade.`);
+    }
+  }
+  return out;
+}
+
+/* =====================================================================
+   ORTOGRAFIA (sugestões)
+   ===================================================================== */
+let SPELL=[];
+function renderSpell(){
+  const found=new Map();
+  const addS=(from,to,why)=>{ const k=from+"→"+to; const o=found.get(k); if(o) o.n++; else found.set(k,{from,to,why,n:1}); };
+  for(const s of segs){
+    if(s.type!=="text") continue;
+    for(const x of s.value.matchAll(/\p{L}+/gu)){
+      const w=x[0], k=strip(w).toLowerCase();
+      if(TYPOS[k]) addS(w, applyCase(w,TYPOS[k]), "digitação");
+      else if(ACCENT_FIX[k] && strip(w)===w && ACCENT_FIX[k]!==k) addS(w, applyCase(w,ACCENT_FIX[k]), "acento");
+      else if(/([aiu])\1/i.test(w) && !/^(xiita|saara|vacuo|vacuos)$/i.test(k)) addS(w, w.replace(/([aiuAIU])\1/,"$1"), "letra repetida");
+    }
+    for(const x of s.value.matchAll(/,\s*,/g)) addS(x[0], ",", "vírgula duplicada");
+    for(const x of s.value.matchAll(/(?<=\S|^) {2,}(?=\S|$)/g)){
+      const prev = x.index>0 ? s.value[x.index-1] : segValue(segs[segs.indexOf(s)-1]||{type:"text",value:"\n"}).slice(-1);
+      if(prev && prev!=="\n") addS(x[0], " ", "espaço duplo");
+    }
+    for(const x of s.value.matchAll(/ +(?=[,.;])/g)) addS(x[0], "", "espaço antes da pontuação");
+  }
+  // repetição criada por troca de campo: "DIURESE POR SVD" + " EM SVD"
+  segs.forEach((s,i)=>{
+    if(!((s.type==="opt"||s.type==="num") && s.state==="chg")) return;
+    const nx=segs[i+1]; if(!nx || nx.type!=="text") return;
+    const m=nx.value.match(/^\s+(?:em|por|via|com|sem|de|da|do|na|no)\s+([\p{L}\d+]+(?:\s+[\p{L}\d+]+)?)/iu); if(!m) return;
+    const vw=new Set((segValue(s).match(/[\p{L}\d+]+/gu)||[]).map(norm).filter(w=>w.length>1));
+    const tw=(m[1].match(/[\p{L}\d+]+/gu)||[]).map(norm);
+    if(tw.length && tw.every(w=>vw.has(w))){
+      const k="rep"+i; found.set(k,{from:m[0],to:"",why:`repetição depois de “${segValue(s)}”`,n:1,seg:i+1});
+    }
+  });
+  if(window.extraSpell) window.extraSpell(found);
+  SPELL=[...found.values()];
+  $("spellSum").textContent = SPELL.length ? `Revisão ortográfica — ${SPELL.length} sugestão(ões)` : "Revisão ortográfica — nenhuma sugestão";
+  const show=v=>v.trim()?esc(v):`“${v.replace(/ /g,"·")}”`;
+  $("spellList").innerHTML = (SPELL.length>1?`<div><button class="small" id="spellAll">Corrigir todas</button></div>`:"")+
+    SPELL.map((x,i)=>`<div><button class="small" data-sp="${i}">Corrigir</button><code>${show(x.from)}</code> → <code>${x.to===""?"(remover)":show(x.to)}</code><span class="note">${x.why}${x.n>1?` · ${x.n}×`:""}</span></div>`).join("");
+  $("spellList").querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{ applySpell([SPELL[+b.dataset.sp]]); });
+  const all=$("spellAll"); if(all) all.onclick=()=>applySpell(SPELL);
+}
+function applySpell(list){
+  pushHistory(); SPELLFIXED+=list.reduce((a,x)=>a+x.n,0);
+  for(const x of list){ if(x.seg!=null){ const t=segs[x.seg]; if(t && t.type==="text" && t.value.startsWith(x.from)) t.value=x.to+t.value.slice(x.from.length); } }
+  for(const x of list.filter(x=>x.seg==null)) for(const s of segs){
+    if(s.type!=="text" && !(x.prot && s.type==="prot")) continue;
+    if(/^\p{L}+$/u.test(x.from)) s.value=s.value.replace(new RegExp("(?<!\\p{L})"+x.from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?!\\p{L})","gu"), x.to);
+    else s.value=s.value.split(x.from).join(x.to);
+  }
+  render(); $("spell").open=true;
+}
+
+/* =====================================================================
+   DESFAZER / REVERTER
+   ===================================================================== */
+let FUTURE=[];
+const snap = () => ({segs:segs.map(s=>({...s})),SEX,ACCENT,EVAL:EVAL.getTime(),SPELLFIXED});
+function restoreSnap(st){
+  segs=st.segs; SEX=st.SEX; ACCENT=st.ACCENT; EVAL=new Date(st.EVAL); SPELLFIXED=st.SPELLFIXED;
+  $("sex").value=SEX; $("accent").value=ACCENT; $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+  closePop(); render();
+}
+function pushHistory(){ HIST.push(snap()); if(HIST.length>150) HIST.shift(); FUTURE=[]; }
+function undo(){ const st=HIST.pop(); if(!st) return; FUTURE.push(snap()); restoreSnap(st); }
+function redo(){ const st=FUTURE.pop(); if(!st) return; HIST.push(snap()); restoreSnap(st); }
+function revertAll(){
+  const h=HIST.slice(), snap={segs:segs.map(s=>({...s})),SEX,ACCENT,EVAL:EVAL.getTime(),SPELLFIXED};
+  analyze(SRC); HIST=[...h,snap];
+  $("sex").value=SEX; $("sexWhy").textContent=SEXWHY; closePop(); render();
+}
+
+/* =====================================================================
+   RESUMO DO QUE MUDOU
+   ===================================================================== */
+function renderSummary(){
+  const L=[];
+  for(const s of segs){
+    const v=segValue(s);
+    if(s.type==="counter" && v!==s.orig) L.push(`${esc(s.label)}${s.ctx?` <span class="note">(${esc(s.ctx)})</span>`:""}: ${esc(s.orig.trim())||"—"} → <b>${esc(v.trim())}</b>${s.state==="auto"?"":" <i>(conferir)</i>"}`);
+    else if((s.type==="opt"||s.type==="num") && s.state==="chg"){
+      let trend=""; if(s.scale!=null){ const a=parseInt(s.orig), b=parseInt(v); if(!isNaN(a)&&!isNaN(b)&&a!==b) trend = b>a ? ` <span style="color:var(--keep)">↑ melhora</span>` : ` <span style="color:var(--warn)">↓ piora</span>`; }
+      L.push(`${esc(s.label)}${s.ctx?` <span class="note">(${esc(s.ctx)})</span>`:""}: ${esc(gend(s.orig))} → <b>${esc(v)}</b>${trend}`);
+    }
+    else if(s.type==="ins") L.push(`Inserido da visita: <b>${esc(v.trim())}</b>`);
+    else if(s.type==="rx" && s.state==="chg") L.push(`${s.newSection?"Nova seção de RX":"RX"}: <b>${esc(v.split("\n").map(l=>l.trim()).filter(l=>l && !/^[-–—]{3,}$/.test(l)).pop()||"")}</b>`);
+  }
+  const g=segs.filter(s=>s.type==="gw"&&segValue(s)!==s.orig).length + segs.filter(s=>s.type==="opt"&&gend(s.raw)!==s.raw).length;
+  if(g) L.push(`Concordância de gênero: ${g} ajuste(s) para o ${SEX==="f"?"feminino":"masculino"}`);
+  if(SPELLFIXED) L.push(`Ortografia: ${SPELLFIXED} correção(ões) aplicada(s)`);
+  $("summary").innerHTML = `<h5>Resumo do que mudou</h5>` + (L.length ? `<ul>${L.map(x=>`<li>${x}</li>`).join("")}</ul>` : `<div class="none">Nada alterado ainda em relação ao texto colado.</div>`);
+}
+
+/* =====================================================================
+   RASCUNHO (só nesta aba; some ao fechar a aba)
+   ===================================================================== */
+const SS_DRAFT="evolucao-rascunho-v1", SS_INPUT="evolucao-entrada-v1";
+const ssSet=(k,v)=>{ try{ sessionStorage.setItem(k,v); }catch(e){} };
+const ssGet=k=>{ try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
+const ssDel=k=>{ try{ sessionStorage.removeItem(k); }catch(e){} };
+function saveDraft(){
+  if(!SRC||window.__EMBED) return;
+  ssSet(SS_DRAFT, JSON.stringify({src:SRC,eval:fmtBR(EVAL),ndays:NDAYS,sex:SEX,sexWhy:SEXWHY,accent:ACCENT,spell:SPELLFIXED,segs}));
+}
+function restoreDraft(){
+  const raw=ssGet(SS_DRAFT); if(!raw) return false;
+  try{
+    const d=JSON.parse(raw); if(!d.segs||!d.src) return false;
+    const fix=r=>{ if(r&&r.date) r.date=new Date(r.date); if(r&&r.endRef&&r.endRef.date) r.endRef.date=new Date(r.endRef.date); };
+    d.segs.forEach(s=>{ if(s.ref) fix(s.ref); });
+    SRC=d.src; prepText(SRC); segs=d.segs; EVAL=parseBR(d.eval)||todayUTC(); NDAYS=d.ndays; SEX=d.sex; SEXWHY=d.sexWhy; ACCENT=d.accent; SPELLFIXED=d.spell||0; HIST=[];
+    $("input").value=SRC; $("days").value=NDAYS; $("sex").value=SEX; $("sexWhy").textContent=SEXWHY; $("accent").value=ACCENT;
+    $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+    $("step2").classList.remove("hidden"); $("step1").classList.add("hidden"); $("draftBar").classList.remove("hidden");
+    render(); return true;
+  }catch(e){ return false; }
+}
+
+/* =====================================================================
+   POPOVER / EDIÇÃO
+   ===================================================================== */
+function optState(s){ return norm(gend(s.raw))===norm(gend(s.orig)) && !(s.atb&&s.atb.length) ? "keep" : "chg"; }
+function setOpt(i,v,advance){
+  pushHistory(); const s=segs[i]; s.raw=v; s.state=optState(s);
+  closePop(); render(i); if(advance) gotoPending(i,1);
+}
+function setPlain(i,v,advance){
+  pushHistory(); const s=segs[i]; s.value=v;
+  if(s.type==="counter"){ s.manual=true; s.flag=s.flag==="nodate"||s.flag==="future"?"checked":s.flag; }
+  s.state = v.trim()===s.orig.trim() ? "keep" : "chg";
+  if(s.type==="counter" && v!==s.orig) s.state="chg";
+  closePop(); render(i); if(advance) gotoPending(i,1);
+}
+function placePop(el){
+  const vr=view.getBoundingClientRect(), r=el.getBoundingClientRect();
+  pop.style.left=Math.max(6,Math.min(r.left-vr.left, view.clientWidth-pop.offsetWidth-6))+"px";
+  pop.style.top=(r.bottom-vr.top+6)+"px";
+}
+function openPop(i){
+  closePop();
+  const s=segs[i], el=view.querySelector(`[data-i="${i}"]`); if(!el) return;
+  openIdx=i; el.classList.add("open");
+  let h=`<h4>${esc(s.label)}${s.ctx?` — ${esc(s.ctx)}`:""}</h4>`;
+  if(s.type==="rx"){
+    h+=`<div class="other" style="margin:0 0 8px"><input type="text" class="date" id="rxDate" value="${esc(s.date)}" aria-label="Data"></div><div class="opts">`;
+    for(const o of ["mantendo padrão","padrão satisfatório","padrão insatisfatório","sem alterações em relação ao anterior","perda de redução","soltura de material de síntese","consolidação em curso"]){
+      const t=s.upper?o.toUpperCase():o; const st=styleText(s.upper?"XXXX":"xxxx",t);
+      h+=`<button data-rx="${esc(st)}" class="${s.opt===st?"cur":""}"><kbd>${(h.match(/data-rx=/g)||[]).length+1}</kbd>${s.opt===st?"✓ ":""}${esc(st)}</button>`;
+    }
+    h+=`</div><div class="other"><input type="text" placeholder="Outro achado…" id="popInput"><button id="popOk">OK</button></div>`;
+    if(s.newSection) h+=`<div class="hint">Cria a seção “RADIOGRAFIA CONTROLE” ${s.atEnd?"no fim do texto":"antes da conduta"}. A data pode ser editada acima (deixe em branco para __/__/____).</div>`;
+    if(s.state!=="off") h+=`<div class="opts" style="margin-top:6px"><button id="rxRemove">${s.newSection?"Remover seção de RX":"Remover linha de RX"}</button></div>`;
+    pop.innerHTML=h; pop.style.display="block"; placePop(el);
+    const setRx=o=>{
+      pushHistory();
+      s.date=$("rxDate").value.trim()||"__/__/____"; s.opt=o;
+      if(s.newSection){
+        const head=s.upper?"RADIOGRAFIA CONTROLE":"Radiografia controle", line=s.date+" "+o;
+        s.value = s.atEnd ? `\n---\n${head}\n${line}` : `${s.sepBefore?"":"---\n"}${head}\n${line}\n---\n`;
+      } else s.value="\n"+s.date+" "+o;
+      s.state="chg"; closePop(); render(i);
+    };
+    pop.querySelectorAll("[data-rx]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation(); setRx(b.dataset.rx);}));
+    const inp=$("popInput");
+    $("popOk").addEventListener("click",ev=>{ev.stopPropagation(); if(inp.value.trim()) setRx(s.upper?inp.value.trim().toUpperCase():inp.value.trim());});
+    inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"&&inp.value.trim()){ev.preventDefault(); setRx(s.upper?inp.value.trim().toUpperCase():inp.value.trim());} });
+    const rm=$("rxRemove"); rm&&rm.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); s.value=""; s.opt=null; s.state="off"; closePop(); render();});
+    pop.querySelector("[data-rx]").focus(); return;
+  }
+  if(s.type==="opt"){
+    const cur=norm(gend(s.raw)), prev=norm(gend(s.orig)); let k=0;
+    h+='<div class="opts">';
+    for(const d of optList(s)){
+      const isCur=norm(d)===cur; k++;
+      h+=`<button data-v="${esc(d)}" class="${isCur?"cur":""}">${k<=9?`<kbd>${k}</kbd>`:""}${isCur?"✓ ":""}${esc(d)}${norm(d)===prev?' <span style="color:var(--muted)">(anterior)</span>':""}</button>`;
+    }
+    h+='</div><div class="other"><input type="text" placeholder="Outro texto… (O)" id="popInput"><button id="popOk">OK</button></div>';
+    if(s.label==="Antibiótico"){
+      h+=`<div class="atb"><h4>Dia de antibiótico (A)</h4>${(s.atb||[]).map((a,j)=>`<div class="item"><span>${esc(atbItemText(s,a))}</span><button class="small" data-atbrm="${j}" title="Remover">✕</button></div>`).join("")}
+        <div class="other"><input type="text" id="atbDrug" list="abxList" placeholder="Antibiótico (ex.: cefazolina)"></div>
+        <div class="other"><input type="text" class="date" id="atbDi" value="${fmtBR(EVAL)}" title="Data de início (Di) — dia 1" aria-label="Di"><input type="text" class="date" id="atbDf" placeholder="Df (opcional)" title="Data final prevista (Df)" aria-label="Df"><button id="atbAdd">Inserir</button></div>
+        <div class="hint">Entra como “(D3 CEFAZOLINA Di 08/11/2026 - Df 15/11/2026)” logo após o campo; nas próximas evoluções o dia é recalculado pela Di.</div></div>`;
+    }
+  } else {
+    const v=segValue(s);
+    if(s.scale!=null){
+      h+=`<div class="row" style="gap:4px;margin-bottom:6px">`;
+      for(let g=0; g<=s.scale; g++){ const isCur=String(g)===v.trim(); h+=`<button class="small${isCur?" cur":""}" data-grade="${g}" style="min-width:34px${isCur?";border-color:var(--keep);background:var(--keep-bg)":""}">${g}</button>`; }
+      h+=`</div><div class="hint" style="margin:0 0 6px">${s.nkind==="sens"?"0 = ausente · 1 = alterada · 2 = normal":"0 = plegia … 5 = normal"} — tecle o número</div>`;
+    }
+    h+=`<div class="other"><input type="text" id="popInput" value="${esc(v)}"><button id="popOk">OK</button></div>`;
+    h+=`<div class="opts" style="margin-top:6px"><button data-v="${esc(v)}"><kbd>1</kbd>✓ Manter ${esc(v)}</button>${v!==s.orig?`<button data-v="${esc(s.orig)}"><kbd>2</kbd>Voltar ao anterior (${esc(s.orig)})</button>`:""}${s.type==="counter"&&s.manual?`<button id="recalc">Recalcular pela data</button>`:""}</div>`;
+    if(s.note) h+=`<div class="hint">${esc(s.note)}</div>`;
+    if(s.type==="ins") h+=`<div class="hint">Inserido a partir da visita (${esc(s.visit||"")}).</div><div class="opts" style="margin-top:6px"><button id="insRm">Remover este trecho</button></div>`;
+  }
+  pop.innerHTML=h; pop.style.display="block"; placePop(el);
+  const set = s.type==="opt" ? v=>setOpt(i,v) : v=>setPlain(i,v);
+  pop.querySelectorAll("button[data-v]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation(); set(b.dataset.v);}));
+  const inp=$("popInput"), apply=()=>{ if(inp.value.trim()) set(s.type==="opt"?matchCase(s.orig,inp.value):inp.value); };
+  $("popOk").addEventListener("click",ev=>{ev.stopPropagation(); apply();});
+  inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ev.preventDefault(); apply();} });
+  const ir=$("insRm"); ir&&ir.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); segs.splice(i,1); closePop(); render();});
+  const rc=$("recalc"); rc&&rc.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); s.manual=false; computeCounter(s); closePop(); render(i);});
+  pop.querySelectorAll("[data-grade]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation(); setPlain(i,b.dataset.grade,true);}));
+  const ad=$("atbAdd");
+  if(ad){
+    const addAtb=()=>{
+      const drug=$("atbDrug").value.trim(), di=$("atbDi").value.trim(), df=$("atbDf").value.trim();
+      if(!drug){ $("atbDrug").focus(); return; }
+      if(!parseBR(di)){ $("atbDi").focus(); $("atbDi").select(); return; }
+      if(df && !parseBR(df)){ $("atbDf").focus(); $("atbDf").select(); return; }
+      pushHistory(); s.atb=[...(s.atb||[]),{drug,di,df}]; s.state=optState(s); closePop(); render(i);
+    };
+    ad.addEventListener("click",ev=>{ev.stopPropagation(); addAtb();});
+    ["atbDrug","atbDi","atbDf"].forEach(id=>$(id).addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ev.preventDefault(); addAtb();} }));
+    pop.querySelectorAll("[data-atbrm]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); s.atb=s.atb.filter((_,j)=>j!==+b.dataset.atbrm); s.state=optState(s); closePop(); render(i);}));
+  }
+  (s.type==="opt"?pop.querySelector("button[data-v]"):s.scale!=null?pop.querySelector("[data-grade].cur")||pop.querySelector("[data-grade]"):inp)?.focus();
+}
+function closePop(){
+  if(pop) pop.style.display="none";
+  view.querySelectorAll(".f.open").forEach(e=>e.classList.remove("open"));
+  if(openIdx>-1){ const el=view.querySelector(`[data-i="${openIdx}"]`); openIdx=-1; el&&el.focus({preventScroll:true}); }
+}
+view.addEventListener("click",ev=>{ const f=ev.target.closest(".f"); if(f){ ev.stopPropagation(); const i=+f.dataset.i; i===openIdx?closePop():openPop(i); } });
+view.addEventListener("keydown",ev=>{ const f=ev.target.closest(".f"); if(f&&(ev.key==="Enter"||ev.key===" ")){ ev.preventDefault(); openPop(+f.dataset.i); } });
+document.addEventListener("click",ev=>{ if(pop && pop.style.display==="block" && !pop.contains(ev.target)) closePop(); });
+document.addEventListener("keydown",ev=>{ if(ev.key==="Escape") closePop(); });
+
+/* =====================================================================
+   CONTROLES
+   ===================================================================== */
+function readEval(id){
+  const d=parseBR($(id).value); if(d) EVAL=d; else $(id).value=fmtBR(EVAL);
+  $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+}
+function recomputeAll(){
+  segs.forEach(s=>{ if(s.type==="counter") computeCounter(s); if(s.type==="rx"&&s.state==="off") s.date=fmtBR(EVAL); });
+  render();
+}
+function go(){
+  const t=$("input").value; if(!t.trim()) return;
+  readEval("evalDate"); NDAYS=Math.max(0,parseInt($("days").value)||0);
+  analyze(t);
+  $("sex").value=SEX; $("sexWhy").textContent=SEXWHY; $("accent").value=ACCENT;
+  copyConfirmed=false; $("copyWarn").classList.add("hidden"); $("fallback").classList.add("hidden");
+  render();
+  $("step2").classList.remove("hidden"); $("step1").classList.add("hidden");
+  try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){}
+}
+$("btnAnalyze").onclick=()=>{ $("draftBar").classList.add("hidden"); go(); };
+$("btnUndo").onclick=undo;
+$("btnRevert").onclick=revertAll;
+$("btnDiscard").onclick=()=>{ ssDel(SS_DRAFT); ssDel(SS_INPUT); segs=[]; SRC=""; $("input").value=""; $("draftBar").classList.add("hidden"); $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); };
+$("input").addEventListener("input",()=>ssSet(SS_INPUT,$("input").value));
+document.addEventListener("keydown",ev=>{
+  if((ev.ctrlKey||ev.metaKey) && !ev.shiftKey && ev.key.toLowerCase()==="z" && !$("step2").classList.contains("hidden") && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)){ ev.preventDefault(); undo(); }
+});
+$("btnBack").onclick=()=>{ $("input").value=outputText(); ssDel(SS_DRAFT); ssSet(SS_INPUT,$("input").value); $("step1").classList.remove("hidden"); $("step2").classList.add("hidden"); };
+$("btnNext").onclick=()=>{ $("input").value=outputText(); EVAL=addDays(EVAL,1); $("evalDate").value=fmtBR(EVAL); $("days").value=1; go(); };
+$("btnKeepAll").onclick=()=>{ pushHistory(); segs.forEach(s=>{ if(reviewable(s)&&s.state==="pend"){ s.state="keep"; if(s.type==="counter"){ s.manual=true; s.flag="checked"; } } }); render(); };
+$("sex").onchange=()=>{ pushHistory(); SEX=$("sex").value; $("sexWhy").textContent= SEX?"escolhido manualmente":"sem ajuste de gênero"; render(); };
+$("accent").onchange=()=>{
+  pushHistory(); ACCENT=$("accent").value; lsSet(LS_ACC,ACCENT);
+  segs.forEach(s=>{ if(s.type==="opt" && s.state!=="chg") s.raw = ACCENT==="correct"&&s.cur>-1 ? matchCase(s.orig,s.opts[s.cur]) : s.orig; });
+  recomputeAll();
+};
+$("evalDate2").onchange=()=>{ pushHistory(); readEval("evalDate2"); recomputeAll(); };
+$("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+
+async function doCopy(){
+  const t=outputText();
+  try{ await navigator.clipboard.writeText(t); $("toast").textContent="Copiado ✓"; setTimeout(()=>$("toast").textContent="",2000); }
+  catch(e){ const fb=$("fallback"); fb.value=t; fb.classList.remove("hidden"); fb.focus(); fb.select(); $("toast").textContent="Selecione e copie (Ctrl+C)"; }
+}
+$("btnCopy").onclick=()=>{
+  const pend=segs.filter(s=>reviewable(s)&&s.state==="pend").length;
+  if(pend && !copyConfirmed){ $("copyWarnText").textContent=`${pend} campo(s) ainda não revisado(s).`; $("copyWarn").classList.remove("hidden"); return; }
+  doCopy();
+};
+$("btnCopyAnyway").onclick=()=>{ copyConfirmed=true; $("copyWarn").classList.add("hidden"); doCopy(); };
+$("btnCopyCancel").onclick=()=>{ $("copyWarn").classList.add("hidden"); const f=view.querySelector(".f.pend"); f&&f.focus(); };
+
+$("btnExample").onclick=()=>{
+  $("input").value=
+`POI  OPERATORIO OSTEOSSINTESE DE FEMUR PROXIMAL A DIREITA 09/11/2026
+1D FRATURA DE FEMUR PROXIMAL A DIREITA 09/11/2026
+QUEDA DA PROPRIA ALTURA
+---
+HMA
+PACIENTE ENCAMINHADA DE GALIA DEVIDO QPA DIA 09/11/2026 EVOLUINDO COM DOR , EDEMA REDUÇÃO DE AMPLITUDE DE MOVIMENTO E FRATURA DE FEMUR PROXIMAL A DIREITA.
+---
+CMB NEGA
+MUC NEGA
+ALERGIAS NEGA
+---
+AVALIO PACIENTE EM LEITO DE ENFERMARIA, EM  DECÚBITO LATERAL DIREITO (DLD), SONOLENTO, LUCIDO E ORIENTADO EM TEMPO E ESPAÇO, SEM QUEIXAS AGUDAS NO MOMENTO. REFERE BOA ACEITAÇÃO DA DIETA VIA ORAL PRESCRITA E ELIMINAÇÕES PRESENTES (DIURESE ESPONTÂNEA E EVACUAÇÕES PRESERVADAS). HEMODINAMICAMENTE ESTÁVEL, EUPNEICO EM AR AMBIENTE
+
+EXAME FISICO
+
+MEMBRO INFERIOR DIREITO: PELE COM PRESENÇA DE F.O EM TOPOGRAFIA CIRURGICA COM CURATIVO OCLUSIVO, AO RETIRAR, BOM ESTADO, PONTOS ÍNTEGROS SEM SAIDA DE SECREÇÃO ATIVA OU PASSIVA, SEM SINAIS FLOGISTICOS, LEVE DOR A PALPAÇÃO PERI FO, ADM E MOBILDIADE  PRESERVADAS DEVIDO PO, NEUROVASCULAR PRESERVADO E TEC < 3 SEGUNDOS
+---
+RADIOGRAFIA CONTROLE
+11/11/2026 MANTENDO PADRÃO
+---
+CONDUTA
+ALTA 3 PO
+HEPARINA PROFILATICA
+ANALGESIA
+RETORNO EM PS SE NECESSARIO
+RETORNO EM AMB ORTOPEDIA CURATIVO TERÇA FEIRA PARA RX +  REAVAALIAÇÃO`;
+};
+$("custom").value=lsGet(LS_KEY,"");
+$("protKeys").value=(()=>{ const u=lsGet(LS_PROT,""); return u===PROT_DEFAULT?"":u; })();
+$("btnResetProt").onclick=()=>{ $("protKeys").value=""; };
+$("btnSaveCustom").onclick=()=>{
+  const ok=lsSet(LS_KEY,$("custom").value) && lsSet(LS_PROT,$("protKeys").value);
+  $("toastCustom").textContent = ok?"Salvo ✓":"Não foi possível salvar neste navegador";
+  setTimeout(()=>$("toastCustom").textContent="",2000); renderTerms();
+};
+function renderTerms(){
+  $("termsList").innerHTML = allGroups().map(([n,o])=>`<div><b>${esc(n)}:</b> ${o.map(esc).join(" · ")}</div>`).join("")
+    + `<div><b>Números:</b> PA, FC, FR, Tax, SatO2, HGT, débito do dreno, força muscular (0–5), estágio de lesão por pressão</div>`
+    + `<div><b>Contagens (calculadas pela data da mesma linha):</b> POI / PO IMEDIATO / PÓS-OPERATÓRIO IMEDIATO → 1° PO → 2° PO…; “n PÓS OPERATÓRIO”, “n° dia de pós-operatório”, DPO; nD de fratura/trauma/queda (dia do evento = 1D); Dn de antibiótico (ex.: D2 DE CEFAZOLINA; dia de início = D1); DIH; “n semanas / meses / dias de PO ou de fratura”. Níveis vertebrais (C, T, D, L, S) e datas nunca mudam.</div>`;
+}
+renderTerms();
+/* =====================================================================
+   ATALHOS DE TECLADO
+   ===================================================================== */
+$("abxList").innerHTML = ABX_LIST.map(a=>`<option value="${esc(a)}">`).join("");
+const isTyping = () => { const a=document.activeElement; return a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable); };
+const focusedIdx = () => { const f=document.activeElement && document.activeElement.closest && document.activeElement.closest("#view .f"); return f ? +f.dataset.i : -1; };
+const popOpen = () => pop && pop.style.display==="block";
+function focusField(i){ const el=view.querySelector(`[data-i="${i}"]`); if(!el) return false; el.focus({preventScroll:true}); try{ el.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} return true; }
+function gotoPending(from,dir){
+  const idx=segs.map((s,i)=>i).filter(i=>reviewable(segs[i]) && segs[i].state==="pend");
+  if(!idx.length){ const c=$("btnCopy"); c&&c.focus(); return; }
+  const next = dir>0 ? (idx.find(i=>i>from) ?? idx[0]) : ([...idx].reverse().find(i=>i<from) ?? idx[idx.length-1]);
+  focusField(next);
+}
+function keepField(i){
+  const s=segs[i]; if(!s) return;
+  if(s.type==="opt") setOpt(i, gend(s.raw), true);
+  else if(s.type==="num"||s.type==="counter") setPlain(i, segValue(s), true);
+}
+function pickOption(i,n){
+  const s=segs[i]; if(!s) return;
+  if(s.type==="opt"){ const L=optList(s); if(n<=L.length) setOpt(i,L[n-1],true); }
+  else if(s.type==="rx"){ openPop(i); const b=pop.querySelectorAll("[data-rx]")[n-1]; b&&b.click(); gotoPending(i,1); }
+}
+function toggleHelp(show){ const hlp=$("help"); const on = show ?? hlp.classList.contains("hidden"); hlp.classList.toggle("hidden",!on); if(on) $("helpClose").focus(); }
+$("helpClose").onclick=()=>toggleHelp(false);
+$("help").addEventListener("click",ev=>{ if(ev.target.id==="help") toggleHelp(false); });
+
+document.addEventListener("keydown",ev=>{
+  const step2 = !$("step2").classList.contains("hidden");
+  // tela inicial: Ctrl+Enter analisa
+  if(!step2){ if((ev.ctrlKey||ev.metaKey) && ev.key==="Enter"){ ev.preventDefault(); $("btnAnalyze").click(); } return; }
+  if(!$("help").classList.contains("hidden")){ if(ev.key==="Escape"||ev.key==="?"){ ev.preventDefault(); toggleHelp(false); } return; }
+  if((ev.ctrlKey||ev.metaKey) && ev.key==="Enter"){ ev.preventDefault(); closePop(); $("btnCopy").click(); return; }
+  if((ev.ctrlKey||ev.metaKey) && !isTyping() && (ev.key.toLowerCase()==="y" || (ev.shiftKey && ev.key.toLowerCase()==="z"))){ ev.preventDefault(); redo(); return; }
+  if(ev.ctrlKey||ev.metaKey||ev.altKey) return;
+
+  // menu aberto
+  if(popOpen()){
+    const typing=isTyping();
+    if(typing) return;
+    const btns=[...pop.querySelectorAll("button[data-v],button[data-rx]")];
+    const so=segs[openIdx];
+    if(so && so.scale!=null && /^[0-9]$/.test(ev.key)){ if(+ev.key<=so.scale){ ev.preventDefault(); setPlain(openIdx,ev.key,true); } return; }
+    if(/^[1-9]$/.test(ev.key)){ const b=btns[+ev.key-1]; if(b){ ev.preventDefault(); const i=openIdx; b.click(); if(segs[i] && segs[i].type!=="rx") gotoPending(i,1); } return; }
+    if(ev.key==="0"){ ev.preventDefault(); const i=openIdx; const s=segs[i]; if(s&&s.type==="opt") setOpt(i,gend(s.orig),true); else if(btns[0]) { btns[0].click(); gotoPending(i,1); } return; }
+    if(ev.key.toLowerCase()==="o"){ const inp=$("popInput"); if(inp){ ev.preventDefault(); inp.focus(); } return; }
+    if(ev.key.toLowerCase()==="a"){ const d=$("atbDrug"); if(d){ ev.preventDefault(); d.focus(); } return; }
+    if(ev.key==="ArrowDown"||ev.key==="ArrowUp"){
+      const all=[...pop.querySelectorAll("button")]; if(!all.length) return; ev.preventDefault();
+      const k=all.indexOf(document.activeElement); const n = ev.key==="ArrowDown" ? (k+1)%all.length : (k<=0?all.length-1:k-1); all[n].focus();
+    }
+    return;
+  }
+  if(isTyping()) return;
+
+  const i=focusedIdx(), k=ev.key;
+  if(k==="?"){ ev.preventDefault(); toggleHelp(true); return; }
+  if(k==="n"||k==="N"||k==="ArrowDown"){ ev.preventDefault(); gotoPending(i,1); return; }
+  if(k==="ArrowUp"){ ev.preventDefault(); gotoPending(i<0?segs.length:i,-1); return; }
+  if(k==="M" && ev.shiftKey){ ev.preventDefault(); $("btnKeepAll").click(); return; }
+  if(k==="m"){ ev.preventDefault(); if(i>=0) keepField(i); else gotoPending(-1,1); return; }
+  if(/^[0-9]$/.test(k) && i>=0 && segs[i] && segs[i].scale!=null){ ev.preventDefault(); if(+k<=segs[i].scale) setPlain(i,k,true); return; }
+  if(/^[1-9]$/.test(k) && i>=0){ ev.preventDefault(); pickOption(i,+k); return; }
+  if(k==="r"||k==="R"){ const r=segs.findIndex(s=>s.type==="rx"); if(r>=0){ ev.preventDefault(); openPop(r); } return; }
+  if(k==="e"||k==="E"){ ev.preventDefault(); $("btnBack").click(); return; }
+});
+
+/* =====================================================================
+   PONTE COM A VISITA BEIRA-LEITO (só quando aberto dentro do protótipo)
+   ===================================================================== */
+const EMBED = !!window.__EMBED;
+let VISIT = null, VISIT_RES = [], XV = {red:[],warn:[],info:[]}, XC = {warn:[],info:[],spell:[]};
+const EVA_LVL = n => n==null ? null : n<=3 ? "leve" : n<=6 ? "moderada" : "intensa";
+const textUpper = () => { const L=(SRC||"").replace(/[^\p{L}]/gu,""); return !!L && L.replace(/[^\p{Lu}]/gu,"").length/L.length>0.8; };
+const phr = s => { s=gend(s); return textUpper()? s.toUpperCase() : s; };
+const baseDate = () => addDays(EVAL, -(NDAYS||1));
+const freeText = () => segs.map(s=>s.type==="prot"?"\n":segValue(s)).join("");
+const NEG_BEFORE = /(?:\bSEM\b|\bNEGA\b|\bAUSENCIA DE\b|\bNAO\b|\bAFEBRIL\b)[^.;\n]{0,25}$/;
+
+/* ---------------- níveis neurológicos (coluna) ---------------- */
+const MYO = [["C5",/FLEXORES DO COTOVELO|BICEPS/],["C6",/EXTENSORES DO PUNHO/],["C7",/EXTENSORES DO COTOVELO|TRICEPS/],["C8",/FLEXORES (?:PROFUNDOS )?DOS DEDOS/],
+  ["T1",/ABDUTORES? DOS DEDOS|ABDUTOR DO DEDO MINIMO|INTEROSSE/],["L2",/FLEXORES DO QUADRIL|ILIOPSOAS/],["L3",/EXTENSORES DO JOELHO|QUADRICEPS/],
+  ["L4",/DORSIFLEXORES|TIBIAL ANTERIOR/],["L5",/EXTENSOR(?:ES)? LONGOS? DO HALUX/],["S1",/FLEXORES PLANTARES|GASTROCNEM|TRICEPS SURAL/]];
+const MYO_NOME = {C5:"flexores do cotovelo",C6:"extensores do punho",C7:"extensores do cotovelo",C8:"flexores dos dedos",T1:"abdutores dos dedos",
+  L2:"flexores do quadril",L3:"extensores do joelho",L4:"dorsiflexores do tornozelo",L5:"extensores longos do hálux",S1:"flexores plantares do tornozelo"};
+function segLevel(s){
+  const c=upS(s.ctx||""); const side=/\bESQ\b/.test(c)?"E":/\bDIR\b/.test(c)?"D":"";
+  if(s.nkind==="sens"){ const m=c.match(/\b([CTLS]\d{1,2})\b/); return m?{lv:m[1],side,kind:"s"}:null; }
+  if(s.nkind==="forca"){ const f=MYO.find(([,re])=>re.test(c)); return f?{lv:f[0],side,kind:"g"}:null; }
+  return null;
+}
+
+/* ---------------- o que cada marcação significa no glossário ---------------- */
+function visitWants(V){
+  const W=[]; const add=(why,map,o={})=>W.push(Object.assign({why,map},o));
+  const q=V.queixa||[], lvl=EVA_LVL(V.eva);
+  if(q.includes("Sem queixas")){
+    add("Sem queixas",{"Queixas":["sem queixas agudas no momento","sem queixas"],"Dor":["nega queixas álgicas","sem queixas álgicas","nega dor"]},{ins:["s","sem queixas agudas no momento"]});
+  } else {
+    const dor=q.includes("Dor controlada")||q.includes("Dor não controlada")||(V.eva!=null&&V.eva>0);
+    if(dor){
+      const L = lvl && V.eva>0 ? lvl : q.includes("Dor não controlada") ? "moderada" : "leve";
+      add(`Dor ${L}${V.eva!=null?` (EVA ${V.eva})`:""}`,{"Queixas":[`queixando-se de dor ${L}`],"Dor":[`refere dor ${L}`]},{ins:["s",`queixando-se de dor ${L}${V.eva!=null?` (EVA ${V.eva})`:""}`]});
+    }
+    if(q.includes("Dor controlada")) add("Dor controlada com analgesia",{"Controle da dor":["controlada com analgesia"]},{ins:["s","dor controlada com analgesia"]});
+    if(q.includes("Dor não controlada")) add("Dor não controlada",{"Controle da dor":["refratária à analgesia","parcialmente controlada com analgesia"]},{ins:["s","dor não controlada com analgesia atual"]});
+    if(q.includes("Náuseas/vômitos")) add("Náuseas/vômitos",dor?{}:{"Queixas":["queixando-se de náuseas"]},{ins:["s","refere náuseas/vômitos"]});
+    if(q.includes("Insônia")) add("Insônia",{"Sono":["insônia"]},{ins:["s","refere insônia"]});
+    if(q.includes("Parestesia")) add("Parestesia",{},{ins:["s","refere parestesia"]});
+  }
+  if(V.consc){
+    const C={"Lúcido e orientado":[{"Consciência (masc.)":["lúcido e orientado em tempo e espaço","lúcido e orientado"],"Consciência (fem.)":["lúcida e orientada em tempo e espaço","lúcida e orientada"]},"lúcido e orientado em tempo e espaço"],
+      "Sonolento":[{"Despertar (masc.)":["sonolento"],"Despertar (fem.)":["sonolenta"]},"sonolento"],
+      "Confuso / desorientado":[{"Consciência (masc.)":["desorientado em tempo e espaço","lúcido e desorientado em tempo e espaço","confuso"],"Consciência (fem.)":["desorientada em tempo e espaço","lúcida e desorientada em tempo e espaço","confusa"]},"desorientado em tempo e espaço"],
+      "Agitado":[{"Consciência (masc.)":["agitado"],"Consciência (fem.)":["agitada"]},"agitado"],
+      "Rebaixado":[{},"rebaixamento do nível de consciência"]}[V.consc];
+    if(C) add("Consciência: "+V.consc.toLowerCase(),C[0],{ins:["s",C[1]]});
+  }
+  if(V.resp){
+    const R={"Eupneico em ar ambiente":[{"Respiratório":["eupneico em ar ambiente","eupneica em ar ambiente"]},"eupneico em ar ambiente"],
+      "Dispneia":[{"Respiratório":["dispneico","dispneica"]},"dispneico"],
+      "O2 suplementar":[{"Respiratório":["em cateter nasal de O2"]},"em uso de O2 suplementar"]}[V.resp];
+    if(R) add("Respiratório: "+V.resp.toLowerCase(),R[0],{ins:["s",R[1]]});
+  }
+  if(V.acomp==="Acompanhado") add("Acompanhado(a)",{"Acompanhante (masc.)":["acompanhado"],"Acompanhante (fem.)":["acompanhada"]},{ins:["s","acompanhado"],textOk:/ACOMPANHANTE|ACOMPANHAD/});
+  if(V.acomp==="Sem acompanhante") add("Sem acompanhante",{"Acompanhante (masc.)":["desacompanhado"],"Acompanhante (fem.)":["desacompanhada"]},{ins:["s","sem acompanhante"],textConflict:/\bACOMPANHANTE\b(?!S? AUSENTE)|\bACOMPANHAD[OA]\b/});
+  const DIETA={"Boa aceitação":[["boa aceitação da dieta","aceitando bem a dieta"],1],"Aceitação regular":[["aceitação regular da dieta","aceitação parcial da dieta"],1],
+    "Baixa aceitação":[["baixa aceitação da dieta","recusando a dieta"],1],"Jejum":[["em jejum","dieta zero"],0],"Sonda nasogástrica":[["dieta por sonda nasogástrica","dieta por SNG"],0],
+    "Sonda nasoenteral":[["dieta por sonda nasoenteral","dieta por SNE"],0],"Gastrostomia":[["dieta por gastrostomia"],0],"Parenteral":[["nutrição parenteral"],0]}[V.dieta];
+  if(DIETA) add("Dieta: "+V.dieta.toLowerCase(),{"Dieta":DIETA[0]},{ins:["s",DIETA[0][0]],keepTail:!!DIETA[1]});
+  const DIU={"Espontânea":["diurese espontânea","diurese presente"],"SVD":["diurese por SVD","diurese presente em SVD"],"Fralda":["diurese em fralda","diurese presente em fralda"],"Ausente / retenção":["diurese ausente"]};
+  if(V.diurese && DIU[V.diurese]){
+    const m={"Diurese":DIU[V.diurese]};
+    if(V.diurese==="SVD") m["Sonda vesical"]=["em uso de sonda vesical de demora","em uso de SVD","SVD mantida"];
+    if(V.diurese==="Espontânea"||V.diurese==="Fralda") m["Sonda vesical"]=["sonda vesical de demora retirada","SVD retirada","sem SVD"];
+    add("Diurese: "+V.diurese.toLowerCase(),m,{ins:["s",DIU[V.diurese][0]]});
+  }
+  if(V.urina==="Turva / piúria") add("Urina turva / piúria",{"Urina":["urina turva","piúria"]},{ins:["s","urina de aspecto turvo"]});
+  if(V.urina==="Hematúria") add("Hematúria",{"Urina":["hematúria"]},{ins:["s","hematúria"]});
+  if(V.evac==="Presente") add("Evacuação presente",{"Evacuação":["evacuações presentes","evacuações preservadas","evacuação presente","hábito intestinal preservado"]},{ins:["s","evacuações presentes"]});
+  if(V.evac==="Ausente") add("Evacuação ausente"+(V.evac_x?` há ${V.evac_x} dia(s)`:""),{"Evacuação":cur=>/^evacuacao/.test(cur)?["evacuação ausente","evacuações ausentes"]:["evacuações ausentes","evacuação ausente"]},{ins:["s","evacuações ausentes"+(V.evac_x?` há ${V.evac_x} dias`:"")]});
+  if(V.diurese && V.evac){
+    const a=(V.diurese==="Ausente / retenção")+(V.evac==="Ausente");
+    add("Eliminações",{"Eliminações":[a===0?"eliminações presentes":a===1?"eliminações parcialmente presentes":"eliminações ausentes"]},{silent:true});
+  }
+  if(V.febre==="Afebril") add("Afebril",{"Febre":["afebril","nega febre"]},{ins:["s","afebril"]});
+  if(V.febre==="Febre") add("Febre"+(V.febre_x?` (Tax ${V.febre_x})`:""),{"Febre":cur=>/nega|refere/.test(cur)?["refere febre","febril"]:["febril","refere febre"]},{ins:["s","febril"+(V.febre_x?` (Tax ${V.febre_x} °C)`:"")]});
+  const DEC={
+    "Dorsal":[{"Decúbito / posição":["decúbito dorsal horizontal (DDH)","decúbito dorsal horizontal"],"Decúbito (sigla)":["DDH"]},"em decúbito dorsal horizontal (DDH)"],
+    "Dorsal elevado":[{"Decúbito / posição":["decúbito elevado"]},"em decúbito elevado"],
+    "Lateral D":[{"Decúbito / posição":["decúbito lateral direito (DLD)","decúbito lateral direito"],"Decúbito (sigla)":["DLD"]},"em decúbito lateral direito (DLD)"],
+    "Lateral E":[{"Decúbito / posição":["decúbito lateral esquerdo (DLE)","decúbito lateral esquerdo"],"Decúbito (sigla)":["DLE"]},"em decúbito lateral esquerdo (DLE)"],
+    "Sedestação":[{"Decúbito / posição":["sentado no leito","sentado em poltrona"]},"em sedestação"],
+    "Deambulando c/ auxílio":[{"Mobilidade / chegada":["deambulando com auxílio","deambulando com muletas","deambulando com andador"]},"deambulando com auxílio"],
+    "Deambulando":[{"Mobilidade / chegada":["deambulando sem auxílio","deambulando"]},"deambulando sem auxílio"],
+  }[V.decub];
+  if(DEC) add("Posição: "+V.decub.toLowerCase(),DEC[0],{ins:["s",DEC[1]]});
+  const fo=(V.fo||[]).filter(x=>x!=="Curativo oclusivo");
+  if(fo.length){
+    const k = fo.includes("Limpa e seca") ? "limpa" : fo.includes("Secreção purulenta") ? "pur" : fo.includes("Secreção sanguinolenta") ? "sang" : fo.includes("Secreção serosa") ? "ser" : fo.includes("Deiscência") ? "deisc" : "hip";
+    const T={limpa:"limpa e seca",ser:"com secreção serosa",sang:"com secreção sanguinolenta",pur:"com secreção purulenta",hip:"com hiperemia",deisc:"com deiscência"}[k];
+    const m={"Ferida operatória":["ferida operatória "+T],"FO (sigla)":["FO "+T]}, acc={};
+    if(k==="sang"){ acc["Ferida operatória"]=["ferida operatória com secreção sero-hemática"]; acc["FO (sigla)"]=["FO com secreção sero-hemática"]; }
+    if(k==="limpa"){ m["Secreção"]=["sem saída de secreção ativa ou passiva"]; m["Bordas"]=["bordas coaptadas"]; m["Aspecto ao retirar curativo"]=["ao retirar, bom estado"]; m["Curativo"]=["curativo oclusivo limpo e seco","curativo limpo e seco"]; acc["Curativo"]=["curativo oclusivo"]; acc["Pontos"]=["pontos íntegros sem deiscências","pontos íntegros","pontos retirados"]; m["Pontos"]=["pontos íntegros sem deiscências","pontos íntegros"]; }
+    if(k==="ser"){ m["Secreção"]=["com saída de secreção serosa","com saída de secreção serosa à expressão"]; m["Curativo"]=["curativo oclusivo com sujidade serosa","curativo com sujidade serosa"]; }
+    if(k==="sang"){ m["Secreção"]=["com saída de secreção sanguinolenta","com saída de secreção sero-hemática"]; m["Curativo"]=["curativo oclusivo com sujidade sanguinolenta","curativo oclusivo com sujidade sero-hemática","curativo com sujidade sanguinolenta"]; }
+    if(k==="pur") m["Secreção"]=["com saída de secreção purulenta"];
+    if(fo.includes("Hiperemia")){ m["Sinais flogísticos"]=["com sinais flogísticos","com hiperemia perincisional"]; m["Bordas"]=["bordas com hiperemia"]; m["Aspecto ao retirar curativo"]=["ao retirar, com hiperemia local"]; }
+    else if(k==="limpa"||k==="ser") m["Sinais flogísticos"]=["sem sinais flogísticos"];
+    if(fo.includes("Deiscência")){ m["Pontos"]=["deiscência parcial de pontos"]; m["Bordas"]=["bordas com deiscência parcial"]; }
+    const extra=fo.filter(x=>x!==({limpa:"Limpa e seca",ser:"Secreção serosa",sang:"Secreção sanguinolenta",pur:"Secreção purulenta",hip:"Hiperemia",deisc:"Deiscência"}[k])).map(x=>x.toLowerCase());
+    add("FO: "+fo.join(", ").toLowerCase(),m,{accept:acc,ins:["e","ferida operatória "+T+(extra.length?", "+extra.join(", "):"")+(fo.length&&(V.fo||[]).includes("Curativo oclusivo")?", curativo oclusivo":"")]});
+  }
+  const d=V.dreno||{};
+  if(d.sem) add("Sem dreno",{"Dreno":["dreno retirado"],"Dreno de Portovac":["dreno de Portovac retirado"]},{ins:["e","sem drenos"]});
+  if(d.tem){
+    const asp=(d.asp||[]).find(x=>!/vácuo/.test(x)), tot=["d","e","u"].map(k=>parseFloat(String(d[k]||"").replace(",","."))).filter(x=>!isNaN(x));
+    const zero = tot.length && tot.every(x=>x===0);
+    const t = zero ? "sem débito" : asp==="Hemático" ? "com débito sanguinolento" : asp==="Sero-hemático" ? "com débito sero-hemático" : asp==="Seroso" ? "com débito seroso" : "com débito";
+    const ml=[["D",d.d],["E",d.e],["",d.u]].filter(x=>x[1]!=null&&String(x[1]).trim()!=="").map(x=>(x[0]?x[0]+" ":"")+x[1]+" mL").join(" / ");
+    const vac=(d.asp||[]).find(x=>/vácuo/.test(x));
+    add("Dreno "+t+(ml?` (${ml})`:""),{"Dreno":["dreno "+t],"Dreno de Portovac":["dreno de Portovac "+t]},{ins:["e","dreno "+t+(ml?` de ${ml} nas últimas 24h`:"")+(vac?`, ${vac.toLowerCase()}`:"")],numDreno:true});
+  }
+  if(V.imob==="Bem posicionada") add("Imobilização bem posicionada",{"Imobilização (estado)":["imobilização íntegra","tala gessada bem posicionada","tala íntegra","gesso íntegro"]},{ins:["e","imobilização bem posicionada e íntegra"]});
+  if(V.imob==="Reposicionada") add("Imobilização reposicionada",{"Imobilização (estado)":["imobilização íntegra","tala gessada bem posicionada","tala íntegra","gesso íntegro"]},{confirm:true,ins:["e","imobilização reposicionada no leito"]});
+  if(V.imob==="Frouxa / danificada") add("Imobilização frouxa / danificada",{"Imobilização (estado)":["imobilização frouxa","imobilização danificada"]},{ins:["e","imobilização frouxa, necessita troca/reforço"]});
+  if(V.nv==="Preservado") add("Neurovascular preservado",{"Neurovascular":["sem déficits neurovasculares","sem déficit neurovascular"],"Neurovascular (curto)":["neurovascular preservado"],"Perfusão":["perfusão periférica preservada"],"Sensibilidade":["sensibilidade preservada"],"Motricidade":["motricidade preservada"],"TEC":["TEC < 3 segundos"]},{ins:["e","extremidade perfundida, neurovascular preservado"]});
+  if(V.nv==="Alterado") add("Alteração neurovascular"+(V.nv_x?": "+V.nv_x:""),{"Neurovascular":["com déficit neurovascular"],"Neurovascular (curto)":["neurovascular alterado"]},{confirm:true,ins:["e","alteração neurovascular"+(V.nv_x?": "+V.nv_x:"")]});
+  // exame físico rápido
+  const X=V.exf||{};
+  if(X.edema){ const E={"Sem edema":"sem edema","Leve":"edema leve","Moderado":"edema moderado","Importante":"edema importante","Em regressão":"edema em regressão","Em piora":"edema em piora"}[X.edema]; if(E) add("Edema: "+X.edema.toLowerCase(),{"Edema":[E]},{ins:["e",E]}); }
+  const CH={"Hematoma em resolução":[{"Hematoma":["hematoma em resolução"]},"hematoma em resolução"],"Hematoma tenso":[{"Hematoma":["hematoma tenso"]},"hematoma tenso"],
+    "Equimose extensa":[{"Equimose":["equimose extensa"]},"equimose extensa"],"Flictenas":[{"Flictenas":["com flictenas","flictenas íntegras","flictenas rotas"]},"presença de flictenas"],
+    "Compartimentos tensos":[{"Compartimentos":["compartimentos tensos","compartimentos com tensão aumentada"]},"compartimentos tensos"],
+    "Dor à extensão passiva":[{"Extensão passiva":["dor à extensão passiva dos dedos"]},"dor à extensão passiva dos dedos"],
+    "Perfusão lentificada":[{"Perfusão":["perfusão periférica lentificada"],"TEC":["TEC > 3 segundos"]},"perfusão periférica lentificada"],
+    "Pulsos diminuídos":[{"Pulsos":["pulsos diminuídos","pulsos ausentes"]},"pulsos diminuídos"],
+    "Hipoestesia":[{"Sensibilidade":["hipoestesia","sensibilidade alterada"]},"hipoestesia"],
+    "Déficit motor":[{"Motricidade":["déficit motor","motricidade alterada"]},"déficit motor"],
+    "Panturrilha empastada":[{"Panturrilhas":["panturrilhas empastadas"]},"panturrilha empastada"],
+    "Panturrilhas livres":[{"Panturrilhas":["panturrilhas livres"]},"panturrilhas livres"]};
+  for(const c of X.chips||[]) if(CH[c]) add(c,CH[c][0],{ins:["e",CH[c][1]]});
+  return W;
+}
+
+/* ---------------- inserção de frases ---------------- */
+const SUBJ = new Set(["Queixas","Dor","Controle da dor","Dieta","Diurese","Evacuação","Eliminações","Respiratório","Febre","Consciência (masc.)","Consciência (fem.)","Despertar (masc.)","Despertar (fem.)","Hemodinâmica","Acompanhante (masc.)","Acompanhante (fem.)","Decúbito / posição","Local da avaliação","Sono","Estado geral","Estado geral (extenso)"]);
+const EXAMSEG = new Set(["Ferida operatória","FO (sigla)","Curativo","Secreção","Sinais flogísticos","Pontos","Bordas","Edema","Neurovascular","Neurovascular (curto)","Perfusão","TEC","Dreno","Dreno de Portovac","Imobilização (estado)","Panturrilhas","Aspecto ao retirar curativo"]);
+function segStart(i){ let a=0; for(let j=0;j<i;j++) a+=segValue(segs[j]).length; return a; }
+function anchor(where){
+  const t=outputText(); let pos=-1;
+  const lineEnd=p=>{ let e=t.indexOf("\n",p); if(e<0) e=t.length; while(e>0 && /[ \t]/.test(t[e-1])) e--; return e; };
+  if(where==="e"){
+    const i=segs.findIndex(s=>s.type==="opt"&&EXAMSEG.has(s.label)); if(i>=0) pos=lineEnd(segStart(i));
+    else {
+      const lines=t.split("\n"); let off=0, inEx=false, last=-1;
+      for(const l of lines){
+        if(/^\s*#?\s*(EF\b|EXAME|AO EXAME|MEMBRO|REGI[ÃA]O|COLUNA)/i.test(l)) inEx=true;
+        else if(inEx && /^[-–—_=]{3,}\s*$/.test(l.trim())) break;
+        if(inEx && l.trim() && !/^[.\s]+$/.test(l)) last=off+l.replace(/\s+$/,"").length;
+        off+=l.length+1;
+      }
+      pos=last;
+    }
+  }
+  if(pos<0){ const i=segs.findIndex(s=>s.type==="opt"&&SUBJ.has(s.label)); if(i>=0) pos=lineEnd(segStart(i)); }
+  if(pos<0){ const m=t.search(/AVALIO|EVOLU|SUBJETIVO/i); if(m>=0) pos=lineEnd(m); }
+  if(pos<0) pos=t.replace(/\s+$/,"").length;
+  return pos;
+}
+function insertPhrase(where, text, why){
+  const pos=anchor(where), t=outputText(), before=t.slice(0,pos).replace(/\s+$/,"");
+  const str=(/[.:]$/.test(before)?" ":/[,;]$/.test(before)?" ":". ")+phr(text)+".";
+  let acc=0;
+  for(let i=0;i<segs.length;i++){
+    const v=segValue(segs[i]);
+    if(segs[i].type==="text" && pos>=acc && pos<=acc+v.length){
+      const k=pos-acc, s=segs[i];
+      segs.splice(i,1,{type:"text",value:s.value.slice(0,k)},{type:"ins",label:"Inserido da visita",orig:"",value:str,state:"chg",visit:why},{type:"text",value:s.value.slice(k)});
+      return true;
+    }
+    acc+=v.length;
+  }
+  segs.push({type:"ins",label:"Inserido da visita",orig:"",value:"\n"+phr(text)+".",state:"chg",visit:why}); return true;
+}
+
+/* ---------------- aplicar a visita ---------------- */
+function optCoreTail(s){
+  const raw=s.raw; let best=null;
+  for(const o of s.opts){ const m=raw.match(new RegExp("^"+toPattern(o),"iu")); if(m && (!best||m[0].length>best.length)) best=m[0]; }
+  return best ? [best, raw.slice(best.length)] : [raw,""];
+}
+function applyVisit(V){
+  pushHistory();
+  const res=[], pendIns=[];
+  const free0=upS(freeText());
+  for(const w of visitWants(V)){
+    let hit=0, chg=0;
+    for(const [label,spec] of Object.entries(w.map)){
+      segs.forEach((s,i)=>{
+        if(s.type!=="opt"||s.label!==label) return;
+        const [core,tail]=optCoreTail(s);
+        const cur=norm(gend(core));
+        const prefer = typeof spec==="function" ? spec(cur) : spec;
+        const acc=[...prefer, ...((w.accept&&w.accept[label])||[])];
+        hit++;
+        if(acc.some(o=>norm(gend(o))===cur)){ if(s.state==="pend") s.state = w.confirm ? "pend" : "keep"; }
+        else {
+          let p=prefer[0]; const prev=i>0?segValue(segs[i-1]):"";
+          if(/^em jejum/i.test(p) && /REFER\w*\s+$/i.test(prev)) p="estar em jejum";
+          s.raw=styleText(s.orig,p)+(w.keepTail?tail:"");
+          s.state = w.confirm ? "pend" : optState(s); if(s.state==="chg"||w.confirm) chg++;
+        }
+        s.visit=w.why;
+      });
+    }
+    if(!hit && w.textOk && w.textOk.test(free0)){ res.push({why:w.why+" (o texto já cita)",hit:1,chg:0}); continue; }
+    if(w.textConflict && w.textConflict.test(free0) && !hit){ XV.warn.push(`Visita marcou “${w.why}”, mas o texto de ontem cita acompanhante — ajuste a frase manualmente (não inseri para não contradizer o texto).`); res.push({why:w.why+" — texto cita acompanhante; ajustar manualmente",hit:0,chg:0}); continue; }
+    if(!hit && w.ins){ pendIns.push(w); continue; }
+    if(!w.silent || hit) res.push({why:w.why, hit, chg, confirm:!!w.confirm});
+  }
+  // débito do dreno (número)
+  const d=V.dreno||{};
+  if(d.tem){
+    const vals=[["D",d.d],["E",d.e],["",d.u]].filter(x=>x[1]!=null&&String(x[1]).trim()!=="");
+    const nums=segs.filter(s=>s.type==="num"&&/^D[ée]bito/.test(s.label));
+    if(vals.length && nums.length===vals.length){ let c=0; nums.forEach((s,j)=>{ const v=String(vals[j][1]); if(v!==s.value){ s.value=v; c++; } s.state = v===s.orig ? "keep" : "chg"; s.visit="Débito do dreno"; }); res.push({why:"Débito do dreno: "+vals.map(x=>(x[0]?x[0]+" ":"")+x[1]+" mL").join(" / "),hit:nums.length,chg:c}); }
+    else if(vals.length && nums.length) res.push({why:"Débito do dreno — quantidade de valores difere do texto; conferir",hit:0,chg:0,confirm:true});
+  }
+  // exame neurológico (coluna)
+  const N=V.neuro;
+  if(N){
+    const nsegs=segs.filter(s=>s.type==="num"&&(s.nkind==="forca"||s.nkind==="sens"));
+    if(N.sem){
+      let k=0; nsegs.forEach(s=>{ if(s.state==="pend"){ s.state="keep"; k++; } s.visit="Neuro sem alterações"; });
+      res.push({why:`Exame neurológico sem alterações (${nsegs.length} graus mantidos)`,hit:nsegs.length||(/FOR[CÇ]A|NEUROL/.test(free0)?1:0),chg:0});
+      if(!nsegs.length && !/FOR[CÇ]A|NEUROL/.test(free0)) pendIns.push({why:"Exame neurológico sem alterações",ins:["e","exame neurológico sem alterações em relação à avaliação anterior"]});
+    } else if(N.alt){
+      let ch=0, worse=[], better=[]; const used=new Set(), missing=[];
+      for(const [key,val] of Object.entries(Object.assign({},N.g||{},Object.fromEntries(Object.entries(N.s||{}).map(([k,v])=>["s"+k,v]))))){
+        if(val===""||val==null) continue;
+        const sens=key[0]==="s", k=sens?key.slice(1):key, lv=k.slice(0,-1), side=k.slice(-1);
+        const s=nsegs.find(x=>{ const L=segLevel(x); return L && L.lv===lv && L.side===side && L.kind===(sens?"s":"g"); });
+        if(!s){ missing.push(sens?`sensibilidade ${lv} ${side==="E"?"esquerda":"direita"} ${val}/2`:`força grau ${val} em ${MYO_NOME[lv]||lv} ${side==="E"?"esquerdo":"direito"}`); continue; }
+        used.add(s); const a=parseInt(s.orig), b=parseInt(val);
+        if(String(val)!==s.value){ s.value=String(val); ch++; }
+        s.state = String(val)===s.orig ? "keep" : "chg"; s.visit="Neuro";
+        if(b<a) worse.push(`${s.ctx}: ${a}→${b}`); if(b>a) better.push(`${s.ctx}: ${a}→${b}`);
+      }
+      nsegs.forEach(s=>{ if(!used.has(s) && s.state==="pend"){ s.state="keep"; } });
+      res.push({why:`Exame neurológico alterado — ${ch} grau(s) atualizado(s), demais mantidos`,hit:1,chg:ch});
+      if(worse.length) XV.red.push("Piora neurológica na visita ("+worse.length+" grau(s) menores que ontem) — comunicar assistente e avaliar compressão medular com urgência.");
+      if(better.length) XV.info.push("Melhora neurológica: "+better.join("; "));
+      if(missing.length) pendIns.push({why:"Neuro (sem campo no texto)",ins:["e",missing.join(", ")]});
+    }
+  }
+  // lesão por pressão
+  const P=V.lpp;
+  if(P){
+    const hasTxt=/LES[AÃ]O(?:ES)? POR PRESS[AÃ]O|\bLPP\b|ESCARA|[ÚU]LCERA POR PRESS/.test(free0);
+    if(P.sem){
+      const s=segs.filter(x=>x.type==="opt"&&x.label==="Lesão por pressão");
+      if(s.length){ s.forEach(x=>{ const c=norm(gend(x.raw)); if(!/^sem/.test(c)){ x.raw=styleText(x.orig,"sem lesões por pressão"); x.state=optState(x);} else if(x.state==="pend") x.state="keep"; x.visit="Sem LPP"; }); res.push({why:"Sem lesão por pressão",hit:s.length,chg:0}); }
+      else if(!hasTxt) pendIns.push({why:"Sem lesão por pressão",ins:["e","sem lesões por pressão"]});
+      else { res.push({why:"Sem LPP — mas o texto de ontem descreve LPP; conferir",hit:0,chg:0,confirm:true}); XV.warn.push("Visita: sem LPP, mas a evolução de ontem descreve lesão por pressão — conferir."); }
+    } else if((P.itens||[]).length){
+      const frases=P.itens.map(lppFrase);
+      const stg=segs.filter(s=>s.type==="num"&&/Est[áa]gio da les/.test(s.label));
+      if(hasTxt){
+        if(stg.length===1 && P.itens[0].estagio && /^[1-4]$/.test(P.itens[0].estagio)){ const s=stg[0]; const a=parseInt(s.orig), b=parseInt(P.itens[0].estagio); s.value=String(b); s.state=b===a?"keep":"chg"; if(b>a) XV.red.push(`LPP: estágio ${a} → ${b} (piora).`); }
+        res.push({why:"LPP: o texto já descreve — confira e ajuste: “"+frases.map(phr).join("; ")+"”",hit:0,chg:0,confirm:true,copy:frases.map(phr).join(". ")+"."});
+      } else { pendIns.push({why:"Lesão por pressão",ins:["e",frases.join(". ")]}); XV.warn.push("LPP nova registrada na visita: "+frases.join("; ")+"."); }
+      if(P.itens.some(x=>/^[34]|Não classific|Tissular/.test(x.estagio||""))) XV.red.push("LPP estágio 3/4, tissular profunda ou não classificável — avaliar estomaterapia/plástica e cobertura.");
+      if(P.itens.some(x=>(x.aspecto||[]).some(a=>/Secreção|Necrose|Odor/.test(a)))) XV.red.push("LPP com necrose/secreção/odor — sinais de infecção local.");
+    }
+  }
+  for(const w of pendIns){ insertPhrase(w.ins[0],w.ins[1],w.why); res.push({why:w.why,hit:1,chg:1,ins:true}); }
+  // demais itens iguais a ontem
+  if(V.exIgual){ let k=0; segs.forEach(s=>{ if(reviewable(s) && s.state==="pend" && s.type!=="counter"){ s.state="keep"; k++; } }); if(k) res.push({why:`Restante igual a ontem: ${k} campo(s) marcados como mantidos`,hit:k,chg:0}); }
+  VISIT_RES=res;
+}
+function lppFrase(x){
+  let f="lesão por pressão em "+(x.local||"local não especificado").toLowerCase();
+  if(x.estagio) f+=", "+(/^\d/.test(x.estagio)?"estágio "+x.estagio:x.estagio.toLowerCase());
+  if(x.dim) f+=", medindo "+x.dim.replace(/\s*[x×]\s*/i," x ")+" cm";
+  if((x.aspecto||[]).length) f+=", com "+x.aspecto.map(a=>a.toLowerCase()).join(", ");
+  if(x.placa) f+=", em uso de placa de hidrocoloide";
+  if(x.mud) f+=", mantendo mudança de decúbito de 2/2h";
+  return f;
+}
+
+/* ---------------- alertas da visita (sinais de alerta) ---------------- */
+function visitFlags(V, ig){
+  const R=[], Wn=[], I=[], base=upS(SRC||"");
+  const spine = ig && ig.tipo && ig.tipo.coluna;
+  if(!VISIT.visited) Wn.push("Paciente NÃO marcado como visitado hoje — confira à beira do leito antes de assinar.");
+  if(!V) return {red:R,warn:Wn,info:I};
+  if(V.febre==="Febre") R.push("Febre"+(V.febre_x?` (Tax ${V.febre_x} °C)`:"")+" — investigar foco (FO, urinário, respiratório, cateter); colher culturas conforme protocolo.");
+  const tax=parseFloat(String(V.febre_x||"").replace(",",".")); if(!isNaN(tax)&&tax>=37.8&&V.febre!=="Febre") R.push(`Tax ${tax} °C registrada sem marcar febre.`);
+  if(V.diurese==="SVD" && !/\bSVD\b|SONDA VESICAL/.test(base)) R.push("SVD nova em relação a ontem — motivo? Retenção urinária"+(spine?" em paciente de coluna: afastar compressão medular / síndrome da cauda equina.":"."));
+  if(V.diurese==="Ausente / retenção") R.push("Diurese ausente / retenção urinária"+(spine?" em paciente de coluna — avaliar compressão medular / cauda equina.":" — avaliar globo vesical, função renal."));
+  if(V.urina==="Turva / piúria") R.push("Urina turva / piúria — suspeita de ITU (principalmente com SVD).");
+  if(V.urina==="Hematúria") R.push("Hematúria — checar SVD/trauma, anticoagulação.");
+  const fo=V.fo||[];
+  if(fo.includes("Secreção purulenta")) R.push("FO com secreção purulenta — suspeita de infecção de sítio cirúrgico.");
+  if(fo.includes("Hiperemia")) R.push("FO com hiperemia — sinais flogísticos.");
+  if(fo.includes("Deiscência")) R.push("Deiscência de FO.");
+  if(fo.includes("Secreção sanguinolenta")) Wn.push("FO com secreção sanguinolenta — checar Hb e anticoagulação.");
+  if((V.queixa||[]).includes("Dor não controlada") || (V.eva!=null&&V.eva>=7)) R.push(`Dor ${V.eva!=null?"EVA "+V.eva:"não controlada"} — rever analgesia; se desproporcional, afastar síndrome compartimental/complicação.`);
+  if(V.consc && /Sonolento|Confuso|Agitado|Rebaixado/.test(V.consc)) R.push(`Consciência: ${V.consc.toLowerCase()} — delirium? rebaixamento? (hipóxia, sepse, distúrbio HE, opioide, TCE).`);
+  if(V.resp==="Dispneia") R.push("Dispneia — afastar TEP, pneumonia, congestão.");
+  if(V.resp==="O2 suplementar" && !/CATETER|O2|OXIG/.test(base)) R.push("O2 suplementar novo — dessaturação?");
+  if(V.nv==="Alterado") R.push("Alteração neurovascular"+(V.nv_x?`: ${V.nv_x}`:"")+" — reavaliar imobilização, compartimentos, lesão vascular/nervosa.");
+  const ch=(V.exf&&V.exf.chips)||[];
+  if(ch.includes("Compartimentos tensos")||ch.includes("Dor à extensão passiva")) R.push("Sinais de síndrome compartimental — avaliação imediata.");
+  if(ch.includes("Perfusão lentificada")||ch.includes("Pulsos diminuídos")) R.push("Perfusão/pulsos alterados — comprometimento vascular?");
+  if(ch.includes("Panturrilha empastada")) R.push("Panturrilha empastada — suspeita de TVP (checar profilaxia, doppler).");
+  if(ch.includes("Déficit motor")) R.push("Déficit motor no exame.");
+  if(ch.includes("Hematoma tenso")) Wn.push("Hematoma tenso.");
+  if(V.exf && V.exf.edema==="Em piora") Wn.push("Edema em piora.");
+  if(V.evac==="Ausente" && parseInt(V.evac_x)>=3) Wn.push(`Sem evacuar há ${V.evac_x} dias — constipação/íleo (opioide?); laxativo.`);
+  if(V.dieta==="Baixa aceitação") Wn.push("Baixa aceitação da dieta.");
+  if((V.queixa||[]).includes("Náuseas/vômitos")) Wn.push("Náuseas/vômitos.");
+  if(V.imob==="Frouxa / danificada") Wn.push("Imobilização frouxa/danificada — trocar ou reforçar.");
+  for(const a of V.alerta||[]) R.push("Sinal de alerta marcado na visita: "+a+".");
+  const d=V.dreno||{}; const tot=["d","e","u"].map(k=>parseFloat(String(d[k]||"").replace(",","."))).filter(x=>!isNaN(x)).reduce((a,b)=>a+b,0);
+  if(d.tem && tot>=300) Wn.push(`Débito total do dreno ${tot} mL — checar Hb e hemostasia.`);
+  return {red:R,warn:Wn,info:I};
+}
+/* sinais de alerta no próprio texto (fora das seções protegidas) */
+const TXT_RED=[[/\bFEBRIL\b|\bFEBRE\b|PICO FEBRIL/,"febre"],[/PURULENT/,"secreção purulenta"],[/HIPEREMI/,"hiperemia"],[/DEISC[EÊ]NCI/,"deiscência"],
+  [/COM SINAIS FLOG/,"sinais flogísticos"],[/SONOLENT|REBAIX|TORPOR|OBNUBIL/,"rebaixamento do nível de consciência"],[/\bCONFUS[OA]\b|DESORIENTAD|DELIRIUM/,"desorientação/delirium"],
+  [/DISPNEI|DESSATUR|TAQUIPNEI/,"dispneia/dessaturação"],[/EMPASTAD/,"panturrilha empastada (TVP?)"],[/COMPARTIMENTOS? TENS|EXTENS[AÃ]O PASSIVA/,"síndrome compartimental?"],
+  [/PI[UÚ]RIA|URINA TURVA/,"piúria"],[/HEMAT[UÚ]RIA/,"hematúria"],[/RETEN[CÇ][AÃ]O URIN/,"retenção urinária"],[/HIPOTENS/,"hipotensão"],[/TAQUICARD/,"taquicardia"],
+  [/SANGRAMENTO ATIVO|SANGRAMENTO/,"sangramento"],[/NECROSE/,"necrose"],[/PERFUS[AÃ]O PERIF[EÉ]RICA LENTIFICADA|PULSOS? (DIMINU|AUSENT)/,"perfusão/pulsos alterados"]];
+function textRed(free){
+  const out=[], U=" "+upS(free).replace(/\s+/g," ")+" ";
+  for(const [re,lbl] of TXT_RED){
+    const g=new RegExp(re.source,"g"); let m, hit=false;
+    while((m=g.exec(U))){ const pre=U.slice(Math.max(0,m.index-30),m.index); if(!NEG_BEFORE.test(pre)){ hit=true; break; } }
+    if(hit) out.push(lbl);
+  }
+  return out;
+}
+
+/* ---------------- cruzamento internograma × evolução ---------------- */
+function lev(a,b){ const m=a.length,n=b.length; if(Math.abs(m-n)>3) return 9; const d=Array.from({length:m+1},(_,i)=>[i]); for(let j=1;j<=n;j++) d[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[m][n]; }
+function allergyOf(txt){
+  if(!txt) return null; const U=upS(txt);
+  if(/(NEGA|SEM|NAO POSSUI|NKDA)\s+ALERGI|ALERGI\w*\s*:?\s*(NEGA|NAO|NENHUMA|SEM)\b/.test(U)) return {nega:true};
+  if(/ALERGI\w*\s*:?\s*NAO SABE|NAO SABE (RELATAR|REFERIR)\s*$/.test(U)) return {desc:true};
+  const m=U.match(/ALERGI\w*\s*(?:A|:)?\s*:?\s*([A-Z ,/E]+?)(?=\s*(?:\*|$|MUC|AP\b|CMB|ASS\b|H[AÁ]BITOS|CIRURGIA|\n|VICIOS|---))/) || U.match(/ALERGIC[OA]\s+A\s+([A-Z ,/E]+?)(?=\s*(?:\*|$|\n|MUC|EQ\.|ASS))/);
+  if(!m) return null;
+  const w=m[1].split(/[ ,/]+/).filter(x=>x.length>=4 && !/^(MEDICAMENTOS[AO]S?|ALERGIAS?|MEDICAMENTO|REFERE)$/.test(x));
+  return w.length?{list:w}:null;
+}
+function medsOf(txt,re){ const m=upS(txt||"").match(re); if(!m) return []; return m[1].split(/[^A-Z]+/).filter(w=>w.length>=5 && !/^(NEGA|NEGAS|ALERGIA|ALERGIAS|COMORBIDADES|MEDICAMENTOSA|USO|CONTINUO|HABITOS|DOSES?|MCG|ATUAL)$/.test(w)); }
+const STOP=new Set(["PARA","COM","SEM","EM","DE","DA","DO","DAS","DOS","A","E","O","AS","OS","NO","NA","POR","APOS","HORA"]);
+const wordsOf=s=>new Set(upS(s).split(/[^A-Z0-9]+/).filter(w=>w.length>=4&&!STOP.has(w)));
+function sideSet(u){ u=u.replace(/DECUBITO LATERAL (DIREITO|ESQUERDO)|\bDL[DE]\b/g,""); const s=new Set(); if(/\bDIREIT[OA]S?\b|\bD\b(?=\s*$)|\bM[SI]D\b|\bDIR\b/.test(u)) s.add("D"); if(/\bESQUERD[OA]S?\b|\bM[SI]E\b|\bESQ\b/.test(u)) s.add("E"); return s; }
+function igCross(ig){
+  const W=[], I=[], SP=[]; if(!ig) return {warn:W,info:I,spell:SP};
+  const head=SRC.split(/\n[ \t]*[-–—]{3,}/)[0];
+  // alergias
+  const evA=allergyOf((SRC.match(/^.*ALERGI.*$/im)||[""])[0]), igA=allergyOf(ig.ap||"");
+  if(evA && igA){
+    const fmt=a=>a.nega?"nega":a.desc?"não sabe":a.list.join(", ");
+    const diff = (evA.nega&&igA.list)||(igA.nega&&evA.list)||(evA.list&&igA.list&&!evA.list.some(x=>igA.list.some(y=>lev(x,y)<=2)));
+    if(diff) W.push(`ALERGIA divergente — evolução: ${fmt(evA)} × internograma: ${fmt(igA)}. Confirmar com paciente/prontuário e corrigir o documento errado.`);
+  } else if(evA && !igA && ig.ap) I.push("Internograma sem registro claro de alergias (evolução: "+(evA.nega?"nega":evA.list?evA.list.join(", "):"não sabe")+").");
+  // datas de evento/cirurgia: linhas de cabeçalho da evolução × trechos do diagnóstico do internograma
+  const chunks=[]; const re=/([^()]*?)\(?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*\)?/g; let m;
+  while((m=re.exec(ig.dx||""))) if(m[1].trim()||chunks.length) chunks.push({w:wordsOf(m[1]),d:+m[2],mo:+m[3],txt:(m[1].trim().slice(-50)+" "+m[2]+"/"+m[3])});
+  for(const line of head.split("\n")){
+    const dm=line.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(!dm) continue;
+    const lw=wordsOf(line.replace(/\d+\/\d+\/\d+/g,""));
+    let best=null, sc=0; for(const c of chunks){ const k=[...c.w].filter(x=>lw.has(x)).length; if(k>sc){ sc=k; best=c; } }
+    if(best && sc>=2 && (best.d!==+dm[1]||best.mo!==+dm[2])) W.push(`Data divergente — evolução: “${line.trim().slice(0,70)}” × internograma: “${best.txt.trim()}”. Conferir qual está correta (afeta a contagem de dias).`);
+  }
+  // lateralidade
+  const sE=sideSet(upS(head)), sI=sideSet(upS(ig.dx||""));
+  if(sE.size===1 && sI.size===1 && [...sE][0]!==[...sI][0]) W.push(`Lateralidade divergente — evolução: ${[...sE][0]==="D"?"DIREITO":"ESQUERDO"} × internograma: ${[...sI][0]==="D"?"DIREITO":"ESQUERDO"}.`);
+  // PO
+  if(ig.po && ig.po.n!=null){
+    const C=segs.filter(s=>s.type==="counter"&&s.cat==="surg");
+    const vals=C.map(s=>/POI/i.test(segValue(s))?0:parseInt(segValue(s))).filter(x=>!isNaN(x));
+    if(vals.length && !vals.includes(ig.po.n)) W.push(`PO divergente — internograma (pela data da cirurgia) indica ${ig.po.label}; a evolução calcula ${C.map(s=>segValue(s).trim()).join(" / ")}. Conferir data da cirurgia.`);
+    if(!C.length) I.push(`Internograma indica ${ig.po.label} (${ig.po.proc||"cirurgia"}), mas a evolução não tem contagem de PO.`);
+  }
+  if(ig.poStated!=null && ig.po && ig.poStated!==ig.po.n) I.push(`Internograma escrito como “${ig.poStated} PO”, mas pela data seria ${ig.po.label} — internograma desatualizado.`);
+  if(ig.dihStated!=null && ig.dih!=null && ig.dihStated!==ig.dih) I.push(`DIH: internograma diz ${ig.dihStated}; pela data de internação (${ig.dihData}) hoje é DIH ${ig.dih} (${VISIT&&VISIT.dihConv?"dia da internação = DIH 1":"dia da internação = DIH 0"}).`);
+  // medicações
+  const eM=medsOf(SRC,/(?:^|\n)\s*#?\s*(?:MUC|MEDICA[CÇ](?:[OÕ]ES|AO)(?: EM USO)?)\s*:?\s*([^\n]*)/), iM=medsOf(ig.ap,/MUC\s*:?\s*(.*?)(?=\s+(?:NEGA ALERG|ALERGI|ASS\b|EQ\.)|$)/);
+  if(eM.length && iM.length){
+    const onlyE=[], onlyI=new Set(iM);
+    for(const w of eM){ if(iM.includes(w)){ onlyI.delete(w); continue; } const near=iM.find(y=>lev(w,y)<=2); if(near){ onlyI.delete(near); SP.push({from:w,to:near,why:"grafia do internograma — conferir"}); W.push(`Medicação com grafia diferente — evolução: ${w} × internograma: ${near}.`); } else onlyE.push(w); }
+    if(onlyE.length||onlyI.size) I.push(`MUC difere — só na evolução: ${onlyE.join(", ")||"—"}; só no internograma: ${[...onlyI].join(", ")||"—"}.`);
+  }
+  return {warn:W,info:I,spell:SP};
+}
+
+/* ---------------- datas: palavras relativas e conduta vencida ---------------- */
+const REL=/\b(ANTEONTEM|ONTEM|HOJE|AMANH[ÃA]|NESTA (?:NOITE|MANH[ÃA]|TARDE)|ESTA (?:NOITE|MANH[ÃA]|TARDE)|NA NOITE DE HOJE)\b/gi;
+function relDate(w){ const u=upS(w), b=baseDate(); const n=/ANTEONTEM/.test(u)?-2:/ONTEM/.test(u)?-1:/AMANH/.test(u)?1:/HOJE|NESTA|ESTA/.test(u)?0:null; return n==null?null:fmtBR(addDays(b,n)); }
+function dateChecks(){
+  const W=[], I=[], free=freeText();
+  const rel=[...new Set((free.match(REL)||[]).map(x=>x.toUpperCase()))];
+  if(rel.length) W.push(`Palavra de tempo relativo fora das seções protegidas (${rel.join(", ")}) — copiada de outro dia ela fica errada. Troque pela data (sugestão na revisão ortográfica).`);
+  for(const b of protectedBlocks(SRC)){
+    if(!b.conduta) continue;
+    for(const line of SRC.slice(b.start,b.end).split("\n")){
+      if(/DISCUTID|REALIZAD|AVALIAD|COMUNICAD|\bOK\b/i.test(line)) continue;
+      for(const m of line.matchAll(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/g)){
+        let y=m[3]?+m[3]:EVAL.getUTCFullYear(); if(y<100) y+=2000;
+        const d=new Date(Date.UTC(y,+m[2]-1,+m[1])); const k=diffDays(EVAL,d);
+        if(k<0 && k>-60) W.push(`Conduta com data já passada: “${line.trim()}” — foi realizado? atualizar a conduta.`);
+        else if(k===0) I.push(`HOJE: ${line.trim()}`);
+        else if(k===1) I.push(`AMANHÃ: ${line.trim()}${/BI[OÓ]PSIA|CIRURG|OSTEOSS|ARTRO|LIMPEZA|PROCED|CX\b/i.test(line)?" — jejum / pré-op ok?":""}`);
+      }
+    }
+  }
+  return {warn:W,info:I};
+}
+
+/* ---------------- ortografia extra (inclui seções protegidas) ---------------- */
+const VOW="AEIOUÁÉÍÓÚÂÊÔÃÕÀaeiouáéíóúâêôãõà";
+function heurFix(w){
+  if(w.length<6 || /\d/.test(w)) return null;
+  let x=w;
+  if(/q(?![uü])/i.test(x)) x=x.replace(/q(?![uü])/i,"");
+  x=x.replace(new RegExp(`([${VOW}])[Hh](?=[^${VOW}\\P{L}])`,"u"),"$1");
+  x=x.replace(/(\p{L})\1\1+/gu,"$1$1");
+  return x!==w ? x : null;
+}
+window.extraSpell = function(found){
+  const add=(from,to,why,prot)=>{ const k=from+"→"+to; const o=found.get(k); if(o){ o.n++; if(prot) o.prot=true; } else found.set(k,{from,to,why,n:1,prot}); };
+  for(const s of segs){
+    if(s.type!=="text"&&s.type!=="prot") continue;
+    const prot=s.type==="prot";
+    for(const x of s.value.matchAll(/\p{L}+/gu)){
+      const w=x[0], k=strip(w).toLowerCase();
+      if(prot && TYPOS[k]) add(w, applyCase(w,TYPOS[k]), "digitação (seção protegida — só ortografia)", true);
+      else { const h=heurFix(w); if(h) add(w,h,prot?"letra trocada (seção protegida — só ortografia)":"letra trocada", prot); }
+    }
+    if(!prot) for(const m of s.value.matchAll(REL)){ const d=relDate(m[0]); if(d) add(m[0],"EM "+d,"tempo relativo → data",false); }
+  }
+  for(const sp of XC.spell||[]) add(sp.from,sp.to,sp.why+" (seção protegida)",true);
+};
+window.extraAlerts = function(free){
+  const red=[...XV.red], warn=[...XV.warn, ...XC.warn], info=[...XV.info, ...XC.info];
+  const t=textRed(free); if(t.length) red.push("No texto de hoje: "+t.join(", ")+" — conferir conduta.");
+  const dc=dateChecks(); warn.push(...dc.warn); info.push(...dc.info);
+  return {red,warn,info};
+};
+
+function renderVisitBox(){
+  const box=$("visitBox"); if(!box) return;
+  if(!VISIT){ box.classList.add("hidden"); return; }
+  const R=VISIT_RES, L=[];
+  for(const r of R){
+    if(r.ins) L.push(`<li class="chg">＋ ${esc(r.why)} — <b>inserido no texto</b> <i>(clique no trecho azul para editar/remover)</i></li>`);
+    else if(!r.hit) L.push(`<li class="miss">⚠ ${esc(r.why)} — <i>sem lugar no texto; acrescente manualmente</i></li>`);
+    else if(r.confirm) L.push(`<li class="conf">? ${esc(r.why)}${r.copy?` <button class="small" data-cp="${esc(r.copy)}">Copiar frase</button>`:""}</li>`);
+    else if(r.chg) L.push(`<li class="chg">✓ ${esc(r.why)} — <b>alterado</b></li>`);
+    else L.push(`<li class="keep">✓ ${esc(r.why)} — igual a ontem</li>`);
+  }
+  const ig=VISIT.ig||{};
+  const pend=(ig.pend||[]).map(x=>`<li>☐ ${esc(x)}</li>`).join(""), ag=(ig.agenda||[]).map(a=>`<li>📅 ${a.dias===0?"HOJE":a.dias===1?"AMANHÃ":"em "+a.dias+" dias"}: ${esc(a.txt)}</li>`).join("");
+  const obs = VISIT.obs ? `<div class="vobs"><b>Observações da visita:</b> ${esc(VISIT.obs)} <button class="small" data-cp="${esc(VISIT.obs.toUpperCase())}">Copiar</button></div>` : "";
+  box.innerHTML = `<div class="row"><strong>Da visita de hoje${VISIT.pac?` · ${esc(VISIT.pac)}`:""}</strong><span class="spacer"></span><span class="note">${R.filter(r=>r.hit&&r.chg).length} alterados/inseridos · ${R.filter(r=>r.hit&&!r.chg).length} mantidos · ${R.filter(r=>!r.hit||r.confirm).length} p/ conferir</span></div>`
+    + (VISIT.visited?"":`<div class="vwarn">⚠ Paciente não marcado como visitado hoje.</div>`)
+    + (L.length ? `<ul>${L.join("")}</ul>` : `<div class="note">Nada marcado na visita para este paciente.</div>`) + obs
+    + (pend||ag ? `<div class="vobs"><b>Pendências / agenda (internograma e visita):</b><ul>${ag}${pend}</ul></div>` : "");
+  box.classList.remove("hidden");
+  box.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{ try{ navigator.clipboard.writeText(b.dataset.cp); b.textContent="Copiado ✓"; }catch(e){} });
+}
+
+if(EMBED){
+  document.body.classList.add("embed");
+  const post=m=>{ try{ window.parent.postMessage(Object.assign({src:"evo"},m),"*"); }catch(e){} };
+  const _go=go;
+  go=function(){
+    _go(); post({type:"evo-base",text:SRC});
+    if(VISIT){
+      XV={red:[],warn:[],info:[]};
+      if(VISIT.marks) applyVisit(VISIT.marks); else VISIT_RES=[];
+      const f=visitFlags(VISIT.marks, VISIT.ig); XV.red.unshift(...f.red); XV.warn.unshift(...f.warn); XV.info.push(...f.info);
+      XC=igCross(VISIT.ig);
+      render(); renderVisitBox();
+    }
+  };
+  const _doCopy=doCopy;
+  doCopy=async function(){ await _doCopy(); post({type:"evo-copied",text:outputText()}); };
+  window.addEventListener("message",ev=>{
+    const d=ev.data||{};
+    if(d.type==="evo-load"){
+      COUNTERS.forEach(c=>{ if(c.label==="Dia de internação (DIH)") c.kind = d.dihConv ? "d1" : "days"; });
+      VISIT={dihConv:d.dihConv, marks:d.marks||null, obs:d.obs||"", pac:d.pac||"", ig:d.ig||null, visited:!!d.visited}; VISIT_RES=[];
+      $("input").value=d.text||""; $("evalDate").value=d.date; $("days").value=d.ndays||1;
+      $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); $("draftBar").classList.add("hidden");
+      $("embedHint").innerHTML = (d.visited?"":"⚠ Paciente ainda não marcado como visitado hoje. ") + (d.text
+        ? `Abaixo está a evolução salva de ${d.baseDate}. <b>Cole por cima a evolução de ontem do sistema do hospital</b> (se for a mesma, só toque em “Analisar texto”). As marcações da visita entram em seguida.`
+        : "Cole a evolução de ontem do sistema do hospital e toque em “Analisar texto”. As marcações da visita entram em seguida.");
+      $("input").focus(); $("input").select();
+    }
+    if(d.type==="evo-get"){
+      const ready=!$("step2").classList.contains("hidden");
+      post({type:"evo-text", ready, text: ready?outputText():"", pend: ready?segs.filter(s=>reviewable(s)&&s.state==="pend").length:0, red: ready?(window.extraAlerts(freeText()).red.length):0});
+    }
+  });
+  post({type:"evo-ready"});
+} else if(!restoreDraft()){ const inp=ssGet(SS_INPUT); if(inp) $("input").value=inp; }
+
+</script>
+</body>
+</html>

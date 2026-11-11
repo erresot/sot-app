@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOT — Visita + Evolução</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f6b5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --bg:#f3f5f4; --card:#fff; --ink:#15211d; --mut:#5d6b66; --line:#dde3e0;
+  --acc:#0f6b5c; --acc2:#e3f1ed; --warn:#b45309; --warn2:#fdf1e2; --bad:#b42318; --bad2:#fdeceb; --ok:#15803d; --ok2:#e7f6ec;
+  --evo:#1f5fbf; --evo2:#e2ecfb;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.top{position:sticky;top:0;z-index:5;background:var(--acc);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px}
+.top h1{margin:0;font-size:17px;font-weight:650;letter-spacing:.2px}
+.top .sub{display:flex;gap:10px;align-items:center;font-size:13px;opacity:.92;margin-top:4px;flex-wrap:wrap}
+.top input[type=date]{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:8px;padding:3px 6px;font:inherit}
+.prog{height:4px;background:rgba(255,255,255,.25);border-radius:4px;margin-top:8px;overflow:hidden;position:relative}
+.prog i{position:absolute;left:0;top:0;height:100%;background:#9ee6c9;width:0;transition:width .3s}
+.prog i.e{background:#8fb8ff;height:50%;top:50%}
+main{padding:12px 12px calc(env(safe-area-inset-bottom) + 84px);max-width:760px;margin:0 auto}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;border:0;background:none;padding:10px 4px 12px;font-size:12.5px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button b{font-size:19px;line-height:1}
+.tabs button.on{color:var(--acc);font-weight:600}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13.5px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.card{background:var(--card);border-radius:var(--r);padding:12px;margin-bottom:10px;box-shadow:0 1px 0 rgba(0,0,0,.04);border:1px solid var(--line)}
+.pt{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.leito{flex:none;width:58px;text-align:center;border-radius:10px;background:var(--acc2);color:var(--acc);font-weight:700;padding:8px 0;font-size:16px}
+.leito small{display:block;font-weight:500;font-size:10.5px;opacity:.8}
+.pt.done .leito{background:var(--ok2);color:var(--ok)}
+.pt .nm{font-weight:650}
+.pt .dx{color:var(--mut);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.tag{font-size:11.5px;border-radius:6px;padding:1px 6px;background:#eef1f0;color:#33413c}
+.tag.po{background:var(--acc2);color:var(--acc);font-weight:600}
+.tag.hj{background:var(--warn2);color:var(--warn);font-weight:600}
+.tag.ok{background:var(--ok2);color:var(--ok);font-weight:600}
+.tag.evo{background:var(--evo2);color:var(--evo);font-weight:600}
+.empty{text-align:center;padding:30px 16px;color:var(--mut)}
+.btn{border:0;border-radius:12px;padding:12px 14px;background:var(--acc);color:#fff;font-weight:600;width:100%}
+.btn.sec{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.btn.evo{background:var(--evo);color:#fff}
+.btn.evos{background:#fff;color:var(--evo);border:1px solid var(--evo)}
+.btn.ghost{background:none;color:var(--mut);border:1px dashed var(--line)}
+.btn.sm{padding:7px 10px;font-size:13.5px;width:auto;border-radius:9px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:16px 2px 8px;font-weight:650}
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;transform:translateX(100%);transition:transform .22s ease;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:none}
+.sh-top{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 10px;display:flex;gap:10px;align-items:center}
+.sh-top .back{border:0;background:var(--acc2);color:var(--acc);border-radius:10px;width:38px;height:38px;font-size:20px;flex:none}
+.sh-top .t{flex:1;min-width:0}
+.sh-top .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-top .t span{font-size:12.5px;color:var(--mut)}
+.sh-body{padding:12px 12px calc(env(safe-area-inset-bottom) + 96px);max-width:760px;margin:0 auto}
+details.ig{background:#fff;border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px}
+details.ig summary{padding:11px 12px;font-weight:600;list-style:none;display:flex;justify-content:space-between;cursor:pointer}
+details.ig summary::after{content:"▾";color:var(--mut)}
+details.ig[open] summary::after{content:"▴"}
+.ig .in{padding:0 12px 12px;font-size:13.5px}
+.ig .in p{margin:0 0 6px}
+.ig .in b{color:var(--acc)}
+.q{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.q .lb{font-size:12.5px;color:var(--mut);font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.q.evoq{border-color:var(--evo);background:linear-gradient(var(--evo2),#fff 60px)}
+.q.evoq .lb{color:var(--evo)}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.op{border:1px solid var(--line);background:#fafbfa;border-radius:10px;padding:8px 11px;font-size:14px;min-height:38px}
+.op.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.op.on.alert{background:var(--bad);border-color:var(--bad)}
+.eva{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+.eva .op{padding:8px 0;text-align:center;min-height:36px}
+.num{display:flex;gap:8px;align-items:center;margin-top:6px}
+.num input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:#fafbfa}
+textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;background:#fafbfa;resize:vertical}
+textarea.mono{font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;min-height:140px}
+.hint{font-size:12px;color:var(--mut);margin-top:5px}
+.pend{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.pend:first-child{border-top:0}
+.pend input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--acc)}
+.pend .tx{flex:1;font-size:14px}
+.pend.ok .tx{text-decoration:line-through;color:var(--mut)}
+.pend .who{font-size:12px;color:var(--acc);font-weight:600;cursor:pointer}
+.pend .x{border:0;background:none;color:var(--mut);font-size:18px;padding:0 4px}
+.add{display:flex;gap:6px;margin-top:8px}
+.add input{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit}
+.add button{border:0;background:var(--acc);color:#fff;border-radius:10px;padding:0 14px;font-weight:700}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:3;background:#fff;border-top:1px solid var(--line);padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);display:flex;gap:8px}
+.out{white-space:pre-wrap;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#fafbfa;border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;max-height:260px;overflow:auto}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(20px);background:#15211d;color:#fff;padding:9px 14px;border-radius:10px;font-size:13.5px;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.modal{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.35);display:none;align-items:flex-end}
+.modal.on{display:flex}
+.modal .box{background:#fff;width:100%;max-width:760px;margin:0 auto;border-radius:18px 18px 0 0;padding:16px 14px calc(env(safe-area-inset-bottom) + 16px)}
+.modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;margin-bottom:8px}
+.drop{border:2px dashed #b9c7c2;border-radius:var(--r);padding:22px 14px;text-align:center;background:#fff}
+.drop b{display:block;font-size:16px;margin-bottom:4px}
+.lock{font-size:12px;color:var(--mut);text-align:center;margin-top:10px}
+.agenda .when{font-weight:700;font-size:12px;color:var(--warn);min-width:56px}
+/* evolução (tela cheia com o atualizador) */
+#evoSheet{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease}
+#evoSheet.open{transform:none}
+#evoSheet .sh-top .back{background:var(--evo2);color:var(--evo)}
+#evoSheet iframe{flex:1;border:0;width:100%;background:#f6f7f9}
+.flow{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mut);margin:2px 2px 10px;flex-wrap:wrap}
+.flow span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+.flow span.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+.flow span.done{border-color:var(--ok);color:var(--ok)}
+.evrow{display:flex;gap:10px;align-items:center}
+.evrow .st{flex:1;min-width:0}
+.evrow .st b{display:block}
+.evrow .st span{font-size:12.5px;color:var(--mut)}
+.tag.ic{background:#ece8fb;color:#5b3fc4;font-weight:600}
+.tag.red{background:var(--bad2);color:var(--bad);font-weight:700}
+.tag.warn{background:var(--warn2);color:var(--warn)}
+.flagbox{background:var(--warn2);border:1px solid #f2c48d;color:#7a3e00;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
+.q.redq{border-color:#f3b8b3}
+.q.redq .lb{color:var(--bad)}
+details.ng{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+details.ng summary{font-weight:600;font-size:13.5px;cursor:pointer}
+.ngrid{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.ngh,.ngr{display:grid;grid-template-columns:minmax(0,1fr) 54px 54px 50px 50px;gap:4px;align-items:center;font-size:12.5px}
+.ngh{color:var(--mut);font-size:11px;text-align:center}
+.ngr select,.lppi select{font:inherit;font-size:13px;padding:6px 2px;border:1px solid var(--line);border-radius:8px;background:#fafbfa;width:100%}
+.ngr select.set{border-color:var(--acc);background:var(--acc2);font-weight:700}
+.ngr select.pior{border-color:var(--bad);background:var(--bad2);font-weight:700;color:var(--bad)}
+.lppi{border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px}
+.sync{display:block;width:100%;text-align:left;margin-top:6px;border:0;border-radius:8px;padding:5px 8px;font-size:12px;background:rgba(255,255,255,.14);color:#fff}
+.sync.off{background:#7a4b00}.sync.erro{background:#8a1c13}.sync.login{background:#3b3f8a}.sync.ok{background:rgba(255,255,255,.14)}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;margin-top:8px}
+.fotos figure{margin:0;position:relative;border-radius:8px;overflow:hidden;background:#e9eeec;aspect-ratio:1}
+.fotos img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.fotos figcaption{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;padding:2px 4px;line-height:1.25}
+.fotos .st{position:absolute;top:3px;right:3px;font-size:11px;background:rgba(0,0,0,.55);color:#fff;border-radius:5px;padding:0 4px}
+.camrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.camrow label.btn{width:auto;display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+#viewer{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;flex-direction:column}
+#viewer.on{display:flex}#viewer img{max-width:100%;max-height:85vh}#viewer div{color:#fff;font-size:13px;padding:8px;text-align:center}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>SOT · Visita + Evolução</h1>
+  <div class="sub"><input type="date" id="hoje"><span id="resumo">—</span></div>
+  <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
+  <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
+</div>
+<main id="main"></main>
+<nav class="tabs">
+  <button data-tab="leitos" class="on"><b>🛏</b>Leitos</button>
+  <button data-tab="pend"><b>☑</b><span>Pendências <span id="npend"></span></span></button>
+  <button data-tab="saida"><b>📝</b><span>Evoluções <span id="nevo"></span></span></button>
+  <button data-tab="config"><b>⚙</b>Internograma</button>
+</nav>
+
+<div class="sheet" id="sheet"></div>
+<div id="evoSheet" aria-hidden="true">
+  <div class="sh-top">
+    <button class="back" id="evoBack" title="Voltar sem salvar">‹</button>
+    <div class="t"><b id="evoTit">Evolução</b><span id="evoSub">revise os campos e salve</span></div>
+    <button class="btn evo sm" id="evoSave">Salvar ✓</button>
+  </div>
+  <iframe id="evoFrame" title="Atualizador de evolução" allow="clipboard-write"></iframe>
+</div>
+<div class="modal" id="modal"><div class="box" id="mbox"></div></div>
+<div class="toast" id="toast"></div>
+<div id="viewer" data-viewer><img id="viewerImg" alt=""><div id="viewerCap"></div></div>
+<input type="file" id="file" accept="application/pdf" hidden>
+
+<script src="sync.js"></script>
+<script>
+// ===== Parser do internograma (PDF exportado do Google Docs) =====
+var COL_EDGES = [39, 142, 221, 356, 516, 669, 802];
+var COLS = ['local', 'nome', 'causa', 'orienta', 'condutas', 'exames'];
+// início de um paciente na coluna "Local": ala, sala, UTI, CC, PS, Hm, arquivo…
+var RE_START = /^(ala|sala|uti|enf|enfermaria|apto|box|semi|cti|cc|centro|rpa|ps|pronto|hm|hd|arquivo|isolamento|leito)\b/i;
+var RE_SECTION = /^(ala\s*[a-z0-9]{1,2}|sala amarela\s*\/\s*vermelha|uti\s*[a-z0-9]?|mi|cc|centro cir[uú]rgico|rpa|hm|altas?|arquivo|interconsultas?|pronto[- ]socorro|ps|possível internação.*|possivel internação.*|enfermaria.*|semi.*)$/i;
+function colOf(xc, pw) { var s = pw / 842; for (var i = 0; i < 6; i++) if (xc < COL_EDGES[i + 1] * s) return i; return 5; }
+function parseInternograma(pages) {
+  var rows = [], dataInternograma = null, cab = null, leitosPDF = [];
+  pages.forEach(function (pg, pi) {
+    var its = pg.items.filter(function (i) { return i.str && i.str.trim(); }).sort(function (a, b) { return a.top - b.top || a.x - b.x; });
+    var cur = null;
+    its.forEach(function (it) { if (!cur || Math.abs(it.top - cur.top) > 3) { cur = { page: pi, top: it.top, parts: [] }; rows.push(cur); } cur.parts.push(it); });
+  });
+  rows.forEach(function (r) {
+    r.cells = [[], [], [], [], [], []];
+    r.parts.sort(function (a, b) { return a.x - b.x; });
+    r.parts.forEach(function (it) {
+      var pw = pages[r.page].width, c = colOf(it.x + (it.w || 0) / 2, pw);
+      if ((it.w || 0) > 120 * pw / 842) c = colOf(it.x + 5, pw);
+      r.cells[c].push(it.str.replace(/\s+/g, ' ').trim());
+    });
+    r.text = r.parts.map(function (p) { return p.str.trim(); }).join(' ').trim();
+    r.cells[0].forEach(function (t) { if (/^\d{4}[a-z]?$/i.test(t.trim())) leitosPDF.push(t.trim()); });
+  });
+  var pacientes = [], cur = null, section = '', soltas = [];
+  rows.forEach(function (r) {
+    var m = r.text.match(/^\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm\s*\/\s*(\d+)\s*alta/i);
+    if (m) { dataInternograma = m[1]; cab = { hc: +m[2], ic: +m[3], hm: +m[4], alta: +m[5] }; return; }
+    m = r.text.match(/^\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*\d+\s*hc/i);
+    if (m) { dataInternograma = m[1]; return; }
+    if (/^Local\b.*\bNome\b/i.test(r.text) || /^(Mecanismo|Dih Origem|Leito Interna|Registro)\b/i.test(r.text)) return;
+    var nonEmpty = r.cells.filter(function (c) { return c.length; }).length;
+    var pw0 = pages[r.page].width, x0 = r.parts[0].x / pw0 * 842;
+    if (nonEmpty === 1 && !r.cells[0].length && r.parts.length <= 4 && x0 > 300 && x0 < 520 && RE_SECTION.test(r.text.trim())) {
+      // título de seção sozinho na linha (centralizado ou na coluna Local)
+      cur = null; section = r.text.replace(/\s+/g, ' ').trim(); return;
+    }
+    var local0 = r.cells[0].join(' ');
+    if (RE_START.test(local0) && r.cells[1].length && (!cur || cur.cols.local.length > 1 || cur.cols.nome.length)) {
+      cur = { section: section, cols: {} }; COLS.forEach(function (k) { cur.cols[k] = []; }); pacientes.push(cur);
+    } else if (RE_START.test(local0) && !cur) {
+      cur = { section: section, cols: {} }; COLS.forEach(function (k) { cur.cols[k] = []; }); pacientes.push(cur);
+    }
+    if (!cur) { if (r.cells[1].length || r.cells[2].length) soltas.push({ section: section, texto: r.text.slice(0, 120) }); return; }
+    COLS.forEach(function (k, i) { if (r.cells[i].length) cur.cols[k].push({ t: r.cells[i].join(' '), top: r.top + r.page * 10000 }); });
+  });
+  return { data: dataInternograma, cab: cab, soltas: soltas, leitosPDF: leitosPDF, pacientes: pacientes.map(extrairCampos).filter(function (p) { return p.nome; }) };
+}
+
+// ===== leitura direta do Google Doc (exportado em HTML: 1 linha da tabela = 1 paciente) =====
+function parseTabelaHTML(html) {
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  var cab = null, data = null;
+  var txt = doc.body ? doc.body.textContent : '';
+  var m = txt.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm\s*\/\s*(\d+)\s*alta/i);
+  if (m) { data = m[1]; cab = { hc: +m[2], ic: +m[3], hm: +m[4], alta: +m[5] }; }
+  var tab = Array.prototype.slice.call(doc.querySelectorAll('table')).sort(function (a, b) { return b.rows.length - a.rows.length; })[0];
+  if (!tab) return { data: data, cab: cab, soltas: [], leitosPDF: [], pacientes: [] };
+  var section = '', pacientes = [], soltas = [], top = 0;
+  function linhasCel(td) {
+    var ps = td.querySelectorAll('p'), out = [];
+    (ps.length ? Array.prototype.slice.call(ps) : [td]).forEach(function (p) { var t = (p.textContent || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim(); if (t) out.push(t); });
+    return out;
+  }
+  Array.prototype.slice.call(tab.rows).forEach(function (tr, ri) {
+    var tds = Array.prototype.slice.call(tr.cells);
+    var cels = tds.map(linhasCel);
+    var cheio = cels.filter(function (c) { return c.length; }).length;
+    if (!cheio) return;
+    if (tds.length === 1 || cheio === 1 && cels[0].length === 1 && tds.length < 6) { section = cels.map(function (c) { return c.join(' '); }).join(' ').trim(); return; }
+    if (/^local\b/i.test((cels[0][0] || '')) && /^nome\b/i.test((cels[1] && cels[1][0]) || '')) return;
+    if (!(cels[1] || []).length) { soltas.push({ section: section, texto: cels.map(function (c) { return c.join(' / '); }).join(' | ').slice(0, 120) }); return; }
+    var p = { section: section, cols: {} };
+    COLS.forEach(function (k, i) { p.cols[k] = (cels[i] || []).map(function (t, j) { return { t: t, top: ri * 1000 + j * 10 }; }); });
+    pacientes.push(p);
+  });
+  return { data: data, cab: cab, soltas: soltas, leitosPDF: [], pacientes: pacientes.map(extrairCampos).filter(function (p) { return p.nome; }), fonteTipo: 'doc' };
+}
+function linhas(arr) { return arr.map(function (l) { return l.t; }); }
+function paragrafos(arr) {
+  var out = [], cur = null, last = null;
+  arr.forEach(function (l) { if (!cur || l.top - last > 14) { cur = []; out.push(cur); } cur.push(l.t); last = l.top; });
+  return out.map(function (p) { return p.join(' ').replace(/\s+/g, ' ').trim(); });
+}
+function extrairCampos(p) {
+  var c = p.cols, o = { id: '', section: p.section, regs: [], avisos: [] };
+  var L = linhas(c.local), resto = [];
+  o.local = (L[0] || '').replace(/\s+/g, ' ');
+  L.slice(1).forEach(function (t) {
+    var m;
+    if (!o.leito && (m = t.match(/^\d{3,4}[a-z]?$/i))) o.leito = t;
+    else if ((m = t.match(/^\d{3,4}[a-z]?$/i))) { o.avisos.push('Mais de um leito na mesma ficha (' + o.leito + ' e ' + t + ') — possível mistura de pacientes'); }
+    else if ((m = t.match(/dih:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/i))) o.dihData = m[1];
+    else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) o.dihStated = +m[1];
+    else if (/^(p|e|c|p\s*\+\s*e|c\s*\+\s*e)$/i.test(t)) o.flag = t.toUpperCase().replace(/\s/g, '');
+    else resto.push(t);
+  });
+  o.mecanismo = resto.join(' ').replace(/\bDih\s*:?\s*(\d{1,3})\b/i, function (x, n) { if (o.dihStated == null) o.dihStated = +n; return ''; }).trim();
+  var N = [], nome = [], i = 0, after = [];
+  linhas(c.nome).forEach(function (t) {
+    var m = t.match(/^(.*?)\s+(\d{1,3}\s*(?:anos|a)\b\.?)\s*(.*)$/i);
+    if (m && m[1] && !/^\d/.test(m[1])) { N.push(m[1], m[2]); if (m[3]) m[3].split(/\s+(?=\b(?:p|r|reg|gmr):?\s*\d)|\s+(?=ao\s)/i).forEach(function (x) { N.push(x); }); }
+    else N.push(t);
+  });
+  for (; i < N.length; i++) { if (/^\d{1,3}\s*(a|anos|a\.)\b/i.test(N[i]) || /^\d{1,3}a$/i.test(N[i])) break; nome.push(N[i]); }
+  o.nome = nome.join(' ').replace(/\s+/g, ' ').trim().replace(/\s+(\d{5,8})$/, function (x, r) { o.regs.push(r); return ''; });
+  o.idade = N[i] ? N[i].replace(/\s*(anos|a)\.?$/i, '').trim() : '';
+  N.slice(i + 1).forEach(function (t) {
+    var m;
+    if ((m = t.match(/^(?:r|p|reg|gmr)?\s*:?\s*(\d{5,8})$/i)) || (m = t.match(/\b(?:r|p|reg)\s*:\s*(\d{5,8})\b/i))) o.regs.push(m[1]);
+    else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) { if (o.dihStated == null) o.dihStated = +m[1]; }
+    else if ((m = t.match(/dih:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/i))) { if (!o.dihData) o.dihData = m[1]; }
+    else if (!o.origem && !/^ao\b|^\-+$|classificar/i.test(t)) o.origem = t;
+    else after.push(t);
+  });
+  o.registro = o.regs[0] || '';
+  o.classif = after.join(' ');
+  var Cz = linhas(c.causa), dx = [], ap = [], ass = '', mode = 0;
+  Cz.forEach(function (t) {
+    if (/^ass\.?\s/i.test(t)) { ass = ass ? ass + ' | ' + t : t; return; }
+    if (mode === 0 && /^(#\s*)?(ap\b|ap:|antecedentes|#antecedentes|comorbidades|cmb)/i.test(t)) mode = 1;
+    (mode ? ap : dx).push(t);
+  });
+  o.dx = dx.join(' ').replace(/\s+/g, ' ').replace(/(\s[-.]+)+\s*$/, '').trim();
+  o.ap = ap.join(' ').replace(/\s+/g, ' ').trim();
+  o.ass = ass;
+  o.orienta = paragrafos(c.orienta); o.condutasLinhas = linhas(c.condutas); o.condutas = paragrafos(c.condutas);
+  o.orientaLinhas = linhas(c.orienta); o.exames = paragrafos(c.exames);
+  o.bruto = COLS.map(function (k) { return linhas(c[k]).join(' / '); });
+  o.id = o.registro ? 'R' + o.registro : 'N' + (o.nome || '').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g, '').slice(0, 24) + (o.leito || '');
+  return o;
+}
+// ===== datas =====
+function parseData(s, ref) {
+  var m = s.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return null;
+  var y = m[3] ? +m[3] : ref.getFullYear(); if (y < 100) y += 2000;
+  var d = new Date(y, +m[2] - 1, +m[1]);
+  if (d.getMonth() !== +m[2] - 1) return null;
+  if (!m[3] && d - ref > 1000 * 3600 * 24 * 200) d.setFullYear(y - 1);
+  return d;
+}
+function diasEntre(a, b) { return Math.round((b - a) / 86400000); }
+// PO: POI = dia da cirurgia (0), 1º PO no dia seguinte…  Usa a data escrita ao lado de cada “n Po”.
+function calcPO(dx, hoje) {
+  var re = /(?:\b(\d+)\s*[º°]?\s*po|\b(poi))\b((?:(?!\b\d+\s*[º°]?\s*po\b|\bpot\b).){0,140}?)\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, m, best = null;
+  while ((m = re.exec(dx))) { var d = parseData(m[4], hoje); if (d && (!best || d > best.d)) best = { d: d, proc: m[3].replace(/[(\s]+$/, '').trim(), stated: m[2] ? 0 : +m[1] }; }
+  if (!best) return null;
+  var n = diasEntre(best.d, hoje);
+  if (n < 0) return { n: null, label: 'cirurgia em ' + fmtD(best.d), proc: best.proc, futuro: true, stated: best.stated };
+  return { n: n, label: n === 0 ? 'POI' : n + 'º PO', proc: best.proc, stated: best.stated };
+}
+function fmtD(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+var RE_PEND = /(checar|solicitar|pegar|mostrar|discutir|aguard|agendar|pendente|comunicar|colher|pedir|cobrar|ligar|verificar|conferir|repetir|programar|marcar|\?\s*$)/i;
+function extrairPendencias(o, hoje) {
+  var out = [];
+  [o.orientaLinhas || [], o.condutasLinhas || []].forEach(function (L) {
+    var cur = null;
+    L.forEach(function (t) {
+      if (RE_PEND.test(t) && !/-\s*ok\b|\bok$|\(ok\)/i.test(t)) { cur = { txt: t }; out.push(cur); }
+      else if (cur && !/:\s*$/.test(t) && !/^(dr|cd|ass)\b/i.test(t) && cur.txt.length < 90 && !/\bok\b/i.test(t) && /^[a-zà-ú]/i.test(t) && !/orienta/i.test(t) && cur.txt.split(' ').length < 9) { cur.txt += ' ' + t; }
+      else cur = null;
+    });
+  });
+  var vistos = [];
+  return out.map(function (x) { return x.txt.replace(/\s+/g, ' ').replace(/^[-–•\s]+/, '').trim(); }).filter(function (t) {
+    if (/^[A-Z]?\d[\w-]*\?*$/i.test(t)) return false;                         // fragmentos tipo "L3-L5?"
+    var d = t.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/); if (d) { var dd = parseData(d[1], hoje); if (dd && diasEntre(hoje, dd) < 0 && /discutir|rediscutir|em\s+\d/i.test(t)) return false; }
+    var k = t.toLowerCase().replace(/[^a-zà-ú0-9]/g, '');
+    if (vistos.some(function (v) { return v.indexOf(k) > -1 || k.indexOf(v) > -1; })) return false;
+    vistos.push(k); return true;
+  });
+}
+function extrairAgenda(o, hoje) {
+  var out = [], vistos = {};
+  [o.orientaLinhas || [], o.condutasLinhas || []].forEach(function (L) {
+    L.forEach(function (t, i) {
+      var re = /(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/g, m;
+      while ((m = re.exec(t))) {
+        var d = parseData(m[1], hoje); if (!d) continue;
+        var dd = diasEntre(hoje, d); if (dd < 0 || dd > 10) continue;
+        if (/^\d{1,2}\/\d{1,2}\s*-\s*(\d{1,2}h|[de]\s*\d)|\bml\b|vacuo|vácuo/i.test(t)) continue;           // registros de débito do dreno etc.
+        var txt = t; if (t.replace(/[\d\/\s-]/g, '').length < 12 && L[i - 1] && !/\d{1,2}\/\d{1,2}/.test(L[i - 1]) && !/orienta/i.test(L[i - 1])) txt = L[i - 1] + ' ' + t;
+        txt = txt.replace(/^.*?\borienta:?\s*/i, '').replace(/^(cd|-)\s*:?\s*/i, '').replace(/\s+/g, ' ').trim();
+        if (txt.length > 110) txt = txt.slice(0, 110) + '…';
+        var k = txt; if (vistos[k]) continue; vistos[k] = 1;
+        out.push({ dias: dd, txt: txt });
+      }
+    });
+  });
+  return out.sort(function (a, b) { return a.dias - b.dias; });
+}
+function curto(t) { return t.replace(/\s*(em|dia)?\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?.*$/i, '').split(/\s+/).slice(0, 4).join(' '); }
+// tipo de paciente → quais campos aparecem na visita
+function tipoDe(p) {
+  var t = [p.dx, p.ap, p.mecanismo, (p.orienta || []).join(' '), (p.condutas || []).join(' ')].join(' ').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  var dx = (p.dx || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return {
+    operado: !!(p.po && !p.po.futuro) || /\bPOT?\b|\bPOI\b|\bDPO\b/.test(dx),
+    coluna: /COLUNA|VERTEBR|\b[CTL]\d{1,2}\b|CERVIC|LOMB|TORAC|MEDUL|PARESIA|PLEGIA|PERDA DE FORCA|CAUDA EQUINA|ARTRODESE|DESCOMPRESS|COLAR|COLETE|PHILADELPHIA|JEWETT|FRANKEL|ASIA/.test(t),
+    membro: /FX|FRATURA|MEMBRO|UMERO|RADIO|ULNA|PUNHO|MAO|FEMUR|TIBIA|PILAO|PATELA|JOELHO|TORNOZELO|QUADRIL|ACETABULO|ILIACO|BACIA|PE\b|METACARP|METATARS|FIXADOR|PTQ|ATQ|ATJ|ARTROPLAST|OSTEOSS/.test(dx),
+    imob: /TALA|GESSO|BOTA|COLAR|COLETE|BRACE|VELPEAU|TIPOIA|FIXADOR|IMOBILIZ|PHILADELPHIA|JEWETT|TRACAO|ROBOFOOT|ORTESE/.test(t)
+  };
+}
+// verificações de qualidade do que foi lido
+function verificar(p, hj) {
+  var a = (p.avisos || []).slice();
+  if (!p.leito && !p.ps && !p.hm) a.push('Sem número de leito');
+  if (!p.registro) a.push('Sem registro');
+  if ((p.regs || []).length > 1 && p.regs[0] !== p.regs[1]) a.push('Dois registros na mesma ficha (' + p.regs.join(' e ') + ') — possível mistura de pacientes');
+  if (!p.idade) a.push('Sem idade');
+  else if (+p.idade > 110) a.push('Idade improvável: ' + p.idade);
+  if (!p.dx) a.push('Sem diagnóstico / causa');
+  if (!p.nome || p.nome.split(' ').length < 2 || /\d/.test(p.nome)) a.push('Nome incompleto ou com números: "' + p.nome + '"');
+  if (!p.dihData) a.push('Sem data de internação' + (p.dihStated != null ? ' (internograma diz DIH ' + p.dihStated + ')' : ''));
+  if (p.dih != null && p.dih < 0) a.push('Data de internação no futuro (' + p.dihData + ')');
+  if (p.dih != null && p.dihStated != null && p.dih !== p.dihStated) a.push('DIH: internograma diz ' + p.dihStated + ', mas pela data (' + p.dihData + ') hoje é DIH ' + p.dih + (p.dihStated === p.dih + 1 ? ' — diferença de 1 dia: convenção de contagem diferente?' : p.dihStated === p.dih - 1 ? ' — internograma não atualizado hoje?' : ''));
+  if (p.po && p.po.futuro) a.push('Data de cirurgia no futuro: ' + p.po.label);
+  else if (p.po && p.po.stated != null && p.po.stated !== p.po.n) a.push('PO: internograma escreve "' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + '", pela data hoje é ' + p.po.label);
+  if (p.ass && p.ass.split('|').length > 1 && (p.regs || []).length > 1) a.push('Mais de uma assinatura e registro — conferir se dois pacientes foram juntados');
+  if ((p.ap.match(/\bap\s*:/gi) || []).length > 1) a.push('Antecedentes aparecem duas vezes — possível mistura com a ficha seguinte');
+  return a;
+}
+</script>
+<script>
+// ===================== estado =====================
+var KEY = 'sot-app-v1';
+function novoEstado(tab) { return { hoje: hojeISO(), fonte: null, dataIG: null, cab: null, soltas: [], leitosPDF: [], pacientes: [], vis: {}, pend: {}, pendDel: {}, evo: {}, fotos: {}, idents: {}, conf: {}, sync: {}, eu: '', filtro: 'Todos', mostrarAltas: true, tab: tab || 'leitos' }; }
+// S.v = marcações da visita do dia selecionado (guardadas por data em S.vis)
+function ligarV(o) {
+  ['vis', 'pend', 'pendDel', 'evo', 'fotos', 'idents', 'conf', 'sync'].forEach(function (k) { o[k] = o[k] || {}; });
+  if (o.v && !Object.getOwnPropertyDescriptor(o, 'v').get) { o.vis[o.hoje] = Object.assign(o.vis[o.hoje] || {}, o.v); delete o.v; }
+  Object.defineProperty(o, 'v', { configurable: true, enumerable: false, get: function () { return (o.vis[o.hoje] = o.vis[o.hoje] || {}); }, set: function (x) { o.vis[o.hoje] = x; } });
+  return o;
+}
+var S = ligarV(load() || novoEstado());
+S.evo = S.evo || {}; S.conf = S.conf || {};
+function hojeISO() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function hojeDate() { return isoDate(S.hoje); }
+function isoDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function isoAdd(s, n) { var d = isoDate(s); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function br(s) { var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function brCurto(s) { return br(s).slice(0, 5); }
+function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { toast('⚠ Memória do aparelho cheia — sincronize e apague fotos antigas'); return false; } }
+function save() {
+  if (typeof atual !== 'undefined' && atual && S.v[atual.id]) { S.v[atual.id]._at = Date.now(); S.v[atual.id]._by = S.eu || ''; }
+  saveLocal(); if (window.SYNC) SYNC.agendar();
+}
+function $(s, el) { return (el || document).querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toast(t) { var e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(function () { e.classList.remove('on'); }, 2200); }
+
+// ===================== evoluções por paciente =====================
+function evoLista(id) { return (S.evo[id] || []).slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; }); }
+function evoBase(id) { var L = evoLista(id).filter(function (e) { return e.data < S.hoje; }); return L[L.length - 1] || null; }
+function evoHoje(id) { return evoLista(id).find(function (e) { return e.data === S.hoje; }) || null; }
+function evoGuardar(id, data, txt) {
+  var L = (S.evo[id] || []).filter(function (e) { return e.data !== data; });
+  L.push({ data: data, txt: txt, at: Date.now(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+  S.evo[id] = L.slice(-5); save();
+}
+function evoluido(p) { return !!evoHoje(p.id); }
+
+// ===================== campos da visita =====================
+// when(t): t = tipo do paciente; sem when = sempre
+var CAMPOS = [
+  { k: 'queixa', lb: 'Queixas', multi: true, o: ['Sem queixas', 'Dor controlada', 'Dor não controlada', 'Náuseas/vômitos', 'Parestesia', 'Insônia'], alert: ['Dor não controlada', 'Parestesia'] },
+  { k: 'eva', lb: 'Dor (EVA)', tipo: 'eva' },
+  { k: 'consc', lb: 'Consciência', o: ['Lúcido e orientado', 'Sonolento', 'Confuso / desorientado', 'Agitado', 'Rebaixado'], alert: ['Sonolento', 'Confuso / desorientado', 'Agitado', 'Rebaixado'] },
+  { k: 'resp', lb: 'Respiratório', o: ['Eupneico em ar ambiente', 'Dispneia', 'O2 suplementar'], alert: ['Dispneia', 'O2 suplementar'] },
+  { k: 'acomp', lb: 'Acompanhante', o: ['Acompanhado', 'Sem acompanhante'] },
+  { k: 'dieta', lb: 'Dieta', o: ['Boa aceitação', 'Aceitação regular', 'Baixa aceitação', 'Jejum', 'Sonda nasogástrica', 'Sonda nasoenteral', 'Gastrostomia', 'Parenteral'], alert: ['Baixa aceitação'] },
+  { k: 'diurese', lb: 'Diurese', o: ['Espontânea', 'SVD', 'Fralda', 'Ausente / retenção'], alert: ['Ausente / retenção'] },
+  { k: 'urina', lb: 'Aspecto da urina', o: ['Clara', 'Turva / piúria', 'Hematúria'], alert: ['Turva / piúria', 'Hematúria'] },
+  { k: 'evac', lb: 'Evacuação', o: ['Presente', 'Ausente'], extra: { quando: 'Ausente', tipo: 'num', ph: 'há quantos dias?' } },
+  { k: 'febre', lb: 'Febre', o: ['Afebril', 'Febre'], alert: ['Febre'], extra: { quando: 'Febre', tipo: 'num', ph: 'Tax (°C), ex.: 38,2' } },
+  { k: 'decub', lb: 'Decúbito / mobilização', o: ['Dorsal', 'Dorsal elevado', 'Lateral D', 'Lateral E', 'Sedestação', 'Deambulando c/ auxílio', 'Deambulando'] },
+  { k: 'fo', lb: 'FO / curativo', multi: true, when: function (t) { return t.operado; }, o: ['Limpa e seca', 'Secreção serosa', 'Secreção sanguinolenta', 'Secreção purulenta', 'Hiperemia', 'Deiscência', 'Curativo oclusivo'], alert: ['Secreção purulenta', 'Hiperemia', 'Deiscência'] },
+  { k: 'dreno', lb: 'Dreno', tipo: 'dreno', when: function (t) { return t.operado; } },
+  { k: 'imob', lb: 'Imobilização (tala / gesso / colar / colete / fixador)', when: function (t) { return t.imob; }, o: ['Bem posicionada', 'Reposicionada', 'Frouxa / danificada'], alert: ['Frouxa / danificada'] },
+  { k: 'neuro', lb: 'Exame neurológico (coluna)', tipo: 'neuro', when: function (t) { return t.coluna; } },
+  { k: 'nv', lb: 'Extremidade / neurovascular', when: function (t) { return !t.coluna || t.membro; }, o: ['Preservado', 'Alterado'], alert: ['Alterado'], extra: { quando: 'Alterado', tipo: 'txt', ph: 'o que está alterado?' } },
+  { k: 'exf', lb: 'Exame físico — alterações rápidas', tipo: 'exf' },
+  { k: 'lpp', lb: 'Lesão por pressão', tipo: 'lpp' },
+  { k: 'alerta', lb: '🚩 Sinais de alerta', multi: true, o: ['Dispneia súbita', 'Dor torácica', 'Taquicardia', 'Hipotensão', 'Sangramento ativo', 'Confusão / delirium', 'Dor em panturrilha', 'Retenção urinária', 'Incontinência nova', 'Perda de força nova', 'Parestesia nova', 'Anestesia em sela', 'Vômitos persistentes', 'Queda do leito'], alert: 'all' }
+];
+var EXF_EDEMA = ['Sem edema', 'Leve', 'Moderado', 'Importante', 'Em regressão', 'Em piora'];
+var EXF_CHIPS = ['Panturrilhas livres', 'Hematoma em resolução', 'Hematoma tenso', 'Equimose extensa', 'Flictenas', 'Hipoestesia', 'Déficit motor', 'Perfusão lentificada', 'Pulsos diminuídos', 'Compartimentos tensos', 'Dor à extensão passiva', 'Panturrilha empastada'];
+var EXF_ALERT = ['Hematoma tenso', 'Déficit motor', 'Perfusão lentificada', 'Pulsos diminuídos', 'Compartimentos tensos', 'Dor à extensão passiva', 'Panturrilha empastada'];
+var NIVEIS = [['C5', 'Flexores do cotovelo'], ['C6', 'Extensores do punho'], ['C7', 'Extensores do cotovelo'], ['C8', 'Flexores dos dedos'], ['T1', 'Abdutores dos dedos'],
+  ['L2', 'Flexores do quadril'], ['L3', 'Extensores do joelho'], ['L4', 'Dorsiflexores do tornozelo'], ['L5', 'Extensor longo do hálux'], ['S1', 'Flexores plantares']];
+var MYO_RE = { C5: /FLEXORES DO COTOVELO|BICEPS/, C6: /EXTENSORES DO PUNHO/, C7: /EXTENSORES DO COTOVELO|TRICEPS/, C8: /FLEXORES (PROFUNDOS )?DOS DEDOS/, T1: /ABDUTORES? DOS DEDOS/, L2: /FLEXORES DO QUADRIL|ILIOPSOAS/, L3: /EXTENSORES DO JOELHO|QUADRICEPS/, L4: /DORSIFLEXORES|TIBIAL ANTERIOR/, L5: /EXTENSOR(ES)? LONGOS? DO HALUX/, S1: /FLEXORES PLANTARES|GASTROCNEM/ };
+var LPP_LOCAL = ['Região sacral', 'Região glútea D', 'Região glútea E', 'Região trocantérica D', 'Região trocantérica E', 'Calcâneo D', 'Calcâneo E', 'Maléolo D', 'Maléolo E', 'Região occipital', 'Região escapular', 'Outro'];
+var LPP_EST = ['1', '2', '3', '4', 'Tissular profunda', 'Não classificável'];
+var LPP_ASP = ['Hiperemia', 'Flictena', 'Esfacelo', 'Necrose', 'Granulação', 'Secreção', 'Odor'];
+function U(s) { return String(s).toUpperCase(); }
+function semAc(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+// graus de ontem (lidos da evolução salva) para mostrar ao lado do menu neurológico
+function grausOntem(id) {
+  var b = evoBase(id) || evoHoje(id); if (!b) return {};
+  var out = {};
+  semAc(b.txt).split('\n').forEach(function (l) {
+    for (var lv in MYO_RE) if (MYO_RE[lv].test(l)) {
+      var e = l.match(/ESQ\w*\s+FORCA\s+(?:GRAU\s+)?([0-5])/), d = l.match(/DIR\w*\s+FORCA\s+(?:GRAU\s+)?([0-5])/);
+      if (e) out[lv + 'E'] = e[1]; if (d) out[lv + 'D'] = d[1];
+    }
+    var s = l.match(/DERMAT\w*\s+(?:SENSITIVOS?\s+)?(?:DE\s+)?([CTLS]\d{1,2})\b.*?\bESQ\w*\.?\s*:?\s*([0-2]).*?\bDIR\w*\.?\s*:?\s*([0-2])/);
+    if (s) { out['s' + s[1] + 'E'] = s[2]; out['s' + s[1] + 'D'] = s[3]; }
+  });
+  return out;
+}
+
+// ===================== import do PDF =====================
+$('#file').addEventListener('change', function (e) { var f = e.target.files[0]; if (!f) return; importarPDF(f); e.target.value = ''; });
+function importarPDF(f) {
+  if (!window.pdfjsLib) { toast('Leitor de PDF não carregou — verifique a internet'); return; }
+  toast('Lendo internograma…');
+  try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) {}
+  f.arrayBuffer().then(function (buf) { return pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise; }).then(function (doc) {
+    var ps = [];
+    for (var i = 1; i <= doc.numPages; i++) ps.push(doc.getPage(i).then(function (pg) {
+      var vp = pg.getViewport({ scale: 1 });
+      return pg.getTextContent().then(function (tc) { return { width: vp.width, height: vp.height, items: tc.items.map(function (it) { return { str: it.str, x: it.transform[4], top: vp.height - it.transform[5], w: it.width }; }) }; });
+    }));
+    return Promise.all(ps);
+  }).then(function (pages) {
+    var r = parseInternograma(pages);
+    if (!r.pacientes.length) { toast('Não reconheci pacientes neste PDF'); return; }
+    aplicarImport(r, f.name);
+  }).catch(function (err) { console.error(err); toast('Erro ao ler o PDF'); });
+}
+function classificar(p) {
+  var sec = p.section || '', loc = p.local || '', tudo = (loc + ' ' + p.mecanismo + ' ' + p.origem).toLowerCase();
+  p.alta = /^altas?$|^arquivo/i.test(sec) || /^arquivo/i.test(loc);
+  p.hm = /^hm\b/i.test(sec) || /^hm\b/i.test(loc);
+  p.ic = /interconsult/i.test(sec) || /interconsult/i.test(tudo);
+  p.ps = /possível internação|possivel internacao|pronto|^ps\b|sala amarela|sala vermelha/i.test(sec + ' ' + loc) || /est[aá] no ps|no pronto/i.test(tudo);
+  var lugar = loc.replace(/\s+/g, ' ').replace(/^(\w+)\s*(\w?)$/, function (m, a, b) { return cap(a) + (b ? ' ' + b.toUpperCase() : ''); }) || sec || '—';
+  p.lugar = lugar;
+  p.grupo = p.hm ? 'Hm' : p.alta ? 'Altas' : p.ic ? 'Interconsultas' : p.ps ? 'PS / sala amarela' : lugar;
+}
+function aplicarImport(r, nome) {
+  var lista = [];
+  r.pacientes.forEach(function (p) { var dup = lista.findIndex(function (q) { return q.id === p.id; }); if (dup > -1) { p.avisos.push('Paciente listado duas vezes no internograma (' + (lista[dup].section || '') + ' e ' + (p.section || '') + ')'); lista.splice(dup, 1); } lista.push(p); });
+  var hj = hojeDate();
+  lista.forEach(function (p, i) {
+    p.ordem = i; classificar(p);
+    p.po = calcPO(p.dx, hj);
+    var dd = p.dihData ? parseData(p.dihData, hj) : null; p.dih = dd ? diasEntre(dd, hj) + (S.dihConv ? 1 : 0) : null;
+    p.sugPend = extrairPendencias(p, hj);
+    p.agenda = extrairAgenda(p, hj);
+    p.tipo = tipoDe(p);
+    p.verif = verificar(p, hj);
+    var ja = S.pend[p.id] || [], del = S.pendDel[p.id] || [];
+    p.sugPend.forEach(function (t) { if (!ja.some(function (x) { return x.t === t; }) && del.indexOf(t) < 0) ja.push({ t: t, ok: false, auto: true, at: 0 }); });
+    S.pend[p.id] = ja;
+  });
+  lista.sort(function (a, b) { return (a.hm - b.hm) || (a.ordem - b.ordem); });   // Hm sempre por último
+  S.pacientes = lista; S.fonte = nome; S.dataIG = r.data; S.cab = r.cab; S.soltas = r.soltas || []; S.leitosPDF = r.leitosPDF || []; S.conf = {};
+  save(); S.tab = 'leitos'; render();
+  var c = contagem(); toast(lista.length + ' pacientes lidos' + (c.ok ? '' : ' — confira a contagem'));
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+function contagem() {
+  var P = S.pacientes, c = { hc: 0, ic: 0, hm: 0, alta: 0 };
+  P.forEach(function (p) { if (p.hm) c.hm++; else if (p.alta) c.alta++; else if (p.ic) c.ic++; else c.hc++; });
+  var faltaLeito = (S.leitosPDF || []).filter(function (l) { return !P.some(function (p) { return p.leito === l; }); });
+  var dif = S.cab ? ['hc', 'ic', 'hm', 'alta'].filter(function (k) { return S.cab[k] !== c[k]; }) : [];
+  var tot = P.length, totCab = S.cab ? S.cab.hc + S.cab.ic + S.cab.hm + S.cab.alta : null;
+  return { c: c, cab: S.cab, dif: dif, tot: tot, totCab: totCab, faltaLeito: faltaLeito, soltas: S.soltas || [], ok: (totCab == null || tot === totCab) && !faltaLeito.length && !(S.soltas || []).length };
+}
+
+// ===================== render =====================
+function ativos() { return S.pacientes.filter(function (p) { return S.mostrarAltas || !p.alta; }); }
+function visitado(p) { return S.v[p.id] && S.v[p.id]._ok; }
+function pendAbertas() { var n = 0; ativos().forEach(function (p) { (S.pend[p.id] || []).forEach(function (x) { if (!x.ok) n++; }); }); return n; }
+function alertasVisita(v) {
+  if (!v) return [];
+  var a = [];
+  CAMPOS.forEach(function (c) { var x = v[c.k]; if (!c.alert || x == null) return; (Array.isArray(x) ? x : [x]).forEach(function (o) { if (c.alert === 'all' || c.alert.indexOf(o) > -1) a.push(o); }); });
+  if (v.eva >= 7) a.push('EVA ' + v.eva);
+  ((v.exf && v.exf.chips) || []).forEach(function (o) { if (EXF_ALERT.indexOf(o) > -1) a.push(o); });
+  if (v.lpp && (v.lpp.itens || []).some(function (x) { return /^[34]|Tissular|Não class/.test(x.estagio || ''); })) a.push('LPP grave');
+  if (v.neuro && v.neuro.alt) a.push('Neuro alterado');
+  return a;
+}
+function render() {
+  $('#hoje').value = S.hoje;
+  var a = ativos(), feitos = a.filter(visitado).length, evs = a.filter(evoluido).length;
+  $('#resumo').textContent = a.length ? feitos + '/' + a.length + ' visitados · ' + evs + '/' + a.length + ' evoluídos' + (S.dataIG ? ' · IG ' + S.dataIG : '') : 'sem internograma';
+  $('#progbar').style.width = a.length ? (100 * feitos / a.length) + '%' : 0;
+  $('#progevo').style.width = a.length ? (100 * evs / a.length) + '%' : 0;
+  var np = pendAbertas(); $('#npend').innerHTML = np ? '<span class="badge">' + np + '</span>' : '';
+  var ne = a.filter(function (p) { return visitado(p) && !evoluido(p); }).length; $('#nevo').innerHTML = ne ? '<span class="badge" style="background:var(--evo)">' + ne + '</span>' : '';
+  var m = $('#main');
+  if (!S.pacientes.length && S.tab !== 'config') S.tab = 'config';
+  if (S.tab === 'leitos') m.innerHTML = vLeitos();
+  if (S.tab === 'pend') m.innerHTML = vPend();
+  if (S.tab === 'saida') m.innerHTML = vSaida();
+  if (S.tab === 'config') m.innerHTML = vConfig();
+  document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === S.tab); });
+}
+function grupos() { var g = ['Todos']; ativos().forEach(function (p) { if (g.indexOf(p.grupo) < 0) g.push(p.grupo); }); var i = g.indexOf('Hm'); if (i > -1) { g.splice(i, 1); g.push('Hm'); } return g; }
+function tagsPac(p) {
+  var t = '';
+  if (p.alta) t += '<span class="tag hj">ALTA</span>';
+  if (p.ic) t += '<span class="tag ic">IC</span>';
+  if (p.hm) t += '<span class="tag ic">Hm</span>';
+  if (p.ps) t += '<span class="tag ic">PS · sem internação</span>';
+  if (p.po) t += '<span class="tag po">' + esc(p.po.label) + '</span>';
+  if (p.dih != null) t += '<span class="tag">DIH ' + p.dih + '</span>';
+  if (p.idade) t += '<span class="tag">' + esc(p.idade) + ' a</span>';
+  (p.agenda || []).forEach(function (a) { if (a.dias <= 1) t += '<span class="tag hj">' + (a.dias === 0 ? 'HOJE' : 'AMANHÃ') + ': ' + esc(curto(a.txt)) + '</span>'; });
+  var al = alertasVisita(S.v[p.id]); if (al.length) t += '<span class="tag red">🚩 ' + esc(al.slice(0, 2).join(', ')) + (al.length > 2 ? ' +' + (al.length - 2) : '') + '</span>';
+  if ((p.verif || []).length) t += '<span class="tag warn">⚠ ' + p.verif.length + ' verificação(ões)</span>';
+  if (evoluido(p)) t += '<span class="tag evo">evoluído ✓</span>';
+  else if (!evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
+  return t;
+}
+function bannerContagem() {
+  var k = contagem(); if (k.ok) return '';
+  var L = [];
+  if (k.totCab != null && k.tot !== k.totCab) L.push('Total: cabeçalho ' + k.totCab + ' × lidos ' + k.tot + '.');
+  if (k.dif.length) L.push('Cabeçalho do internograma: ' + k.cab.hc + ' HC / ' + k.cab.ic + ' IC / ' + k.cab.hm + ' Hm / ' + k.cab.alta + ' altas — o app leu ' + k.c.hc + ' / ' + k.c.ic + ' / ' + k.c.hm + ' / ' + k.c.alta + '.');
+  if (k.faltaLeito.length) L.push('Leitos no PDF sem paciente reconhecido: ' + k.faltaLeito.join(', '));
+  if (k.soltas.length) L.push(k.soltas.length + ' linha(s) do PDF não atribuída(s) a nenhum paciente.');
+  return '<div class="card flagbox" data-tab="config"><b>⚠ Confira a contagem nome por nome</b><div class="hint" style="color:inherit">' + L.map(esc).join('<br>') + '<br>Toque para abrir a conferência.</div></div>';
+}
+function vLeitos() {
+  var g = grupos(); if (g.indexOf(S.filtro) < 0) S.filtro = 'Todos';
+  var h = bannerContagem();
+  h += '<div class="chips">' + g.map(function (x) { var n = x === 'Todos' ? ativos().length : ativos().filter(function (p) { return p.grupo === x; }).length; return '<button class="chip' + (x === S.filtro ? ' on' : '') + '" data-f="' + esc(x) + '">' + esc(x) + ' · ' + n + '</button>'; }).join('') + '</div>';
+  var lista = ativos().filter(function (p) { return S.filtro === 'Todos' || p.grupo === S.filtro; });
+  if (!lista.length) return h + '<div class="empty">Nenhum paciente neste filtro.</div>';
+  var pend = lista.filter(function (p) { return !visitado(p); }), feitos = lista.filter(visitado);
+  h += pend.map(cardPac).join('');
+  if (feitos.length) h += '<h2>Visitados (' + feitos.length + ')</h2>' + feitos.map(cardPac).join('');
+  return h;
+}
+function cardPac(p) {
+  var np = (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).length;
+  return '<div class="card pt' + (visitado(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '">' +
+    '<div class="leito">' + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small></div>' +
+    '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + '</div>' +
+    '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div></div></div>';
+}
+function vPend() {
+  var a = ativos(), h = '', ag = [];
+  a.forEach(function (p) { (p.agenda || []).forEach(function (x) { ag.push({ p: p, a: x }); }); });
+  ag.sort(function (x, y) { return x.a.dias - y.a.dias; });
+  if (ag.length) {
+    h += '<h2>Agenda dos próximos dias</h2><div class="card agenda">' + ag.map(function (x) {
+      var w = x.a.dias === 0 ? 'HOJE' : x.a.dias === 1 ? 'AMANHÃ' : 'em ' + x.a.dias + ' d';
+      return '<div class="pend"><span class="when">' + w + '</span><div class="tx">' + esc(x.a.txt) + '<div class="who" data-open="' + esc(x.p.id) + '">' + esc(x.p.leito || x.p.lugar || '') + ' · ' + esc(x.p.nome) + '</div></div></div>';
+    }).join('') + '</div>';
+  }
+  var blocos = a.map(function (p) {
+    var L = S.pend[p.id] || []; if (!L.length) return '';
+    return '<div class="card"><div class="who" data-open="' + esc(p.id) + '" style="margin-bottom:4px">' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + ' ›</div>' + L.map(function (x, i) { return linhaPend(p.id, x, i); }).join('') + '</div>';
+  }).join('');
+  h += '<h2>Pendências por paciente</h2>' + (blocos || '<div class="empty">Nenhuma pendência. Adicione dentro de cada paciente.</div>');
+  h += '<div class="hint" style="padding:0 4px">✦ = sugerido das colunas "Orienta" e "Condutas" (checar, solicitar, cobrar, discutir, programar…). Itens com data já passada e fragmentos soltos são ignorados. As pendências abertas aparecem também na tela de evolução.</div>';
+  return h;
+}
+function linhaPend(id, x, i) {
+  return '<div class="pend' + (x.ok ? ' ok' : '') + '"><input type="checkbox" data-pk="' + esc(id) + '" data-pi="' + i + '"' + (x.ok ? ' checked' : '') + '><div class="tx">' + (x.auto ? '✦ ' : '') + esc(x.t) + '</div><button class="x" data-pdel="' + esc(id) + '" data-pi="' + i + '">×</button></div>';
+}
+function vSaida() {
+  var a = ativos();
+  if (!a.length) return '<div class="empty">Sem pacientes.</div>';
+  var prontas = a.filter(evoluido);
+  var h = '<div class="hint" style="margin:0 2px 10px">A evolução salva hoje vira a base de amanhã. Mesmo assim, cole por cima a do sistema se alguém editou.</div>';
+  if (prontas.length) h += '<button class="btn evo" data-copyall>Copiar todas as evoluções prontas (' + prontas.length + ')</button>';
+  var grupo = function (tit, L) { return L.length ? '<h2>' + tit + ' (' + L.length + ')</h2>' + L.map(cardEvo).join('') : ''; };
+  h += grupo('Visitados — falta evoluir', a.filter(function (p) { return visitado(p) && !evoluido(p); }));
+  h += grupo('Evoluídos hoje', prontas);
+  h += grupo('Ainda não visitados', a.filter(function (p) { return !visitado(p) && !evoluido(p); }));
+  return h;
+}
+function cardEvo(p) {
+  var hj = evoHoje(p.id), b = evoBase(p.id);
+  var st = hj ? '<b style="color:var(--evo)">✓ Evolução de hoje salva</b><span>' + (b ? 'feita a partir de ' + brCurto(b.data) : 'colada hoje') + '</span>'
+    : b ? '<b>Base salva: evolução de ' + brCurto(b.data) + '</b><span>' + (visitado(p) ? 'visita feita — campos vão marcados' : '⚠ visita ainda não feita') + '</span>'
+    : '<b style="color:var(--warn)">Sem evolução anterior</b><span>cole a do sistema ao evoluir</span>';
+  var bt = hj ? '<button class="btn evos sm" data-copyevo="' + esc(p.id) + '">Copiar</button><button class="btn ghost sm" data-evo="' + esc(p.id) + '">Refazer</button>'
+    : '<button class="btn evo sm" data-evo="' + esc(p.id) + '">Evoluir</button>';
+  return '<div class="card"><div class="evrow"><div class="leito" style="width:52px;padding:6px 0;font-size:14px">' + esc(p.leito || p.lugar || '—') + '</div><div class="st"><div class="who" data-open="' + esc(p.id) + '" style="font-weight:650;cursor:pointer">' + esc(p.nome) + '</div>' + st + '</div><div style="display:flex;flex-direction:column;gap:5px">' + bt + '</div></div>' +
+    (hj ? '<details><summary class="hint" style="cursor:pointer">ver texto</summary><div class="out">' + esc(hj.txt) + '</div></details>' : '') + '</div>';
+}
+function vConfig() {
+  var stt = SYNC.status(), pend = SYNC.contarPend();
+  var h = '<h2>Conta Google da equipe</h2><div class="card"><div style="font-size:13.5px">' + esc(stt.msg) + (pend.total ? ' · <b>' + pend.total + ' aguardando envio</b> (' + pend.reg + ' paciente(s), ' + pend.fotos + ' foto(s))' : '') + '</div>' +
+    '<div class="row" style="margin-top:8px"><button class="btn" data-conectar>' + (SYNC.temToken() ? 'Sincronizar agora' : 'Conectar ao Google (' + esc(CFG.CONTA || 'equipe') + ')') + '</button></div>' +
+    '<div class="num" style="margin-top:8px"><input id="eu" placeholder="Seu nome (fica registrado em cada alteração)" value="' + esc(S.eu || '') + '"></div></div>';
+  h += '<div class="drop" style="margin-top:10px"><b>Internograma</b>Lido direto do Google Doc da equipe.<div style="margin-top:12px"><button class="btn" data-doc>Atualizar do Google Doc</button></div><div class="hint" style="margin-top:8px">Sem login ou sem internet? <button class="btn ghost sm" data-pick style="width:auto">carregar PDF</button></div></div>';
+  if (S.fonte) {
+    h += '<div class="lock">Atual: ' + esc(S.fonte) + (S.dataIG ? ' (internograma de ' + esc(S.dataIG) + ')' : '') + ' · ' + S.pacientes.length + ' pacientes</div>';
+    var k = contagem();
+    h += '<h2>Conferência nome por nome</h2><div class="card">';
+    h += '<div class="hint" style="margin:0 0 6px">' + (k.cab ? 'Cabeçalho: ' + k.cab.hc + ' HC · ' + k.cab.ic + ' IC · ' + k.cab.hm + ' Hm · ' + k.cab.alta + ' altas. ' : '') + 'Lidos: ' + k.c.hc + ' HC · ' + k.c.ic + ' IC · ' + k.c.hm + ' Hm · ' + k.c.alta + ' altas. ' +
+      (k.totCab != null ? (k.tot === k.totCab ? '<b style="color:var(--ok)">Total ' + k.tot + ' = cabeçalho ✓</b> ' : '<b style="color:var(--bad)">Total ' + k.tot + ' ≠ cabeçalho ' + k.totCab + '</b> ') : '') + (k.dif.length ? '<b style="color:var(--warn)">Distribuição diferente em: ' + k.dif.join(', ').toUpperCase() + '.</b> O cabeçalho costuma estar desatualizado — confira a lista abaixo com o PDF.' : '✓ bate com o cabeçalho.') + '</div>';
+    if (k.faltaLeito.length) h += '<div class="flagbox" style="margin:6px 0">Leitos no PDF sem paciente: ' + esc(k.faltaLeito.join(', ')) + '</div>';
+    if (k.soltas.length) h += '<details style="margin:6px 0"><summary class="hint" style="cursor:pointer;color:var(--warn)">⚠ ' + k.soltas.length + ' linha(s) do PDF não atribuída(s)</summary>' + k.soltas.map(function (s) { return '<div class="hint">[' + esc(s.section) + '] ' + esc(s.texto) + '</div>'; }).join('') + '</details>';
+    var conf = S.pacientes.filter(function (p) { return S.conf[p.id]; }).length;
+    h += '<div class="hint" style="margin:6px 0">Marque cada paciente conferido com o internograma impresso: <b>' + conf + '/' + S.pacientes.length + '</b></div>';
+    var sec = null;
+    S.pacientes.forEach(function (p) {
+      if (p.grupo !== sec) { sec = p.grupo; h += '<div class="lb" style="margin-top:8px;font-weight:650;color:var(--mut)">' + esc(sec) + '</div>'; }
+      h += '<label class="pend" style="padding:6px 0"><input type="checkbox" data-conf="' + esc(p.id) + '"' + (S.conf[p.id] ? ' checked' : '') + '><div class="tx"><b>' + esc(p.leito || '—') + '</b> · ' + esc(p.nome) + ' <span class="hint">(' + esc(p.section || '') + ')</span>' + ((p.verif || []).length ? '<div class="hint" style="color:var(--warn)">⚠ ' + p.verif.map(esc).join('<br>⚠ ') + '</div>' : '') + '</div></label>';
+    });
+    h += '</div>';
+  }
+  h += '<h2>Opções</h2><div class="card"><div class="lb" style="font-size:12.5px;color:var(--mut);font-weight:600">Contagem do DIH</div><div class="opts" style="margin-bottom:8px"><button class="op' + (!S.dihConv ? ' on' : '') + '" data-dihc="0">Dia da internação = DIH 0</button><button class="op' + (S.dihConv ? ' on' : '') + '" data-dihc="1">Dia da internação = DIH 1</button></div><label class="pend" style="border:0"><input type="checkbox" id="altas"' + (S.mostrarAltas ? ' checked' : '') + '><div class="tx">Mostrar pacientes de alta (precisam de visita e evolução antes de sair)</div></label></div>';
+  h += '<div class="row" style="margin-top:6px"><button class="btn sec" data-addpac>+ Paciente manual (PS, CC…)</button><button class="btn sec" data-demo>Ver exemplo</button></div>';
+  h += '<div class="row" style="margin-top:8px"><button class="btn ghost" data-novodia>Nova visita (limpa marcações, mantém evoluções)</button></div>';
+  h += '<div class="row" style="margin-top:8px"><button class="btn ghost" data-zerar style="color:var(--bad)">Apagar tudo deste aparelho</button></div>';
+  h += '<h2>Backup</h2><div class="card"><div class="hint" style="margin:0 0 8px">Tudo é salvo no aparelho a cada toque e enviado ao Drive quando houver internet. Uma cópia completa por dia vai para a pasta “backups” no Drive.</div><div class="row"><button class="btn sec" data-bkp>Baixar backup (arquivo)</button><label class="btn sec" style="text-align:center;cursor:pointer">Restaurar backup<input type="file" id="bkpIn" accept="application/json" hidden></label></div></div>';
+  h += '<div class="lock">🔒 Dados de pacientes só neste aparelho e no Google Drive da conta da equipe.</div>';
+  return h;
+}
+
+// ===================== ficha do paciente =====================
+var atual = null;
+function abrir(id) {
+  atual = S.pacientes.find(function (p) { return p.id === id; }); if (!atual) return;
+  S.v[id] = S.v[id] || {};
+  desenharFicha(); $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0;
+}
+function fechar() { $('#sheet').classList.remove('open'); atual = null; render(); }
+function nMarcados(v) { return CAMPOS.filter(function (c) { var x = v[c.k]; return x != null && !(Array.isArray(x) && !x.length) && !(typeof x === 'object' && !Array.isArray(x) && !Object.keys(x).length); }).length; }
+function desenharFicha() {
+  var p = atual, v = S.v[p.id], t = p.tipo || tipoDe(p), todos = !!v._all;
+  var h = '<div class="sh-top"><button class="back" data-close>‹</button><div class="t"><b>' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + '</b><span>' + [p.po && p.po.label, p.dih != null && 'DIH ' + p.dih, p.idade && p.idade + ' anos', p.ic && 'INTERCONSULTA', p.alta && 'ALTA', p.ps && 'PS', p.ass && p.ass.replace(/^ass\.?\s*/i, '')].filter(Boolean).map(esc).join(' · ') + '</span></div></div><div class="sh-body">';
+  h += '<div class="card" style="padding:10px 12px"><div style="font-size:13.5px"><b style="color:var(--acc)">Dx:</b> ' + esc(p.dx || '—') + '</div>' +
+    (p.agenda || []).map(function (a) { return '<div class="hint" style="color:var(--warn);font-weight:600">📅 ' + (a.dias === 0 ? 'HOJE' : a.dias === 1 ? 'AMANHÃ' : 'em ' + a.dias + ' d') + ': ' + esc(a.txt) + '</div>'; }).join('') +
+    ((p.verif || []).length ? '<div class="flagbox" style="margin-top:6px">⚠ ' + p.verif.map(esc).join('<br>⚠ ') + '</div>' : '') + '</div>';
+  h += '<details class="ig"><summary>Do internograma</summary><div class="in">' +
+    (p.mecanismo ? '<p><b>Mecanismo:</b> ' + esc(p.mecanismo) + '</p>' : '') + (p.ap ? '<p><b>AP:</b> ' + esc(p.ap) + '</p>' : '') +
+    (p.orienta && p.orienta.length ? '<p><b>Orienta:</b> ' + p.orienta.map(esc).join('<br>') + '</p>' : '') +
+    (p.condutas && p.condutas.length ? '<p><b>Condutas:</b> ' + p.condutas.map(esc).join('<br>') + '</p>' : '') +
+    (p.exames && p.exames.length ? '<p><b>Exames:</b> ' + p.exames.map(esc).join('<br>') + '</p>' : '') +
+    '<details><summary class="hint" style="cursor:pointer">texto bruto lido do PDF</summary><div class="out">' + esc((p.bruto || []).join('\n')) + '</div></details></div></details>';
+  CAMPOS.forEach(function (c) { if (todos || !c.when || c.when(t)) h += campo(c, v); });
+  h += '<div class="row" style="margin:0 0 8px"><button class="btn ghost sm" data-all style="width:100%">' + (todos ? 'Mostrar só os campos do tipo de paciente' : 'Mostrar todos os campos (FO, dreno, imobilização, neuro…)') + '</button></div>';
+  h += '<label class="q" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="exIgual"' + (v.exIgual ? ' checked' : '') + ' style="width:22px;height:22px;accent-color:var(--acc)"><div><b>Restante igual a ontem</b><div class="hint">O que você não marcou aqui entra como “mantido” na evolução, sem revisar campo por campo.</div></div></label>';
+  h += '<div class="q"><div class="lb">Observações</div><textarea id="obs" placeholder="Toque no microfone do teclado para ditar">' + esc(v.obs || '') + '</textarea><div class="hint">Aparecem no topo da tela de evolução para você encaixar no texto.</div></div>';
+  var L = S.pend[p.id] || [];
+  h += '<div class="q"><div class="lb">Pendências deste paciente</div>' + (L.length ? L.map(function (x, i) { return linhaPend(p.id, x, i); }).join('') : '<div class="hint">Nenhuma.</div>') +
+    '<div class="add"><input id="newp" placeholder="Ex.: pedir RX controle, ver cultura…"><button data-padd>+</button></div></div>';
+  h += blocoFotos(p, 'rx') + blocoFotos(p, 'pele');
+  h += blocoEvo(p);
+  h += '</div><div class="foot"><button class="btn evos" data-evo="' + esc(p.id) + '" style="flex:1">' + (evoluido(p) ? 'Refazer evolução' : 'Evoluir') + '</button><button class="btn" data-proximo style="flex:1.4">' + (v._ok ? 'Próximo leito →' : '✓ Visitado · próximo') + '</button></div>';
+  $('#sheet').innerHTML = h;
+}
+function blocoEvo(p) {
+  var hj = evoHoje(p.id), b = evoBase(p.id), n = nMarcados(S.v[p.id] || {});
+  var h = '<div class="q evoq"><div class="lb">Evolução<span>' + (n ? n + ' campo(s) da visita vão pré-preenchidos' : 'nada marcado na visita ainda') + '</span></div>';
+  if (hj) h += '<div><b style="color:var(--evo)">✓ Evolução de hoje salva</b></div><div class="out">' + esc(hj.txt) + '</div><div class="row"><button class="btn evo" data-copyevo="' + esc(p.id) + '">Copiar para o prontuário</button></div>';
+  else if (b) h += '<div>Base salva: <b>evolução de ' + brCurto(b.data) + '</b>. Ao evoluir, cole por cima a do sistema se houver mudança.</div>';
+  else h += '<div class="hint" style="color:var(--warn)">Sem evolução anterior salva. Ao tocar em Evoluir, cole a de ontem do sistema do hospital.</div>';
+  return h + '</div>';
+}
+function opsHtml(k, opts, cur, multi, alert, extraAttr) {
+  return '<div class="opts">' + opts.map(function (o) {
+    var on = multi ? (cur || []).indexOf(o) > -1 : cur === o;
+    var al = alert === 'all' || (alert || []).indexOf(o) > -1;
+    return '<button class="op' + (on ? ' on' + (al ? ' alert' : '') : '') + '" data-k="' + k + '" data-o="' + esc(o) + '"' + (extraAttr || '') + '>' + esc(o) + '</button>';
+  }).join('') + '</div>';
+}
+function campo(c, v) {
+  var val = v[c.k];
+  var temVal = val != null && !(Array.isArray(val) && !val.length) && !(typeof val === 'object' && !Array.isArray(val) && !Object.keys(val).length);
+  var h = '<div class="q' + (c.k === 'alerta' ? ' redq' : '') + '"><div class="lb">' + c.lb + (temVal ? '<span data-clear="' + c.k + '" style="cursor:pointer">limpar</span>' : '') + '</div>';
+  if (c.tipo === 'eva') {
+    h += '<div class="eva">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '<button class="op' + (val === n ? ' on' + (n >= 7 ? ' alert' : '') : '') + '" data-k="eva" data-n="' + n + '">' + n + '</button>'; }).join('') + '</div>';
+  } else if (c.tipo === 'dreno') {
+    var d = val || {};
+    h += '<div class="opts">' + ['Sem dreno', 'Dreno'].map(function (o) { var on = (o === 'Sem dreno' ? d.sem : d.tem); return '<button class="op' + (on ? ' on' : '') + '" data-dr="' + o + '">' + o + '</button>'; }).join('') + '</div>';
+    if (d.tem) {
+      h += '<div class="num"><input inputmode="numeric" data-drn="d" placeholder="D (ml)" value="' + esc(d.d || '') + '"><input inputmode="numeric" data-drn="e" placeholder="E (ml)" value="' + esc(d.e || '') + '"><input inputmode="numeric" data-drn="u" placeholder="Único (ml)" value="' + esc(d.u || '') + '"></div>';
+      h += '<div class="opts" style="margin-top:6px">' + ['Hemático', 'Sero-hemático', 'Seroso', 'Com vácuo', 'Sem vácuo'].map(function (o) { return '<button class="op' + ((d.asp || []).indexOf(o) > -1 ? ' on' : '') + '" data-dra="' + o + '">' + o + '</button>'; }).join('') + '</div>';
+    }
+  } else if (c.tipo === 'neuro') {
+    var N = val || {};
+    h += '<div class="opts"><button class="op' + (N.sem ? ' on' : '') + '" data-neuro="sem">Sem alterações (igual a ontem)</button><button class="op' + (N.alt ? ' on alert' : '') + '" data-neuro="alt">Alterado — abrir menu rápido</button></div>';
+    if (N.alt) {
+      var g0 = grausOntem(atual.id);
+      h += '<div class="hint">Preencha só o que mudou; o resto fica como ontem. “=2” = grau de ontem (da evolução salva).</div>';
+      [['Membros superiores (C5–T1)', 0, 5], ['Membros inferiores (L2–S1)', 5, 10]].forEach(function (blk) {
+        h += '<details class="ng" ' + (blk[1] === 5 ? 'open' : '') + '><summary>' + blk[0] + '</summary><div class="ngrid"><div class="ngh"><span></span><span>Força E</span><span>Força D</span><span>Sens E</span><span>Sens D</span></div>';
+        NIVEIS.slice(blk[1], blk[2]).forEach(function (nv) {
+          var lv = nv[0];
+          var sel = function (key, max, isS) {
+            var cur = isS ? ((N.s || {})[key] || '') : ((N.g || {})[key] || ''), ont = g0[(isS ? 's' : '') + key];
+            var o = '<option value="">' + (ont != null ? '=' + ont : '—') + '</option>';
+            for (var i = 0; i <= max; i++) o += '<option' + (String(i) === cur ? ' selected' : '') + '>' + i + '</option>';
+            return '<select data-ng="' + (isS ? 's' : 'g') + '" data-key="' + key + '" class="' + (cur !== '' ? (ont != null && +cur < +ont ? 'pior' : 'set') : '') + '">' + o + '</select>';
+          };
+          h += '<div class="ngr"><span><b>' + lv + '</b> ' + nv[1] + '</span>' + sel(lv + 'E', 5) + sel(lv + 'D', 5) + sel(lv + 'E', 2, true) + sel(lv + 'D', 2, true) + '</div>';
+        });
+        h += '</div></details>';
+      });
+    }
+  } else if (c.tipo === 'exf') {
+    var X = val || {};
+    h += '<div class="hint" style="margin:0 0 4px">Edema</div>' + opsHtml('exfE', EXF_EDEMA, X.edema, false, ['Em piora']);
+    h += '<div class="hint" style="margin:8px 0 4px">Achados</div>' + opsHtml('exfC', EXF_CHIPS, X.chips, true, EXF_ALERT);
+  } else if (c.tipo === 'lpp') {
+    var P = val || {};
+    h += '<div class="opts"><button class="op' + (P.sem ? ' on' : '') + '" data-lpp="sem">Sem LPP</button><button class="op' + ((P.itens || []).length ? ' on alert' : '') + '" data-lpp="add">' + ((P.itens || []).length ? '+ outra lesão' : 'Com LPP') + '</button></div>';
+    (P.itens || []).forEach(function (x, i) {
+      h += '<div class="lppi"><div class="lb" style="margin:0 0 4px"><span>Lesão ' + (i + 1) + '</span><span data-lpprm="' + i + '" style="cursor:pointer">remover</span></div>' +
+        '<select data-lppf="local" data-i="' + i + '"><option value="">Topografia…</option>' + LPP_LOCAL.map(function (o) { return '<option' + (x.local === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>' +
+        '<div class="hint" style="margin:6px 0 4px">Estágio</div><div class="opts">' + LPP_EST.map(function (o) { return '<button class="op' + (x.estagio === o ? ' on' + (/^[34]|Tiss|Não/.test(o) ? ' alert' : '') : '') + '" data-lppe="' + esc(o) + '" data-i="' + i + '">' + o + '</button>'; }).join('') + '</div>' +
+        '<div class="num"><input data-lppf="dim" data-i="' + i + '" placeholder="Dimensão (cm), ex.: 3x2" value="' + esc(x.dim || '') + '"></div>' +
+        '<div class="hint" style="margin:6px 0 4px">Aspecto</div><div class="opts">' + LPP_ASP.map(function (o) { return '<button class="op' + ((x.aspecto || []).indexOf(o) > -1 ? ' on' + (/Necrose|Secreção|Odor/.test(o) ? ' alert' : '') : '') + '" data-lppa="' + esc(o) + '" data-i="' + i + '">' + o + '</button>'; }).join('') + '</div>' +
+        '<div class="opts" style="margin-top:6px"><button class="op' + (x.placa ? ' on' : '') + '" data-lppt="placa" data-i="' + i + '">Placa de hidrocoloide</button><button class="op' + (x.mud ? ' on' : '') + '" data-lppt="mud" data-i="' + i + '">Mudança de decúbito 2/2h</button></div></div>';
+    });
+  } else {
+    h += opsHtml(c.k, c.o, val, c.multi, c.alert);
+    if (c.extra && val === c.extra.quando) h += '<div class="num"><input ' + (c.extra.tipo === 'num' ? 'inputmode="decimal"' : '') + ' data-ex="' + c.k + '" placeholder="' + c.extra.ph + '" value="' + esc(v[c.k + '_x'] || '') + '"></div>';
+  }
+  return h + '</div>';
+}
+
+// ===================== tela de evolução (atualizador embutido) =====================
+var evoAtual = null, evoWaitSave = false;
+function abrirEvo(id) {
+  var p = S.pacientes.find(function (x) { return x.id === id; }); if (!p) return;
+  evoAtual = p;
+  $('#evoTit').textContent = (p.leito ? p.leito + ' · ' : '') + p.nome;
+  var b = evoBase(id);
+  $('#evoSub').textContent = (visitado(p) ? '' : '⚠ não visitado · ') + 'cole a evolução de ontem → analisar → revisar → salvar';
+  var fr = $('#evoFrame');
+  fr.onload = function () {
+    var nd = b ? Math.max(1, diasEntre(isoDate(b.data), hojeDate())) : 1;
+    var abertas = (S.pend[id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; });
+    fr.contentWindow.postMessage({ type: 'evo-load', text: b ? b.txt : '', date: br(S.hoje), ndays: nd, baseDate: b ? brCurto(b.data) : '', visited: !!visitado(p),
+      marks: S.v[id] || null, obs: (S.v[id] || {}).obs || '', pac: (p.leito ? p.leito + ' · ' : '') + p.nome,
+      dihConv: S.dihConv ? 1 : 0, ig: { dx: p.dx, ap: p.ap, dihData: p.dihData, dih: p.dih, dihStated: p.dihStated, po: p.po && !p.po.futuro ? p.po : null, poStated: p.po ? p.po.stated : null, agenda: p.agenda || [], pend: abertas, tipo: p.tipo || tipoDe(p) } }, '*');
+  };
+  fr.src = 'evo.html?t=' + Date.now();
+  $('#evoSheet').classList.add('open'); $('#evoSheet').setAttribute('aria-hidden', 'false');
+}
+function fecharEvo() {
+  $('#evoSheet').classList.remove('open'); $('#evoSheet').setAttribute('aria-hidden', 'true');
+  evoAtual = null; if (atual) desenharFicha(); render();
+}
+function salvarEvo(txt) { if (!evoAtual || !txt) return; evoGuardar(evoAtual.id, S.hoje, txt); toast('Evolução salva — amanhã ela já é a base'); }
+$('#evoBack').onclick = fecharEvo;
+$('#evoSave').onclick = function () { evoWaitSave = true; $('#evoFrame').contentWindow.postMessage({ type: 'evo-get' }, '*'); };
+window.addEventListener('message', function (ev) {
+  var d = ev.data || {}; if (d.src !== 'evo' || !evoAtual) return;
+  if (d.type === 'evo-copied') salvarEvo(d.text);
+  if (d.type === 'evo-base') { var b = evoBase(evoAtual.id); if (d.text && (!b || b.txt.trim() !== d.text.trim())) evoGuardar(evoAtual.id, isoAdd(S.hoje, -1), d.text); }
+  if (d.type === 'evo-text' && evoWaitSave) {
+    evoWaitSave = false;
+    if (!d.ready) { toast('Toque em "Analisar texto" antes de salvar'); return; }
+    var fazer = function () { salvarEvo(d.text); fecharEvo(); };
+    var msg = [];
+    if (d.red) msg.push(d.red + ' sinal(is) de alerta 🚩 — já comunicou/registrou conduta?');
+    if (d.pend) msg.push(d.pend + ' campo(s) ainda em amarelo (não revisados).');
+    if (msg.length) confirmar(msg.join(' ') + ' Salvar mesmo assim?', fazer); else fazer();
+  }
+});
+
+// ===================== eventos =====================
+document.addEventListener('click', function (ev) {
+  var t = ev.target.closest('[data-fdel],[data-foto],[data-viewer],button,[data-open],[data-clear],[data-lpprm],label,.flagbox[data-tab]'); if (!t) return;
+  var ds = t.dataset;
+  if (ds.dihc != null) { S.dihConv = +ds.dihc; recalc(); save(); render(); toast('DIH recalculado'); return; }
+  if ('conectar' in ds) { if (SYNC.temToken()) SYNC.agora().then(render); else SYNC.conectar(); return; }
+  if ('sync' in ds) { if (SYNC.temToken()) { SYNC.agora(); toast('Sincronizando…'); } else { S.tab = 'config'; render(); } return; }
+  if ('doc' in ds) { carregarDoc(); return; }
+  if ('bkp' in ds) { baixarBackup(); return; }
+  if ('viewer' in ds) { $('#viewer').classList.remove('on'); return; }
+  if (ds.foto) { abrirFoto(ds.foto); return; }
+  if (ds.fdel) { confirmar('Apagar esta foto? (também sai do Drive na próxima sincronização)', function () { var F = S.fotos[atual.id], f = F.find(function (x) { return x.lid === ds.fdel; }); if (f) { f.del = true; f.at = Date.now(); } save(); redesenhar(); }); return; }
+  if (ds.tab) { S.tab = ds.tab; save(); render(); window.scrollTo(0, 0); return; }
+  if (ds.f) { S.filtro = ds.f; save(); render(); return; }
+  if (ds.evo) { abrirEvo(ds.evo); return; }
+  if (ds.copyevo) { var e = evoHoje(ds.copyevo); if (e) copiar(e.txt); return; }
+  if (ds.open) { abrir(ds.open); return; }
+  if ('close' in ds) { fechar(); return; }
+  if ('pick' in ds) { $('#file').click(); return; }
+  if ('demo' in ds) { demo(); return; }
+  if ('addpac' in ds) { modalPac(); return; }
+  if ('novodia' in ds) { confirmar('Limpar as marcações da visita? Pacientes, pendências e evoluções salvas continuam.', function () { S.v = {}; save(); render(); toast('Pronto para nova visita'); }); return; }
+  if ('zerar' in ds) { confirmar('Apagar os dados DESTE aparelho? A cópia no Google Drive continua e volta na próxima sincronização.', function () { try { localStorage.removeItem(KEY); } catch (e) {} S = ligarV(novoEstado('config')); try { indexedDB.deleteDatabase('sot-fotos'); } catch (e) {} render(); toast('Apagado deste aparelho (a cópia no Drive continua)'); }); return; }
+  if ('copyall' in ds) { copiar(ativos().filter(evoluido).map(function (p) { return '>> ' + (p.leito || p.lugar || '') + ' - ' + U(p.nome) + '\n' + evoHoje(p.id).txt; }).join('\n\n')); return; }
+  if ('cancel' in ds) { $('#modal').classList.remove('on'); return; }
+  if (ds.pdel != null && t.classList.contains('x')) { var rm = S.pend[ds.pdel].splice(+ds.pi, 1)[0]; if (rm) (S.pendDel[ds.pdel] = S.pendDel[ds.pdel] || []).push(rm.t); save(); atual ? redesenhar() : render(); return; }
+  if ('padd' in ds) { var inp = $('#newp'); if (inp.value.trim()) { (S.pend[atual.id] = S.pend[atual.id] || []).push({ t: inp.value.trim(), ok: false, at: Date.now(), by: S.eu || '' }); save(); redesenhar(); } return; }
+  if ('proximo' in ds) { proximo(); return; }
+  if (!atual) return;
+  var v = S.v[atual.id];
+  if ('all' in ds) { v._all = !v._all; save(); redesenhar(); return; }
+  if (ds.clear) { delete v[ds.clear]; delete v[ds.clear + '_x']; save(); redesenhar(); return; }
+  if (ds.k === 'eva') { v.eva = v.eva === +ds.n ? null : +ds.n; if (v.eva == null) delete v.eva; save(); redesenhar(); return; }
+  if (ds.k === 'exfE') { v.exf = v.exf || {}; v.exf.edema = v.exf.edema === ds.o ? undefined : ds.o; save(); redesenhar(); return; }
+  if (ds.k === 'exfC') { v.exf = v.exf || {}; var cc = v.exf.chips || [], ci = cc.indexOf(ds.o); if (ci > -1) cc.splice(ci, 1); else { cc.push(ds.o); if (ds.o === 'Panturrilha empastada') cc = cc.filter(function (x) { return x !== 'Panturrilhas livres'; }); if (ds.o === 'Panturrilhas livres') cc = cc.filter(function (x) { return x !== 'Panturrilha empastada'; }); } v.exf.chips = cc; save(); redesenhar(); return; }
+  if (ds.neuro) { var N = v.neuro || {}; if (ds.neuro === 'sem') v.neuro = N.sem ? undefined : { sem: true }; else v.neuro = N.alt ? undefined : { alt: true, g: {}, s: {} }; save(); redesenhar(); return; }
+  if (ds.lpp) { var P = v.lpp || {}; if (ds.lpp === 'sem') v.lpp = P.sem ? undefined : { sem: true }; else { P.sem = false; P.itens = (P.itens || []).concat([{ aspecto: [] }]); v.lpp = P; } save(); redesenhar(); return; }
+  if (ds.lpprm != null) { v.lpp.itens.splice(+ds.lpprm, 1); save(); redesenhar(); return; }
+  if (ds.lppe) { var it = v.lpp.itens[+ds.i]; it.estagio = it.estagio === ds.lppe ? '' : ds.lppe; save(); redesenhar(); return; }
+  if (ds.lppa) { var it2 = v.lpp.itens[+ds.i], aa = it2.aspecto = it2.aspecto || [], ai = aa.indexOf(ds.lppa); if (ai > -1) aa.splice(ai, 1); else aa.push(ds.lppa); save(); redesenhar(); return; }
+  if (ds.lppt) { var it3 = v.lpp.itens[+ds.i]; it3[ds.lppt] = !it3[ds.lppt]; save(); redesenhar(); return; }
+  if (ds.k) {
+    var c = CAMPOS.find(function (x) { return x.k === ds.k; });
+    if (c.multi) {
+      var a = v[c.k] || [], i = a.indexOf(ds.o);
+      if (i > -1) a.splice(i, 1); else {
+        if (ds.o === 'Sem queixas') a = []; else { var j = a.indexOf('Sem queixas'); if (j > -1) a.splice(j, 1); }
+        if (ds.o === 'Limpa e seca') a = a.filter(function (x) { return /oclusivo/i.test(x); });
+        if (/^Secreção|Hiperemia|Deiscência/.test(ds.o)) a = a.filter(function (x) { return x !== 'Limpa e seca'; });
+        a.push(ds.o);
+      }
+      v[c.k] = a;
+    } else v[c.k] = v[c.k] === ds.o ? undefined : ds.o;
+    save(); redesenhar(); return;
+  }
+  if (ds.dr) { var d = v.dreno || {}; if (ds.dr === 'Sem dreno') { d = d.sem ? {} : { sem: true }; } else { d.tem = !d.tem; d.sem = false; } v.dreno = d; save(); redesenhar(); return; }
+  if (ds.dra) { var d2 = v.dreno; d2.asp = d2.asp || []; var k = d2.asp.indexOf(ds.dra); if (k > -1) d2.asp.splice(k, 1); else { if (/vácuo/.test(ds.dra)) d2.asp = d2.asp.filter(function (x) { return !/vácuo/.test(x); }); else d2.asp = d2.asp.filter(function (x) { return /vácuo/.test(x); }); d2.asp.push(ds.dra); } save(); redesenhar(); return; }
+});
+document.addEventListener('change', function (ev) {
+  var t = ev.target;
+  if (t.id === 'eu') { S.eu = t.value.trim(); saveLocal(); return; }
+  if (t.id === 'bkpIn' && t.files[0]) { restaurarBackup(t.files[0]); t.value = ''; return; }
+  if (t.dataset.cam && t.files && t.files.length) { var tipo = t.dataset.cam, leg = ($('#leg_' + tipo) || {}).value || '', fs = Array.prototype.slice.call(t.files); t.value = '';
+    toast('Salvando ' + fs.length + ' foto(s)…');
+    fs.reduce(function (pr, f) { return pr.then(function () { return FOTO.adicionar(atual.id, tipo, f, leg); }); }, Promise.resolve()).then(function () { redesenhar(); toast('Foto salva no aparelho' + (navigator.onLine ? ' — enviando ao Drive' : ' — vai para o Drive quando houver internet')); }).catch(function (e) { toast('Erro na foto: ' + e); });
+    return; }
+  if (t.id === 'hoje') { S.hoje = t.value || hojeISO(); recalc(); save(); render(); return; }
+  if (t.id === 'altas') { S.mostrarAltas = t.checked; save(); render(); return; }
+  if (t.dataset.conf) { S.conf[t.dataset.conf] = t.checked; save(); render(); return; }
+  if (t.dataset.pk) { var it0 = S.pend[t.dataset.pk][+t.dataset.pi]; it0.ok = t.checked; it0.at = Date.now(); it0.auto = false; save(); atual ? redesenhar() : render(); return; }
+  if (!atual) return; var v = S.v[atual.id];
+  if (t.id === 'exIgual') { v.exIgual = t.checked; save(); return; }
+  if (t.dataset.ng) { var N = v.neuro; var bag = t.dataset.ng === 's' ? (N.s = N.s || {}) : (N.g = N.g || {}); if (t.value === '') delete bag[t.dataset.key]; else bag[t.dataset.key] = t.value; save(); redesenhar(); return; }
+  if (t.dataset.lppf === 'local') { v.lpp.itens[+t.dataset.i].local = t.value; save(); return; }
+});
+document.addEventListener('input', function (ev) {
+  var t = ev.target; if (!atual) return; var v = S.v[atual.id];
+  if (t.id === 'obs') v.obs = t.value;
+  else if (t.dataset.drn) v.dreno[t.dataset.drn] = t.value.replace(/[^\d,.]/g, '');
+  else if (t.dataset.ex) v[t.dataset.ex + '_x'] = t.value;
+  else if (t.dataset.lppf === 'dim') v.lpp.itens[+t.dataset.i].dim = t.value;
+  else return;
+  save();
+});
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && ev.target.id === 'newp') { ev.preventDefault(); document.querySelector('[data-padd]').click(); } });
+
+function redesenhar() { var y = $('#sheet').scrollTop; desenharFicha(); $('#sheet').scrollTop = y; }
+function proximo() {
+  S.v[atual.id]._ok = true; save();
+  var lista = ativos().filter(function (p) { return S.filtro === 'Todos' || p.grupo === S.filtro; });
+  var i = lista.findIndex(function (p) { return p.id === atual.id; });
+  var prox = lista.slice(i + 1).concat(lista.slice(0, i)).find(function (p) { return !visitado(p); });
+  if (prox) { abrir(prox.id); toast((prox.leito || prox.lugar || '') + ' · ' + prox.nome.split(' ')[0]); }
+  else {
+    fechar();
+    var faltam = ativos().filter(function (p) { return !visitado(p); });
+    if (faltam.length) { S.filtro = 'Todos'; render(); toast('Filtro concluído — ainda faltam ' + faltam.length + ' em outros setores'); }
+    else { S.tab = 'saida'; render(); toast('Todos visitados ✓ — agora é evoluir'); }
+  }
+}
+function copiar(txt) {
+  var ok = function () { toast('Copiado'); };
+  try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (e) { fallback(); }
+  function fallback() { var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = 0; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('Selecione e copie manualmente'); } ta.remove(); }
+}
+function confirmar(msg, fn) {
+  $('#mbox').innerHTML = '<p style="margin:2px 2px 14px">' + esc(msg) + '</p><div class="row"><button class="btn sec" data-cancel>Cancelar</button><button class="btn" id="mok">Confirmar</button></div>';
+  $('#modal').classList.add('on'); $('#mok').onclick = function () { $('#modal').classList.remove('on'); fn(); };
+}
+function modalPac() {
+  $('#mbox').innerHTML = '<b style="display:block;margin-bottom:10px">Adicionar paciente</b><input id="mL" placeholder="Leito ou local (ex.: 1249, PS, CC)"><input id="mN" placeholder="Nome"><input id="mD" placeholder="Diagnóstico / procedimento"><input id="mP" type="date" title="Data da cirurgia (opcional)"><div class="hint" style="margin:-4px 2px 10px">Data da cirurgia (opcional) — calcula o PO (POI no dia, 1º PO no dia seguinte).</div><div class="row"><button class="btn sec" data-cancel>Cancelar</button><button class="btn" id="mok">Adicionar</button></div>';
+  $('#modal').classList.add('on');
+  $('#mok').onclick = function () {
+    var n = $('#mN').value.trim(); if (!n) return;
+    var l = $('#mL').value.trim();
+    var p = { id: 'm' + Date.now(), leito: /^\d+/.test(l) ? l : '', local: l, lugar: l || 'Manual', nome: n, dx: $('#mD').value.trim(), grupo: /ps|pronto/i.test(l) ? 'PS / sala amarela' : 'Manual', ps: /ps|pronto/i.test(l), orienta: [], condutas: [], exames: [], agenda: [], manual: true, verif: [], ap: '' };
+    if ($('#mP').value) { var q = $('#mP').value.split('-'); p.cirurgia = $('#mP').value; p.po = calcPO('0 Po (' + q[2] + '/' + q[1] + '/' + q[0] + ')', hojeDate()); if (p.po) p.po.stated = null; }
+    p.tipo = tipoDe(p);
+    S.pacientes.push(p); S.pend[p.id] = []; save(); $('#modal').classList.remove('on'); S.tab = 'leitos'; render(); toast('Adicionado');
+  };
+}
+function recalc() {
+  var hj = hojeDate();
+  S.pacientes.forEach(function (p) {
+    if (p.manual) { if (p.cirurgia) { var q = p.cirurgia.split('-'); p.po = calcPO('0 Po (' + q[2] + '/' + q[1] + '/' + q[0] + ')', hj); if (p.po) p.po.stated = null; } return; }
+    p.po = calcPO(p.dx, hj);
+    var dd = p.dihData ? parseData(p.dihData, hj) : null; p.dih = dd ? diasEntre(dd, hj) + (S.dihConv ? 1 : 0) : null;
+    p.agenda = extrairAgenda(p, hj); p.tipo = tipoDe(p); p.verif = verificar(p, hj);
+  });
+}
+
+
+// ===================== fotos (Radiografias / Pele) =====================
+var LEG = { rx: ['AP', 'Perfil', 'Oblíqua', 'Axial', 'Panorâmica', 'Escanometria', 'Tela do PACS'], pele: ['FO', 'LPP', 'Flictenas', 'Fixador', 'Pinos/fios', 'Edema', 'Lesão'] };
+function blocoFotos(p, tipo) {
+  var F = ((S.fotos || {})[p.id] || []).filter(function (f) { return f.tipo === tipo && !f.del; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  var h = '<div class="q"><div class="lb">' + (tipo === 'rx' ? '🩻 Radiografias' : '📷 Pele / ferida') + '<span>' + F.length + ' foto(s)</span></div>';
+  h += '<div class="camrow"><select id="leg_' + tipo + '" style="font:inherit;font-size:13px;padding:7px;border:1px solid var(--line);border-radius:9px;background:#fafbfa"><option value="">Legenda…</option>' + LEG[tipo].map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>' +
+    '<label class="btn sm">📸 Câmera<input type="file" accept="image/*" capture="environment" data-cam="' + tipo + '" hidden></label>' +
+    '<label class="btn sec sm">🖼 Arquivo<input type="file" accept="image/*" multiple data-cam="' + tipo + '" hidden></label></div>';
+  if (F.length) {
+    h += '<div class="fotos">' + F.map(function (f) {
+      return '<figure><img data-foto="' + f.lid + '" data-fimg="' + f.lid + '" alt=""><figcaption>' + esc(brCurto(f.data)) + ' ' + esc(f.legenda || '') + (f.by ? ' · ' + esc(f.by) : '') + '</figcaption><span class="st">' + (f.driveId ? '☁︎' : '⏳') + '</span>' +
+        '<span class="st" style="right:auto;left:3px;cursor:pointer" data-fdel="' + f.lid + '">✕</span></figure>';
+    }).join('') + '</div>';
+    setTimeout(function () { F.forEach(function (f) { FOTO.url(f).then(function (u) { var im = document.querySelector('[data-fimg="' + f.lid + '"]'); if (im && u) im.src = u; else if (im) im.alt = 'na nuvem'; }); }); }, 0);
+  }
+  h += '<div class="hint">A foto fica guardada no app (não vai para a galeria do celular) e sobe para o Drive da equipe.</div>';
+  return h + '</div>';
+}
+function abrirFoto(lid) {
+  var f = null; Object.keys(S.fotos || {}).some(function (k) { f = S.fotos[k].find(function (x) { return x.lid === lid; }); return f; });
+  if (!f) return;
+  FOTO.url(f).then(function (u) { if (!u) { toast('Foto ainda não disponível neste aparelho'); return; } $('#viewerImg').src = u; $('#viewerCap').textContent = (f.tipo === 'rx' ? 'Radiografia' : 'Pele') + ' · ' + br(f.data) + ' ' + (f.hora ? f.hora.slice(0, 2) + ':' + f.hora.slice(2) : '') + ' · ' + (f.legenda || '') + (f.by ? ' · ' + f.by : '') + ' — toque para fechar'; $('#viewer').classList.add('on'); });
+}
+// ===================== internograma direto do Google Doc =====================
+function carregarDoc() {
+  if (!navigator.onLine) { toast('Sem internet — usando o último internograma salvo no aparelho'); return; }
+  if (!SYNC.temToken()) { toast('Conecte ao Google primeiro'); S.tab = 'config'; render(); SYNC.conectar(); return; }
+  toast('Lendo o internograma do Google Doc…');
+  SYNC.exportarDoc().then(function (html) {
+    var r = parseTabelaHTML(html);
+    if (!r.pacientes.length) { toast('Não reconheci pacientes no documento'); return; }
+    aplicarImport(r, 'Google Doc · ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
+    S.igCache = { em: Date.now() }; saveLocal();
+  }).catch(function (e) { toast('Não consegui ler o Doc: ' + ((e && (e.msg || e.message)) || e).toString().slice(0, 80)); });
+}
+// ===================== backup em arquivo =====================
+function baixarBackup() {
+  var b = new Blob([JSON.stringify(SYNC.backupObj(), null, 1)], { type: 'application/json' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'sot-backup-' + S.hoje + '.json'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('Backup baixado (sem as fotos — elas ficam no Drive)');
+}
+function restaurarBackup(file) {
+  file.text().then(function (t) {
+    var o = JSON.parse(t); if (!o || !o.pacientes) throw 'arquivo inválido';
+    confirmar('Restaurar o backup de ' + (o.geradoEm || '').slice(0, 16).replace('T', ' ') + '? Ele é MESCLADO com o que já existe (nada é apagado).', function () {
+      if (!S.pacientes.length) { S.pacientes = o.pacientes; S.fonte = o.fonte; S.dataIG = o.dataIG; S.cab = o.cab; }
+      var pids = {}; ['vis'].forEach(function () { Object.keys(o.vis || {}).forEach(function (d) { Object.keys(o.vis[d]).forEach(function (k) { pids[k] = 1; }); }); });
+      Object.keys(o.evo || {}).concat(Object.keys(o.pend || {}), Object.keys(o.fotos || {})).forEach(function (k) { pids[k] = 1; });
+      Object.keys(pids).forEach(function (pid) {
+        var vis = {}; Object.keys(o.vis || {}).forEach(function (d) { if (o.vis[d][pid]) vis[d] = o.vis[d][pid]; });
+        SYNC._mesclar(pid, { visitas: vis, pend: (o.pend || {})[pid] || [], pendDel: (o.pendDel || {})[pid] || [], evo: (o.evo || {})[pid] || [], fotos: (o.fotos || {})[pid] || [] });
+      });
+      save(); render(); toast('Backup restaurado e mesclado');
+    });
+  }).catch(function (e) { toast('Não consegui ler o backup: ' + e); });
+}
+
+// ===================== exemplo fictício =====================
+function demo() {
+  var hj = hojeDate();
+  function dt(n) { var d = new Date(hj); d.setDate(d.getDate() + n); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+  function dm(n) { return dt(n).slice(0, 5); }
+  var P = [
+    { local: 'Ala C', section: 'Ala C', leito: '1201', nome: 'Paciente Exemplo Um', idade: '67', registro: '100001', regs: ['100001'], dihData: dt(-5), dx: '3 Po Osteossíntese De Fêmur Proximal Esquerdo (' + dt(-3) + ') 5d Fx Transtrocanteriana Esquerda', ap: 'Ap: Has, Dm Muc: Losartana, Metformina Alergia: Nega', ass: 'Ass Dr Exemplo', orientaLinhas: ['Dr Exemplo Orienta', 'Alta Amanhã Se Rx Ok'], condutasLinhas: ['Cobrar Rx Poi', 'Sem Carga Até 2ª Ordem'], exames: [dm(-1) + ': Hb 10.1 / Leuco 8200 / Cr 0.9'] },
+    { local: 'Ala C', section: 'Ala C', leito: '1202', nome: 'Paciente Exemplo Dois', idade: '34', registro: '100002', regs: ['100002'], dihData: dt(-2), dx: '2d Fx Pilão Tibial Direito Moto X Carro (' + dt(-2) + ')', ap: 'Ap: Nega', ass: 'Ass Dr Exemplo', orientaLinhas: ['Dr Exemplo Orienta', 'Osteossíntese De Pilão Tibial Em ' + dm(1)], condutasLinhas: ['Pré-Ops - Checar', 'Aviso - Ok', 'Pegar Ecg'], exames: [] },
+    { local: 'Ala C', section: 'Ala C', leito: '1203', nome: 'Paciente Exemplo Três', idade: '58', registro: '100003', regs: ['100003'], dihData: dt(-9), dx: '7 Po Descompressão + Artrodese L4-L5 (' + dt(-7) + ')', ap: 'Ap: Dlp Muc: Sinvastatina Alergia: Dipirona', ass: 'Ass Dr Exemplo', orientaLinhas: ['Dr Exemplo Orienta', 'Retirar Dreno Se < 50 Ml', 'Discutir Alta Com Assistente'], condutasLinhas: ['Colete Ao Sair Do Leito'], exames: [] },
+    { local: 'Uti B', section: 'Interconsulta', leito: '1310', nome: 'Paciente Exemplo Quatro', idade: '25', registro: '100004', regs: ['100004'], dihData: dt(-12), dx: '1 Po Limpeza Cirúrgica Perna Direita (' + dt(-1) + ') 12 Po Fixador Externo Tíbia Direita', ap: 'Ap: Nega', ass: 'Ass Dr Exemplo', orientaLinhas: ['Dr Exemplo Orienta', 'Nova Limpeza Em ' + dm(0)], condutasLinhas: ['Cobrar Culturas E Discutir Com Ccih'], exames: [] },
+    { local: 'Hm', section: 'Hm', leito: '', nome: 'Paciente Exemplo Cinco', idade: '7', registro: '100005', regs: ['100005'], dihData: dt(-1), mecanismo: 'Está no PS', dx: '1d Fx Falange Proximal Pé Direito', ap: 'Ap: Nega', ass: '', orientaLinhas: [], condutasLinhas: [], exames: [] }
+  ];
+  P.forEach(function (p) { p.orienta = [p.orientaLinhas.join(' ')]; p.condutas = p.condutasLinhas.slice(); p.id = (p.leito || 'hm') + '|demo'; p.avisos = []; p.mecanismo = p.mecanismo || ''; });
+  var ontem = isoAdd(S.hoje, -1);
+  S.evo['1201|demo'] = [{ data: ontem, txt:
+'2° PO OSTEOSSINTESE DE FEMUR PROXIMAL ESQUERDO ' + dt(-3) + '\n5D FRATURA TRANSTROCANTERIANA ESQUERDA ' + dt(-5) + '\nQUEDA DA PROPRIA ALTURA\n---\nHMA\nPACIENTE ENCAMINHADA DE OUTRO SERVIÇO DEVIDO QPA DIA ' + dt(-5) + ' EVOLUINDO COM DOR, EDEMA E INCAPACIDADE DE DEAMBULAR.\n---\nCMB HAS, DM\nMUC LOSARTANA, METFORMINA\nALERGIAS NEGA\n---\nAVALIO PACIENTE EM LEITO DE ENFERMARIA, EM DECÚBITO DORSAL HORIZONTAL (DDH), ACOMPANHADA, LÚCIDA E ORIENTADA EM TEMPO E ESPAÇO, SEM QUEIXAS AGUDAS NO MOMENTO. REFERE BOA ACEITAÇÃO DA DIETA VIA ORAL PRESCRITA E ELIMINAÇÕES PARCIALMENTE PRESENTES (DIURESE ESPONTÂNEA E EVACUAÇÕES AUSENTES). AFEBRIL. HEMODINAMICAMENTE ESTÁVEL, EUPNEICA EM AR AMBIENTE\n\nEXAME FISICO\n\nMEMBRO INFERIOR ESQUERDO: CURATIVO OCLUSIVO LIMPO E SECO, AO RETIRAR, BOM ESTADO, PONTOS ÍNTEGROS SEM DEISCÊNCIAS, SEM SAÍDA DE SECREÇÃO ATIVA OU PASSIVA, SEM SINAIS FLOGÍSTICOS, EDEMA LEVE, PANTURRILHAS LIVRES, NEUROVASCULAR PRESERVADO E TEC < 3 SEGUNDOS\n---\nRADIOGRAFIA CONTROLE\n' + dt(-2) + ' PADRÃO SATISFATÓRIO\n---\nCONDUTA\nENOXAPARINA PROFILÁTICA\nANALGESIA\nFISIOTERAPIA MOTORA\nALTA APÓS RX DE CONTROLE' }];
+  S.evo['1203|demo'] = [{ data: ontem, txt:
+'6° PO DESCOMPRESSÃO + ARTRODESE L4-L5 ' + dt(-7) + '\n---\nHMA\nPACIENTE COM LOMBOCIATALGIA À ESQUERDA HÁ 2 ANOS, REFRATÁRIA A TRATAMENTO CONSERVADOR.\n---\nCMB DLP\nMUC SINVASTATINA\nALERGIAS DIPIRONA\n---\nAVALIO PACIENTE EM LEITO DE ENFERMARIA, EM DECÚBITO DORSAL HORIZONTAL (DDH), DESACOMPANHADO, LÚCIDO E ORIENTADO EM TEMPO E ESPAÇO, QUEIXANDO-SE DE DOR LEVE, CONTROLADA COM ANALGESIA. REFERE BOA ACEITAÇÃO DA DIETA, DIURESE ESPONTÂNEA E EVACUAÇÕES PRESENTES. AFEBRIL.\n\nEXAME FISICO\n\nREGIÃO LOMBAR: CURATIVO OCLUSIVO COM SUJIDADE SEROSA, FO LIMPA E SECA, SEM SINAIS FLOGÍSTICOS, DRENO DE PORTOVAC COM DÉBITO SERO-HEMÁTICO DE 80 ML NAS ÚLTIMAS 24H.\n- FLEXORES DO QUADRIL ESQUERDO FORÇA GRAU 5 / DIREITO FORÇA GRAU 5\n- DORSIFLEXORES DO TORNOZELO ESQUERDO FORÇA GRAU 4 / DIREITO FORÇA GRAU 5\nPANTURRILHAS LIVRES\n---\nCONDUTA\nCOLETE AO SAIR DO LEITO\nRETIRAR DRENO SE DÉBITO < 50 ML\nANALGESIA' }];
+  S.v['1201|demo'] = { queixa: ['Dor controlada'], eva: 3, acomp: 'Acompanhado', dieta: 'Boa aceitação', diurese: 'Espontânea', evac: 'Presente', febre: 'Afebril', decub: 'Sedestação', fo: ['Limpa e seca', 'Curativo oclusivo'], nv: 'Preservado', obs: 'Fez sedestação com fisio, sem intercorrências', exIgual: true, _ok: true };
+  S.v['1203|demo'] = { queixa: ['Sem queixas'], acomp: 'Sem acompanhante', dieta: 'Boa aceitação', diurese: 'Espontânea', evac: 'Presente', febre: 'Afebril', decub: 'Deambulando c/ auxílio', fo: ['Secreção serosa', 'Curativo oclusivo'], dreno: { tem: true, u: '30', asp: ['Seroso'] }, neuro: { alt: true, g: { L4E: '5' }, s: {} }, _ok: true };
+  aplicarImport({ data: dt(-1), cab: null, pacientes: P }, 'Exemplo (pacientes fictícios)');
+}
+
+// ===================== init =====================
+if (S.pacientes.length) recalc();
+render();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});
+if (!S.pacientes.length && navigator.onLine) setTimeout(function () { if (SYNC.temToken()) carregarDoc(); }, 1500);
+</script>
+</body>
+</html>
