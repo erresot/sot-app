@@ -171,11 +171,20 @@ details.ig2{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}deta
 details.hist .out{max-height:none}
 @media (min-width:900px){main{max-width:1180px}#main{display:block}.lista2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lista2 .card{margin:0}.sh-body{max-width:900px}.tabs{max-width:1180px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line)}}
 @media (min-width:600px) and (max-width:899px){main{max-width:860px}}
+.hrow{display:flex;align-items:center;gap:8px}.hrow h1{flex:1;min-width:0}
+.hbtns{display:flex;gap:6px;flex:none}
+.hb{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:10px;min-width:38px;height:38px;font-size:17px;cursor:pointer;position:relative}
+.top .syncmini.hb{background:rgba(255,255,255,.16);color:#fff}
+.hb2{border:0;background:var(--acc2);color:var(--acc);border-radius:10px;min-width:38px;height:38px;font-size:16px;flex:none;cursor:pointer}
+#evoSheet .hb2{background:var(--evo2)}
+html.travado,html.travado body{overflow:hidden;height:100%}
+body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
+.sheet{overscroll-behavior:contain}
 </style>
 </head>
 <body>
 <div class="top">
-  <h1>SOT · Visita + Evolução</h1>
+  <div class="hrow"><h1>SOT · Visita + Evolução</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button></div></div>
   <div class="sub"><input type="date" id="hoje"><span id="resumo">—</span></div>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -193,7 +202,7 @@ details.hist .out{max-height:none}
   <div class="sh-top">
     <button class="back" id="evoBack" title="Voltar sem salvar">‹</button>
     <div class="t"><b id="evoTit">Evolução</b><span id="evoSub">revise os campos e salve</span></div>
-    <button class="syncmini" data-sync title="Sincronizar agora" id="evoSync">⟳</button><button class="btn evo sm" id="evoSave">Salvar ✓</button>
+    <button class="hb2" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini" data-sync title="Sincronizar agora" id="evoSync">☁︎</button><button class="btn evo sm" id="evoSave">Salvar ✓</button>
   </div>
   <iframe id="evoFrame" title="Atualizador de evolução" allow="clipboard-write"></iframe>
 </div>
@@ -624,6 +633,7 @@ function resumoVisita(v) {
 function aplicarTema() {
   var t = S.tema || 'auto', esc = t === 'escuro' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('escuro', esc);
+  document.querySelectorAll('[data-temaciclo]').forEach(function (b) { b.textContent = esc ? '☀️' : '🌙'; });
   var mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = esc ? '#0c2a24' : '#0f6b5c';
   try { var fr = document.getElementById('evoFrame'); if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: 'evo-tema', escuro: esc }, '*'); } catch (e) {}
   return esc;
@@ -943,16 +953,17 @@ function vConfig() {
 
 // ===================== ficha do paciente =====================
 var atual = null;
+function travar() { document.documentElement.classList.toggle('travado', $('#sheet').classList.contains('open') || $('#evoSheet').classList.contains('open')); }
 function abrir(id) {
   atual = S.pacientes.find(function (p) { return p.id === id; }) || (S.ultimos || {})[id]; if (!atual) { toast('Paciente não encontrado'); return; }
   S.v[id] = S.v[id] || {};
-  desenharFicha(); $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0;
+  desenharFicha(); $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0; document.body.classList.add('travado'); travar();
 }
-function fechar() { $('#sheet').classList.remove('open'); atual = null; render(); }
+function fechar() { $('#sheet').classList.remove('open'); atual = null; travar(); render(); }
 function nMarcados(v) { return CAMPOS.filter(function (c) { var x = v[c.k]; return x != null && !(Array.isArray(x) && !x.length) && !(typeof x === 'object' && !Array.isArray(x) && !Object.keys(x).length); }).length; }
 function desenharFicha() {
   var p = atual, v = S.v[p.id], t = p.tipo || tipoDe(p), todos = !!v._all;
-  var h = '<div class="sh-top"><button class="back" data-close>‹</button><div class="t"><b>' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + '</b><span>' + (p.registro ? 'Reg ' + esc(p.registro) + ' · ' : '') + [p.po && p.po.label, p.dih != null && 'DIH ' + p.dih, p.idade && p.idade + ' anos', p.ic && 'INTERCONSULTA', p.alta && 'ALTA', p.ps && 'PS'].filter(Boolean).map(esc).join(' · ') + '</span></div><button class="syncmini" data-sync title="Sincronizar agora">' + iconeSync() + '</button></div><div class="sh-body">';
+  var h = '<div class="sh-top"><button class="back" data-close>‹</button><div class="t"><b>' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + '</b><span>' + (p.registro ? 'Reg ' + esc(p.registro) + ' · ' : '') + [p.po && p.po.label, p.dih != null && 'DIH ' + p.dih, p.idade && p.idade + ' anos', p.ic && 'INTERCONSULTA', p.alta && 'ALTA', p.ps && 'PS'].filter(Boolean).map(esc).join(' · ') + '</span></div><button class="hb2" data-temaciclo title="Modo noturno / claro">' + (document.documentElement.classList.contains('escuro') ? '☀️' : '🌙') + '</button><button class="syncmini" data-sync title="Sincronizar agora">' + iconeSync() + '</button></div><div class="sh-body">';
   h += fichaIG(p);
   CAMPOS.forEach(function (c) { if (todos || !c.when || c.when(t)) h += campo(c, v); });
   h += '<div class="row" style="margin:0 0 8px"><button class="btn ghost sm" data-all style="width:100%">' + (todos ? 'Mostrar só os campos do tipo de paciente' : 'Mostrar todos os campos (FO, dreno, imobilização, neuro…)') + '</button></div>';
@@ -1124,10 +1135,10 @@ function abrirEvo(id) {
       dihConv: S.dihConv ? 1 : 0, ig: { dx: p.dx, ap: p.ap, dihData: p.dihData, dih: p.dih, dihStated: p.dihStated, po: p.po && !p.po.futuro ? p.po : null, poStated: p.po ? p.po.stated : null, agenda: p.agenda || [], pend: abertas, tipo: p.tipo || tipoDe(p) } }, '*');
   };
   fr.src = 'evo.html?t=' + Date.now();
-  $('#evoSheet').classList.add('open'); $('#evoSheet').setAttribute('aria-hidden', 'false');
+  $('#evoSheet').classList.add('open'); $('#evoSheet').setAttribute('aria-hidden', 'false'); document.body.classList.add('travado'); travar();
 }
 function fecharEvo() {
-  $('#evoSheet').classList.remove('open'); $('#evoSheet').setAttribute('aria-hidden', 'true');
+  $('#evoSheet').classList.remove('open'); $('#evoSheet').setAttribute('aria-hidden', 'true'); if (!$('#sheet').classList.contains('open')) document.body.classList.remove('travado'); travar();
   evoAtual = null; if (atual) desenharFicha(); render();
 }
 function salvarEvo(txt) { if (!evoAtual || !txt) return; evoGuardar(evoAtual.id, S.hoje, txt); if (S.rasc) delete S.rasc[evoAtual.id]; toast('Evolução salva — amanhã ela já é a base'); }
@@ -1155,6 +1166,7 @@ document.addEventListener('click', function (ev) {
   var t = ev.target.closest('[data-fdel],[data-foto],[data-viewer],button,[data-open],[data-clear],[data-lpprm],label,.flagbox[data-tab]'); if (!t) return;
   var ds = t.dataset;
   if (ds.dihc != null) { S.dihConv = +ds.dihc; recalc(); save(); render(); toast('DIH recalculado'); return; }
+  if ('temaciclo' in ds) { S.tema = document.documentElement.classList.contains('escuro') ? 'claro' : 'escuro'; saveLocal(); aplicarTema(); if (S.tab === 'config') render(); return; }
   if (ds.tema) { S.tema = ds.tema; saveLocal(); aplicarTema(); render(); return; }
   if (ds.copytxt) { var ta0 = $('#resumoTxt'); if (ta0) copiar(ta0.value); return; }
   if ('limpar' in ds) { var cand = candidatosLimpeza(); confirmar('Apagar fotos, visitas, pendências e evoluções de ' + cand.length + ' paciente(s) (alta ou fora do internograma há mais de 5 dias)? As fotos vão para a lixeira do Drive e podem ser recuperadas por 30 dias.', function () { limparPacientes(cand.map(function (x) { return x.pid; })); }); return; }
@@ -1320,7 +1332,7 @@ function carregarDoc() {
     var r = parseTabelaHTML(html);
     if (!r.pacientes.length) { toast('Não reconheci pacientes no documento'); return; }
     aplicarImport(r, 'Google Doc · ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
-    S.igCache = { em: Date.now() }; saveLocal();
+    S.igCache = { em: Date.now() }; S.parserV = 4; saveLocal();
   }).catch(function (e) { toast('Não consegui ler o Doc: ' + ((e && (e.msg || e.message)) || e).toString().slice(0, 80)); });
 }
 // ===================== backup em arquivo =====================
@@ -1372,10 +1384,15 @@ function demo() {
 aplicarTema();
 if (S.pacientes.length) recalc();
 render();
+// relê o internograma sozinho: versão nova da leitura, ou última leitura com mais de 20 min
+setTimeout(function () {
+  if (navigator.onLine && SYNC.temToken() && (S.parserV !== 4 || !S.igCache || Date.now() - S.igCache.em > 20 * 60000)) carregarDoc();
+}, 1800);
+document.addEventListener('visibilitychange', function () { if (!document.hidden && navigator.onLine && SYNC.temToken() && S.igCache && Date.now() - S.igCache.em > 20 * 60000) carregarDoc(); });
 </script>
 <script>
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});
-if (!S.pacientes.length && navigator.onLine) setTimeout(function () { if (SYNC.temToken()) carregarDoc(); }, 1500);
+if ((!S.pacientes.length || (S.fonte && /Google Doc/.test(S.fonte) && !S.pacientes.some(function (p) { return p.apL; }))) && navigator.onLine) setTimeout(function () { if (SYNC.temToken()) carregarDoc(); }, 1500);
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* Mantém o app abrindo mesmo sem internet. Ao publicar uma versão nova, troque o número abaixo. */
-var V = 'sot-v4';
+var V = 'sot-v5';
 var ARQ = ['./', 'index.html', 'evo.html', 'sync.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return Promise.all(ARQ.map(function (u) { return c.add(new Request(u, { cache: 'reload' })).catch(function () {}); })); }).then(function () { return self.skipWaiting(); })); });
