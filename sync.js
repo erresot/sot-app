@@ -101,6 +101,9 @@ var SYNC = (function () {
   }
   function baixarJSON(id) { return req(API + '/files/' + id + '?alt=media').then(function (r) { return r.json(); }); }
   function baixarBlob(id) { return req(API + '/files/' + id + '?alt=media').then(function (r) { return r.blob(); }); }
+  function acharFoto(lid) {
+    return req(API + '/files?q=' + q("appProperties has { key='lid' and value='" + lid + "' } and trashed=false") + '&fields=files(id)').then(function (r) { return r.json(); }).then(function (j) { return j.files && j.files[0] ? j.files[0].id : null; });
+  }
   function exportarDoc() {
     if (!CFG.DOC_ID) return Promise.reject({ msg: 'DOC_ID não configurado' });
     return req(API + '/files/' + CFG.DOC_ID + '/export?mimeType=text/html').then(function (r) { return r.text(); });
@@ -193,7 +196,10 @@ var SYNC = (function () {
         });
       }, Promise.resolve()).then(function () { return baixar.length; });
     }).then(function (nb) {
-      // 2) envia o que mudou aqui
+      return enviarFotos().then(function (nf) { return { nb: nb, nf: nf }; });
+    }).then(function (x0) {
+      var nb = x0.nb;
+      // 2) envia o que mudou aqui (já com o endereço das fotos)
       var envia = idsLocais().filter(function (pid) { var r = registro(pid); return (Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length) && sujo(pid); });
       return envia.reduce(function (pr, pid) {
         return pr.then(function () {
@@ -201,9 +207,9 @@ var SYNC = (function () {
           var op = S.sync.ids[pid] ? atualizarArquivo(S.sync.ids[pid], b, 'application/json') : criarArquivo(pid + '.json', pPac, b, 'application/json');
           return op.then(function (f) { S.sync.ids[pid] = f.id; S.sync.vistos[pid] = f.modifiedTime; S.sync.enviado[pid] = j; });
         });
-      }, Promise.resolve()).then(function () { return { nb: nb, ne: envia.length }; });
+      }, Promise.resolve()).then(function () { return { nb: nb, ne: envia.length, nf: x0.nf }; });
     }).then(function (x) {
-      return enviarFotos().then(function (nf) { x.nf = nf; return backupDiario().then(function () { return x; }); });
+      return backupDiario().then(function () { return x; });
     }).then(function (x) {
       S.sync.ultimo = Date.now(); saveLocal(); rodando = false;
       st.pend = contarPend().total;
@@ -261,7 +267,7 @@ var SYNC = (function () {
   setInterval(function () { if (!document.hidden) agora(); }, 45000);
   window.addEventListener('load', function () { setTimeout(function () { initGIS(); agora(); }, 800); });
 
-  return { agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
@@ -296,8 +302,12 @@ var FOTO = {
     if (FOTO._c[f.lid]) return Promise.resolve(FOTO._c[f.lid]);
     return FDB.get(f.lid).then(function (b) {
       if (b) return (FOTO._c[f.lid] = URL.createObjectURL(b));
-      if (f.driveId && SYNC.temToken()) return SYNC.baixarBlob(f.driveId).then(function (bl) { FDB.put(f.lid, bl); return (FOTO._c[f.lid] = URL.createObjectURL(bl)); });
-      return null;
+      if (!SYNC.temToken() || !navigator.onLine) return null;
+      var id = f.driveId ? Promise.resolve(f.driveId) : SYNC.acharFoto(f.lid).then(function (x) { if (x) { f.driveId = x; saveLocal(); } return x; });
+      return id.then(function (did) {
+        if (!did) return null;
+        return SYNC.baixarBlob(did).then(function (bl) { FDB.put(f.lid, bl); return (FOTO._c[f.lid] = URL.createObjectURL(bl)); });
+      }).catch(function () { return null; });
     });
   }
 };

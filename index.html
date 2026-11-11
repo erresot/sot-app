@@ -997,7 +997,7 @@ function blocoFotos(p, tipo) {
       return '<figure><img data-foto="' + f.lid + '" data-fimg="' + f.lid + '" alt=""><figcaption>' + esc(brCurto(f.data)) + ' ' + esc(f.legenda || '') + (f.by ? ' · ' + esc(f.by) : '') + '</figcaption><span class="st">' + (f.driveId ? '☁︎' : '⏳') + '</span>' +
         '<span class="st" style="right:auto;left:3px;cursor:pointer" data-fdel="' + f.lid + '">✕</span></figure>';
     }).join('') + '</div>';
-    setTimeout(function () { F.forEach(function (f) { FOTO.url(f).then(function (u) { var im = document.querySelector('[data-fimg="' + f.lid + '"]'); if (im && u) im.src = u; else if (im) im.alt = 'na nuvem'; }); }); }, 0);
+    setTimeout(function () { F.forEach(function (f) { FOTO.url(f).then(function (u) { var im = document.querySelector('[data-fimg="' + f.lid + '"]'); if (im && u) im.src = u; else if (im) { im.alt = ''; im.parentNode.insertAdjacentHTML('afterbegin', '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#5d6b66;padding:6px">' + (f.driveId || navigator.onLine ? '☁︎ ainda não chegou — puxe de novo após sincronizar' : '📴 sem internet') + '</div>'); } }); }); }, 0);
   }
   h += '<div class="hint">A foto fica guardada no app (não vai para a galeria do celular) e sobe para o Drive da equipe.</div>';
   return h + '</div>';
