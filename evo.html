@@ -121,6 +121,8 @@
   .vbox .vobs{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
   .vbox .vwarn{margin-top:6px;color:var(--warn);font-weight:600}
   .f.ins{background:var(--chg-bg);border-color:var(--chg)}
+  html.escuro{--bg:#11161d;--card:#19202a;--ink:#e6ebf1;--muted:#97a3b3;--line:#2b3542;--accent:#4c8dff;--accent-ink:#0b1220;--pend:#f0b54a;--pend-bg:#3a2e14;--keep:#5fd08f;--keep-bg:#163225;--chg:#79a8ff;--chg-bg:#18284a;--auto:#b39cff;--auto-bg:#2a2148;--warn:#ff8a7a;--warn-bg:#3a1a17;color-scheme:dark}
+  html.claro{--bg:#f6f7f9;--card:#fff;--ink:#1b2430;--muted:#5d6b7c;--line:#dde3ea;--accent:#1f6feb;--accent-ink:#fff;--pend:#b7791f;--pend-bg:#fdf3dd;--keep:#2f855a;--keep-bg:#e3f4ea;--chg:#1f5fbf;--chg-bg:#e2ecfb;--auto:#6b46c1;--auto-bg:#ede7fb;--warn:#b42318;--warn-bg:#fdecea;color-scheme:light}
 </style>
 </head>
 <body>
@@ -1898,16 +1900,28 @@ if(EMBED){
     _go(); post({type:"evo-base",text:SRC});
     if(VISIT){
       XV={red:[],warn:[],info:[]};
-      if(VISIT.marks) applyVisit(VISIT.marks); else VISIT_RES=[];
+      if(VISIT.marks) applyVisit(VISIT.marks); else VISIT_RES=VISIT.rascunho?[{why:"Rascunho recuperado — a visita já tinha sido aplicada",hit:1,chg:0}]:[];
       const f=visitFlags(VISIT.marks, VISIT.ig); XV.red.unshift(...f.red); XV.warn.unshift(...f.warn); XV.info.push(...f.info);
       XC=igCross(VISIT.ig);
       render(); renderVisitBox();
     }
   };
+  // rascunho: cada alteração vai para o app principal (sobrevive a fechamento inesperado)
+  let tDraft=null;
+  const _render=render;
+  render=function(){ _render.apply(this,arguments); clearTimeout(tDraft); tDraft=setTimeout(()=>{ if(!$("step2").classList.contains("hidden")) post({type:"evo-draft",text:outputText()}); },700); };
   const _doCopy=doCopy;
   doCopy=async function(){ await _doCopy(); post({type:"evo-copied",text:outputText()}); };
   window.addEventListener("message",ev=>{
     const d=ev.data||{};
+    if(d.type==="evo-tema"){ document.documentElement.classList.toggle("escuro",!!d.escuro); document.documentElement.classList.toggle("claro",!d.escuro); }
+    if(d.type==="evo-load" && d.rascunho){
+      VISIT={dihConv:0, marks:null, obs:d.obs||"", pac:d.pac||"", ig:null, visited:!!d.visited, rascunho:true}; VISIT_RES=[];
+      $("input").value=d.text; $("evalDate").value=d.date; $("days").value=0;
+      $("embedHint").innerHTML=`Rascunho recuperado (salvo às ${new Date(d.rascunho).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}) — continue de onde parou. <button class="small" id="rascDesc">Descartar rascunho e recomeçar</button>`;
+      $("rascDesc").onclick=()=>post({type:"evo-discard"});
+      go(); return;
+    }
     if(d.type==="evo-load"){
       COUNTERS.forEach(c=>{ if(c.label==="Dia de internação (DIH)") c.kind = d.dihConv ? "d1" : "days"; });
       VISIT={dihConv:d.dihConv, marks:d.marks||null, obs:d.obs||"", pac:d.pac||"", ig:d.ig||null, visited:!!d.visited}; VISIT_RES=[];

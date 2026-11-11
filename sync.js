@@ -112,6 +112,8 @@ var SYNC = (function () {
   /* ---------- registro de cada paciente (o que vai para a nuvem) ---------- */
   function diasGuardar() { return isoAdd(S.hoje, -7); }
   function registro(pid) {
+    var ap = (S.apagados || {})[pid];
+    if (ap && !hasLocalRaw(pid)) return { pid: pid, v: 1, apagado: true, em: ap };
     var vis = {};
     Object.keys(S.vis || {}).forEach(function (d) { if (d >= diasGuardar() && S.vis[d][pid]) vis[d] = S.vis[d][pid]; });
     var p = S.pacientes.find(function (x) { return x.id === pid; });
@@ -129,17 +131,35 @@ var SYNC = (function () {
     Object.keys(S.evo || {}).forEach(function (k) { ids[k] = 1; });
     Object.keys(S.fotos || {}).forEach(function (k) { ids[k] = 1; });
     Object.keys(S.pend || {}).forEach(function (k) { if ((S.pend[k] || []).some(function (x) { return !x.auto; })) ids[k] = 1; });
+    Object.keys(S.apagados || {}).forEach(function (k) { ids[k] = 1; });
     return Object.keys(ids).filter(function (k) { return k && k !== 'undefined'; });
   }
-  function hasLocal(pid) { var r = registro(pid); return Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length; }
+  function hasLocalRaw(pid) { return Object.keys(S.vis || {}).some(function (d) { return S.vis[d][pid]; }) || (S.evo[pid] || []).length || ((S.fotos || {})[pid] || []).length || (S.pend[pid] || []).some(function (x) { return !x.auto; }); }
+  function hasLocal(pid) { var r = registro(pid); if (r.apagado) return true; return Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length; }
   function sujo(pid) { var j = JSON.stringify(registro(pid)); return (S.sync.enviado || {})[pid] !== j; }
   function contarPend() {
-    var n = idsLocais().filter(function (pid) { var r = registro(pid); return (Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; })) && sujo(pid); }).length;
+    var n = idsLocais().filter(function (pid) { var r = registro(pid); if (r.apagado) return sujo(pid); return (Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; })) && sujo(pid); }).length;
     var f = 0; Object.keys(S.fotos || {}).forEach(function (k) { S.fotos[k].forEach(function (x) { if (!x.driveId && !x.del) f++; }); });
     return { reg: n, fotos: f, total: n + f };
   }
   /* mescla: o mais recente vence por item (visita do dia, pendência, evolução do dia, foto) */
+  function maisRecente(pid) {
+    var t = 0;
+    Object.keys(S.vis || {}).forEach(function (d) { var v = S.vis[d][pid]; if (v && v._at > t) t = v._at; });
+    (S.evo[pid] || []).forEach(function (e) { if ((e.at || 0) > t) t = e.at; });
+    ((S.fotos || {})[pid] || []).forEach(function (f) { if ((f.at || 0) > t) t = f.at; });
+    (S.pend[pid] || []).forEach(function (x) { if ((x.at || 0) > t) t = x.at; });
+    return t;
+  }
   function mesclar(pid, rem) {
+    if (rem.apagado) {
+      if (maisRecente(pid) > rem.em) return;            // reinternado: dado novo é mais recente que a limpeza
+      ((S.fotos || {})[pid] || []).forEach(function (f) { FDB.del(f.lid); });
+      if (S.fotos) delete S.fotos[pid]; delete S.evo[pid]; delete S.pend[pid]; if (S.pendDel) delete S.pendDel[pid];
+      Object.keys(S.vis || {}).forEach(function (d) { delete S.vis[d][pid]; });
+      S.apagados = S.apagados || {}; S.apagados[pid] = rem.em; return;
+    }
+    if ((S.apagados || {})[pid] && maisRecente(pid) > S.apagados[pid]) delete S.apagados[pid];
     if (rem.ident) { S.idents = S.idents || {}; S.idents[pid] = rem.ident; }
     if (rem.manual && !S.pacientes.some(function (p) { return p.id === pid; })) S.pacientes.push(rem.manual);
     Object.keys(rem.visitas || {}).forEach(function (d) {
@@ -200,7 +220,7 @@ var SYNC = (function () {
     }).then(function (x0) {
       var nb = x0.nb;
       // 2) envia o que mudou aqui (já com o endereço das fotos)
-      var envia = idsLocais().filter(function (pid) { var r = registro(pid); return (Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length) && sujo(pid); });
+      var envia = idsLocais().filter(function (pid) { var r = registro(pid); return (r.apagado || Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length) && sujo(pid); });
       return envia.reduce(function (pr, pid) {
         return pr.then(function () {
           var j = JSON.stringify(registro(pid)), b = new Blob([j], { type: 'application/json' });
@@ -209,7 +229,7 @@ var SYNC = (function () {
         });
       }, Promise.resolve()).then(function () { return { nb: nb, ne: envia.length, nf: x0.nf }; });
     }).then(function (x) {
-      return backupDiario().then(function () { return x; });
+      return esvaziarLixo().then(function () { return backupDiario(); }).then(function () { return x; });
     }).then(function (x) {
       S.sync.ultimo = Date.now(); saveLocal(); rodando = false;
       st.pend = contarPend().total;
@@ -240,6 +260,14 @@ var SYNC = (function () {
       }, Promise.resolve());
     }).then(function () { return n; });
   }
+  function esvaziarLixo() {
+    var L = (S.lixo || []).slice(), lids = (S.lixoLid || []).slice();
+    var p = Promise.resolve();
+    lids.forEach(function (lid) { p = p.then(function () { return acharFoto(lid).then(function (id) { if (id) L.push(id); }); }); });
+    return p.then(function () {
+      return L.reduce(function (pr, id) { return pr.then(function () { return req(API + '/files/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }).catch(function () {}); }); }, Promise.resolve());
+    }).then(function () { S.lixo = []; S.lixoLid = []; });
+  }
   function backupDiario() {
     S.sync.backups = S.sync.backups || {};
     if (S.sync.backups[S.hoje]) return Promise.resolve();
@@ -249,7 +277,7 @@ var SYNC = (function () {
     }).then(function () { S.sync.backups[S.hoje] = 1; });
   }
   function backupObj() {
-    var o = {}; ['hoje', 'pacientes', 'vis', 'pend', 'pendDel', 'evo', 'fotos', 'conf', 'fonte', 'dataIG', 'cab', 'idents', 'dihConv'].forEach(function (k) { o[k] = S[k]; });
+    var o = {}; ['hoje', 'pacientes', 'vis', 'pend', 'pendDel', 'evo', 'fotos', 'conf', 'fonte', 'dataIG', 'cab', 'idents', 'dihConv', 'igHist', 'vistoEm', 'altaEm', 'ultimos', 'apagados', 'rasc'].forEach(function (k) { o[k] = S[k]; });
     o.geradoEm = new Date().toISOString(); o.por = S.eu || ''; return o;
   }
   function hhmm(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
@@ -264,7 +292,7 @@ var SYNC = (function () {
   window.addEventListener('online', function () { agendar(); });
   window.addEventListener('offline', function () { estado('off', 'sem internet — tudo salvo no aparelho'); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) agendar(); });
-  setInterval(function () { if (!document.hidden) agora(); }, 45000);
+  setInterval(function () { if (!document.hidden) agora(); }, 30000);
   window.addEventListener('load', function () { setTimeout(function () { initGIS(); agora(); }, 800); });
 
   return { acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
