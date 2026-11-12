@@ -1,0 +1,120 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Solicitador de Retornos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: uma coluna estreita tipo prontuário — campos em cima, texto pronto embaixo, botão copiar fixo no fim */
+:root{
+  --bg:#f3f6f6; --card:#ffffff; --fg:#17262a; --muted:#5b6f73; --line:#d5e0e1;
+  --accent:#0f6e74; --accent-soft:#e1f0f0; --ok:#1d7a46;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --card:#172226; --fg:#e4eeef; --muted:#93a7aa; --line:#2a3a3e;
+  --accent:#4fb8be; --accent-soft:#1c3336; --ok:#5ccf8b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --card:#172226; --fg:#e4eeef; --muted:#93a7aa; --line:#2a3a3e;
+  --accent:#4fb8be; --accent-soft:#1c3336; --ok:#5ccf8b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-size:20px;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+.field{display:flex;flex-direction:column;gap:8px}
+label,.lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;gap:8px}
+.chip{flex:1;padding:12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);
+  border-radius:10px;font:500 16px var(--sans);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+input[type=text],input[type=date],input[type=time]{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--fg);font:16px var(--sans)}
+input:focus-visible,.chip:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{padding:6px 10px;border:1px solid var(--line);background:transparent;color:var(--muted);
+  border-radius:999px;font:500 13px var(--sans);cursor:pointer}
+.out{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;
+  font-size:16px;line-height:1.55;white-space:pre-wrap;min-width:0;overflow-wrap:anywhere}
+.out b{color:var(--accent);font-weight:600}
+.out .d{font-family:var(--mono)}
+.copy{padding:14px;border:0;border-radius:12px;background:var(--accent);color:var(--card);
+  font:600 16px var(--sans);cursor:pointer}
+.copy.done{background:var(--ok)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.credit{text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:8px;border-top:1px solid var(--line)}
+.credit span{color:var(--accent);font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Solicitador de Retornos</h1>
+    <p class="sub">Ambulatório de ortopedia · escolha o motivo e a data, depois copie o texto.</p>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Motivo</span>
+    <div class="chips">
+      <button class="chip" id="c-curativo" type="button" aria-pressed="true">Curativo</button>
+      <button class="chip" id="c-gesso" type="button" aria-pressed="false">Gesso</button>
+    </div>
+    <input type="text" id="motivo" value="curativo" aria-label="Texto do motivo (editável)">
+    <p class="hint">Edite livremente, ex.: “retirada de pontos”, “troca de gesso”.</p>
+  </div>
+
+  <div class="field">
+    <label for="data">Data do retorno</label>
+    <input type="date" id="data">
+    <div class="quick">
+      <button type="button" data-d="7">+7 dias</button>
+      <button type="button" data-d="14">+14 dias</button>
+      <button type="button" data-d="21">+21 dias</button>
+      <button type="button" data-d="30">+30 dias</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Texto</span>
+    <div class="out" id="out"></div>
+  </div>
+
+  <button class="copy" id="copy" type="button">Copiar texto</button>
+
+  <footer class="credit">Powered by <span>Fernando G.</span></footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const motivo=$('motivo'), data=$('data'), out=$('out'), copyBtn=$('copy');
+const chips={curativo:$('c-curativo'),gesso:$('c-gesso')};
+
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const DIAS=['DOMINGO','SEGUNDA-FEIRA','TERÇA-FEIRA','QUARTA-FEIRA','QUINTA-FEIRA','SEXTA-FEIRA','SÁBADO'];
+function br(v){if(!v)return '__/__/__';const[y,m,d]=v.split('-');const w=DIAS[new Date(+y,+m-1,+d).getDay()];return w+' '+d+'/'+m+'/'+y.slice(2)}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function texto(){return `Solicito retorno em ambulatório ortopedia ${motivo.value.trim()||'___'} dia ${br(data.value)} às 7 horas.\n\nAmbulatório Mário Covas`}
+function render(){
+  out.innerHTML=`Solicito retorno em ambulatório ortopedia <b>${esc(motivo.value.trim()||'___')}</b> dia <b class="d">${br(data.value)}</b> às 7 horas.\n\nAmbulatório Mário Covas`;
+  const v=motivo.value.trim().toLowerCase();
+  for(const k in chips) chips[k].setAttribute('aria-pressed', v===k?'true':'false');
+}
+for(const k in chips) chips[k].addEventListener('click',()=>{motivo.value=k;render()});
+motivo.addEventListener('input',render);
+data.addEventListener('change',render);
+data.addEventListener('click',()=>{try{data.showPicker()}catch(e){}});
+document.querySelectorAll('.quick button').forEach(b=>b.addEventListener('click',()=>{
+  const d=new Date();d.setDate(d.getDate()+ +b.dataset.d);data.value=iso(d);render();
+}));
+copyBtn.addEventListener('click',()=>{
+  const t=texto();
+  const ok=()=>{copyBtn.textContent='Copiado';copyBtn.classList.add('done');
+    setTimeout(()=>{copyBtn.textContent='Copiar texto';copyBtn.classList.remove('done')},1600)};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents(out);const s=getSelection();s.removeAllRanges();s.addRange(r);
+    try{document.execCommand('copy');ok()}catch(e){copyBtn.textContent='Texto selecionado — copie manualmente'}};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,fallback); else fallback();
+});
+const d0=new Date();d0.setDate(d0.getDate()+7);data.value=iso(d0);
+render();
+</script>
+
+</body></html>
