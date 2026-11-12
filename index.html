@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>/* bloqueio por senha: só a "impressão digital" (PBKDF2-SHA256) da senha fica no código */
+var LOCK = { salt: 'nVN21HlIPqdANXAl+54/Ww==', it: 310000, hash: 'jEYDJLNo4/hKoMJzngiyqZr5pmQHMENfnbg9PqkoDI0=', min: 15 };
+(function () { var ok = false; try { ok = sessionStorage.getItem('sot-ok') === '1' && Date.now() - (+localStorage.getItem('sot-ult') || 0) < LOCK.min * 60000; } catch (e) {} if (!ok) document.documentElement.classList.add('trancado'); })();
+</script>
+<style>
+html.trancado body > *:not(#lock){visibility:hidden!important}
+#lock{display:none}
+html.trancado #lock{display:flex;position:fixed;inset:0;z-index:2147483647;align-items:center;justify-content:center;background:#0f3d3a;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#lock .lbox{width:100%;max-width:360px;background:#fff;color:#172026;border-radius:18px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
+#lock h1{margin:0 0 4px;font-size:22px}#lock p{margin:0 0 18px;color:#5b666c;font-size:14px}
+#lock input{width:100%;box-sizing:border-box;font-size:18px;padding:13px 14px;border:2px solid #cfd6d4;border-radius:12px;outline:none;text-align:center}
+#lock input:focus{border-color:#0f6e6e}
+#lock button{width:100%;margin-top:12px;font:700 17px/1 inherit;padding:14px;border:0;border-radius:12px;background:#0f6e6e;color:#fff;cursor:pointer}
+#lock button:disabled{opacity:.5}
+#lock .lerr{min-height:20px;margin-top:10px;color:#b42318;font-size:14px;font-weight:600}
+#lock .lbox.erro{animation:lshake .35s}
+@keyframes lshake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+</style>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SOT — Visita + Evolução</title>
@@ -198,6 +217,55 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
 </style>
 </head>
 <body>
+<div id="lock"><form class="lbox" id="lockForm" autocomplete="off"><div style="font-size:40px">🔒</div><h1>SOT · Visita + Evolução</h1><p>Uso restrito da equipe. Digite a senha para entrar.</p><input type="password" id="lockPw" placeholder="Senha" autocomplete="current-password" aria-label="Senha"><button type="submit" id="lockBtn">Entrar</button><div class="lerr" id="lockErr"></div></form></div>
+<script>
+(function () {
+  function b64(buf) { var s = '', a = new Uint8Array(buf); for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
+  function deb64(t) { var s = atob(t), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  function conferir(pw) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits'])
+      .then(function (k) { return crypto.subtle.deriveBits({ name: 'PBKDF2', salt: deb64(LOCK.salt), iterations: LOCK.it, hash: 'SHA-256' }, k, 256); })
+      .then(function (bits) { return b64(bits) === LOCK.hash; });
+  }
+  var erros = 0, esperaAte = 0, ultGrav = 0;
+  function marcarUso() { var n = Date.now(); if (n - ultGrav > 20000) { ultGrav = n; try { localStorage.setItem('sot-ult', String(n)); } catch (e) {} } }
+  function trancado() { return document.documentElement.classList.contains('trancado'); }
+  function trancar() {
+    try { sessionStorage.removeItem('sot-ok'); } catch (e) {}
+    document.documentElement.classList.add('trancado');
+    var pw = document.getElementById('lockPw'); if (pw) { pw.value = ''; setTimeout(function () { pw.focus(); }, 50); }
+  }
+  window.trancarApp = trancar;
+  function vencido() { return Date.now() - (+localStorage.getItem('sot-ult') || 0) > LOCK.min * 60000; }
+  ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (ev) { document.addEventListener(ev, function () { if (!trancado()) marcarUso(); }, { capture: true, passive: true }); });
+  setInterval(function () { if (!trancado() && vencido()) trancar(); }, 30000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && !trancado() && vencido()) trancar(); });
+  document.getElementById('lockForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var box = this, pw = document.getElementById('lockPw'), err = document.getElementById('lockErr'), bt = document.getElementById('lockBtn');
+    if (Date.now() < esperaAte) { err.textContent = 'Muitas tentativas. Aguarde ' + Math.ceil((esperaAte - Date.now()) / 1000) + ' s.'; return; }
+    if (!pw.value) { pw.focus(); return; }
+    if (!window.crypto || !crypto.subtle) { err.textContent = 'Este navegador não permite conferir a senha (abra pelo endereço https).'; return; }
+    bt.disabled = true; bt.textContent = 'Conferindo…'; err.textContent = '';
+    conferir(pw.value).then(function (ok) {
+      bt.disabled = false; bt.textContent = 'Entrar';
+      if (ok) {
+        erros = 0; ultGrav = 0;
+        try { sessionStorage.setItem('sot-ok', '1'); } catch (x) {}
+        marcarUso(); pw.value = '';
+        document.documentElement.classList.remove('trancado');
+      } else {
+        erros++; pw.value = ''; pw.focus();
+        box.classList.remove('erro'); void box.offsetWidth; box.classList.add('erro');
+        if (erros >= 5) { esperaAte = Date.now() + 30000; erros = 0; err.textContent = 'Senha incorreta. Aguarde 30 s para tentar de novo.'; }
+        else err.textContent = 'Senha incorreta.';
+      }
+    }).catch(function () { bt.disabled = false; bt.textContent = 'Entrar'; err.textContent = 'Erro ao conferir a senha.'; });
+  });
+  if (trancado()) setTimeout(function () { var pw = document.getElementById('lockPw'); if (pw) pw.focus(); }, 300);
+})();
+</script>
+
 <div class="top">
   <div class="hrow"><h1>SOT · Visita + Evolução</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button></div></div>
   <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span></div>
@@ -212,7 +280,7 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
   <button data-tab="config"><b>⚙</b>Internograma</button>
   <button data-tab="hub"><b>🦴</b>OrthoHub</button>
 </nav>
-<div id="hubView"><div class="hubbar"><button class="hubx" data-hubclose>‹ OrthoHub</button><b id="hubTit"></b><a id="hubNova" target="_blank" rel="noopener" title="Abrir em outra aba">↗</a></div><div id="hubFrames"></div></div>
+<div id="hubView"><div class="hubbar"><button class="hubx" data-hubclose>‹ OrthoHub</button><b id="hubTit"></b><a id="hubNova" target="_blank" title="Abrir em outra aba">↗</a></div><div id="hubFrames"></div></div>
 
 <div class="sheet" id="sheet"></div>
 <div id="evoSheet" aria-hidden="true">
@@ -662,23 +730,45 @@ window.addEventListener('pagehide', function () { saveLocal(); });
 document.addEventListener('visibilitychange', function () { if (document.hidden) { saveLocal(); try { SYNC.agora(); } catch (e) {} } });
 window.addEventListener('beforeunload', function () { saveLocal(); });
 
-/* ===== v7: botão VOLTAR do celular/navegador navega dentro do app (não sai nem recarrega) ===== */
+/* ===== v10: botão VOLTAR (celular e PC) navega dentro do app; na tela inicial pergunta antes de sair =====
+   O Chrome do Android ignora marcações de histórico criadas sem toque do usuário, por isso a
+   "trava" do voltar é refeita no primeiro toque depois de cada volta. */
 (function () {
-  var ultimoSair = 0;
-  function armar() { try { history.pushState({ sot: 1 }, ''); } catch (e) {} }
-  try { if (!history.state || !history.state.sot) { history.replaceState({ sot: 0 }, ''); armar(); } } catch (e) {}
+  var saindo = false, precisa = true;
+  function armar() { try { history.pushState({ sot: 1 }, ''); } catch (e) {} precisa = false; }
+  try { if (!history.state || !history.state.sot) history.replaceState({ sot: 0 }, ''); } catch (e) {}
+  armar(); precisa = true;  // vale no PC/iPhone; no Android é refeita no 1º toque
+  function aoTocar() { if (precisa && !saindo) armar(); }
+  document.addEventListener('pointerdown', aoTocar, true);
+  document.addEventListener('keydown', aoTocar, true);
+  function perguntarSair() {
+    var mb = document.querySelector('#mbox'), md = document.querySelector('#modal');
+    if (!mb || !md) return;
+    mb.innerHTML = '<p style="margin:2px 2px 6px;font-size:17px"><b>Tem certeza que deseja sair do programa?</b></p><p class="hint" style="margin:0 2px 14px">Tudo o que você marcou já está salvo neste aparelho.</p><div class="row"><button class="btn sec" id="mficar">Ficar</button><button class="btn" id="msair" style="background:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Sair</button></div>';
+    md.classList.add('on'); md.setAttribute('data-sair', '1');
+    document.querySelector('#mficar').onclick = function () { md.classList.remove('on'); md.removeAttribute('data-sair'); };
+    document.querySelector('#msair').onclick = function () {
+      md.classList.remove('on'); md.removeAttribute('data-sair'); saindo = true;
+      try { if (typeof save === 'function') save(); } catch (e) {}
+      history.back();
+      setTimeout(function () { if (document.visibilityState === 'visible') { saindo = false; toast('Pode fechar a aba do navegador'); armar(); } }, 900);
+    };
+  }
   window.addEventListener('popstate', function () {
+    if (saindo) { history.back(); return; }
     var q = function (s) { return document.querySelector(s); };
     var aberto = function (s, c) { var el = q(s); return el && el.classList.contains(c); };
-    if (aberto('#hubView', 'on')) { fecharHub(); return armar(); }
-    if (aberto('#viewer', 'on')) { q('#viewer').classList.remove('on'); return armar(); }
-    if (aberto('#modal', 'on')) { q('#modal').classList.remove('on'); return armar(); }
-    if (aberto('#evoSheet', 'open')) { fecharEvo(); return armar(); }
-    if (aberto('#sheet', 'open')) { fechar(); return armar(); }
-    if (typeof S !== 'undefined' && S.tab && S.tab !== 'leitos' && S.pacientes && S.pacientes.length) { S.tab = 'leitos'; render(); window.scrollTo(0, 0); return armar(); }
-    if (Date.now() - ultimoSair < 2500) { history.back(); return; }
-    ultimoSair = Date.now(); toast('Toque VOLTAR de novo para sair do app'); armar();
+    precisa = true; armar(); precisa = true;
+    if (aberto('#modal', 'on')) { q('#modal').classList.remove('on'); q('#modal').removeAttribute('data-sair'); return; }
+    if (aberto('#viewer', 'on')) { q('#viewer').classList.remove('on'); return; }
+    if (aberto('#hubView', 'on')) { fecharHub(); return; }
+    if (aberto('#evoSheet', 'open')) { fecharEvo(); return; }
+    if (aberto('#sheet', 'open')) { fechar(); return; }
+    if (typeof S !== 'undefined' && S.tab && S.tab !== 'leitos' && S.pacientes && S.pacientes.length) { S.tab = 'leitos'; render(); window.scrollTo(0, 0); return; }
+    perguntarSair();
   });
+  // PC: fechar a aba/janela também pergunta
+  window.addEventListener('beforeunload', function (e) { if (saindo) return; e.preventDefault(); e.returnValue = ''; });
 })();
 
 </script>
@@ -702,7 +792,7 @@ function isoAdd(s, n) { var d = isoDate(s); d.setDate(d.getDate() + n); return d
 function br(s) { var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 function brCurto(s) { return br(s).slice(0, 5); }
 function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
-function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { toast('⚠ Memória do aparelho cheia — sincronize e apague fotos antigas'); return false; } }
+function saveLocal() { if (window.__semSalvar) return true; try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { toast('⚠ Memória do aparelho cheia — sincronize e apague fotos antigas'); return false; } }
 function save() {
   if (typeof atual !== 'undefined' && atual && S.v[atual.id]) { S.v[atual.id]._at = Date.now(); S.v[atual.id]._by = S.eu || ''; }
   saveLocal(); if (window.SYNC) SYNC.agendar();
@@ -712,7 +802,7 @@ function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function 
 function toast(t) { var e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(function () { e.classList.remove('on'); }, 2200); }
 
 // ===================== evoluções por paciente =====================
-function evoLista(id) { return (S.evo[id] || []).slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; }); }
+function evoLista(id) { return (S.evo[id] || []).filter(function (e) { return !e.del; }).slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; }); }
 function evoBase(id) { var L = evoLista(id).filter(function (e) { return e.data < S.hoje; }); return L[L.length - 1] || null; }
 function evoHoje(id) { return evoLista(id).find(function (e) { return e.data === S.hoje; }) || null; }
 function evoGuardar(id, data, txt) {
@@ -977,6 +1067,7 @@ function vConfig() {
     h += '</div>';
   }
   h += blocoSumidosConfig() + blocoLimpeza();
+  h += '<h2>Apagar dados deste aparelho</h2><div class="card"><div class="hint">Use se for zerar o app (por exemplo, depois de apagar a pasta do Drive). Não mexe no Drive nem nos outros aparelhos.</div><div class="row" style="margin-top:8px"><button class="btn sec" data-apagaraparelho style="color:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Apagar tudo deste aparelho…</button></div></div>';
   h += '<h2>Aparência</h2><div class="card"><div class="opts">' + [['auto', '🌓 Automático'], ['claro', '☀️ Claro'], ['escuro', '🌙 Noturno']].map(function (x) { return '<button class="op' + ((S.tema || 'auto') === x[0] ? ' on' : '') + '" data-tema="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
   h += '<h2>Opções</h2><div class="card"><div class="lb" style="font-size:12.5px;color:var(--mut);font-weight:600">Contagem do DIH</div><div class="opts" style="margin-bottom:8px"><button class="op' + (!S.dihConv ? ' on' : '') + '" data-dihc="0">Dia da internação = DIH 0</button><button class="op' + (S.dihConv ? ' on' : '') + '" data-dihc="1">Dia da internação = DIH 1</button></div><label class="pend" style="border:0"><input type="checkbox" id="altas"' + (S.mostrarAltas ? ' checked' : '') + '><div class="tx">Mostrar pacientes de alta (precisam de visita e evolução antes de sair)</div></label></div>';
   h += '<div class="row" style="margin-top:6px"><button class="btn sec" data-addpac>+ Paciente manual (PS, CC…)</button><button class="btn sec" data-demo>Ver exemplo</button></div>';
@@ -1011,7 +1102,7 @@ function desenharFicha() {
   var L = S.pend[p.id] || [];
   h += '<div class="q"><div class="lb">Pendências deste paciente</div>' + (L.length ? L.map(function (x, i) { return linhaPend(p.id, x, i); }).join('') : '<div class="hint">Nenhuma.</div>') +
     '<div class="add"><input id="newp" placeholder="Ex.: pedir RX controle, ver cultura…"><button data-padd>+</button></div></div>';
-  h += blocoFotos(p, 'rx') + blocoFotos(p, 'pele') + blocoHistorico(p);
+  h += blocoFotos(p, 'rx') + blocoFotos(p, 'pele') + blocoHistorico(p) + botaoApagar(p);
   h += blocoEvo(p);
   h += '</div><div class="foot"><button class="btn evos" data-evo="' + esc(p.id) + '" style="flex:1">' + (evoluido(p) ? 'Refazer evolução' : 'Evoluir') + '</button><button class="btn" data-proximo style="flex:1.4">' + (v._ok ? 'Próximo leito →' : '✓ Visitado · próximo') + '</button></div>';
   $('#sheet').innerHTML = h;
@@ -1129,6 +1220,7 @@ var HUB = [
   { g: 'AMBULATÓRIO E DOCUMENTOS', itens: [
     { id: 'retornos', n: 'Solicitador de Retornos', i: '📅', d: 'Pedido de retorno ambulatorial: motivo, data rápida e texto pronto.' },
     { id: 'evoamb', n: 'Evolução Ambulatorial', i: '📝', d: 'Atualiza a evolução a partir da anterior, mantendo o padrão do serviço.' },
+    { id: 'exames', n: 'Exames Updater', i: '🧪', d: 'Formata os exames laboratoriais em linha, prontos para colar na evolução.' },
     { id: 'relatorio', n: 'Realizador de Relatórios', i: '📄', d: 'Relatório de Ortopedia: identificação, CID-10 com busca, exames, internações e conduta.' } ] },
   { g: 'CENTRO CIRÚRGICO', itens: [
     { id: 'posop', n: 'Condutas Pós-Operatórias', i: '🦿', d: 'Programação pós-cirúrgica: região no boneco 3D, modelo do serviço, retorno e fechamento.' },
@@ -1154,6 +1246,45 @@ function abrirHub(id) {
   $('#hubView').classList.add('on'); document.body.classList.add('travado');
 }
 function fecharHub() { $('#hubView').classList.remove('on'); if (!$('#sheet').classList.contains('open') && !$('#evoSheet').classList.contains('open')) document.body.classList.remove('travado'); }
+function botaoApagar(p) {
+  var v = (S.vis[S.hoje] || {})[p.id], temV = v && Object.keys(v).some(function (k) { return k.charAt(0) !== '_' || k === '_ok'; }), temE = !!evoHoje(p.id), temR = !!((S.rasc || {})[p.id]);
+  if (!temV && !temE && !temR) return '';
+  return '<div class="q" style="border-color:var(--bad,#c0392b)"><div class="lb" style="color:var(--bad,#c0392b)">🗑 Apagar registros de ' + brCurto(S.hoje) + '</div><div class="hint">Apaga deste paciente, neste dia, o que você escolher — também nos outros aparelhos e no Drive.</div><div class="row" style="margin-top:8px"><button class="btn sec sm" data-apagarreg="' + esc(p.id) + '" style="color:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Apagar visita e/ou evolução…</button></div></div>';
+}
+function modalApagar(id) {
+  var p = S.pacientes.find(function (x) { return x.id === id; }) || atual; if (!p) return;
+  var v = (S.vis[S.hoje] || {})[id], temV = v && Object.keys(v).some(function (k) { return k.charAt(0) !== '_' || k === '_ok'; }), temE = !!evoHoje(id) || !!((S.rasc || {})[id]);
+  var op = function (k, txt, on) { return on ? '<label class="q" style="display:flex;gap:10px;align-items:center;margin:0 0 8px"><input type="checkbox" id="ap_' + k + '" checked style="width:22px;height:22px;accent-color:var(--bad,#c0392b)"><span>' + txt + '</span></label>' : ''; };
+  $('#mbox').innerHTML = '<p style="margin:2px 2px 10px;font-size:16px"><b>Apagar registros de ' + esc(p.nome) + ' — ' + brCurto(S.hoje) + '</b></p>' +
+    op('vis', 'Registro da visita beira-leito (marcações, observações, “visitado”)', temV) +
+    op('evo', 'Evolução deste dia' + ((S.rasc || {})[id] ? ' (e o rascunho)' : ''), temE) +
+    '<p class="hint" style="margin:4px 2px 14px">Não dá para desfazer. Fotos e pendências não são apagadas.</p><div class="row"><button class="btn sec" data-cancel>Cancelar</button><button class="btn" id="mapagar" style="background:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Apagar</button></div>';
+  $('#modal').classList.add('on');
+  $('#mapagar').onclick = function () {
+    var cv = $('#ap_vis'), ce = $('#ap_evo'), feito = [];
+    if (cv && cv.checked) { S.vis[S.hoje] = S.vis[S.hoje] || {}; S.vis[S.hoje][id] = { _at: Date.now(), _limpo: 1 }; feito.push('visita'); }
+    if (ce && ce.checked) {
+      var L = (S.evo[id] || []).filter(function (e) { return e.data !== S.hoje; });
+      L.push({ data: S.hoje, txt: '', del: true, at: Date.now(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+      S.evo[id] = L.slice(-5); if (S.rasc) delete S.rasc[id]; feito.push('evolução');
+    }
+    $('#modal').classList.remove('on');
+    if (!feito.length) return;
+    save(); if (atual) desenharFicha(); render(); toast('Apagado: ' + feito.join(' e '));
+    if (SYNC.temToken()) SYNC.agora();
+  };
+}
+function modalApagarAparelho() {
+  $('#mbox').innerHTML = '<p style="margin:2px 2px 8px;font-size:16px"><b>Apagar TUDO deste aparelho?</b></p><p class="hint" style="margin:0 2px 10px">Some o internograma lido, as visitas, evoluções, pendências e fotos guardadas <b>neste aparelho</b>. O que já foi para o Drive continua lá e volta na próxima sincronização — para zerar tudo, apague antes a pasta do Drive.</p><p class="hint" style="margin:0 2px 8px">Digite <b>APAGAR</b> para confirmar:</p><input id="apConf" autocomplete="off" style="width:100%;font-size:17px;padding:10px;border:2px solid var(--line);border-radius:10px;margin-bottom:12px"><div class="row"><button class="btn sec" data-cancel>Cancelar</button><button class="btn" id="mapTudo" style="background:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Apagar tudo</button></div>';
+  $('#modal').classList.add('on');
+  $('#mapTudo').onclick = function () {
+    if (($('#apConf').value || '').trim().toUpperCase() !== 'APAGAR') { toast('Digite APAGAR para confirmar'); return; }
+    window.__semSalvar = true;
+    try { Object.keys(localStorage).forEach(function (k) { if (/^sot/.test(k) && ['sot-tk', 'sot-logou', 'sot-ult'].indexOf(k) < 0) localStorage.removeItem(k); }); } catch (e) {}
+    var fim = function () { location.reload(); };
+    try { var r = indexedDB.deleteDatabase('sot-fotos'); r.onsuccess = r.onerror = r.onblocked = fim; setTimeout(fim, 2500); } catch (e) { fim(); }
+  };
+}
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -1164,7 +1295,7 @@ function blocoEvoAnterior(p) {
 }
 function blocoHistorico(p) {
   var dias = Object.keys(S.vis || {}).filter(function (d) { return d < S.hoje && S.vis[d][p.id]; }).sort().reverse().slice(0, 7);
-  var ev = (S.evo[p.id] || []).filter(function (e) { return e.data < S.hoje; }).slice().reverse();
+  var ev = (S.evo[p.id] || []).filter(function (e) { return e.data < S.hoje && !e.del; }).slice().reverse();
   var lug = ((S.idents || {})[p.id] || {}).hist || [];
   if (!dias.length && !ev.length && lug.length < 2) return '';
   var h = '<details class="q hist"><summary class="lb" style="cursor:pointer">🗂 Histórico deste paciente<span>' + dias.length + ' visita(s) · ' + ev.length + ' evolução(ões)</span></summary>';
@@ -1212,7 +1343,7 @@ function abrirEvo(id) {
       marks: S.v[id] || null, obs: (S.v[id] || {}).obs || '', pac: (p.leito ? p.leito + ' · ' : '') + p.nome,
       dihConv: S.dihConv ? 1 : 0, ig: { dx: p.dx, ap: p.ap, dihData: p.dihData, dih: p.dih, dihStated: p.dihStated, po: p.po && !p.po.futuro ? p.po : null, poStated: p.po ? p.po.stated : null, agenda: p.agenda || [], pend: abertas, tipo: p.tipo || tipoDe(p) } }, '*');
   };
-  fr.src = 'evo.html?t=' + Date.now();
+  var u0 = 'evo.html?t=' + Date.now(); try { if (fr.contentWindow && fr.contentWindow.location.href !== 'about:blank') fr.contentWindow.location.replace(u0); else fr.src = u0; } catch (e) { fr.src = u0; }
   $('#evoSheet').classList.add('open'); $('#evoSheet').setAttribute('aria-hidden', 'false'); document.body.classList.add('travado'); travar();
 }
 function fecharEvo() {
@@ -1246,6 +1377,8 @@ document.addEventListener('click', function (ev) {
   if (ds.dihc != null) { S.dihConv = +ds.dihc; recalc(); save(); render(); toast('DIH recalculado'); return; }
   if ('temaciclo' in ds) { S.tema = document.documentElement.classList.contains('escuro') ? 'claro' : 'escuro'; saveLocal(); aplicarTema(); if (S.tab === 'config') render(); return; }
   if (ds.tema) { S.tema = ds.tema; saveLocal(); aplicarTema(); render(); return; }
+  if (ds.apagarreg) { modalApagar(ds.apagarreg); return; }
+  if ('apagaraparelho' in ds) { modalApagarAparelho(); return; }
   if (ds.hub) { abrirHub(ds.hub); return; }
   if ('hubclose' in ds) { fecharHub(); return; }
   if ('irhoje' in ds) { S.hoje = hojeISO(); recalc(); save(); render(); toast('Data: hoje'); return; }
