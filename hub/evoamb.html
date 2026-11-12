@@ -111,6 +111,18 @@
   #pop .atb .item{display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:4px}
   #pop .atb .item span{flex:1}
   #pop input.date{width:104px}
+  body.embed h1, body.embed .sub, body.embed #btnNext, body.embed #btnExample{display:none}
+  body.embed .wrap{padding-top:12px}
+  #alerts li.red{background:var(--warn-bg);border-left:4px solid var(--warn);font-weight:600}
+  .vbox{border:1px solid var(--auto);background:var(--auto-bg);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:13.5px}
+  .vbox ul{margin:6px 0 0;padding-left:4px;list-style:none}
+  .vbox li{margin:2px 0}
+  .vbox li.chg b{color:var(--chg)} .vbox li.keep{color:var(--muted)} .vbox li.miss{color:var(--warn)} .vbox li.conf{color:var(--pend)}
+  .vbox .vobs{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .vbox .vwarn{margin-top:6px;color:var(--warn);font-weight:600}
+  .f.ins{background:var(--chg-bg);border-color:var(--chg)}
+  html.escuro{--bg:#11161d;--card:#19202a;--ink:#e6ebf1;--muted:#97a3b3;--line:#2b3542;--accent:#4c8dff;--accent-ink:#0b1220;--pend:#f0b54a;--pend-bg:#3a2e14;--keep:#5fd08f;--keep-bg:#163225;--chg:#79a8ff;--chg-bg:#18284a;--auto:#b39cff;--auto-bg:#2a2148;--warn:#ff8a7a;--warn-bg:#3a1a17;color-scheme:dark}
+  html.claro{--bg:#f6f7f9;--card:#fff;--ink:#1b2430;--muted:#5d6b7c;--line:#dde3ea;--accent:#1f6feb;--accent-ink:#fff;--pend:#b7791f;--pend-bg:#fdf3dd;--keep:#2f855a;--keep-bg:#e3f4ea;--chg:#1f5fbf;--chg-bg:#e2ecfb;--auto:#6b46c1;--auto-bg:#ede7fb;--warn:#b42318;--warn-bg:#fdecea;color-scheme:light}
 </style>
 </head>
 <body>
@@ -125,6 +137,7 @@
       <span class="spacer"></span>
       <button id="btnExample">Carregar exemplo</button>
     </div>
+    <p class="note" id="embedHint" style="margin:0 0 8px;color:var(--pend)"></p>
     <textarea id="input" placeholder="Cole aqui a evolução anterior…"></textarea>
     <div class="row" style="margin-top:12px">
       <label class="inl">Data desta evolução <input type="text" class="date" id="evalDate" inputmode="numeric" placeholder="dd/mm/aaaa"></label>
@@ -148,6 +161,7 @@
       <label class="inl">Data <input type="text" class="date" id="evalDate2" inputmode="numeric"></label>
     </div>
     <div class="warnbar hidden" id="draftBar" style="margin:0 0 12px">Rascunho desta aba restaurado. <button class="small" id="btnDiscard">Descartar e começar de novo</button></div>
+    <div id="visitBox" class="vbox hidden"></div>
     <ul id="alerts"></ul>
     <div class="row">
       <strong>2. Revise os campos</strong>
@@ -163,11 +177,28 @@
       <span><i class="dot" style="background:var(--muted)"></i>seção protegida</span>
     </div>
     <div id="view"></div>
+    <div id="manualBox" class="hidden">
+      <div class="warnbar" style="margin:0 0 8px">✏️ <b>Modo edição à mão</b> — o texto abaixo é o que será copiado/salvo. Palavras sublinhadas em vermelho: corretor do navegador (toque com o botão direito / pressione para ver sugestões).</div>
+      <textarea id="manualTxt" spellcheck="true" lang="pt-BR" autocapitalize="characters" style="width:100%;min-height:62vh;font:14.5px/1.7 'IBM Plex Mono',ui-monospace,monospace;padding:12px;border-radius:10px"></textarea>
+      <div id="manualSpell" style="margin-top:8px"></div>
+      <div class="row" style="margin-top:8px"><button id="btnManualSair" class="small">↩ Voltar aos campos (descarta o que foi editado à mão)</button></div>
+    </div>
+    <div id="drenoBox" class="hidden" style="margin:10px 0;padding:12px;border:1px solid var(--line,#ccc);border-radius:12px">
+      <b>🧮 Débito do dreno</b>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="drMl" inputmode="decimal" placeholder="mL" style="width:90px"> <span>mL em</span>
+        <input id="drH" inputmode="decimal" placeholder="horas" value="24" style="width:80px"> <span>h</span>
+        <b id="drRes" style="margin-left:6px"></b>
+      </div>
+      <div class="row" style="margin-top:8px;gap:8px"><button id="drCopy" class="small">Copiar frase</button><button id="drIns" class="small">Inserir no texto (modo à mão)</button><button id="drFechar" class="small">Fechar</button></div>
+    </div>
     <div class="row" style="margin-top:12px">
       <button id="btnBack">← Editar texto</button>
       <button id="btnKeepAll" title="Marca como mantidos todos os campos ainda não revisados">Manter pendentes</button>
       <button id="btnUndo" title="Desfazer a última alteração (Ctrl+Z)">↶ Desfazer</button>
       <button id="btnRevert" title="Volta ao texto colado, descartando todas as alterações">Reverter tudo</button>
+      <button id="btnManual" title="Editar o texto final livremente (com corretor ortográfico)">✏️ Editar à mão</button>
+      <button id="btnDreno" title="Calcular débito do dreno em mL/hora">🧮 Dreno mL/h</button>
       <span class="spacer"></span>
       <button id="btnNext" title="Usa o texto atual como base e avança a data em 1 dia">Usar como base do dia seguinte</button>
       <button class="primary" id="btnCopy">Copiar evolução</button><span class="toast" id="toast"></span>
@@ -263,7 +294,11 @@ const BUILTIN = [
   ["Febre", ["afebril","febril","nega febre","refere febre"]],
   ["Dor", ["nega queixas álgicas","sem queixas álgicas","nega dor","refere dor leve","refere dor moderada","refere dor intensa"]],
   ["Controle da dor", ["controlada com analgesia","parcialmente controlada com analgesia","refratária à analgesia"]],
-  ["Dieta", ["boa aceitação da dieta","aceitando bem a dieta","aceitação parcial da dieta","baixa aceitação da dieta","em jejum","dieta zero"]],
+  ["Dieta", ["boa aceitação da dieta","aceitando bem a dieta","aceitação regular da dieta","aceitação parcial da dieta","baixa aceitação da dieta","recusando a dieta","em jejum","estar em jejum","dieta zero","dieta por sonda nasogástrica","dieta por sonda nasoenteral","dieta por SNG","dieta por SNE","dieta por gastrostomia","nutrição parenteral"],
+    {tail:"(?:\\s+(?:por\\s+)?(?:via\\s+oral|VO))?(?:\\s+prescrita)?"}],
+  ["Urina", ["urina clara","urina concentrada","urina turva","urina de aspecto turvo","piúria","hematúria"]],
+  ["Placa de hidrocoloide", ["com placa de hidrocoloide","em uso de placa de hidrocoloide","placa de hidrocoloide íntegra","placa de hidrocoloide descolada","sem placa de hidrocoloide"]],
+  ["Mudança de decúbito", ["mudança de decúbito de 2/2h","mantendo mudança de decúbito","sem mudança de decúbito"]],
   ["Sono", ["noite tranquila","noite agitada","sono preservado","insônia"]],
   ["Eliminações", ["eliminações presentes","eliminações ausentes","eliminações parcialmente presentes"]],
   ["Diurese", ["diurese presente","diurese ausente","diurese espontânea","diurese reduzida","diurese por SVD","diurese presente em SVD","diurese reduzida em SVD","diurese em fralda","diurese presente em fralda"],
@@ -274,7 +309,7 @@ const BUILTIN = [
   ["Decúbito / posição", ["decúbito dorsal horizontal (DDH)","decúbito lateral direito (DLD)","decúbito lateral esquerdo (DLE)","decúbito dorsal horizontal","decúbito lateral direito","decúbito lateral esquerdo","decúbito elevado","sentado no leito","sentada no leito","sentado em poltrona","sentada em poltrona"]],
   ["Decúbito (sigla)", ["DDH","DLD","DLE"]],
   ["Mobilidade / chegada", ["deambulando","deambulando com auxílio","deambulando sem auxílio","deambulando com muletas","deambulando com andador","em cadeira de rodas","em maca","restrito ao leito","restrita ao leito"]],
-  ["Lesão por pressão", ["sem lesões por pressão","sem lesão por pressão","lesão por pressão em região sacral","lesão por pressão em calcâneo","lesão por pressão em região trocantérica"]],
+  ["Lesão por pressão", ["sem lesões por pressão","sem lesão por pressão","lesão por pressão em região sacral","lesão por pressão em calcâneo direito","lesão por pressão em calcâneo esquerdo","lesão por pressão em calcâneo","lesão por pressão em região trocantérica","lesão por pressão em região glútea","lesão por pressão em região occipital"]],
 
   // exame geral curto
   ["Aparelho respiratório", ["MV presente bilateralmente sem RA","MV presente bilateralmente com roncos","MV presente bilateralmente com crepitações","MV diminuído em bases"]],
@@ -385,6 +420,7 @@ const NB = "(?<![A-Za-zÀ-ÿ\\d\\/,.])";       // não pode vir colado em letra 
 const ABX = "ATB|ANTIBI[A-Za-zÀ-ÿ]*|CEFAZOLINA|CEFALOTINA|CEFUROXIMA|CEFTRIAXONA|CEFEPIME|CEFALEXINA|CEFTAZIDIMA|OXACILINA|AMPICILINA|AMOXICILINA|CLAVULANATO|PENICILINA|PIPERACILINA|TAZOBACTAM|TAZOCIN|MEROPENEM|ERTAPENEM|IMIPENEM|VANCOMICINA|TEICOPLANINA|LINEZOLIDA|DAPTOMICINA|CLINDAMICINA|GENTAMICINA|AMICACINA|CIPROFLOXACINO|LEVOFLOXACINO|MOXIFLOXACINO|METRONIDAZOL|SULFAMETOXAZOL|BACTRIM|RIFAMPICINA|DOXICICLINA|POLIMIXINA|AZITROMICINA|TIGECICLINA";
 const R = (s,f="gid") => new RegExp(s,f);
 const COUNTERS = [
+  {label:"Dia de pós-operatório (Dn PO)", kind:"po", cat:"surg", re:R("(?<=^[ \\t#>*-]*|[\\s(])D(\\d{1,2})\\b(?=\\s*(?:DE\\s+)?(?:DPO|PO|P[ÓO]S[-\\s]?OPERAT))","gimd")},
   // pós-operatório: PO n = dias desde a cirurgia (POI = 0)
   {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*(?:DPO|PO)\\b(?!\\s*I\\b)")},
   {label:"Dia de pós-operatório", kind:"po", cat:"surg", re:R("\\b(?:DPO|PO)\\s*(\\d{1,2})\\b(?![\\/\\d])")},
@@ -397,8 +433,8 @@ const COUNTERS = [
   {label:"Dia de antibiótico (Dn)", kind:"d1", cat:"atb", re:R("(?:"+ABX+")\\s*[-–:(]?\\s*\\bD(\\d{1,2})\\b")},
   {label:"Dia de internação", kind:"d1", cat:"intern", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIA\\s+D[EO]\\s+INTERNA[ÇC][ÃA]O")},
   {label:"Dia de antibiótico", kind:"d1", cat:"atb", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIA\\s+D[EO]\\s+(?:ANTIBI\\S*|ATB)")},
-  {label:"Dia de internação (DIH)", kind:"d1", cat:"intern", re:R("\\bDIH\\s*(\\d{1,2})\\b")},
-  {label:"Dia de internação (DIH)", kind:"d1", cat:"intern", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIH\\b")},
+  {label:"Dia de internação (DIH)", kind:"days", cat:"intern", re:R("\\bDIH\\s*(\\d{1,2})\\b")},
+  {label:"Dia de internação (DIH)", kind:"days", cat:"intern", re:R(NB+"(\\d{1,2})\\s*[ºo°]?\\s*DIH\\b")},
   // número ausente: "PÓS OPERATÓRIO … (05/11/2026)", "D FRATURA … (04/11/2026)", "D VANCOMICINA Di 05/11/2026"
   {label:"Dia de pós-operatório (inserido)", kind:"po", cat:"surg", missing:true, re:/(?<=^[ \t]*)((?:[°º][ \t]*)?P[ÓO]S)(?=[-\s]?OPERAT[ÓO]RIO(?!\s+IMEDIATO))/gimd},
   {label:"Dia de fratura / evento (inserido)", kind:"d1", cat:"event", missing:true, re:/(?<=^[ \t]*)(D)(?=\s+(?:D[EAO]\s+)?(?:FRATURA|TRAUMA|QUEDA|ACIDENTE|LES[ÃA]O|LUXA[ÇC][ÃA]O|ENTORSE))/gimd},
@@ -406,7 +442,7 @@ const COUNTERS = [
   {label:"Dia de antibiótico (inserido)", kind:"d1", cat:"atb", missing:true, after:true, re:R("\\b(D)(?=\\s+(?:D[EO]\\s+)?(?:"+ABX+")\\b)")},
   {label:"Dia de antibiótico (inserido)", kind:"d1", cat:"atb", missing:true, prefixD:true, re:R("(?<=^[ \\t]*)((?:"+ABX+"))(?=\\b[^\\n]*?(?:\\bDI\\b|IN[ÍI]CIO)[^\\n]*?\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})","gimd")},
   // genérico: "5D PERDA DE FORÇA … 05/11/2026" — qualquer motivo, no início da linha e com data na mesma linha
-  {label:"Dia de evolução (nD)", kind:"d1", cat:"any", re:/(?<=^[ \t#>*-]*)(\d{1,2})\s?D(?=\s+[A-Za-zÀ-ÿ][^\n]*?\d{1,2}\/\d{1,2}\/\d{2,4})/gimd},
+  {label:"Dia de evolução (nD)", kind:"d1", cat:"any", re:/(?<=^[ \t#>*-]*)(\d{1,2})\s?D(?=\s+[A-Za-zÀ-ÿ](?:(?!\n[ \t]*\n|\n[ \t]*-{3})[\s\S]){0,500}?\d{1,2}\/\d{1,2}\/\d{2,4})/gimd},
   {label:"Dia de evolução (inserido)", kind:"d1", cat:"any", missing:true, re:/(?<=^[ \t#>*-]*)(D)(?=\s+[A-Za-zÀ-ÿ][^\n]*?\d{1,2}\/\d{1,2}\/\d{2,4})/gmd},
   // tempo decorrido com unidade (retornos)
   {label:"Tempo decorrido", unit:true, re:R(NB+"(\\d{1,3})\\s+(SEMANAS?|MESES|M[ÊE]S|DIAS?)(?=\\s+(?:D[EAO]\\s+|AP[ÓO]S\\s+(?:[AO]\\s+)?)?(?:PO\\b|P[ÓO]S|FRATURA|TRAUMA|CIRURGIA|PROCEDIMENTO|QUEDA|ACIDENTE|LES[ÃA]O|EVOLU))")},
@@ -693,6 +729,7 @@ function fmtCounter(s,n){
   }
   if(s.unitWord){ const [sg,pl]=UNITS[s.kind]; return `${n} ${styleText(s.unitWord, n===1?sg:pl)}`; }
   if(s.kind==="po" && n===0) return null;
+  if(/^0\d$/.test(String(s.orig)) && n>=0 && n<10) return "0"+n;
   return String(n);
 }
 /* trecho descritivo da linha (p/ diferenciar várias fraturas/cirurgias no resumo e alertas) */
@@ -831,7 +868,9 @@ function segValue(s){
   if(s.type==="gw") return gend(s.orig);
   return s.value;
 }
-const outputText = () => segs.map(segValue).join("");
+let MANUAL=null;
+const outputText0 = () => segs.map(segValue).join("");
+const outputText = () => MANUAL!==null ? MANUAL : outputText0();
 function displayOpt(s,o){ return gend(styleText(s.orig,o)); }
 /* lista de opções exibida (mesma ordem dos números 1–9) */
 function optList(s){
@@ -938,7 +977,10 @@ function renderAlerts(){
   const INFO=[];
   for(const s of C.filter(s=>s.flag==="global"&&s.state==="auto")) INFO.push(`“${s.value}” calculado pela data ${s.ref.str} encontrada em outra linha (“${s.ref.src.slice(0,70)}${s.ref.src.length>70?"…":""}”).`);
 
-  $("alerts").innerHTML = (A.length ? A.map(a=>`<li>⚠ ${esc(a)}</li>`).join("") : `<li class="ok">✓ Nenhuma incoerência encontrada.</li>`)
+  const XR = window.extraAlerts ? window.extraAlerts(free) : {red:[],warn:[],info:[]};
+  A.push(...XR.warn); INFO.push(...XR.info);
+  $("alerts").innerHTML = XR.red.map(a=>`<li class="red">🚩 ${esc(a)}</li>`).join("")
+    + (A.length ? A.map(a=>`<li>⚠ ${esc(a)}</li>`).join("") : XR.red.length ? "" : `<li class="ok">✓ Nenhuma incoerência encontrada.</li>`)
     + INFO.map(a=>`<li class="info">ℹ ${esc(a)}</li>`).join("");
 }
 
@@ -1039,6 +1081,7 @@ function renderSpell(){
       const k="rep"+i; found.set(k,{from:m[0],to:"",why:`repetição depois de “${segValue(s)}”`,n:1,seg:i+1});
     }
   });
+  if(window.extraSpell) window.extraSpell(found);
   SPELL=[...found.values()];
   $("spellSum").textContent = SPELL.length ? `Revisão ortográfica — ${SPELL.length} sugestão(ões)` : "Revisão ortográfica — nenhuma sugestão";
   const show=v=>v.trim()?esc(v):`“${v.replace(/ /g,"·")}”`;
@@ -1051,7 +1094,7 @@ function applySpell(list){
   pushHistory(); SPELLFIXED+=list.reduce((a,x)=>a+x.n,0);
   for(const x of list){ if(x.seg!=null){ const t=segs[x.seg]; if(t && t.type==="text" && t.value.startsWith(x.from)) t.value=x.to+t.value.slice(x.from.length); } }
   for(const x of list.filter(x=>x.seg==null)) for(const s of segs){
-    if(s.type!=="text") continue;
+    if(s.type!=="text" && !(x.prot && s.type==="prot")) continue;
     if(/^\p{L}+$/u.test(x.from)) s.value=s.value.replace(new RegExp("(?<!\\p{L})"+x.from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?!\\p{L})","gu"), x.to);
     else s.value=s.value.split(x.from).join(x.to);
   }
@@ -1089,6 +1132,7 @@ function renderSummary(){
       let trend=""; if(s.scale!=null){ const a=parseInt(s.orig), b=parseInt(v); if(!isNaN(a)&&!isNaN(b)&&a!==b) trend = b>a ? ` <span style="color:var(--keep)">↑ melhora</span>` : ` <span style="color:var(--warn)">↓ piora</span>`; }
       L.push(`${esc(s.label)}${s.ctx?` <span class="note">(${esc(s.ctx)})</span>`:""}: ${esc(gend(s.orig))} → <b>${esc(v)}</b>${trend}`);
     }
+    else if(s.type==="ins") L.push(`Inserido da visita: <b>${esc(v.trim())}</b>`);
     else if(s.type==="rx" && s.state==="chg") L.push(`${s.newSection?"Nova seção de RX":"RX"}: <b>${esc(v.split("\n").map(l=>l.trim()).filter(l=>l && !/^[-–—]{3,}$/.test(l)).pop()||"")}</b>`);
   }
   const g=segs.filter(s=>s.type==="gw"&&segValue(s)!==s.orig).length + segs.filter(s=>s.type==="opt"&&gend(s.raw)!==s.raw).length;
@@ -1105,7 +1149,7 @@ const ssSet=(k,v)=>{ try{ sessionStorage.setItem(k,v); }catch(e){} };
 const ssGet=k=>{ try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
 const ssDel=k=>{ try{ sessionStorage.removeItem(k); }catch(e){} };
 function saveDraft(){
-  if(!SRC) return;
+  if(!SRC||window.__EMBED) return;
   ssSet(SS_DRAFT, JSON.stringify({src:SRC,eval:fmtBR(EVAL),ndays:NDAYS,sex:SEX,sexWhy:SEXWHY,accent:ACCENT,spell:SPELLFIXED,segs}));
 }
 function restoreDraft(){
@@ -1197,6 +1241,7 @@ function openPop(i){
     h+=`<div class="other"><input type="text" id="popInput" value="${esc(v)}"><button id="popOk">OK</button></div>`;
     h+=`<div class="opts" style="margin-top:6px"><button data-v="${esc(v)}"><kbd>1</kbd>✓ Manter ${esc(v)}</button>${v!==s.orig?`<button data-v="${esc(s.orig)}"><kbd>2</kbd>Voltar ao anterior (${esc(s.orig)})</button>`:""}${s.type==="counter"&&s.manual?`<button id="recalc">Recalcular pela data</button>`:""}</div>`;
     if(s.note) h+=`<div class="hint">${esc(s.note)}</div>`;
+    if(s.type==="ins") h+=`<div class="hint">Inserido a partir da visita (${esc(s.visit||"")}).</div><div class="opts" style="margin-top:6px"><button id="insRm">Remover este trecho</button></div>`;
   }
   pop.innerHTML=h; pop.style.display="block"; placePop(el);
   const set = s.type==="opt" ? v=>setOpt(i,v) : v=>setPlain(i,v);
@@ -1204,6 +1249,7 @@ function openPop(i){
   const inp=$("popInput"), apply=()=>{ if(inp.value.trim()) set(s.type==="opt"?matchCase(s.orig,inp.value):inp.value); };
   $("popOk").addEventListener("click",ev=>{ev.stopPropagation(); apply();});
   inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ev.preventDefault(); apply();} });
+  const ir=$("insRm"); ir&&ir.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); segs.splice(i,1); closePop(); render();});
   const rc=$("recalc"); rc&&rc.addEventListener("click",ev=>{ev.stopPropagation(); pushHistory(); s.manual=false; computeCounter(s); closePop(); render(i);});
   pop.querySelectorAll("[data-grade]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation(); setPlain(i,b.dataset.grade,true);}));
   const ad=$("atbAdd");
@@ -1244,6 +1290,7 @@ function recomputeAll(){
 }
 function go(){
   const t=$("input").value; if(!t.trim()) return;
+  manualOff();
   readEval("evalDate"); NDAYS=Math.max(0,parseInt($("days").value)||0);
   analyze(t);
   $("sex").value=SEX; $("sexWhy").textContent=SEXWHY; $("accent").value=ACCENT;
@@ -1396,7 +1443,582 @@ document.addEventListener("keydown",ev=>{
   if(k==="e"||k==="E"){ ev.preventDefault(); $("btnBack").click(); return; }
 });
 
-if(!restoreDraft()){ const inp=ssGet(SS_INPUT); if(inp) $("input").value=inp; }
+/* =====================================================================
+   PONTE COM A VISITA BEIRA-LEITO (só quando aberto dentro do protótipo)
+   ===================================================================== */
+const EMBED = !!window.__EMBED;
+let VISIT = null, VISIT_RES = [], XV = {red:[],warn:[],info:[]}, XC = {warn:[],info:[],spell:[]};
+const EVA_LVL = n => n==null ? null : n<=3 ? "leve" : n<=6 ? "moderada" : "intensa";
+const textUpper = () => { const L=(SRC||"").replace(/[^\p{L}]/gu,""); return !!L && L.replace(/[^\p{Lu}]/gu,"").length/L.length>0.8; };
+const phr = s => { s=gend(s); return textUpper()? s.toUpperCase() : s; };
+const baseDate = () => addDays(EVAL, -(NDAYS||1));
+const freeText = () => segs.map(s=>s.type==="prot"?"\n":segValue(s)).join("");
+const NEG_BEFORE = /(?:\bSEM\b|\bNEGA\b|\bAUSENCIA DE\b|\bNAO\b|\bAFEBRIL\b)[^.;\n]{0,25}$/;
+
+/* ---------------- níveis neurológicos (coluna) ---------------- */
+const MYO = [["C5",/FLEXORES DO COTOVELO|BICEPS/],["C6",/EXTENSORES DO PUNHO/],["C7",/EXTENSORES DO COTOVELO|TRICEPS/],["C8",/FLEXORES (?:PROFUNDOS )?DOS DEDOS/],
+  ["T1",/ABDUTORES? DOS DEDOS|ABDUTOR DO DEDO MINIMO|INTEROSSE/],["L2",/FLEXORES DO QUADRIL|ILIOPSOAS/],["L3",/EXTENSORES DO JOELHO|QUADRICEPS/],
+  ["L4",/DORSIFLEXORES|TIBIAL ANTERIOR/],["L5",/EXTENSOR(?:ES)? LONGOS? DO HALUX/],["S1",/FLEXORES PLANTARES|GASTROCNEM|TRICEPS SURAL/]];
+const MYO_NOME = {C5:"flexores do cotovelo",C6:"extensores do punho",C7:"extensores do cotovelo",C8:"flexores dos dedos",T1:"abdutores dos dedos",
+  L2:"flexores do quadril",L3:"extensores do joelho",L4:"dorsiflexores do tornozelo",L5:"extensores longos do hálux",S1:"flexores plantares do tornozelo"};
+function segLevel(s){
+  const c=upS(s.ctx||""); const side=/\bESQ\b/.test(c)?"E":/\bDIR\b/.test(c)?"D":"";
+  if(s.nkind==="sens"){ const m=c.match(/\b([CTLS]\d{1,2})\b/); return m?{lv:m[1],side,kind:"s"}:null; }
+  if(s.nkind==="forca"){ const f=MYO.find(([,re])=>re.test(c)); return f?{lv:f[0],side,kind:"g"}:null; }
+  return null;
+}
+
+/* ---------------- o que cada marcação significa no glossário ---------------- */
+function visitWants(V){
+  const W=[]; const add=(why,map,o={})=>W.push(Object.assign({why,map},o));
+  const q=V.queixa||[], lvl=EVA_LVL(V.eva);
+  if(q.includes("Sem queixas")){
+    add("Sem queixas",{"Queixas":["sem queixas agudas no momento","sem queixas"],"Dor":["nega queixas álgicas","sem queixas álgicas","nega dor"]},{ins:["s","sem queixas agudas no momento"]});
+  } else {
+    const dor=q.includes("Dor controlada")||q.includes("Dor não controlada")||(V.eva!=null&&V.eva>0);
+    if(dor){
+      const L = lvl && V.eva>0 ? lvl : q.includes("Dor não controlada") ? "moderada" : "leve";
+      add(`Dor ${L}${V.eva!=null?` (EVA ${V.eva})`:""}`,{"Queixas":[`queixando-se de dor ${L}`],"Dor":[`refere dor ${L}`]},{ins:["s",`queixando-se de dor ${L}${V.eva!=null?` (EVA ${V.eva})`:""}`]});
+    }
+    if(q.includes("Dor controlada")) add("Dor controlada com analgesia",{"Controle da dor":["controlada com analgesia"]},{ins:["s","dor controlada com analgesia"]});
+    if(q.includes("Dor não controlada")) add("Dor não controlada",{"Controle da dor":["refratária à analgesia","parcialmente controlada com analgesia"]},{ins:["s","dor não controlada com analgesia atual"]});
+    if(q.includes("Náuseas/vômitos")) add("Náuseas/vômitos",dor?{}:{"Queixas":["queixando-se de náuseas"]},{ins:["s","refere náuseas/vômitos"]});
+    if(q.includes("Insônia")) add("Insônia",{"Sono":["insônia"]},{ins:["s","refere insônia"]});
+    if(q.includes("Parestesia")) add("Parestesia",{},{ins:["s","refere parestesia"]});
+  }
+  if(V.consc){
+    const C={"Lúcido e orientado":[{"Consciência (masc.)":["lúcido e orientado em tempo e espaço","lúcido e orientado"],"Consciência (fem.)":["lúcida e orientada em tempo e espaço","lúcida e orientada"]},"lúcido e orientado em tempo e espaço"],
+      "Sonolento":[{"Despertar (masc.)":["sonolento"],"Despertar (fem.)":["sonolenta"]},"sonolento"],
+      "Confuso / desorientado":[{"Consciência (masc.)":["desorientado em tempo e espaço","lúcido e desorientado em tempo e espaço","confuso"],"Consciência (fem.)":["desorientada em tempo e espaço","lúcida e desorientada em tempo e espaço","confusa"]},"desorientado em tempo e espaço"],
+      "Agitado":[{"Consciência (masc.)":["agitado"],"Consciência (fem.)":["agitada"]},"agitado"],
+      "Rebaixado":[{},"rebaixamento do nível de consciência"]}[V.consc];
+    if(C) add("Consciência: "+V.consc.toLowerCase(),C[0],{ins:["s",C[1]]});
+  }
+  if(V.resp){
+    const R={"Eupneico em ar ambiente":[{"Respiratório":["eupneico em ar ambiente","eupneica em ar ambiente"]},"eupneico em ar ambiente"],
+      "Dispneia":[{"Respiratório":["dispneico","dispneica"]},"dispneico"],
+      "O2 suplementar":[{"Respiratório":["em cateter nasal de O2"]},"em uso de O2 suplementar"]}[V.resp];
+    if(R) add("Respiratório: "+V.resp.toLowerCase(),R[0],{ins:["s",R[1]]});
+  }
+  if(V.acomp==="Acompanhado") add("Acompanhado(a)",{"Acompanhante (masc.)":["acompanhado"],"Acompanhante (fem.)":["acompanhada"]},{ins:["s","acompanhado"],textOk:/ACOMPANHANTE|ACOMPANHAD/});
+  if(V.acomp==="Sem acompanhante") add("Sem acompanhante",{"Acompanhante (masc.)":["desacompanhado"],"Acompanhante (fem.)":["desacompanhada"]},{ins:["s","sem acompanhante"],textConflict:/\bACOMPANHANTE\b(?!S? AUSENTE)|\bACOMPANHAD[OA]\b/});
+  const DIETA={"Boa aceitação":[["boa aceitação da dieta","aceitando bem a dieta"],1],"Aceitação regular":[["aceitação regular da dieta","aceitação parcial da dieta"],1],
+    "Baixa aceitação":[["baixa aceitação da dieta","recusando a dieta"],1],"Jejum":[["em jejum","dieta zero"],0],"Sonda nasogástrica":[["dieta por sonda nasogástrica","dieta por SNG"],0],
+    "Sonda nasoenteral":[["dieta por sonda nasoenteral","dieta por SNE"],0],"Gastrostomia":[["dieta por gastrostomia"],0],"Parenteral":[["nutrição parenteral"],0]}[V.dieta];
+  if(DIETA) add("Dieta: "+V.dieta.toLowerCase(),{"Dieta":DIETA[0]},{ins:["s",DIETA[0][0]],keepTail:!!DIETA[1]});
+  const DIU={"Espontânea":["diurese espontânea","diurese presente"],"SVD":["diurese por SVD","diurese presente em SVD"],"Fralda":["diurese em fralda","diurese presente em fralda"],"Ausente / retenção":["diurese ausente"]};
+  if(V.diurese && DIU[V.diurese]){
+    const m={"Diurese":DIU[V.diurese]};
+    if(V.diurese==="SVD") m["Sonda vesical"]=["em uso de sonda vesical de demora","em uso de SVD","SVD mantida"];
+    if(V.diurese==="Espontânea"||V.diurese==="Fralda") m["Sonda vesical"]=["sonda vesical de demora retirada","SVD retirada","sem SVD"];
+    add("Diurese: "+V.diurese.toLowerCase(),m,{ins:["s",DIU[V.diurese][0]]});
+  }
+  if(V.urina==="Turva / piúria") add("Urina turva / piúria",{"Urina":["urina turva","piúria"]},{ins:["s","urina de aspecto turvo"]});
+  if(V.urina==="Hematúria") add("Hematúria",{"Urina":["hematúria"]},{ins:["s","hematúria"]});
+  if(V.evac==="Presente") add("Evacuação presente",{"Evacuação":["evacuações presentes","evacuações preservadas","evacuação presente","hábito intestinal preservado"]},{ins:["s","evacuações presentes"]});
+  if(V.evac==="Ausente") add("Evacuação ausente"+(V.evac_x?` há ${V.evac_x} dia(s)`:""),{"Evacuação":cur=>/^evacuacao/.test(cur)?["evacuação ausente","evacuações ausentes"]:["evacuações ausentes","evacuação ausente"]},{ins:["s","evacuações ausentes"+(V.evac_x?` há ${V.evac_x} dias`:"")]});
+  if(V.diurese && V.evac){
+    const a=(V.diurese==="Ausente / retenção")+(V.evac==="Ausente");
+    add("Eliminações",{"Eliminações":[a===0?"eliminações presentes":a===1?"eliminações parcialmente presentes":"eliminações ausentes"]},{silent:true});
+  }
+  if(V.febre==="Afebril") add("Afebril",{"Febre":["afebril","nega febre"]},{ins:["s","afebril"]});
+  if(V.febre==="Febre") add("Febre"+(V.febre_x?` (Tax ${V.febre_x})`:""),{"Febre":cur=>/nega|refere/.test(cur)?["refere febre","febril"]:["febril","refere febre"]},{ins:["s","febril"+(V.febre_x?` (Tax ${V.febre_x} °C)`:"")]});
+  const DEC={
+    "Dorsal":[{"Decúbito / posição":["decúbito dorsal horizontal (DDH)","decúbito dorsal horizontal"],"Decúbito (sigla)":["DDH"]},"em decúbito dorsal horizontal (DDH)"],
+    "Dorsal elevado":[{"Decúbito / posição":["decúbito elevado"]},"em decúbito elevado"],
+    "Lateral D":[{"Decúbito / posição":["decúbito lateral direito (DLD)","decúbito lateral direito"],"Decúbito (sigla)":["DLD"]},"em decúbito lateral direito (DLD)"],
+    "Lateral E":[{"Decúbito / posição":["decúbito lateral esquerdo (DLE)","decúbito lateral esquerdo"],"Decúbito (sigla)":["DLE"]},"em decúbito lateral esquerdo (DLE)"],
+    "Sedestação":[{"Decúbito / posição":["sentado no leito","sentado em poltrona"]},"em sedestação"],
+    "Deambulando c/ auxílio":[{"Mobilidade / chegada":["deambulando com auxílio","deambulando com muletas","deambulando com andador"]},"deambulando com auxílio"],
+    "Deambulando":[{"Mobilidade / chegada":["deambulando sem auxílio","deambulando"]},"deambulando sem auxílio"],
+  }[V.decub];
+  if(DEC) add("Posição: "+V.decub.toLowerCase(),DEC[0],{ins:["s",DEC[1]]});
+  const fo=(V.fo||[]).filter(x=>x!=="Curativo oclusivo");
+  if(fo.length){
+    const k = fo.includes("Limpa e seca") ? "limpa" : fo.includes("Secreção purulenta") ? "pur" : fo.includes("Secreção sanguinolenta") ? "sang" : fo.includes("Secreção serosa") ? "ser" : fo.includes("Deiscência") ? "deisc" : "hip";
+    const T={limpa:"limpa e seca",ser:"com secreção serosa",sang:"com secreção sanguinolenta",pur:"com secreção purulenta",hip:"com hiperemia",deisc:"com deiscência"}[k];
+    const m={"Ferida operatória":["ferida operatória "+T],"FO (sigla)":["FO "+T]}, acc={};
+    if(k==="sang"){ acc["Ferida operatória"]=["ferida operatória com secreção sero-hemática"]; acc["FO (sigla)"]=["FO com secreção sero-hemática"]; }
+    if(k==="limpa"){ m["Secreção"]=["sem saída de secreção ativa ou passiva"]; m["Bordas"]=["bordas coaptadas"]; m["Aspecto ao retirar curativo"]=["ao retirar, bom estado"]; m["Curativo"]=["curativo oclusivo limpo e seco","curativo limpo e seco"]; acc["Curativo"]=["curativo oclusivo"]; acc["Pontos"]=["pontos íntegros sem deiscências","pontos íntegros","pontos retirados"]; m["Pontos"]=["pontos íntegros sem deiscências","pontos íntegros"]; }
+    if(k==="ser"){ m["Secreção"]=["com saída de secreção serosa","com saída de secreção serosa à expressão"]; m["Curativo"]=["curativo oclusivo com sujidade serosa","curativo com sujidade serosa"]; }
+    if(k==="sang"){ m["Secreção"]=["com saída de secreção sanguinolenta","com saída de secreção sero-hemática"]; m["Curativo"]=["curativo oclusivo com sujidade sanguinolenta","curativo oclusivo com sujidade sero-hemática","curativo com sujidade sanguinolenta"]; }
+    if(k==="pur") m["Secreção"]=["com saída de secreção purulenta"];
+    if(fo.includes("Hiperemia")){ m["Sinais flogísticos"]=["com sinais flogísticos","com hiperemia perincisional"]; m["Bordas"]=["bordas com hiperemia"]; m["Aspecto ao retirar curativo"]=["ao retirar, com hiperemia local"]; }
+    else if(k==="limpa"||k==="ser") m["Sinais flogísticos"]=["sem sinais flogísticos"];
+    if(fo.includes("Deiscência")){ m["Pontos"]=["deiscência parcial de pontos"]; m["Bordas"]=["bordas com deiscência parcial"]; }
+    const extra=fo.filter(x=>x!==({limpa:"Limpa e seca",ser:"Secreção serosa",sang:"Secreção sanguinolenta",pur:"Secreção purulenta",hip:"Hiperemia",deisc:"Deiscência"}[k])).map(x=>x.toLowerCase());
+    add("FO: "+fo.join(", ").toLowerCase(),m,{accept:acc,ins:["e","ferida operatória "+T+(extra.length?", "+extra.join(", "):"")+(fo.length&&(V.fo||[]).includes("Curativo oclusivo")?", curativo oclusivo":"")]});
+  }
+  const d=V.dreno||{};
+  if(d.sem) add("Sem dreno",{"Dreno":["dreno retirado"],"Dreno de Portovac":["dreno de Portovac retirado"]},{ins:["e","sem drenos"]});
+  if(d.tem){
+    const asp=(d.asp||[]).find(x=>!/vácuo/.test(x)), tot=["d","e","u"].map(k=>parseFloat(String(d[k]||"").replace(",","."))).filter(x=>!isNaN(x));
+    const zero = tot.length && tot.every(x=>x===0);
+    const t = zero ? "sem débito" : asp==="Hemático" ? "com débito sanguinolento" : asp==="Sero-hemático" ? "com débito sero-hemático" : asp==="Seroso" ? "com débito seroso" : "com débito";
+    const ml=[["D",d.d],["E",d.e],["",d.u]].filter(x=>x[1]!=null&&String(x[1]).trim()!=="").map(x=>(x[0]?x[0]+" ":"")+x[1]+" mL").join(" / ");
+    const vac=(d.asp||[]).find(x=>/vácuo/.test(x));
+    const hh=parseFloat(String(d.h||"").replace(",",".")), somaMl=tot.reduce((a,b)=>a+b,0), per=hh>0?hh:24;
+    const taxa=tot.length?(somaMl/per).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mL/h":"";
+    const quando=hh>0?` em ${String(hh).replace(".",",")} h`:" nas últimas 24h";
+    add("Dreno "+t+(ml?` (${ml}${quando}${taxa?" · "+taxa:""})`:""),{"Dreno":["dreno "+t],"Dreno de Portovac":["dreno de Portovac "+t]},{ins:["e","dreno "+t+(ml?` de ${ml}${quando}${taxa?" ("+taxa+")":""}`:"")+(vac?`, ${vac.toLowerCase()}`:"")],numDreno:true});
+  }
+  if(V.imob==="Bem posicionada") add("Imobilização bem posicionada",{"Imobilização (estado)":["imobilização íntegra","tala gessada bem posicionada","tala íntegra","gesso íntegro"]},{ins:["e","imobilização bem posicionada e íntegra"]});
+  if(V.imob==="Reposicionada") add("Imobilização reposicionada",{"Imobilização (estado)":["imobilização íntegra","tala gessada bem posicionada","tala íntegra","gesso íntegro"]},{confirm:true,ins:["e","imobilização reposicionada no leito"]});
+  if(V.imob==="Frouxa / danificada") add("Imobilização frouxa / danificada",{"Imobilização (estado)":["imobilização frouxa","imobilização danificada"]},{ins:["e","imobilização frouxa, necessita troca/reforço"]});
+  if(V.nv==="Preservado") add("Neurovascular preservado",{"Neurovascular":["sem déficits neurovasculares","sem déficit neurovascular"],"Neurovascular (curto)":["neurovascular preservado"],"Perfusão":["perfusão periférica preservada"],"Sensibilidade":["sensibilidade preservada"],"Motricidade":["motricidade preservada"],"TEC":["TEC < 3 segundos"]},{ins:["e","extremidade perfundida, neurovascular preservado"]});
+  if(V.nv==="Alterado") add("Alteração neurovascular"+(V.nv_x?": "+V.nv_x:""),{"Neurovascular":["com déficit neurovascular"],"Neurovascular (curto)":["neurovascular alterado"]},{confirm:true,ins:["e","alteração neurovascular"+(V.nv_x?": "+V.nv_x:"")]});
+  // exame físico rápido
+  const X=V.exf||{};
+  if(X.edema){ const E={"Sem edema":"sem edema","Leve":"edema leve","Moderado":"edema moderado","Importante":"edema importante","Em regressão":"edema em regressão","Em piora":"edema em piora"}[X.edema]; if(E) add("Edema: "+X.edema.toLowerCase(),{"Edema":[E]},{ins:["e",E]}); }
+  const CH={"Hematoma em resolução":[{"Hematoma":["hematoma em resolução"]},"hematoma em resolução"],"Hematoma tenso":[{"Hematoma":["hematoma tenso"]},"hematoma tenso"],
+    "Equimose extensa":[{"Equimose":["equimose extensa"]},"equimose extensa"],"Flictenas":[{"Flictenas":["com flictenas","flictenas íntegras","flictenas rotas"]},"presença de flictenas"],
+    "Compartimentos tensos":[{"Compartimentos":["compartimentos tensos","compartimentos com tensão aumentada"]},"compartimentos tensos"],
+    "Dor à extensão passiva":[{"Extensão passiva":["dor à extensão passiva dos dedos"]},"dor à extensão passiva dos dedos"],
+    "Perfusão lentificada":[{"Perfusão":["perfusão periférica lentificada"],"TEC":["TEC > 3 segundos"]},"perfusão periférica lentificada"],
+    "Pulsos diminuídos":[{"Pulsos":["pulsos diminuídos","pulsos ausentes"]},"pulsos diminuídos"],
+    "Hipoestesia":[{"Sensibilidade":["hipoestesia","sensibilidade alterada"]},"hipoestesia"],
+    "Déficit motor":[{"Motricidade":["déficit motor","motricidade alterada"]},"déficit motor"],
+    "Panturrilha empastada":[{"Panturrilhas":["panturrilhas empastadas"]},"panturrilha empastada"],
+    "Panturrilhas livres":[{"Panturrilhas":["panturrilhas livres"]},"panturrilhas livres"]};
+  for(const c of X.chips||[]) if(CH[c]) add(c,CH[c][0],{ins:["e",CH[c][1]]});
+  return W;
+}
+
+/* ---------------- inserção de frases ---------------- */
+const SUBJ = new Set(["Queixas","Dor","Controle da dor","Dieta","Diurese","Evacuação","Eliminações","Respiratório","Febre","Consciência (masc.)","Consciência (fem.)","Despertar (masc.)","Despertar (fem.)","Hemodinâmica","Acompanhante (masc.)","Acompanhante (fem.)","Decúbito / posição","Local da avaliação","Sono","Estado geral","Estado geral (extenso)"]);
+const EXAMSEG = new Set(["Ferida operatória","FO (sigla)","Curativo","Secreção","Sinais flogísticos","Pontos","Bordas","Edema","Neurovascular","Neurovascular (curto)","Perfusão","TEC","Dreno","Dreno de Portovac","Imobilização (estado)","Panturrilhas","Aspecto ao retirar curativo"]);
+function segStart(i){ let a=0; for(let j=0;j<i;j++) a+=segValue(segs[j]).length; return a; }
+function anchor(where){
+  const t=outputText(); let pos=-1;
+  const lineEnd=p=>{ let e=t.indexOf("\n",p); if(e<0) e=t.length; while(e>0 && /[ \t]/.test(t[e-1])) e--; return e; };
+  if(where==="e"){
+    const i=segs.findIndex(s=>s.type==="opt"&&EXAMSEG.has(s.label)); if(i>=0) pos=lineEnd(segStart(i));
+    else {
+      const lines=t.split("\n"); let off=0, inEx=false, last=-1;
+      for(const l of lines){
+        if(/^\s*#?\s*(EF\b|EXAME|AO EXAME|MEMBRO|REGI[ÃA]O|COLUNA)/i.test(l)) inEx=true;
+        else if(inEx && /^[-–—_=]{3,}\s*$/.test(l.trim())) break;
+        if(inEx && l.trim() && !/^[.\s]+$/.test(l)) last=off+l.replace(/\s+$/,"").length;
+        off+=l.length+1;
+      }
+      pos=last;
+    }
+  }
+  if(pos<0){ const i=segs.findIndex(s=>s.type==="opt"&&SUBJ.has(s.label)); if(i>=0) pos=lineEnd(segStart(i)); }
+  if(pos<0){ const m=t.search(/AVALIO|EVOLU|SUBJETIVO/i); if(m>=0) pos=lineEnd(m); }
+  if(pos<0) pos=t.replace(/\s+$/,"").length;
+  return pos;
+}
+function insertPhrase(where, text, why){
+  const pos=anchor(where), t=outputText(), before=t.slice(0,pos).replace(/\s+$/,"");
+  const str=(/[.:]$/.test(before)?" ":/[,;]$/.test(before)?" ":". ")+phr(text)+".";
+  let acc=0;
+  for(let i=0;i<segs.length;i++){
+    const v=segValue(segs[i]);
+    if(segs[i].type==="text" && pos>=acc && pos<=acc+v.length){
+      const k=pos-acc, s=segs[i];
+      segs.splice(i,1,{type:"text",value:s.value.slice(0,k)},{type:"ins",label:"Inserido da visita",orig:"",value:str,state:"chg",visit:why},{type:"text",value:s.value.slice(k)});
+      return true;
+    }
+    acc+=v.length;
+  }
+  segs.push({type:"ins",label:"Inserido da visita",orig:"",value:"\n"+phr(text)+".",state:"chg",visit:why}); return true;
+}
+
+/* ---------------- aplicar a visita ---------------- */
+function optCoreTail(s){
+  const raw=s.raw; let best=null;
+  for(const o of s.opts){ const m=raw.match(new RegExp("^"+toPattern(o),"iu")); if(m && (!best||m[0].length>best.length)) best=m[0]; }
+  return best ? [best, raw.slice(best.length)] : [raw,""];
+}
+function applyVisit(V){
+  pushHistory();
+  const res=[], pendIns=[];
+  const free0=upS(freeText());
+  for(const w of visitWants(V)){
+    let hit=0, chg=0;
+    for(const [label,spec] of Object.entries(w.map)){
+      segs.forEach((s,i)=>{
+        if(s.type!=="opt"||s.label!==label) return;
+        const [core,tail]=optCoreTail(s);
+        const cur=norm(gend(core));
+        const prefer = typeof spec==="function" ? spec(cur) : spec;
+        const acc=[...prefer, ...((w.accept&&w.accept[label])||[])];
+        hit++;
+        if(acc.some(o=>norm(gend(o))===cur)){ if(s.state==="pend") s.state = w.confirm ? "pend" : "keep"; }
+        else {
+          let p=prefer[0]; const prev=i>0?segValue(segs[i-1]):"";
+          if(/^em jejum/i.test(p) && /REFER\w*\s+$/i.test(prev)) p="estar em jejum";
+          s.raw=styleText(s.orig,p)+(w.keepTail?tail:"");
+          s.state = w.confirm ? "pend" : optState(s); if(s.state==="chg"||w.confirm) chg++;
+        }
+        s.visit=w.why;
+      });
+    }
+    if(!hit && w.textOk && w.textOk.test(free0)){ res.push({why:w.why+" (o texto já cita)",hit:1,chg:0}); continue; }
+    if(w.textConflict && w.textConflict.test(free0) && !hit){ XV.warn.push(`Visita marcou “${w.why}”, mas o texto de ontem cita acompanhante — ajuste a frase manualmente (não inseri para não contradizer o texto).`); res.push({why:w.why+" — texto cita acompanhante; ajustar manualmente",hit:0,chg:0}); continue; }
+    if(!hit && w.ins){ pendIns.push(w); continue; }
+    if(!w.silent || hit) res.push({why:w.why, hit, chg, confirm:!!w.confirm});
+  }
+  // débito do dreno (número)
+  const d=V.dreno||{};
+  if(d.tem){
+    const vals=[["D",d.d],["E",d.e],["",d.u]].filter(x=>x[1]!=null&&String(x[1]).trim()!=="");
+    const nums=segs.filter(s=>s.type==="num"&&/^D[ée]bito/.test(s.label));
+    if(vals.length && nums.length===vals.length){ let c=0; nums.forEach((s,j)=>{ const v=String(vals[j][1]); if(v!==s.value){ s.value=v; c++; } s.state = v===s.orig ? "keep" : "chg"; s.visit="Débito do dreno"; }); res.push({why:"Débito do dreno: "+vals.map(x=>(x[0]?x[0]+" ":"")+x[1]+" mL").join(" / "),hit:nums.length,chg:c}); }
+    else if(vals.length && nums.length) res.push({why:"Débito do dreno — quantidade de valores difere do texto; conferir",hit:0,chg:0,confirm:true});
+  }
+  // exame neurológico (coluna)
+  const N=V.neuro;
+  if(N){
+    const nsegs=segs.filter(s=>s.type==="num"&&(s.nkind==="forca"||s.nkind==="sens"));
+    if(N.sem){
+      let k=0; nsegs.forEach(s=>{ if(s.state==="pend"){ s.state="keep"; k++; } s.visit="Neuro sem alterações"; });
+      res.push({why:`Exame neurológico sem alterações (${nsegs.length} graus mantidos)`,hit:nsegs.length||(/FOR[CÇ]A|NEUROL/.test(free0)?1:0),chg:0});
+      if(!nsegs.length && !/FOR[CÇ]A|NEUROL/.test(free0)) pendIns.push({why:"Exame neurológico sem alterações",ins:["e","exame neurológico sem alterações em relação à avaliação anterior"]});
+    } else if(N.alt){
+      let ch=0, worse=[], better=[]; const used=new Set(), missing=[];
+      for(const [key,val] of Object.entries(Object.assign({},N.g||{},Object.fromEntries(Object.entries(N.s||{}).map(([k,v])=>["s"+k,v]))))){
+        if(val===""||val==null) continue;
+        const sens=key[0]==="s", k=sens?key.slice(1):key, lv=k.slice(0,-1), side=k.slice(-1);
+        const s=nsegs.find(x=>{ const L=segLevel(x); return L && L.lv===lv && L.side===side && L.kind===(sens?"s":"g"); });
+        if(!s){ missing.push(sens?`sensibilidade ${lv} ${side==="E"?"esquerda":"direita"} ${val}/2`:`força grau ${val} em ${MYO_NOME[lv]||lv} ${side==="E"?"esquerdo":"direito"}`); continue; }
+        used.add(s); const a=parseInt(s.orig), b=parseInt(val);
+        if(String(val)!==s.value){ s.value=String(val); ch++; }
+        s.state = String(val)===s.orig ? "keep" : "chg"; s.visit="Neuro";
+        if(b<a) worse.push(`${s.ctx}: ${a}→${b}`); if(b>a) better.push(`${s.ctx}: ${a}→${b}`);
+      }
+      nsegs.forEach(s=>{ if(!used.has(s) && s.state==="pend"){ s.state="keep"; } });
+      res.push({why:`Exame neurológico alterado — ${ch} grau(s) atualizado(s), demais mantidos`,hit:1,chg:ch});
+      if(worse.length) XV.red.push("Piora neurológica na visita ("+worse.length+" grau(s) menores que ontem) — comunicar assistente e avaliar compressão medular com urgência.");
+      if(better.length) XV.info.push("Melhora neurológica: "+better.join("; "));
+      if(missing.length) pendIns.push({why:"Neuro (sem campo no texto)",ins:["e",missing.join(", ")]});
+    }
+  }
+  // lesão por pressão
+  const P=V.lpp;
+  if(P){
+    const hasTxt=/LES[AÃ]O(?:ES)? POR PRESS[AÃ]O|\bLPP\b|ESCARA|[ÚU]LCERA POR PRESS/.test(free0);
+    if(P.sem){
+      const s=segs.filter(x=>x.type==="opt"&&x.label==="Lesão por pressão");
+      if(s.length){ s.forEach(x=>{ const c=norm(gend(x.raw)); if(!/^sem/.test(c)){ x.raw=styleText(x.orig,"sem lesões por pressão"); x.state=optState(x);} else if(x.state==="pend") x.state="keep"; x.visit="Sem LPP"; }); res.push({why:"Sem lesão por pressão",hit:s.length,chg:0}); }
+      else if(!hasTxt) pendIns.push({why:"Sem lesão por pressão",ins:["e","sem lesões por pressão"]});
+      else { res.push({why:"Sem LPP — mas o texto de ontem descreve LPP; conferir",hit:0,chg:0,confirm:true}); XV.warn.push("Visita: sem LPP, mas a evolução de ontem descreve lesão por pressão — conferir."); }
+    } else if((P.itens||[]).length){
+      const frases=P.itens.map(lppFrase);
+      const stg=segs.filter(s=>s.type==="num"&&/Est[áa]gio da les/.test(s.label));
+      if(hasTxt){
+        if(stg.length===1 && P.itens[0].estagio && /^[1-4]$/.test(P.itens[0].estagio)){ const s=stg[0]; const a=parseInt(s.orig), b=parseInt(P.itens[0].estagio); s.value=String(b); s.state=b===a?"keep":"chg"; if(b>a) XV.red.push(`LPP: estágio ${a} → ${b} (piora).`); }
+        res.push({why:"LPP: o texto já descreve — confira e ajuste: “"+frases.map(phr).join("; ")+"”",hit:0,chg:0,confirm:true,copy:frases.map(phr).join(". ")+"."});
+      } else { pendIns.push({why:"Lesão por pressão",ins:["e",frases.join(". ")]}); XV.warn.push("LPP nova registrada na visita: "+frases.join("; ")+"."); }
+      if(P.itens.some(x=>/^[34]|Não classific|Tissular/.test(x.estagio||""))) XV.red.push("LPP estágio 3/4, tissular profunda ou não classificável — avaliar estomaterapia/plástica e cobertura.");
+      if(P.itens.some(x=>(x.aspecto||[]).some(a=>/Secreção|Necrose|Odor/.test(a)))) XV.red.push("LPP com necrose/secreção/odor — sinais de infecção local.");
+    }
+  }
+  for(const w of pendIns){ insertPhrase(w.ins[0],w.ins[1],w.why); res.push({why:w.why,hit:1,chg:1,ins:true}); }
+  // demais itens iguais a ontem
+  if(V.exIgual){ let k=0; segs.forEach(s=>{ if(reviewable(s) && s.state==="pend" && s.type!=="counter"){ s.state="keep"; k++; } }); if(k) res.push({why:`Restante igual a ontem: ${k} campo(s) marcados como mantidos`,hit:k,chg:0}); }
+  VISIT_RES=res;
+}
+function lppFrase(x){
+  let f="lesão por pressão em "+(x.local||"local não especificado").toLowerCase();
+  if(x.estagio) f+=", "+(/^\d/.test(x.estagio)?"estágio "+x.estagio:x.estagio.toLowerCase());
+  if(x.dim) f+=", medindo "+x.dim.replace(/\s*[x×]\s*/i," x ")+" cm";
+  if((x.aspecto||[]).length) f+=", com "+x.aspecto.map(a=>a.toLowerCase()).join(", ");
+  if(x.placa) f+=", em uso de placa de hidrocoloide";
+  if(x.mud) f+=", mantendo mudança de decúbito de 2/2h";
+  return f;
+}
+
+/* ---------------- alertas da visita (sinais de alerta) ---------------- */
+function visitFlags(V, ig){
+  const R=[], Wn=[], I=[], base=upS(SRC||"");
+  const spine = ig && ig.tipo && ig.tipo.coluna;
+  if(!VISIT.visited) Wn.push("Paciente NÃO marcado como visitado hoje — confira à beira do leito antes de assinar.");
+  if(!V) return {red:R,warn:Wn,info:I};
+  if(V.febre==="Febre") R.push("Febre"+(V.febre_x?` (Tax ${V.febre_x} °C)`:"")+" — investigar foco (FO, urinário, respiratório, cateter); colher culturas conforme protocolo.");
+  const tax=parseFloat(String(V.febre_x||"").replace(",",".")); if(!isNaN(tax)&&tax>=37.8&&V.febre!=="Febre") R.push(`Tax ${tax} °C registrada sem marcar febre.`);
+  if(V.diurese==="SVD" && !/\bSVD\b|SONDA VESICAL/.test(base)) R.push("SVD nova em relação a ontem — motivo? Retenção urinária"+(spine?" em paciente de coluna: afastar compressão medular / síndrome da cauda equina.":"."));
+  if(V.diurese==="Ausente / retenção") R.push("Diurese ausente / retenção urinária"+(spine?" em paciente de coluna — avaliar compressão medular / cauda equina.":" — avaliar globo vesical, função renal."));
+  if(V.urina==="Turva / piúria") R.push("Urina turva / piúria — suspeita de ITU (principalmente com SVD).");
+  if(V.urina==="Hematúria") R.push("Hematúria — checar SVD/trauma, anticoagulação.");
+  const fo=V.fo||[];
+  if(fo.includes("Secreção purulenta")) R.push("FO com secreção purulenta — suspeita de infecção de sítio cirúrgico.");
+  if(fo.includes("Hiperemia")) R.push("FO com hiperemia — sinais flogísticos.");
+  if(fo.includes("Deiscência")) R.push("Deiscência de FO.");
+  if(fo.includes("Secreção sanguinolenta")) Wn.push("FO com secreção sanguinolenta — checar Hb e anticoagulação.");
+  if((V.queixa||[]).includes("Dor não controlada") || (V.eva!=null&&V.eva>=7)) R.push(`Dor ${V.eva!=null?"EVA "+V.eva:"não controlada"} — rever analgesia; se desproporcional, afastar síndrome compartimental/complicação.`);
+  if(V.consc && /Sonolento|Confuso|Agitado|Rebaixado/.test(V.consc)) R.push(`Consciência: ${V.consc.toLowerCase()} — delirium? rebaixamento? (hipóxia, sepse, distúrbio HE, opioide, TCE).`);
+  if(V.resp==="Dispneia") R.push("Dispneia — afastar TEP, pneumonia, congestão.");
+  if(V.resp==="O2 suplementar" && !/CATETER|O2|OXIG/.test(base)) R.push("O2 suplementar novo — dessaturação?");
+  if(V.nv==="Alterado") R.push("Alteração neurovascular"+(V.nv_x?`: ${V.nv_x}`:"")+" — reavaliar imobilização, compartimentos, lesão vascular/nervosa.");
+  const ch=(V.exf&&V.exf.chips)||[];
+  if(ch.includes("Compartimentos tensos")||ch.includes("Dor à extensão passiva")) R.push("Sinais de síndrome compartimental — avaliação imediata.");
+  if(ch.includes("Perfusão lentificada")||ch.includes("Pulsos diminuídos")) R.push("Perfusão/pulsos alterados — comprometimento vascular?");
+  if(ch.includes("Panturrilha empastada")) R.push("Panturrilha empastada — suspeita de TVP (checar profilaxia, doppler).");
+  if(ch.includes("Déficit motor")) R.push("Déficit motor no exame.");
+  if(ch.includes("Hematoma tenso")) Wn.push("Hematoma tenso.");
+  if(V.exf && V.exf.edema==="Em piora") Wn.push("Edema em piora.");
+  if(V.evac==="Ausente" && parseInt(V.evac_x)>=3) Wn.push(`Sem evacuar há ${V.evac_x} dias — constipação/íleo (opioide?); laxativo.`);
+  if(V.dieta==="Baixa aceitação") Wn.push("Baixa aceitação da dieta.");
+  if((V.queixa||[]).includes("Náuseas/vômitos")) Wn.push("Náuseas/vômitos.");
+  if(V.imob==="Frouxa / danificada") Wn.push("Imobilização frouxa/danificada — trocar ou reforçar.");
+  for(const a of V.alerta||[]) R.push("Sinal de alerta marcado na visita: "+a+".");
+  const d=V.dreno||{}; const tot=["d","e","u"].map(k=>parseFloat(String(d[k]||"").replace(",","."))).filter(x=>!isNaN(x)).reduce((a,b)=>a+b,0);
+  if(d.tem && tot>=300) Wn.push(`Débito total do dreno ${tot} mL — checar Hb e hemostasia.`);
+  return {red:R,warn:Wn,info:I};
+}
+/* sinais de alerta no próprio texto (fora das seções protegidas) */
+const TXT_RED=[[/\bFEBRIL\b|\bFEBRE\b|PICO FEBRIL/,"febre"],[/PURULENT/,"secreção purulenta"],[/HIPEREMI/,"hiperemia"],[/DEISC[EÊ]NCI/,"deiscência"],
+  [/COM SINAIS FLOG/,"sinais flogísticos"],[/SONOLENT|REBAIX|TORPOR|OBNUBIL/,"rebaixamento do nível de consciência"],[/\bCONFUS[OA]\b|DESORIENTAD|DELIRIUM/,"desorientação/delirium"],
+  [/DISPNEI|DESSATUR|TAQUIPNEI/,"dispneia/dessaturação"],[/EMPASTAD/,"panturrilha empastada (TVP?)"],[/COMPARTIMENTOS? TENS|EXTENS[AÃ]O PASSIVA/,"síndrome compartimental?"],
+  [/PI[UÚ]RIA|URINA TURVA/,"piúria"],[/HEMAT[UÚ]RIA/,"hematúria"],[/RETEN[CÇ][AÃ]O URIN/,"retenção urinária"],[/HIPOTENS/,"hipotensão"],[/TAQUICARD/,"taquicardia"],
+  [/SANGRAMENTO ATIVO|SANGRAMENTO/,"sangramento"],[/NECROSE/,"necrose"],[/PERFUS[AÃ]O PERIF[EÉ]RICA LENTIFICADA|PULSOS? (DIMINU|AUSENT)/,"perfusão/pulsos alterados"]];
+function textRed(free){
+  const out=[], U=" "+upS(free).replace(/\s+/g," ")+" ";
+  for(const [re,lbl] of TXT_RED){
+    const g=new RegExp(re.source,"g"); let m, hit=false;
+    while((m=g.exec(U))){ const pre=U.slice(Math.max(0,m.index-30),m.index); if(!NEG_BEFORE.test(pre)){ hit=true; break; } }
+    if(hit) out.push(lbl);
+  }
+  return out;
+}
+
+/* ---------------- cruzamento internograma × evolução ---------------- */
+function lev(a,b){ const m=a.length,n=b.length; if(Math.abs(m-n)>3) return 9; const d=Array.from({length:m+1},(_,i)=>[i]); for(let j=1;j<=n;j++) d[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[m][n]; }
+function allergyOf(txt){
+  if(!txt) return null; const U=upS(txt);
+  if(/(NEGA|SEM|NAO POSSUI|NKDA)\s+ALERGI|ALERGI\w*\s*:?\s*(NEGA|NAO|NENHUMA|SEM)\b/.test(U)) return {nega:true};
+  if(/ALERGI\w*\s*:?\s*NAO SABE|NAO SABE (RELATAR|REFERIR)\s*$/.test(U)) return {desc:true};
+  const m=U.match(/ALERGI\w*\s*(?:A|:)?\s*:?\s*([A-Z ,/E]+?)(?=\s*(?:\*|$|MUC|AP\b|CMB|ASS\b|H[AÁ]BITOS|CIRURGIA|\n|VICIOS|---))/) || U.match(/ALERGIC[OA]\s+A\s+([A-Z ,/E]+?)(?=\s*(?:\*|$|\n|MUC|EQ\.|ASS))/);
+  if(!m) return null;
+  const w=m[1].split(/[ ,/]+/).filter(x=>x.length>=4 && !/^(MEDICAMENTOS[AO]S?|ALERGIAS?|MEDICAMENTO|REFERE)$/.test(x));
+  return w.length?{list:w}:null;
+}
+function medsOf(txt,re){ const m=upS(txt||"").match(re); if(!m) return []; return m[1].split(/[^A-Z]+/).filter(w=>w.length>=5 && !/^(NEGA|NEGAS|ALERGIA|ALERGIAS|COMORBIDADES|MEDICAMENTOSA|USO|CONTINUO|HABITOS|DOSES?|MCG|ATUAL)$/.test(w)); }
+const STOP=new Set(["PARA","COM","SEM","EM","DE","DA","DO","DAS","DOS","A","E","O","AS","OS","NO","NA","POR","APOS","HORA"]);
+const wordsOf=s=>new Set(upS(s).split(/[^A-Z0-9]+/).filter(w=>w.length>=4&&!STOP.has(w)));
+function sideSet(u){ u=u.replace(/DECUBITO LATERAL (DIREITO|ESQUERDO)|\bDL[DE]\b/g,""); const s=new Set(); if(/\bDIREIT[OA]S?\b|\bD\b(?=\s*$)|\bM[SI]D\b|\bDIR\b/.test(u)) s.add("D"); if(/\bESQUERD[OA]S?\b|\bM[SI]E\b|\bESQ\b/.test(u)) s.add("E"); return s; }
+function igCross(ig){
+  const W=[], I=[], SP=[]; if(!ig) return {warn:W,info:I,spell:SP};
+  const head=SRC.split(/\n[ \t]*[-–—]{3,}/)[0];
+  // alergias
+  const evA=allergyOf((SRC.match(/^.*ALERGI.*$/im)||[""])[0]), igA=allergyOf(ig.ap||"");
+  if(evA && igA){
+    const fmt=a=>a.nega?"nega":a.desc?"não sabe":a.list.join(", ");
+    const diff = (evA.nega&&igA.list)||(igA.nega&&evA.list)||(evA.list&&igA.list&&!evA.list.some(x=>igA.list.some(y=>lev(x,y)<=2)));
+    if(diff) W.push(`ALERGIA divergente — evolução: ${fmt(evA)} × internograma: ${fmt(igA)}. Confirmar com paciente/prontuário e corrigir o documento errado.`);
+  } else if(evA && !igA && ig.ap) I.push("Internograma sem registro claro de alergias (evolução: "+(evA.nega?"nega":evA.list?evA.list.join(", "):"não sabe")+").");
+  // datas de evento/cirurgia: linhas de cabeçalho da evolução × trechos do diagnóstico do internograma
+  const chunks=[]; const re=/([^()]*?)\(?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*\)?/g; let m;
+  while((m=re.exec(ig.dx||""))) if(m[1].trim()||chunks.length) chunks.push({w:wordsOf(m[1]),d:+m[2],mo:+m[3],txt:(m[1].trim().slice(-50)+" "+m[2]+"/"+m[3])});
+  for(const line of head.split("\n")){
+    const dm=line.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(!dm) continue;
+    const lw=wordsOf(line.replace(/\d+\/\d+\/\d+/g,""));
+    let best=null, sc=0; for(const c of chunks){ const k=[...c.w].filter(x=>lw.has(x)).length; if(k>sc){ sc=k; best=c; } }
+    if(best && sc>=2 && (best.d!==+dm[1]||best.mo!==+dm[2])) W.push(`Data divergente — evolução: “${line.trim().slice(0,70)}” × internograma: “${best.txt.trim()}”. Conferir qual está correta (afeta a contagem de dias).`);
+  }
+  // lateralidade
+  const sE=sideSet(upS(head)), sI=sideSet(upS(ig.dx||""));
+  if(sE.size===1 && sI.size===1 && [...sE][0]!==[...sI][0]) W.push(`Lateralidade divergente — evolução: ${[...sE][0]==="D"?"DIREITO":"ESQUERDO"} × internograma: ${[...sI][0]==="D"?"DIREITO":"ESQUERDO"}.`);
+  // PO
+  if(ig.po && ig.po.n!=null){
+    const C=segs.filter(s=>s.type==="counter"&&s.cat==="surg");
+    const vals=C.map(s=>/POI/i.test(segValue(s))?0:parseInt(segValue(s))).filter(x=>!isNaN(x));
+    if(vals.length && !vals.includes(ig.po.n)) W.push(`PO divergente — internograma (pela data da cirurgia) indica ${ig.po.label}; a evolução calcula ${C.map(s=>segValue(s).trim()).join(" / ")}. Conferir data da cirurgia.`);
+    if(!C.length) I.push(`Internograma indica ${ig.po.label} (${ig.po.proc||"cirurgia"}), mas a evolução não tem contagem de PO.`);
+  }
+  if(ig.poStated!=null && ig.po && ig.poStated!==ig.po.n) I.push(`Internograma escrito como “${ig.poStated} PO”, mas pela data seria ${ig.po.label} — internograma desatualizado.`);
+  if(ig.dihStated!=null && ig.dih!=null && ig.dihStated!==ig.dih) I.push(`DIH: internograma diz ${ig.dihStated}; pela data de internação (${ig.dihData}) hoje é DIH ${ig.dih} (${VISIT&&VISIT.dihConv?"dia da internação = DIH 1":"dia da internação = DIH 0"}).`);
+  // medicações
+  const eM=medsOf(SRC,/(?:^|\n)\s*#?\s*(?:MUC|MEDICA[CÇ](?:[OÕ]ES|AO)(?: EM USO)?)\s*:?\s*([^\n]*)/), iM=medsOf(ig.ap,/MUC\s*:?\s*(.*?)(?=\s+(?:NEGA ALERG|ALERGI|ASS\b|EQ\.)|$)/);
+  if(eM.length && iM.length){
+    const onlyE=[], onlyI=new Set(iM);
+    for(const w of eM){ if(iM.includes(w)){ onlyI.delete(w); continue; } const near=iM.find(y=>lev(w,y)<=2); if(near){ onlyI.delete(near); SP.push({from:w,to:near,why:"grafia do internograma — conferir"}); W.push(`Medicação com grafia diferente — evolução: ${w} × internograma: ${near}.`); } else onlyE.push(w); }
+    if(onlyE.length||onlyI.size) I.push(`MUC difere — só na evolução: ${onlyE.join(", ")||"—"}; só no internograma: ${[...onlyI].join(", ")||"—"}.`);
+  }
+  return {warn:W,info:I,spell:SP};
+}
+
+/* ---------------- datas: palavras relativas e conduta vencida ---------------- */
+const REL=/\b(ANTEONTEM|ONTEM|HOJE|AMANH[ÃA]|NESTA (?:NOITE|MANH[ÃA]|TARDE)|ESTA (?:NOITE|MANH[ÃA]|TARDE)|NA NOITE DE HOJE)\b/gi;
+function relDate(w){ const u=upS(w), b=baseDate(); const n=/ANTEONTEM/.test(u)?-2:/ONTEM/.test(u)?-1:/AMANH/.test(u)?1:/HOJE|NESTA|ESTA/.test(u)?0:null; return n==null?null:fmtBR(addDays(b,n)); }
+function dateChecks(){
+  const W=[], I=[], free=freeText();
+  const rel=[...new Set((free.match(REL)||[]).map(x=>x.toUpperCase()))];
+  if(rel.length) W.push(`Palavra de tempo relativo fora das seções protegidas (${rel.join(", ")}) — copiada de outro dia ela fica errada. Troque pela data (sugestão na revisão ortográfica).`);
+  for(const b of protectedBlocks(SRC)){
+    if(!b.conduta) continue;
+    for(const line of SRC.slice(b.start,b.end).split("\n")){
+      if(/DISCUTID|REALIZAD|AVALIAD|COMUNICAD|\bOK\b/i.test(line)) continue;
+      for(const m of line.matchAll(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/g)){
+        let y=m[3]?+m[3]:EVAL.getUTCFullYear(); if(y<100) y+=2000;
+        const d=new Date(Date.UTC(y,+m[2]-1,+m[1])); const k=diffDays(EVAL,d);
+        if(k<0 && k>-60) W.push(`Conduta com data já passada: “${line.trim()}” — foi realizado? atualizar a conduta.`);
+        else if(k===0) I.push(`HOJE: ${line.trim()}`);
+        else if(k===1) I.push(`AMANHÃ: ${line.trim()}${/BI[OÓ]PSIA|CIRURG|OSTEOSS|ARTRO|LIMPEZA|PROCED|CX\b/i.test(line)?" — jejum / pré-op ok?":""}`);
+      }
+    }
+  }
+  return {warn:W,info:I};
+}
+
+/* ---------------- ortografia extra (inclui seções protegidas) ---------------- */
+const VOW="AEIOUÁÉÍÓÚÂÊÔÃÕÀaeiouáéíóúâêôãõà";
+function heurFix(w){
+  if(w.length<6 || /\d/.test(w)) return null;
+  let x=w;
+  if(/q(?![uü])/i.test(x)) x=x.replace(/q(?![uü])/i,"");
+  x=x.replace(new RegExp(`([${VOW}])[Hh](?=[^${VOW}\\P{L}])`,"u"),"$1");
+  x=x.replace(/(\p{L})\1\1+/gu,"$1$1");
+  return x!==w ? x : null;
+}
+window.extraSpell = function(found){
+  const add=(from,to,why,prot)=>{ const k=from+"→"+to; const o=found.get(k); if(o){ o.n++; if(prot) o.prot=true; } else found.set(k,{from,to,why,n:1,prot}); };
+  for(const s of segs){
+    if(s.type!=="text"&&s.type!=="prot") continue;
+    const prot=s.type==="prot";
+    for(const x of s.value.matchAll(/\p{L}+/gu)){
+      const w=x[0], k=strip(w).toLowerCase();
+      if(prot && TYPOS[k]) add(w, applyCase(w,TYPOS[k]), "digitação (seção protegida — só ortografia)", true);
+      else { const h=heurFix(w); if(h) add(w,h,prot?"letra trocada (seção protegida — só ortografia)":"letra trocada", prot); }
+    }
+    if(!prot) for(const m of s.value.matchAll(REL)){ const d=relDate(m[0]); if(d) add(m[0],"EM "+d,"tempo relativo → data",false); }
+  }
+  for(const sp of XC.spell||[]) add(sp.from,sp.to,sp.why+" (seção protegida)",true);
+};
+window.extraAlerts = function(free){
+  const red=[...XV.red], warn=[...XV.warn, ...XC.warn], info=[...XV.info, ...XC.info];
+  const t=textRed(free); if(t.length) red.push("No texto de hoje: "+t.join(", ")+" — conferir conduta.");
+  const dc=dateChecks(); warn.push(...dc.warn); info.push(...dc.info);
+  return {red,warn,info};
+};
+
+function renderVisitBox(){
+  const box=$("visitBox"); if(!box) return;
+  if(!VISIT){ box.classList.add("hidden"); return; }
+  const R=VISIT_RES, L=[];
+  for(const r of R){
+    if(r.ins) L.push(`<li class="chg">＋ ${esc(r.why)} — <b>inserido no texto</b> <i>(clique no trecho azul para editar/remover)</i></li>`);
+    else if(!r.hit) L.push(`<li class="miss">⚠ ${esc(r.why)} — <i>sem lugar no texto; acrescente manualmente</i></li>`);
+    else if(r.confirm) L.push(`<li class="conf">? ${esc(r.why)}${r.copy?` <button class="small" data-cp="${esc(r.copy)}">Copiar frase</button>`:""}</li>`);
+    else if(r.chg) L.push(`<li class="chg">✓ ${esc(r.why)} — <b>alterado</b></li>`);
+    else L.push(`<li class="keep">✓ ${esc(r.why)} — igual a ontem</li>`);
+  }
+  const ig=VISIT.ig||{};
+  const pend=(ig.pend||[]).map(x=>`<li>☐ ${esc(x)}</li>`).join(""), ag=(ig.agenda||[]).map(a=>`<li>📅 ${a.dias===0?"HOJE":a.dias===1?"AMANHÃ":"em "+a.dias+" dias"}: ${esc(a.txt)}</li>`).join("");
+  const obs = VISIT.obs ? `<div class="vobs"><b>Observações da visita:</b> ${esc(VISIT.obs)} <button class="small" data-cp="${esc(VISIT.obs.toUpperCase())}">Copiar</button></div>` : "";
+  box.innerHTML = `<div class="row"><strong>Da visita de hoje${VISIT.pac?` · ${esc(VISIT.pac)}`:""}</strong><span class="spacer"></span><span class="note">${R.filter(r=>r.hit&&r.chg).length} alterados/inseridos · ${R.filter(r=>r.hit&&!r.chg).length} mantidos · ${R.filter(r=>!r.hit||r.confirm).length} p/ conferir</span></div>`
+    + (VISIT.visited?"":`<div class="vwarn">⚠ Paciente não marcado como visitado hoje.</div>`)
+    + (L.length ? `<ul>${L.join("")}</ul>` : `<div class="note">Nada marcado na visita para este paciente.</div>`) + obs
+    + (pend||ag ? `<div class="vobs"><b>Pendências / agenda (internograma e visita):</b><ul>${ag}${pend}</ul></div>` : "");
+  box.classList.remove("hidden");
+  box.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{ try{ navigator.clipboard.writeText(b.dataset.cp); b.textContent="Copiado ✓"; }catch(e){} });
+}
+
+if(EMBED){
+  document.body.classList.add("embed");
+  const post=m=>{ try{ window.parent.postMessage(Object.assign({src:"evo"},m),"*"); }catch(e){} };
+  const _go=go;
+  go=function(){
+    _go(); post({type:"evo-base",text:SRC});
+    if(VISIT){
+      XV={red:[],warn:[],info:[]};
+      if(VISIT.marks) applyVisit(VISIT.marks); else VISIT_RES=VISIT.rascunho?[{why:"Rascunho recuperado — a visita já tinha sido aplicada",hit:1,chg:0}]:[];
+      const f=visitFlags(VISIT.marks, VISIT.ig); XV.red.unshift(...f.red); XV.warn.unshift(...f.warn); XV.info.push(...f.info);
+      XC=igCross(VISIT.ig);
+      render(); renderVisitBox();
+    }
+  };
+  // rascunho: cada alteração vai para o app principal (sobrevive a fechamento inesperado)
+  let tDraft=null;
+  const _render=render;
+  render=function(){ _render.apply(this,arguments); clearTimeout(tDraft); tDraft=setTimeout(()=>{ if(!$("step2").classList.contains("hidden")) post({type:"evo-draft",text:outputText()}); },700); };
+  const _doCopy=doCopy;
+  doCopy=async function(){ await _doCopy(); post({type:"evo-copied",text:outputText()}); };
+  window.addEventListener("message",ev=>{
+    const d=ev.data||{};
+    if(d.type==="evo-tema"){ document.documentElement.classList.toggle("escuro",!!d.escuro); document.documentElement.classList.toggle("claro",!d.escuro); }
+    if(d.type==="evo-load" && d.rascunho){
+      VISIT={dihConv:0, marks:null, obs:d.obs||"", pac:d.pac||"", ig:null, visited:!!d.visited, rascunho:true}; VISIT_RES=[];
+      $("input").value=d.text; $("evalDate").value=d.date; $("days").value=0;
+      $("embedHint").innerHTML=`Rascunho recuperado (salvo às ${new Date(d.rascunho).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}) — continue de onde parou. <button class="small" id="rascDesc">Descartar rascunho e recomeçar</button>`;
+      $("rascDesc").onclick=()=>post({type:"evo-discard"});
+      go(); return;
+    }
+    if(d.type==="evo-load"){
+      COUNTERS.forEach(c=>{ if(c.label==="Dia de internação (DIH)") c.kind = d.dihConv ? "d1" : "days"; });
+      VISIT={dihConv:d.dihConv, marks:d.marks||null, obs:d.obs||"", pac:d.pac||"", ig:d.ig||null, visited:!!d.visited}; VISIT_RES=[];
+      $("input").value=d.text||""; $("evalDate").value=d.date; $("days").value=d.ndays||1;
+      $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); $("draftBar").classList.add("hidden");
+      $("embedHint").innerHTML = (d.visited?"":"⚠ Paciente ainda não marcado como visitado hoje. ") + (d.text
+        ? `Abaixo está a evolução salva de ${d.baseDate}. <b>Cole por cima a evolução de ontem do sistema do hospital</b> (se for a mesma, só toque em “Analisar texto”). As marcações da visita entram em seguida.`
+        : "Cole a evolução de ontem do sistema do hospital e toque em “Analisar texto”. As marcações da visita entram em seguida.");
+      $("input").focus(); $("input").select();
+    }
+    if(d.type==="evo-get"){
+      const ready=!$("step2").classList.contains("hidden");
+      post({type:"evo-text", ready, text: ready?outputText():"", pend: ready?segs.filter(s=>reviewable(s)&&s.state==="pend").length:0, red: ready?(window.extraAlerts(freeText()).red.length):0});
+    }
+  });
+  post({type:"evo-ready"});
+} else if(!restoreDraft()){ const inp=ssGet(SS_INPUT); if(inp) $("input").value=inp; }
+
+
+/* ===== edição à mão, corretor e dreno (SOT) ===== */
+try{ $("input").spellcheck=true; $("input").setAttribute("lang","pt-BR"); }catch(e){}
+function manualOn(){
+  if(MANUAL===null) MANUAL=outputText0();
+  $("manualTxt").value=MANUAL; $("view").classList.add("hidden"); $("manualBox").classList.remove("hidden");
+  $("btnManual").textContent="✏️ Editando à mão"; manualSpell();
+  try{ ssSet("evo-manual", MANUAL); }catch(e){}
+}
+function manualOff(){
+  MANUAL=null; if(!$("manualBox")) return;
+  $("manualBox").classList.add("hidden"); $("view").classList.remove("hidden"); $("btnManual").textContent="✏️ Editar à mão";
+}
+let tMS=null;
+function manualSpell(){
+  const t=MANUAL||"", found=new Map();
+  for(const x of t.matchAll(/\p{L}+/gu)){
+    const w=x[0], k=strip(w).toLowerCase(); let to=null;
+    if(TYPOS[k]) to=applyCase(w,TYPOS[k]);
+    else if(ACCENT_FIX[k] && strip(w)===w && ACCENT_FIX[k]!==k) to=applyCase(w,ACCENT_FIX[k]);
+    if(to && to!==w){ const o=found.get(w); if(o) o.n++; else found.set(w,{to,n:1}); }
+  }
+  const box=$("manualSpell");
+  if(!found.size){ box.innerHTML='<span style="color:var(--keep,#2e7d32);font-size:13px">✓ Corretor: nenhuma sugestão.</span>'; return; }
+  box.innerHTML='<div style="font-size:13px;margin-bottom:4px"><b>Corretor ('+found.size+'):</b> toque para corrigir</div>'+[...found].map(([w,o])=>'<button class="small" data-fix="'+w.replace(/"/g,"&quot;")+'" data-to="'+o.to.replace(/"/g,"&quot;")+'" style="margin:2px">'+w+' → <b>'+o.to+'</b>'+(o.n>1?' ×'+o.n:'')+'</button>').join("")+' <button class="small" id="fixAll" style="margin:2px">Corrigir todas</button>';
+}
+function manualFix(w,to){
+  const re=new RegExp("(?<![\\p{L}])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?![\\p{L}])","gu");
+  MANUAL=$("manualTxt").value.replace(re,to); $("manualTxt").value=MANUAL; manualSpell(); manualChanged();
+}
+function manualChanged(){ try{ if(window.__EMBED){ window.parent.postMessage({src:"evo",type:"evo-draft",text:outputText()},"*"); } }catch(e){} }
+$("btnManual").onclick=()=>manualOn();
+$("btnManualSair").onclick=()=>{ if(MANUAL!==null && MANUAL!==outputText0() && !confirm("Descartar o que foi editado à mão?")) return; manualOff(); render(); };
+$("manualTxt").addEventListener("input",()=>{ MANUAL=$("manualTxt").value; clearTimeout(tMS); tMS=setTimeout(()=>{ manualSpell(); manualChanged(); },600); });
+$("manualSpell").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.id==="fixAll"){ document.querySelectorAll("#manualSpell [data-fix]").forEach(x=>{ MANUAL=$("manualTxt").value.replace(new RegExp("(?<![\\p{L}])"+x.dataset.fix.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?![\\p{L}])","gu"),x.dataset.to); $("manualTxt").value=MANUAL; }); manualSpell(); manualChanged(); return; }
+  if(b.dataset.fix) manualFix(b.dataset.fix,b.dataset.to);
+});
+function drenoFrase(){
+  const ml=parseFloat(($("drMl").value||"").replace(",",".")), hh=parseFloat(($("drH").value||"").replace(",","."));
+  if(!(ml>=0) || !(hh>0)){ $("drRes").textContent=""; return ""; }
+  const taxa=(ml/hh).toLocaleString("pt-BR",{maximumFractionDigits:1});
+  $("drRes").textContent=taxa+" mL/h";
+  const fmt=x=>String(x).replace(".",",");
+  const up=(outputText()||"").replace(/[^A-Za-zÀ-ÿ]/g,""), maiusc=up && up===up.toUpperCase();
+  const f="débito de "+fmt(ml)+" mL em "+fmt(hh)+" h ("+taxa+" mL/h)";
+  return maiusc ? f.toUpperCase() : f;
+}
+$("btnDreno").onclick=()=>{ $("drenoBox").classList.toggle("hidden"); $("drMl").focus(); };
+$("drFechar").onclick=()=>$("drenoBox").classList.add("hidden");
+["drMl","drH"].forEach(id=>$(id).addEventListener("input",drenoFrase));
+$("drCopy").onclick=async()=>{ const f=drenoFrase(); if(!f) return; try{ await navigator.clipboard.writeText(f); }catch(e){} $("drRes").textContent+=" · copiado"; };
+$("drIns").onclick=()=>{ const f=drenoFrase(); if(!f) return; manualOn(); const ta=$("manualTxt"), p=ta.selectionStart||ta.value.length; ta.value=ta.value.slice(0,p)+(p&&!/\s$/.test(ta.value.slice(0,p))?" ":"")+f+ta.value.slice(p); MANUAL=ta.value; ta.focus(); manualSpell(); manualChanged(); };
 </script>
 </body>
 </html>

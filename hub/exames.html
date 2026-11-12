@@ -100,6 +100,19 @@
   .ref-head { font-size: 11px; color: var(--muted); margin-top: 6px; }
   .ref-section { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; margin-top: 16px; font-weight: 600; }
 
+  .tabs { display: flex; gap: 4px; margin-top: 14px; border-bottom: 1px solid var(--border); }
+  .tab { border: 1px solid transparent; border-bottom: none; border-radius: 7px 7px 0 0; background: transparent; color: var(--muted); padding: 7px 14px; font-size: 12.5px; margin-bottom: -1px; }
+  .tab:hover { color: var(--accent); border-color: transparent; }
+  .tab.active { background: var(--surface); border-color: var(--border); color: var(--accent); }
+  .tabpane { padding-top: 12px; }
+  .sel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 12px; }
+  .sel-grupo { border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--surface2); }
+  .sel-grupo .gtit { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; margin-bottom: 6px; cursor: pointer; }
+  .sel-grupo .gitens { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .sel-grupo label { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11.5px; cursor: pointer; }
+  .sel-grupo .gnota { font-size: 10.5px; color: var(--muted); margin-top: 5px; }
+  .ocultos { margin-top: 10px; font-size: 12px; color: #8a5a00; background: #fff7e6; border: 1px solid #f5d9a3; border-radius: 8px; padding: 7px 10px; display: none; }
+  .ocultos .chip { border-color: #f0cf8f; background: #fffaf0; color: #8a5a00; }
   footer { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
   footer strong { color: var(--text); letter-spacing: .06em; }
   @media (max-width: 560px) { h1 { font-size: 24px; } .card { padding: 16px; } }
@@ -126,7 +139,10 @@
     <button id="btnLimpar">Limpar</button>
   </div>
   <div class="opts">
-    <label><input type="checkbox" id="optData"> Incluir data da coleta <input type="text" id="optDataVal" placeholder="dd/mm" maxlength="5"></label>
+    <label><input type="checkbox" id="optData"> Data no início da linha</label>
+    <label>Dias <select id="optDias"><option value="todos">todos</option><option value="ultimo">só o mais recente</option></select></label>
+    <label><input type="checkbox" id="optSexRef"> Ref. por sexo/idade do laudo (CR, UR, Ca)</label>
+    <label><input type="checkbox" id="optGasoExtra"> Eletrólitos/HB da gaso</label>
     <label><input type="checkbox" id="optDiff"> Diferencial (mielo-meta-bast-seg)</label>
     <label><input type="checkbox" id="optAst"> Asteriscos no texto simples</label>
     <label>Decimal
@@ -135,6 +151,28 @@
   </div>
   <div class="error-box" id="erroBox"></div>
 </div>
+
+<details class="card" id="cfgCard">
+  <summary><span class="card-label">Configurar exames <span id="selResumo" style="text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:500;color:var(--accent);margin-left:6px"></span></span></summary>
+  <div class="tabs">
+    <button class="tab active" data-tab="tabSel">Exames lançados</button>
+    <button class="tab" data-tab="tabRef">Referências</button>
+  </div>
+  <div id="tabSel" class="tabpane">
+    <div class="ref-head">Marque o que entra na linha copiada. Exames desmarcados que vierem alterados aparecem só como aviso. A escolha fica salva neste navegador.</div>
+    <div class="actions" style="margin-top:10px">
+      <button class="small primary" data-preset="sot">Padrão SOT (orto + infecção)</button>
+      <button class="small" data-preset="todos">Todos</button>
+      <button class="small" data-preset="nenhum">Nenhum</button>
+    </div>
+    <div id="selContainer" class="sel-grid"></div>
+  </div>
+  <div id="tabRef" class="tabpane" style="display:none">
+    <div class="ref-head">Min/máx em branco = sem limite. As alterações ficam salvas neste navegador.</div>
+    <div id="refContainer"></div>
+    <div class="actions"><button class="small" id="btnRestaurar">Restaurar referências padrão</button></div>
+  </div>
+</details>
 
 <div class="card" id="resultCard">
   <div class="result-header">
@@ -146,7 +184,9 @@
     </div>
   </div>
   <div class="result-line" id="resultLine" contenteditable="true" spellcheck="false"></div>
-  <div class="hint">Você pode editar o resultado acima antes de copiar. Em vermelho: fora da referência (vai em <b>negrito</b> ao colar).</div>
+  <div class="hint">Você pode editar o resultado acima antes de copiar. Em vermelho: fora da referência (vai em <b>negrito</b> ao colar). Vários resultados no mesmo dia aparecem em ordem de horário (ex.: HB 8.8 → 12.3).</div>
+  <div class="hint" id="semData" style="display:none">Laudo sem data identificada — digite a data: <input type="text" id="optDataVal" placeholder="dd/mm/aaaa" maxlength="10" style="font-family:var(--mono);font-size:12px;width:96px;padding:3px 6px;border:1px solid var(--border2);border-radius:6px"></div>
+  <div class="ocultos" id="ocultos"></div>
   <div class="missing" id="missing"></div>
   <div id="copyFallback">
     <p>Não foi possível copiar automaticamente. Selecione e copie manualmente (Ctrl+C):</p>
@@ -154,15 +194,9 @@
   </div>
 </div>
 
-<details class="card" id="cfgCard">
-  <summary><span class="card-label">Exames e valores de referência</span></summary>
-  <div class="ref-head">Desmarque o que não quer na linha. Min/máx em branco = sem limite. As alterações ficam salvas neste navegador.</div>
-  <div id="refContainer"></div>
-  <div class="actions"><button class="small" id="btnRestaurar">Restaurar padrão</button></div>
-</details>
 
 <footer>
-  <div><strong>© <span id="ano">2026</span> EQUIPE SOT</strong> · Exames Updater v2.0</div>
+  <div><strong>© <span id="ano">2026</span> EQUIPE SOT</strong> · Exames Updater v2.2</div>
   <div>Ferramenta de apoio — confira sempre os valores com o laudo original.</div>
 </footer>
 
@@ -176,7 +210,10 @@ const norm = txt => txt
   .replace(/[µμ]/g, 'u')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toLowerCase()
-  .replace(/[–—]/g, '-');
+  .replace(/[–—]/g, '-')
+  .replace(/[ ]{2,}/g, ' ')
+  .replace(/ *\n */g, '\n')
+  .replace(/\n{2,}/g, '\n');
 
 const nameRe = src => new RegExp('(?<![a-z0-9])(?:' + src + ')(?![a-z0-9])', 'g');
 
@@ -225,18 +262,22 @@ const EXAMES = [
   { ab: 'PLAQ',  nomes: ['plaquetas', 'contagem de plaquetas'], count: 2000, ref: { min: 150000, max: 400000 }, plaus: [500, 3000000] },
   { ab: 'PCR',   nomes: ['proteina c[\\s\\-]*reativa', 'pcr'], notAfter: /^\s*(para|rt|em tempo|sars|covid)/,
     ref: { min: null, max: 5, strict: true }, plaus: [0, 700],
-    unit: w => /mg\s*\/\s*dl/.test(w) ? { min: null, max: 0.5, strict: true, nota: 'mg/dL' } : null, unidadeNota: 'mg/L; em mg/dL usa < 0,5' },
+    unit: a => /^\s*mg\s*\/\s*dl/.test(a) ? { min: null, max: 0.5, strict: true, nota: 'mg/dL' } : null, unidadeNota: 'mg/L; em mg/dL usa < 0,5' },
   { ab: 'VHS',   nomes: ['vhs', 'velocidade de hemossedimentacao', 'hemossedimentacao'], clean: w => w.replace(/(?<![\d.,])1\s*[aªo°º]?\s*h(ora)?\b/g, ' '), ref: { min: null, max: 20 }, plaus: [0, 200] },
-  { ab: 'GLIC',  nomes: ['glicose', 'glicemia'], notAfter: /^\s*(capilar|na urina|urinaria|pos|2h)/, ref: { min: 70, max: 100 }, plaus: [5, 3000] },
+  { ab: 'GLIC',  nomes: ['glicose', 'glicemia'], notAfter: /^\s*(capilar|na urina|urinaria|pos|2h)/, ref: { min: 75, max: 99 }, plaus: [5, 3000] },
   { ab: 'HBA1C', nomes: ['hemoglobina glicada', 'hemoglobina glicosilada', 'hba1c', 'a1c'], ref: { min: null, max: 5.6 }, plaus: [2, 25] },
-  { ab: 'CR',    nomes: ['creatinina'], notAfter: /^\s*(urinaria|na urina|em urina|de urina|urina)/, notBefore: /clearance\s+(de\s+)?$/, ref: { min: 0.5, max: 1.3 }, plaus: [0.05, 30] },
-  { ab: 'UR',    nomes: ['ureia'], notAfter: /^\s*(urinaria|na urina|urina)/, ref: { min: 10, max: 55 }, plaus: [1, 600] },
+  { ab: 'CR',    nomes: ['creatinina'], notAfter: /^\s*(urinaria|na urina|em urina|de urina|urina)/, notBefore: /clearance\s+(de\s+)?$/, ref: { min: 0.5, max: 1.3 }, plaus: [0.05, 30],
+    sexAge: (sx) => sx === 'F' ? { min: 0.6, max: 1.0 } : sx === 'M' ? { min: 0.7, max: 1.25 } : null, sexNota: 'F 0,6–1,0 · M 0,7–1,25 (auto)' },
+  { ab: 'UR',    nomes: ['ureia'], notAfter: /^\s*(urinaria|na urina|urina)/, ref: { min: 10, max: 55 }, plaus: [1, 600],
+    sexAge: (sx, age) => age != null && age < 20 ? { min: 10.9, max: 44.9 } : sx === 'F' ? (age != null && age < 50 ? { min: 14.9, max: 40 } : { min: 20.9, max: 43 }) : sx === 'M' ? (age != null && age < 50 ? { min: 19, max: 44 } : { min: 17.9, max: 54.9 }) : null,
+    sexNota: 'por sexo/idade do laudo (auto)' },
   { ab: 'NA',    nomes: ['sodio'], notAfter: /^\s*(urinario|na urina|urina)/, ref: { min: 136, max: 145 }, plaus: [90, 200] },
   { ab: 'K',     nomes: ['potassio'], notAfter: /^\s*(urinario|na urina|urina)/, ref: { min: 3.5, max: 5.1 }, plaus: [1, 12] },
   { ab: 'MG',    nomes: ['magnesio'], ref: { min: 1.6, max: 2.6 }, plaus: [0.2, 10] },
-  { ab: 'CAT',   nomes: ['calcio total', 'calcio'], notAfter: /^\s*(ionico|ionizado|ion|i\b|livre|urinario)/, ref: { min: 8.5, max: 10.5 }, plaus: [2, 20] },
-  { ab: 'CA ION',nomes: ['calcio ionico', 'calcio ionizado', 'calcio livre'], ref: { min: 1.12, max: 1.32 }, plaus: [0.3, 8],
-    unit: (w, v) => v > 3 ? { min: 4.5, max: 5.3, nota: 'mg/dL' } : null, unidadeNota: 'mmol/L; se > 3 assume mg/dL (4,5–5,3)' },
+  { ab: 'CAT',   nomes: ['calcio total', 'calcio'], notAfter: /^\s*(ionico|ionizado|ion|i\b|livre|urinario)/, ref: { min: 8.4, max: 10.2 }, plaus: [2, 20],
+    sexAge: (sx, age) => sx === 'M' && age > 60 ? { min: 8.8, max: 10.0 } : null, sexNota: 'H > 60 a: 8,8–10,0 (auto)' },
+  { ab: 'CA ION',nomes: ['calcio ionico', 'calcio ionizado', 'calcio livre'], ref: { min: 1.15, max: 1.35 }, plaus: [0.3, 8],
+    unit: (a, v) => /^\s*mg/.test(a) || v > 3 ? { min: 4.0, max: 5.4, nota: 'mg/dL' } : null, unidadeNota: 'mmol/L; em mg/dL usa 4,0–5,4' },
   { ab: 'P',     nomes: ['fosforo'], ref: { min: 2.5, max: 4.5 }, plaus: [0.3, 20] },
   { ab: 'CL',    nomes: ['cloreto', 'cloro'], ref: { min: 98, max: 107 }, plaus: [50, 160] },
   { ab: 'TSH',   nomes: ['tsh', 'hormonio tireoestimulante', 'tireotrofina'], ref: { min: 0.4, max: 4.0 }, plaus: [0, 500] },
@@ -254,16 +295,16 @@ const EXAMES = [
   { ab: 'ALB',   nomes: ['albumina'], notAfter: /^\s*(urinaria|na urina|urina)/, ref: { min: 3.5, max: 5.0 }, plaus: [0.5, 8] },
   { ab: 'TP',    coag: 'tp',  ref: { min: 10, max: 14 }, plaus: [5, 200] },
   { ab: 'ATV',   coag: 'atv', ref: { min: 70, max: 130 }, plaus: [1, 200] },
-  { ab: 'INR',   coag: 'inr', ref: { min: null, max: 1.21 }, plaus: [0.5, 20] },
+  { ab: 'INR',   coag: 'inr', ref: { min: null, max: 1.24 }, plaus: [0.5, 20] },
   { ab: 'TTPA',  nomes: ['tempo de tromboplastina parcial ativad[ao]', 'tromboplastina parcial ativad[ao]', 'tromboplastina parcial', 'ttpa', 'kptt', 'aptt'], secs: true, ref: { min: 22, max: 40 }, plaus: [10, 250] },
   { ab: 'FIBRI', nomes: ['fibrinogenio'], ref: { min: 180, max: 350 }, plaus: [10, 2000], thousands: true },
   { ab: 'AC LAT',nomes: ['acido lactico', 'lactato'], ref: { min: 4.5, max: 19.8 }, plaus: [0.1, 300],
-    unit: w => /mmol/.test(w) ? { min: 0.5, max: 2.2, nota: 'mmol/L' } : null, unidadeNota: 'mg/dL; em mmol/L usa 0,5–2,2' },
+    unit: a => /^\s*mmol/.test(a) ? { min: 0.5, max: 2.2, nota: 'mmol/L' } : null, unidadeNota: 'mg/dL; em mmol/L usa 0,5–2,2' },
   { ab: 'DDIM',  nomes: ['d[\\s\\-]*dimero', 'dimero[\\s\\-]*d', 'dimero'], thousands: true, ref: { min: null, max: 500, strict: true }, plaus: [0, 200000],
-    unit: (w, v) => (/(ug|mg)\s*\/\s*(ml|l)\b|ug\s*feu|mg\s*feu/.test(w) && !/ng\s*\/\s*ml/.test(w)) || v < 20 ? { min: null, max: 0.5, strict: true, nota: 'µg/mL' } : null,
+    unit: (a, v) => (/^\s*(ug|mg)\s*(\/\s*(ml|l)\b|feu)/.test(a)) || (!/^\s*ng/.test(a) && v < 20) ? { min: null, max: 0.5, strict: true, nota: 'µg/mL' } : null,
     unidadeNota: 'ng/mL; em µg/mL ou mg/L usa < 0,5' },
   { ab: 'TROP',  nomes: ['troponina(?:\\s*[it])?(?:\\s*(?:ultra[\\s\\-]*sensivel|us|hs|de alta sensibilidade))?'], ref: { min: null, max: 0.04, strict: true }, plaus: [0, 100000],
-    unit: (w, v) => /ng\s*\/\s*l\b|pg\s*\/\s*ml/.test(w) || (!/ng\s*\/\s*ml/.test(w) && v >= 1) ? { min: null, max: 14, strict: true, nota: 'ng/L' } : null,
+    unit: (a, v) => /^\s*(ng\s*\/\s*l\b|pg\s*\/\s*ml)/.test(a) || (!/^\s*ng\s*\/\s*ml/.test(a) && v >= 1) ? { min: null, max: 14, strict: true, nota: 'ng/L' } : null,
     unidadeNota: 'ng/mL; em ng/L (alta sensib.) usa < 14' },
   { ab: 'CKMB',  nomes: ['ck[\\s\\-]*mb'], ref: { min: null, max: 25, strict: true }, plaus: [0, 5000] },
   { ab: 'CPK',   nomes: ['cpk', 'creatinofosfoquinase', 'creatinoquinase', 'creatina[\\s\\-]*(?:fosfo)?quinase', 'ck total', 'ck'], notAfter: /^[\s\-]*mb/, thousands: true, ref: { min: 30, max: 200 }, plaus: [1, 500000] },
@@ -272,10 +313,28 @@ const EXAMES = [
   { ab: 'BHCG',  nomes: ['gonadotrofina corionica(?: humana)?(?:[\\s\\-]*fracao beta| beta)?', 'beta[\\s\\-]*hcg', 'b[\\s\\-]*hcg', 'bhcg', 'hcg'], qual: true, ref: { min: null, max: 5, strict: true }, plaus: [0, 2000000], thousands: true },
 ];
 
+// Grupos da aba "Exames lançados" e seleção padrão SOT (cirurgia ortopédica + manejo infeccioso)
+const GRUPOS = [
+  ['Hemograma', ['HB', 'HT', 'LEUCO', 'PLAQ', 'RETIC']],
+  ['Inflamação / infecção', ['PCR', 'VHS', 'AC LAT']],
+  ['Renal / eletrólitos', ['CR', 'UR', 'NA', 'K', 'MG', 'CAT', 'CA ION', 'P', 'CL']],
+  ['Coagulação', ['TP', 'ATV', 'INR', 'TTPA', 'FIBRI', 'DDIM']],
+  ['Metabólico / nutrição', ['GLIC', 'HBA1C', 'ALB']],
+  ['Músculo / trauma', ['CPK']],
+  ['Pré-operatório', ['BHCG']],
+  ['Fígado / pâncreas', ['TGO', 'TGP', 'FA', 'GGT', 'BT', 'BI', 'BD', 'PT', 'AMILASE', 'LIPASE']],
+  ['Cardíaco', ['TROP', 'CKMB', 'BNP', 'NTPROBNP']],
+  ['Tireoide', ['TSH', 'T4L']],
+];
+const PADRAO_SOT = new Set(['HB', 'HT', 'LEUCO', 'PLAQ', 'PCR', 'VHS', 'AC LAT', 'CR', 'UR', 'NA', 'K',
+  'TP', 'ATV', 'INR', 'TTPA', 'FIBRI', 'GLIC', 'HBA1C', 'ALB', 'CPK', 'BHCG']);
+EXAMES.forEach(e => { e.off = !PADRAO_SOT.has(e.ab); });
+const oculto = (ab, cfg) => { const d = (cfg.disabled || {})[ab]; return d === undefined ? !PADRAO_SOT.has(ab) : !!d; };
+
 // Nomes que não são exames da linha, mas servem de "parede" para não ler o valor do vizinho
 const STOPPERS = [
   'hemacias', 'eritrocitos', 'vcm', 'hcm', 'chcm', 'rdw', 'vpm', 'volume corpuscular', 'volume plaquetario',
-  'concentracao de hemoglobina', 'hemoglobina corpuscular', 'eosinofilos', 'basofilos', 'linfocitos', 'monocitos',
+  'concentracao de hemoglobina', 'hemoglobina corpuscular', 'hbcm', 'chbcm', 'eritroblastos', 'comentarios', 'etfg', 'ratio', 'pool normal', 'eosinofilos', 'basofilos', 'linfocitos', 'monocitos',
   'neutrofilos', 'blastos', 'promielocitos', 'mielocitos', 'metamielocitos', 'bastonetes', 'bastoes', 'segmentados',
   'valores? de referencia', 'valor referencial', 'intervalo de referencia', 'referencia', 'metodo', 'material',
   'nota', 'observacao', 'obs', 'liberado', 'assinado', 'responsavel', 'coletado', 'data da coleta',
@@ -290,14 +349,14 @@ const DIFF = [
 
 // Gasometria — refs arterial (A) e venosa (V)
 const GASO = [
-  { ab: 'PH',   nomes: ['ph'], ref: { A: { min: 7.35, max: 7.45 }, V: { min: 7.31, max: 7.41 } }, plaus: [6.5, 8] },
-  { ab: 'PCO2', abA: 'PACO2', abV: 'PVCO2', nomes: ['paco2', 'pvco2', 'pco2', 'pressao parcial de co2'], ref: { A: { min: 35, max: 45 }, V: { min: 41, max: 51 } }, plaus: [5, 200] },
+  { ab: 'PH',   nomes: ['ph'], ref: { A: { min: 7.35, max: 7.45 }, V: { min: 7.35, max: 7.45 } }, plaus: [6.5, 8] },
+  { ab: 'PCO2', abA: 'PACO2', abV: 'PVCO2', nomes: ['paco2', 'pvco2', 'pco2', 'pressao parcial de co2'], ref: { A: { min: 35, max: 45 }, V: { min: 37, max: 50 } }, plaus: [5, 200] },
   { ab: 'PO2',  abA: 'PAO2', abV: 'PVO2', nomes: ['pao2', 'pvo2', 'po2', 'pressao parcial de o2'], ref: { A: { min: 80, max: 100 }, V: null }, plaus: [5, 700] },
-  { ab: 'HCO3', nomes: ['hco3(?:[\\s\\-]*(?:std|padrao|real|act))?', 'bicarbonato(?:[\\s\\-]*(?:padrao|standard|real))?'], ref: { A: { min: 22, max: 26 }, V: { min: 22, max: 28 } }, plaus: [1, 70] },
+  { ab: 'HCO3', nomes: ['c?hco3(?:[\\s\\-]*(?:std|padrao|real|act))?', 'bicarbonato(?:[\\s\\-]*(?:padrao|standard|real))?'], ref: { A: { min: 22, max: 26 }, V: { min: 22, max: 29 } }, plaus: [1, 70] },
   { ab: 'BE',   nomes: ['excesso de bases?', 'base excess', 'beecf', 'beb', 'be'], signed: true, ref: { A: { min: -2, max: 2 }, V: { min: -2, max: 2 } }, plaus: [-40, 40] },
-  { ab: 'SATO2',abA: 'SATO2', abV: 'SVO2', nomes: ['sato2', 'sao2', 'svo2', 'so2', 'saturacao(?: de (?:o2|oxigenio))?'], ref: { A: { min: 95, max: null }, V: null }, plaus: [5, 100] },
+  { ab: 'SATO2',abA: 'SATO2', abV: 'SVO2', nomes: ['sat\\.?\\s*o2', 'sao2', 'svo2', 'so2', 'saturacao(?: de (?:o2|oxigenio))?'], ref: { A: { min: 95, max: null }, V: null }, plaus: [5, 100] },
   { ab: 'LAC',  nomes: ['lactato', 'acido lactico'], ref: { A: { min: null, max: 2.0 }, V: { min: null, max: 2.0 } }, plaus: [0, 40],
-    unit: w => /mg\s*\/\s*dl/.test(w) ? { min: null, max: 18 } : null },
+    unit: a => /^\s*mg\s*\/\s*dl/.test(a) ? { min: null, max: 18 } : null },
 ];
 const GASO_STOP = ['fio2', 'temperatura', 'hemoglobina', 'hb', 'sodio', 'potassio', 'cloro', 'cloreto', 'calcio', 'glicose', 'anion gap', 'tco2', 'co2 total', 'ctco2', 'p50', 'shunt', 'a-ado2', 'ado2', 'pao2\\/fio2'];
 
@@ -349,7 +408,7 @@ function pickNumber(w, ex, opts = {}) {
     if (ex.count || (ex.thousands && /^\d{1,3}([.,]\d{3})+$/.test(n.raw))) display = String(Math.round(v));
     if (ex.plaus && !n.op && (v < ex.plaus[0] || v > ex.plaus[1])) continue;
     if (display === null) display = (n.neg ? '-' : '') + n.raw.replace(/\.(?=\d{3}(?!\d))(?=.*,)/g, '').replace(/[.,]/, '#').replace(/[.,]/g, '').replace('#', '.');
-    return { v, display: (n.op || '') + display, op: n.op, w: s };
+    return { v, display: (n.op || '') + display, op: n.op, w: s, a: n.after };
   }
   return null;
 }
@@ -360,7 +419,10 @@ function extractGeneric(t, ex, walls) {
       if (!validOcc(t, occ, ex)) continue;
       const w = windowAfter(t, occ, walls, ex.ab, 420);
       const r = pickNumber(w, ex, { needSecs: ex.secs && /seg|\ds\b/.test(w) });
-      if (r) return r;
+      if (r) {
+        if (/^\s*pos[\s\-]*transfus/.test(t.slice(occ.end, occ.end + 25))) r.tag = 'PÓS-TX';
+        return r;
+      }
       if (ex.qual) {
         const q = w.slice(0, 160).match(/\b(nao reagente|negativo|reagente|positivo)\b/);
         if (q) { const neg = /nao|negativo/.test(q[1]); return { qualTxt: neg ? 'NEG' : 'POS', altered: !neg }; }
@@ -449,7 +511,8 @@ function detectarData(t) {
   if (!m) return '';
   const d = +m[1], mo = +m[2];
   if (d < 1 || d > 31 || mo < 1 || mo > 12) return '';
-  return String(d).padStart(2, '0') + '/' + String(mo).padStart(2, '0');
+  const ano = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : '';
+  return String(d).padStart(2, '0') + '/' + String(mo).padStart(2, '0') + (ano ? '/' + ano : '');
 }
 
 function isAltered(v, ref) {
@@ -467,12 +530,54 @@ function avaliarOp(op, v, ref) {
   return isAltered(v, ref);
 }
 
-// cfg: { refs: {AB:{min,max}}, disabled: {AB:true}, diff: bool }
-function processar(raw, cfg = {}) {
-  const t = norm(raw);
-  const refs = cfg.refs || {}, disabled = cfg.disabled || {};
+// Extras da gasometria (opcional): eletrólitos/metabólitos do mesmo painel
+const GASO_EXTRA = [
+  { ab: 'NA',     nomes: ['sodio'], ref: { min: 136, max: 145 }, plaus: [90, 200] },
+  { ab: 'K',      nomes: ['potassio'], ref: { min: 3.5, max: 5.1 }, plaus: [1, 12] },
+  { ab: 'CA ION', nomes: ['calcio ionico', 'calcio ionizado'], ref: { min: 1.15, max: 1.35 }, plaus: [0.3, 8] },
+  { ab: 'CL',     nomes: ['cloro', 'cloreto'], ref: { min: 98, max: 107 }, plaus: [50, 160] },
+  { ab: 'GLIC',   nomes: ['glicose'], ref: { min: 75, max: 99 }, plaus: [5, 3000] },
+  { ab: 'HB',     nomes: ['hb', 'hemoglobina'], notBefore: /(o2|co|h|met|oxi|carboxi)\s*$/, ref: { min: 10, max: 18 }, plaus: [1, 30] },
+  { ab: 'HT',     nomes: ['ht', 'hematocrito'], ref: { min: 30, max: 54 }, plaus: [3, 90] },
+];
 
-  // 1) Blocos de gasometria
+function detectarSexoIdade(t) {
+  const sx = t.match(/(?<![a-z])sexo\s*:?\s*(masculino|feminino|m|f)(?![a-z])/);
+  const id = t.match(/(?<![a-z])idade\s*:?\s*(\d{1,3})/);
+  return { sexo: sx ? sx[1][0].toUpperCase() : '', idade: id ? +id[1] : null };
+}
+
+// Divide o texto em laudos (um por cabeçalho "Requisição ... Data: dd/mm/aa hh:mm")
+function segmentar(t) {
+  const re = /requisicao\s*:?\s*\d+[^\n]*?\bdata\s*:?\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/g;
+  const heads = [];
+  let m;
+  while ((m = re.exec(t))) heads.push(m);
+  if (!heads.length) {
+    const d = detectarData(t);
+    return [{ txt: t, data: d, key: d ? (d.slice(6) || '0000') + d.slice(3, 5) + d.slice(0, 2) : '', hora: '' }];
+  }
+  return heads.map((h, i) => {
+    let ano = h[3].length === 2 ? '20' + h[3] : h[3];
+    const dd = h[1].padStart(2, '0'), mm = h[2].padStart(2, '0');
+    return {
+      txt: t.slice(h.index, i + 1 < heads.length ? heads[i + 1].index : t.length),
+      data: `${dd}/${mm}/${ano}`, key: `${ano}${mm}${dd}`,
+      hora: h[4] ? h[4].padStart(2, '0') + ':' + h[5] : ''
+    };
+  });
+}
+
+function refFor(ex, cfg, ctx) {
+  const user = (cfg.refs || {})[ex.ab];
+  if (user) return { ...ex.ref, ...user };
+  if (ex.sexAge && cfg.sexRef !== false) { const r = ex.sexAge(ctx.sexo, ctx.idade); if (r) return r; }
+  return { ...ex.ref };
+}
+
+// Processa UM laudo/segmento
+function processarSegmento(t, cfg, ctx) {
+  const disabled = cfg.disabled || {};
   const mainGroups = EXAMES.filter(e => e.nomes).map(e => ({ id: e.ab, nomes: e.nomes }));
   const gasoShared = new Set(['NA', 'K', 'CL', 'CA ION', 'CAT', 'GLIC', 'AC LAT', 'HB', 'HT']);
   const strongWalls = buildWalls(t, mainGroups.filter(g => !gasoShared.has(g.id)).concat([{ id: 'hemo', nomes: ['hemograma', 'coagulograma', 'eritrograma', 'leucograma', 'urina', 'eas'] }]));
@@ -489,52 +594,99 @@ function processar(raw, cfg = {}) {
   let tMain = t;
   for (const b of gasoBlocks) tMain = tMain.slice(0, b.start) + ' '.repeat(b.end - b.start) + tMain.slice(b.end);
 
-  // 2) Linha principal
   const walls = buildWalls(tMain, mainGroups.concat(
     [{ id: 'stop', nomes: STOPPERS }],
     DIFF.map(d => ({ id: 'diff_' + d.k, nomes: d.nomes }))
   ));
-  const itens = [], faltando = [];
+  const itens = {};
   for (const ex of EXAMES) {
-    if (disabled[ex.ab] ?? ex.off) continue;
     let r = null;
     if (ex.coag) r = extractCoag(tMain, ex.coag);
     else {
       r = extractGeneric(tMain, ex, walls);
       if (!r && ex.bili) r = extractBiliBlock(tMain, ex);
     }
-    if (!r) { faltando.push(ex.ab); continue; }
+    if (!r) continue;
     let item;
-    if (r.qualTxt) item = { ab: ex.ab, val: r.qualTxt, alt: r.altered };
+    if (r.qualTxt) item = { val: r.qualTxt, alt: r.altered };
     else {
-      const user = refs[ex.ab];
-      let ref = { ...ex.ref, ...(user || {}) };
-      if (ex.unit) { const u = ex.unit(r.w || '', r.v); if (u) ref = u; }
-      item = { ab: ex.ab, val: r.display, v: r.v, alt: r.op ? avaliarOp(r.op, r.v, ref) : isAltered(r.v, ref), unidade: ref.nota || '' };
+      let ref = refFor(ex, cfg, ctx);
+      if (ex.unit) { const u = ex.unit(r.a || '', r.v); if (u) ref = u; }
+      item = { val: r.display, v: r.v, alt: r.op ? avaliarOp(r.op, r.v, ref) : isAltered(r.v, ref), unidade: ref.nota || '', tag: r.tag || '' };
     }
     if (ex.ab === 'LEUCO' && cfg.diff !== false) item.diff = extractDiff(tMain, walls);
-    itens.push(item);
+    item.hidden = oculto(ex.ab, cfg);
+    itens[ex.ab] = item;
   }
 
-  // 3) Gasometrias
   const gasos = [];
-  const gWallsGroups = GASO.map(g => ({ id: g.ab, nomes: g.nomes })).concat([{ id: 'gstop', nomes: GASO_STOP.concat(STOPPERS) }]);
+  const extras = cfg.gasoExtra ? GASO_EXTRA : [];
+  const gWallsGroups = GASO.concat(extras).map(g => ({ id: g.ab, nomes: g.nomes })).concat([{ id: 'gstop', nomes: GASO_STOP.concat(STOPPERS) }]);
   for (const b of gasoBlocks) {
     const gw = buildWalls(b.txt, gWallsGroups);
     const tipo = b.tipo || 'A';
     const params = [];
     for (const g of GASO) {
-      const r = extractGeneric(b.txt, { ...g, ab: g.ab }, gw);
+      const r = extractGeneric(b.txt, g, gw);
       const label = (tipo === 'V' ? g.abV : g.abA) || g.ab;
       if (!r) { params.push({ ab: label, val: null }); continue; }
       let ref = g.ref[tipo];
-      if (g.unit && ref) { const u = g.unit(r.w || '', r.v); if (u) ref = u; }
+      if (g.unit && ref) { const u = g.unit(r.a || '', r.v); if (u) ref = u; }
       params.push({ ab: label, val: r.display, v: r.v, alt: ref ? isAltered(r.v, ref) : false });
     }
-    if (params.some(p => p.val !== null)) gasos.push({ label: b.tipo === 'V' ? 'GASO V' : b.tipo === 'A' ? 'GASO A' : 'GASO', params });
+    for (const g of extras) {
+      const r = extractGeneric(b.txt, g, gw);
+      if (r) params.push({ ab: g.ab, val: r.display, v: r.v, alt: isAltered(r.v, g.ref) });
+    }
+    if (params.some(p => p.val !== null)) gasos.push({ label: b.tipo === 'V' ? 'GASO V' : b.tipo === 'A' ? 'GASO A' : 'GASO', params, hidden: !cfg.gaso });
   }
+  return { itens, gasos };
+}
 
-  return { data: detectarData(t), itens, faltando, gasos };
+// cfg: { refs, disabled, diff, sexRef, gasoExtra }
+// Retorna { dias: [{ data, itens:[{ab, vals:[...]}], gasos:[...] }], faltando, sexo, idade }
+function processar(raw, cfg = {}) {
+  const t = norm(raw);
+  const ctx = detectarSexoIdade(t);
+  const segs = segmentar(t).map((sg, i) => ({ ...sg, ordem: i, res: processarSegmento(sg.txt, cfg, ctx) }));
+  segs.sort((a, b) => (a.key + a.hora).localeCompare(b.key + b.hora) || a.ordem - b.ordem);
+
+  const diasMap = new Map();
+  for (const sg of segs) {
+    if (!diasMap.has(sg.key)) diasMap.set(sg.key, { data: sg.data, por: {}, gasos: [], ocultos: [] });
+    const dia = diasMap.get(sg.key);
+    for (const [ab, it] of Object.entries(sg.res.itens)) {
+      if (it.hidden) {
+        if (it.alt && !dia.ocultos.some(o => o.ab === ab && o.val === it.val)) dia.ocultos.push({ ab, val: it.val });
+        continue;
+      }
+      const lista = dia.por[ab] = dia.por[ab] || [];
+      const ult = lista[lista.length - 1];
+      const sig = it.val + '|' + (it.diff || '') + '|' + it.tag;
+      if (ult && ult.sig === sig) continue;            // mesmo valor repetido (ex.: plaquetas do hemograma + contagem)
+      lista.push({ ...it, sig, hora: sg.hora });
+    }
+    for (const g of sg.res.gasos) {
+      if (g.hidden) {
+        g.params.filter(p => p.alt).forEach(p => {
+          const ab = `${p.ab} (${g.label})`;
+          if (!dia.ocultos.some(o => o.ab === ab && o.val === p.val)) dia.ocultos.push({ ab, val: p.val });
+        });
+        continue;
+      }
+      const sig = g.label + JSON.stringify(g.params.map(p => p.val));
+      if (!dia.gasos.some(x => x.sig === sig)) dia.gasos.push({ ...g, sig, hora: sg.hora });
+    }
+  }
+  const encontrados = new Set();
+  const dias = [...diasMap.values()].map(d => ({
+    data: d.data,
+    itens: EXAMES.filter(e => d.por[e.ab]).map(e => { encontrados.add(e.ab); return { ab: e.ab, vals: d.por[e.ab] }; }),
+    gasos: d.gasos,
+    ocultos: d.ocultos
+  })).filter(d => d.itens.length || d.gasos.length || d.ocultos.length);
+  const faltando = EXAMES.filter(e => !encontrados.has(e.ab) && !oculto(e.ab, cfg)).map(e => e.ab);
+  return { dias, faltando, sexo: ctx.sexo, idade: ctx.idade, nSeg: segs.length };
 }
 
 if (typeof module !== 'undefined') module.exports = { processar, norm, toNum, EXAMES };
@@ -543,8 +695,8 @@ if (typeof module !== 'undefined') module.exports = { processar, norm, toNum, EX
 <script>
 // ═════════════════════════════ INTERFACE ═════════════════════════════
 const $ = id => document.getElementById(id);
-const STORE_KEY = 'examesUpdater.sot.v2';
-const DEFAULT_CFG = { refs: {}, disabled: {}, diff: true, ast: true, dec: '.', data: false };
+const STORE_KEY = 'examesUpdater.sot.v4';
+const DEFAULT_CFG = { refs: {}, disabled: {}, diff: true, ast: true, dec: '.', data: true, dias: 'todos', sexRef: true, gasoExtra: false, gaso: false };
 let cfg = loadCfg();
 
 function loadCfg() {
@@ -554,7 +706,7 @@ function loadCfg() {
 function saveCfg() { try { localStorage.setItem(STORE_KEY, JSON.stringify(cfg)); } catch (e) {} }
 
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-function fmtDec(s) { return cfg.dec === ',' ? String(s).replace('.', ',') : String(s); }
+function fmtDec(s) { return cfg.dec === ',' ? String(s).replace(/(\d)\.(\d)/g, '$1,$2') : String(s); }
 
 let ultimo = null;
 
@@ -564,11 +716,8 @@ function formatar() {
   $('copyFallback').style.display = 'none';
   if (!raw) { mostrarErro('Cole o texto dos exames antes de formatar.'); $('resultCard').style.display = 'none'; return; }
 
-  const r = processar(raw, cfg);
-  ultimo = r;
-  if (r.data && !$('optDataVal').dataset.manual) $('optDataVal').value = r.data;
-
-  if (!r.itens.length && !r.gasos.length) {
+  ultimo = processar(raw, cfg);
+  if (!ultimo.dias.length) {
     mostrarErro('Nenhum exame reconhecido. Verifique se colou o texto do laudo (não a imagem/PDF escaneado).');
     $('resultCard').style.display = 'none';
     return;
@@ -576,33 +725,59 @@ function formatar() {
   render();
 }
 
+function valorHTML(ab, vals) {
+  // 1º valor leva a sigla; os seguintes (mesmo dia, horários diferentes) entram com →
+  return vals.map((v, i) => {
+    let txt = (i === 0 ? ab + ' ' : '') + fmtDec(v.val);
+    if (v.diff) txt += ` (${v.diff})`;
+    if (v.tag) txt += ` (${v.tag})`;
+    return v.alt ? `<b class="alt">${esc(txt)}</b>` : esc(txt);
+  }).join(' → ');
+}
+
 function render() {
   const r = ultimo; if (!r) return;
   const sep = ' / ';
-  const partes = r.itens.map(it => {
-    let txt = `${it.ab} ${fmtDec(it.val)}`;
-    if (it.diff) txt += ` (${fmtDec(it.diff).replace(/,/g, cfg.dec === ',' ? ',' : '.')})`;
-    return it.alt ? `<b class="alt">${esc(txt)}</b>` : esc(txt);
-  });
-  let html = partes.join(sep);
-  const dataTxt = $('optData').checked && $('optDataVal').value.trim() ? $('optDataVal').value.trim() + ': ' : '';
-  if (dataTxt) html = esc(dataTxt) + html;
+  let dias = r.dias;
+  if (cfg.dias === 'ultimo') dias = dias.slice(-1);
+  const semData = dias.some(d => !d.data);
+  $('semData').style.display = semData ? 'block' : 'none';
 
-  for (const g of r.gasos) {
-    const ps = g.params.filter(p => p.val !== null).map(p => {
-      const txt = `${p.ab} ${fmtDec(p.val)}`;
-      return p.alt ? `<b class="alt">${esc(txt)}</b>` : esc(txt);
+  const blocos = dias.filter(d => d.itens.length || d.gasos.length).map(d => {
+    const data = d.data || $('optDataVal').value.trim();
+    let linha = d.itens.map(it => valorHTML(it.ab, it.vals)).join(sep);
+    if (cfg.data && data) linha = esc(data) + ': ' + linha;
+    const gl = d.gasos.map(g => {
+      const ps = g.params.filter(p => p.val !== null).map(p => {
+        const txt = `${p.ab} ${fmtDec(p.val)}`;
+        return p.alt ? `<b class="alt">${esc(txt)}</b>` : esc(txt);
+      });
+      return `<span class="glabel">${g.label}</span> (${ps.join(sep)})`;
     });
-    html += (html ? '\n' : '') + `<span class="glabel">${g.label}</span> (${ps.join(sep)})`;
-  }
-  $('resultLine').innerHTML = html;
+    if (!d.itens.length && cfg.data && data && gl.length) gl[0] = esc(data) + ': ' + gl[0];
+    return [d.itens.length ? linha : null, ...gl].filter(Boolean).join('\n');
+  });
+  $('resultLine').innerHTML = blocos.join('\n');
 
-  const nAlt = r.itens.filter(i => i.alt).length + r.gasos.reduce((a, g) => a + g.params.filter(p => p.alt).length, 0);
-  $('stats').innerHTML = `${r.itens.length} exame(s)${r.gasos.length ? ` + ${r.gasos.length} gaso` : ''} · <b>${nAlt}</b> alterado(s)`;
-  const unid = r.itens.filter(i => i.unidade).map(i => `${i.ab}: ref. em ${i.unidade}`);
+  let nAlt = 0, nEx = 0;
+  dias.forEach(d => {
+    d.itens.forEach(it => { nEx++; it.vals.forEach(v => { if (v.alt) nAlt++; }); });
+    d.gasos.forEach(g => g.params.forEach(p => { if (p.alt) nAlt++; }));
+  });
+  const info = [];
+  info.push(`${dias.length} dia(s)`);
+  if (r.sexo || r.idade != null) info.push(`${r.sexo || '?'}${r.idade != null ? ', ' + r.idade + ' a' : ''}`);
+  $('stats').innerHTML = `${info.join(' · ')} · <b>${nAlt}</b> alterado(s)`;
+
+  const unid = new Set();
+  dias.forEach(d => d.itens.forEach(it => it.vals.forEach(v => { if (v.unidade) unid.add(`${it.ab}: ref. em ${v.unidade}`); })));
+  const oc = [];
+  dias.forEach(d => d.ocultos.forEach(o => oc.push(`${o.ab} ${fmtDec(o.val)}${d.data ? ' (' + d.data.slice(0, 5) + ')' : ''}`)));
+  $('ocultos').style.display = oc.length ? 'block' : 'none';
+  $('ocultos').innerHTML = oc.length ? `⚠ Desmarcados com alteração (não entram na cópia): ${oc.map(x => `<span class="chip">${esc(x)}</span>`).join('')}` : '';
   $('missing').innerHTML =
-    (r.faltando.length ? `Não encontrados: ${r.faltando.map(f => `<span class="chip">${esc(f)}</span>`).join('')}` : '') +
-    (unid.length ? `<div style="margin-top:6px">Unidade detectada: ${unid.map(u => `<span class="chip">${esc(u)}</span>`).join('')}</div>` : '');
+    (r.faltando.length ? `Não encontrados em nenhum dia: ${r.faltando.map(f => `<span class="chip">${esc(f)}</span>`).join('')}` : '') +
+    (unid.size ? `<div style="margin-top:6px">Unidade detectada: ${[...unid].map(u => `<span class="chip">${esc(u)}</span>`).join('')}</div>` : '');
 
   $('resultCard').style.display = 'block';
   resetBtn($('btnCopiar'), 'copiar'); resetBtn($('btnCopiarTxt'), 'copiar texto');
@@ -700,7 +875,7 @@ function limpar() {
   $('resultCard').style.display = 'none';
   $('erroBox').style.display = 'none';
   $('copyFallback').style.display = 'none';
-  $('optDataVal').value = ''; delete $('optDataVal').dataset.manual;
+  $('optDataVal').value = '';
   ultimo = null;
   $('inputExames').focus();
 }
@@ -722,9 +897,8 @@ function montarRefs() {
     const user = cfg.refs[chave] || {};
     const min = user.min !== undefined ? user.min : ref.min;
     const max = user.max !== undefined ? user.max : ref.max;
-    const off = cfg.disabled[chave] ?? (EXAMES.find(e => e.ab === chave) || {}).off;
     return `<div class="ref-row">
-      <input type="checkbox" data-k="${esc(chave)}" class="ref-on" ${off ? '' : 'checked'}>
+      <span></span>
       <span class="ab">${esc(ab)}</span>
       <input type="number" step="any" data-k="${esc(chave)}" data-f="min" value="${min ?? ''}" placeholder="mín">
       <input type="number" step="any" data-k="${esc(chave)}" data-f="max" value="${max ?? ''}" placeholder="máx">
@@ -732,11 +906,8 @@ function montarRefs() {
     </div>`;
   };
   c.innerHTML = '<div class="ref-section">Linha principal</div><div class="ref-grid">' +
-    EXAMES.map(e => linha(e.ab, e.ref, e.unidadeNota || (e.coag === 'tp' ? 'segundos' : e.ab === 'BHCG' ? 'aceita NEG/POS e "< x"' : ''), e.ab)).join('') +
-    '</div><div class="ref-head" style="margin-top:12px">Gasometria: referências arterial/venosa fixas no código (PO2 e SAT venosas não são marcadas).</div>';
-  c.querySelectorAll('.ref-on').forEach(cb => cb.addEventListener('change', () => {
-    cfg.disabled[cb.dataset.k] = !cb.checked; saveCfg(); if (ultimo) formatar();
-  }));
+    EXAMES.map(e => linha(e.ab, e.ref, e.sexNota || e.unidadeNota || (e.coag === 'tp' ? 'segundos' : e.ab === 'BHCG' ? 'aceita NEG/POS e "< x"' : ''), e.ab)).join('') +
+    '</div><div class="ref-head" style="margin-top:12px">Gasometria: referências arterial/venosa fixas (venosa conforme o laboratório; PO2 e SAT venosas não são marcadas). Se você editar CR/UR/CAT aqui, a referência automática por sexo/idade deixa de valer para eles.</div>';
   c.querySelectorAll('input[type=number]').forEach(inp => inp.addEventListener('change', () => {
     const k = inp.dataset.k, f = inp.dataset.f;
     cfg.refs[k] = cfg.refs[k] || {};
@@ -745,24 +916,73 @@ function montarRefs() {
   }));
 }
 
+// ── Aba "Exames lançados" ──
+function marcado(ab) { return !oculto(ab, cfg); }
+function montarSelecao() {
+  const c = $('selContainer');
+  const grupos = GRUPOS.concat([['Gasometria', ['__GASO']]]);
+  c.innerHTML = grupos.map(([nome, abs], gi) => {
+    const isGaso = abs[0] === '__GASO';
+    const on = isGaso ? [cfg.gaso] : abs.map(marcado);
+    const all = on.every(Boolean), some = on.some(Boolean);
+    const itens = isGaso
+      ? `<span class="gnota">GASO A / GASO V inteiras (PH, PCO2, PO2, HCO3, BE, SAT, LAC)</span>`
+      : abs.map(ab => `<label><input type="checkbox" class="sel-ex" data-ab="${esc(ab)}" ${marcado(ab) ? 'checked' : ''}>${esc(ab)}</label>`).join('');
+    return `<div class="sel-grupo">
+      <label class="gtit"><input type="checkbox" class="sel-gr" data-g="${gi}" ${all ? 'checked' : ''} ${!all && some ? 'data-ind="1"' : ''}>${esc(nome)}</label>
+      <div class="gitens">${itens}</div>
+    </div>`;
+  }).join('');
+  c.querySelectorAll('.sel-gr[data-ind]').forEach(cb => cb.indeterminate = true);
+  c.querySelectorAll('.sel-ex').forEach(cb => cb.addEventListener('change', () => {
+    cfg.disabled[cb.dataset.ab] = !cb.checked; aplicarSelecao();
+  }));
+  c.querySelectorAll('.sel-gr').forEach(cb => cb.addEventListener('change', () => {
+    const [, abs] = grupos[+cb.dataset.g];
+    if (abs[0] === '__GASO') cfg.gaso = cb.checked;
+    else abs.forEach(ab => { cfg.disabled[ab] = !cb.checked; });
+    aplicarSelecao();
+  }));
+  const n = EXAMES.filter(e => marcado(e.ab)).length;
+  $('selResumo').textContent = `${n}/${EXAMES.length} exames${cfg.gaso ? ' + gaso' : ''}`;
+}
+function aplicarSelecao() { saveCfg(); montarSelecao(); if (ultimo) formatar(); }
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+  const p = b.dataset.preset;
+  cfg.disabled = {};
+  if (p === 'todos') { EXAMES.forEach(e => cfg.disabled[e.ab] = false); cfg.gaso = true; }
+  else if (p === 'nenhum') { EXAMES.forEach(e => cfg.disabled[e.ab] = true); cfg.gaso = false; }
+  else cfg.gaso = false;
+  aplicarSelecao();
+}));
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  document.querySelectorAll('.tabpane').forEach(p => p.style.display = p.id === t.dataset.tab ? 'block' : 'none');
+}));
+
 // ── Inicialização ──
 $('ano').textContent = new Date().getFullYear();
 $('optDiff').checked = cfg.diff; $('optAst').checked = cfg.ast; $('optDec').value = cfg.dec; $('optData').checked = cfg.data;
+$('optDias').value = cfg.dias; $('optSexRef').checked = cfg.sexRef; $('optGasoExtra').checked = cfg.gasoExtra;
+$('optDias').addEventListener('change', e => { cfg.dias = e.target.value; saveCfg(); render(); });
+$('optSexRef').addEventListener('change', e => { cfg.sexRef = e.target.checked; saveCfg(); if (ultimo) formatar(); });
+$('optGasoExtra').addEventListener('change', e => { cfg.gasoExtra = e.target.checked; saveCfg(); if (ultimo) formatar(); });
 $('optDiff').addEventListener('change', e => { cfg.diff = e.target.checked; saveCfg(); if (ultimo) formatar(); });
 $('optAst').addEventListener('change', e => { cfg.ast = e.target.checked; saveCfg(); });
 $('optDec').addEventListener('change', e => { cfg.dec = e.target.value; saveCfg(); render(); });
 $('optData').addEventListener('change', e => { cfg.data = e.target.checked; saveCfg(); render(); });
-$('optDataVal').addEventListener('input', e => { e.target.dataset.manual = '1'; render(); });
+$('optDataVal').addEventListener('input', () => render());
 $('btnFormatar').addEventListener('click', formatar);
 $('btnLimpar').addEventListener('click', limpar);
 $('btnColar').addEventListener('click', colar);
 $('btnCopiar').addEventListener('click', () => copiar(false));
 $('btnCopiarTxt').addEventListener('click', () => copiar(true));
 $('btnRestaurar').addEventListener('click', () => {
-  cfg.refs = {}; cfg.disabled = {}; saveCfg(); montarRefs(); if (ultimo) formatar();
+  cfg.refs = {}; saveCfg(); montarRefs(); if (ultimo) formatar();
 });
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); formatar(); } });
 montarRefs();
+montarSelecao();
 </script>
 </body>
 </html>

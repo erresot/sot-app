@@ -180,7 +180,8 @@ var SYNC = (function () {
     if (rem.manual && !S.pacientes.some(function (p) { return p.id === pid; })) S.pacientes.push(rem.manual);
     Object.keys(rem.visitas || {}).forEach(function (d) {
       S.vis[d] = S.vis[d] || {}; var l = S.vis[d][pid], r = rem.visitas[d];
-      if (!l || (r._at || 0) > (l._at || 0)) S.vis[d][pid] = r;
+      S.vis[d][pid] = mesclarVisita(l, r);
+      if (typeof visSnap === 'function') visSnap(d, pid);
     });
     S.pendDel = S.pendDel || {};
     var del = (S.pendDel[pid] || []).concat(rem.pendDel || []).filter(function (x, i, a) { return a.indexOf(x) === i; });
@@ -194,7 +195,10 @@ var SYNC = (function () {
     var E = (S.evo[pid] || []).slice();
     (rem.evo || []).forEach(function (x) {
       var i = E.findIndex(function (y) { return y.data === x.data; });
-      if (i < 0) E.push(x); else if ((x.at || 0) > (E[i].at || 0)) E[i] = x;
+      if (i < 0) { E.push(x); return; }
+      var ganha = (x.at || 0) > (E[i].at || 0) ? x : E[i], perde = ganha === x ? E[i] : x;
+      if (perde.txt && !perde.del && !ganha.del && perde.txt !== ganha.txt && (perde.by || '') !== (ganha.by || '')) guardarAlt(pid, perde, ganha);
+      E[i] = ganha;
     });
     E.sort(function (a, b) { return a.data < b.data ? -1 : 1; }); S.evo[pid] = E.slice(-5);
     S.fotos = S.fotos || {};
@@ -206,11 +210,44 @@ var SYNC = (function () {
     S.fotos[pid] = F;
   }
 
+  // relógio: compara a hora do aparelho com a do Google (horário errado pode fazer um dado velho "ganhar")
+  function medirRelogio(mt, t0) {
+    var srv = Date.parse(mt); if (isNaN(srv)) return;
+    var meio = (t0 + Date.now()) / 2, dif = srv - meio;
+    var ad = Math.abs(dif);
+    S.sync.skew = ad > 90000 && ad < 6 * 3600000 ? Math.round(dif) : 0;   // compensa até 6 h; mais que isso é suspeito: só avisa
+    S.sync.relogioRuim = ad > 6 * 3600000 ? Math.round(dif) : 0;
+  }
+  var META_V = { _at: 1, _by: 1, _t: 1, _limpo: 1 };
+  function mesclarVisita(l, r) {
+    if (!l) return r; if (!r) return l;
+    var ks = {}, res = {}, t = {};
+    [l, r, l._t || {}, r._t || {}].forEach(function (o) { Object.keys(o).forEach(function (k) { if (!META_V[k]) ks[k] = 1; }); });
+    Object.keys(ks).forEach(function (k) {
+      var tl = l._t ? (l._t[k] || 0) : (l._at || 0), tr = r._t ? (r._t[k] || 0) : (r._at || 0);   // com carimbo por campo, campo sem carimbo = antigo
+      var src = tr > tl ? r : l;
+      if (Object.prototype.hasOwnProperty.call(src, k)) res[k] = src[k];
+      t[k] = Math.max(tl, tr);
+    });
+    var novo = (r._at || 0) > (l._at || 0) ? r : l;
+    res._t = t; res._at = Math.max(l._at || 0, r._at || 0); if (novo._by) res._by = novo._by; if (novo._limpo) res._limpo = 1;
+    return res;
+  }
+  function guardarAlt(pid, perde, ganha) {
+    S.evoAlt = S.evoAlt || {}; var L = (S.evoAlt[pid] || []).filter(function (a) { return !(a.data === perde.data && a.txt === perde.txt); });
+    L.push({ data: perde.data, txt: perde.txt, by: perde.by || '', at: perde.at || 0, porQuem: ganha.by || '', em: Date.now() });
+    S.evoAlt[pid] = L.slice(-6);
+  }
+
   /* ---------- ciclo de sincronização ---------- */
   function estado(e, m) { st.estado = e; st.msg = m; desenharStatus(); }
   function agendar() { clearTimeout(timer); timer = setTimeout(agora, 2500); desenharStatus(); }
+  var corrente = Promise.resolve();
   function agora() {
-    if (rodando) return Promise.resolve();
+    if (rodando) return corrente;
+    corrente = agora0(); return corrente;
+  }
+  function agora0() {
     st.pend = contarPend().total;
     if (!navigator.onLine) { estado('off', 'sem internet — tudo salvo no aparelho'); return Promise.resolve(); }
     if (!configurado() && !window.__TEST_TOKEN) { estado('local', 'só neste aparelho (login não configurado)'); return Promise.resolve(); }
@@ -239,9 +276,18 @@ var SYNC = (function () {
       var envia = idsLocais().filter(function (pid) { var r = registro(pid); return (r.apagado || Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length) && sujo(pid); });
       return envia.reduce(function (pr, pid) {
         return pr.then(function () {
-          var j = JSON.stringify(registro(pid)), b = new Blob([j], { type: 'application/json' });
-          var op = S.sync.ids[pid] ? atualizarArquivo(S.sync.ids[pid], b, 'application/json') : criarArquivo(pid + '.json', pPac, b, 'application/json');
-          return op.then(function (f) { S.sync.ids[pid] = f.id; S.sync.vistos[pid] = f.modifiedTime; S.sync.enviado[pid] = j; });
+          var conferir = S.sync.ids[pid] ? req(API + '/files/' + S.sync.ids[pid] + '?fields=id,modifiedTime,trashed').then(function (r) { return r.json(); }).then(function (m) {
+            if (m && !m.trashed && m.modifiedTime && m.modifiedTime !== S.sync.vistos[pid]) {
+              st.conflitos = (st.conflitos || 0) + 1;
+              return baixarJSON(m.id).then(function (rem) { mesclar(pid, rem); S.sync.vistos[pid] = m.modifiedTime; });
+            }
+          }).catch(function () {}) : Promise.resolve();
+          return conferir.then(function () {
+            var j = JSON.stringify(registro(pid)), b = new Blob([j], { type: 'application/json' });
+            var t0 = Date.now();
+            var op = S.sync.ids[pid] ? atualizarArquivo(S.sync.ids[pid], b, 'application/json') : criarArquivo(pid + '.json', pPac, b, 'application/json');
+            return op.then(function (f) { S.sync.ids[pid] = f.id; S.sync.vistos[pid] = f.modifiedTime; S.sync.enviado[pid] = j; medirRelogio(f.modifiedTime, t0); });
+          });
         });
       }, Promise.resolve()).then(function () { return { nb: nb, ne: envia.length, nf: x0.nf }; });
     }).then(function (x) {
@@ -249,6 +295,8 @@ var SYNC = (function () {
     }).then(function (x) {
       S.sync.ultimo = Date.now(); saveLocal(); rodando = false;
       st.pend = contarPend().total;
+      var sk = S.sync.skew || S.sync.relogioRuim;
+      if (sk && !window.__TEST_TOKEN) { estado('erro', '⚠ relógio deste aparelho está ' + Math.round(Math.abs(sk) / 60000) + ' min ' + (sk > 0 ? 'atrasado' : 'adiantado') + ' — ajuste para data/hora automática' + (S.sync.skew ? ' (o app já compensa)' : '')); if (x.nb && typeof render === 'function') render(); return; }
       estado('ok', 'sincronizado ' + hhmm(new Date()) + (x.nb ? ' · ' + x.nb + ' recebido(s)' : '') + (x.ne ? ' · ' + x.ne + ' enviado(s)' : '') + (x.nf ? ' · ' + x.nf + ' foto(s)' : ''));
       if (x.nb && typeof render === 'function') { render(); if (atual && !document.querySelector('#sheet input:focus,#sheet textarea:focus')) redesenhar(); }
     }).catch(function (e) {
@@ -311,8 +359,15 @@ var SYNC = (function () {
   setInterval(function () { if (!document.hidden) agora(); }, 30000);
   window.addEventListener('load', function () { setTimeout(function () { initGIS(); agora(); }, 800); });
 
-  return { acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
-    status: function () { return st; }, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _registro: registro, erro: function () { return ultimoErro; } };
+  function sair() {
+    var tk = token;
+    token = null; tokenExp = 0;
+    try { localStorage.removeItem('sot-tk'); localStorage.removeItem('sot-logou'); sessionStorage.removeItem('sot-tk'); } catch (e) {}
+    try { if (tk && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(tk, function () {}); } catch (e) {}
+    estado('login', 'desconectado — toque para conectar ao Google');
+  }
+  return { sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+    status: function () { return st; }, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
 /* ---------------- fotos: câmera → reduz → guarda no aparelho → fila ---------------- */

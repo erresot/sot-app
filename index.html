@@ -214,6 +214,7 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
 @media (min-width:700px){.hubgrid{grid-template-columns:1fr 1fr}}@media (min-width:1100px){.hubgrid{grid-template-columns:1fr 1fr 1fr}}
 .tabs button{min-width:0}
 
+.labf{color:#c62828;font-weight:700;background:rgba(198,40,40,.08);border-radius:4px;padding:0 3px}html.escuro .labf{color:#ff8a80;background:rgba(255,138,128,.12)}.labcx{outline:2px solid #c62828}
 </style>
 </head>
 <body>
@@ -267,7 +268,7 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
 </script>
 
 <div class="top">
-  <div class="hrow"><h1>SOT · Visita + Evolução</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button></div></div>
+  <div class="hrow"><h1>SOT · Visita + Evolução</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
   <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span></div>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -693,7 +694,7 @@ function resumoVisita(v) {
   if ((v.fo || []).length) e.push('FO: ' + v.fo.join(', ').toLowerCase());
   var d = v.dreno || {};
   if (d.sem) e.push('sem dreno');
-  if (d.tem) e.push('dreno' + ([['D', d.d], ['E', d.e], ['', d.u]].filter(function (x) { return x[1]; }).map(function (x) { return ' ' + (x[0] ? x[0] + ' ' : '') + x[1] + ' mL'; }).join(' /')) + ((d.asp || []).length ? ' (' + d.asp.join(', ').toLowerCase() + ')' : ''));
+  if (d.tem) e.push('dreno' + ([['D', d.d], ['E', d.e], ['', d.u]].filter(function (x) { return x[1]; }).map(function (x) { return ' ' + (x[0] ? x[0] + ' ' : '') + x[1] + ' mL'; }).join(' /')) + drenoTaxaTxt(d) + ((d.asp || []).length ? ' (' + d.asp.join(', ').toLowerCase() + ')' : ''));
   if (v.imob) e.push('imobilização ' + v.imob.toLowerCase());
   if (v.nv) e.push('neurovascular ' + v.nv.toLowerCase() + (v.nv_x ? ': ' + v.nv_x : ''));
   if (v.neuro && v.neuro.sem) e.push('exame neurológico sem alterações');
@@ -750,7 +751,9 @@ window.addEventListener('beforeunload', function () { saveLocal(); });
     document.querySelector('#msair').onclick = function () {
       md.classList.remove('on'); md.removeAttribute('data-sair'); saindo = true;
       try { if (typeof save === 'function') save(); } catch (e) {}
-      history.back();
+      var irEmbora = function () { history.back(); };
+      if (window.SYNC && SYNC.temToken() && SYNC.contarPend().total) { toast('Enviando para o Google antes de sair…'); Promise.race([SYNC.agora(), new Promise(function (r) { setTimeout(r, 8000); })]).then(irEmbora); }
+      else irEmbora();
       setTimeout(function () { if (document.visibilityState === 'visible') { saindo = false; toast('Pode fechar a aba do navegador'); armar(); } }, 900);
     };
   }
@@ -768,8 +771,21 @@ window.addEventListener('beforeunload', function () { saveLocal(); });
     perguntarSair();
   });
   // PC: fechar a aba/janela também pergunta
-  window.addEventListener('beforeunload', function (e) { if (saindo) return; e.preventDefault(); e.returnValue = ''; });
+  window.addEventListener('beforeunload', function (e) { if (saindo || window.__semAviso) return; e.preventDefault(); e.returnValue = ''; });
 })();
+
+/* v14: dreno em mL/hora */
+function drenoTaxa(d) {
+  var tot = ['d', 'e', 'u'].map(function (k) { return parseFloat(String((d || {})[k] || '').replace(',', '.')); }).filter(function (x) { return !isNaN(x); });
+  if (!tot.length) return null;
+  var soma = tot.reduce(function (a, b) { return a + b; }, 0), hh = parseFloat(String((d || {}).h || '').replace(',', '.'));
+  var per = hh > 0 ? hh : 24;
+  return { soma: soma, h: per, informado: hh > 0, taxa: soma / per };
+}
+function drenoTaxaTxt(d) {
+  var r = drenoTaxa(d); if (!r) return '';
+  return (r.informado ? ' em ' + String(r.h).replace('.', ',') + ' h' : ' em 24 h') + ' (' + r.taxa.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mL/h)';
+}
 
 </script>
 <script>
@@ -794,7 +810,7 @@ function brCurto(s) { return br(s).slice(0, 5); }
 function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
 function saveLocal() { if (window.__semSalvar) return true; try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { toast('⚠ Memória do aparelho cheia — sincronize e apague fotos antigas'); return false; } }
 function save() {
-  if (typeof atual !== 'undefined' && atual && S.v[atual.id]) { S.v[atual.id]._at = Date.now(); S.v[atual.id]._by = S.eu || ''; }
+  if (typeof atual !== 'undefined' && atual && S.v[atual.id] && carimbarV(S.hoje, atual.id)) { S.v[atual.id]._at = relogio(); S.v[atual.id]._by = S.eu || ''; }
   saveLocal(); if (window.SYNC) SYNC.agendar();
 }
 function $(s, el) { return (el || document).querySelector(s); }
@@ -807,7 +823,7 @@ function evoBase(id) { var L = evoLista(id).filter(function (e) { return e.data 
 function evoHoje(id) { return evoLista(id).find(function (e) { return e.data === S.hoje; }) || null; }
 function evoGuardar(id, data, txt) {
   var L = (S.evo[id] || []).filter(function (e) { return e.data !== data; });
-  L.push({ data: data, txt: txt, at: Date.now(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+  L.push({ data: data, txt: txt, at: relogio(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
   S.evo[id] = L.slice(-5); save();
 }
 function evoluido(p) { return !!evoHoje(p.id); }
@@ -969,6 +985,8 @@ function tagsPac(p) {
   (p.agenda || []).forEach(function (a) { if (a.dias <= 1) t += '<span class="tag hj">' + (a.dias === 0 ? 'HOJE' : 'AMANHÃ') + ': ' + esc(curto(a.txt)) + '</span>'; });
   var al = alertasVisita(S.v[p.id]); if (al.length) t += '<span class="tag red">🚩 ' + esc(al.slice(0, 2).join(', ')) + (al.length > 2 ? ' +' + (al.length - 2) : '') + '</span>';
   if ((p.verif || []).length) t += '<span class="tag warn">⚠ ' + p.verif.length + ' verificação(ões)</span>';
+  t += tagPreOp(p);
+  t += tagHb(p);
   if (evoluido(p)) t += '<span class="tag evo">evoluído ✓</span>';
   else if (!evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
   return t;
@@ -1067,6 +1085,7 @@ function vConfig() {
     h += '</div>';
   }
   h += blocoSumidosConfig() + blocoLimpeza();
+  h += '<h2>Sair do sistema</h2><div class=\"card\"><div class=\"hint\">Salva, envia tudo para o Google, desconecta a conta e tranca o app.</div><div class=\"row\" style="margin-top:8px\"><button class=\"btn\" data-sairsis>⏻ Sair do sistema</button></div></div>';
   h += '<h2>Apagar dados deste aparelho</h2><div class="card"><div class="hint">Use se for zerar o app (por exemplo, depois de apagar a pasta do Drive). Não mexe no Drive nem nos outros aparelhos.</div><div class="row" style="margin-top:8px"><button class="btn sec" data-apagaraparelho style="color:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Apagar tudo deste aparelho…</button></div></div>';
   h += '<h2>Aparência</h2><div class="card"><div class="opts">' + [['auto', '🌓 Automático'], ['claro', '☀️ Claro'], ['escuro', '🌙 Noturno']].map(function (x) { return '<button class="op' + ((S.tema || 'auto') === x[0] ? ' on' : '') + '" data-tema="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
   h += '<h2>Opções</h2><div class="card"><div class="lb" style="font-size:12.5px;color:var(--mut);font-weight:600">Contagem do DIH</div><div class="opts" style="margin-bottom:8px"><button class="op' + (!S.dihConv ? ' on' : '') + '" data-dihc="0">Dia da internação = DIH 0</button><button class="op' + (S.dihConv ? ' on' : '') + '" data-dihc="1">Dia da internação = DIH 1</button></div><label class="pend" style="border:0"><input type="checkbox" id="altas"' + (S.mostrarAltas ? ' checked' : '') + '><div class="tx">Mostrar pacientes de alta (precisam de visita e evolução antes de sair)</div></label></div>';
@@ -1080,10 +1099,10 @@ function vConfig() {
 
 // ===================== ficha do paciente =====================
 var atual = null;
-function travar() { document.documentElement.classList.toggle('travado', $('#sheet').classList.contains('open') || $('#evoSheet').classList.contains('open')); }
+function travar() { var on = $('#sheet').classList.contains('open') || $('#evoSheet').classList.contains('open') || ($('#hubView') && $('#hubView').classList.contains('on')); document.documentElement.classList.toggle('travado', on); document.body.classList.toggle('travado', on); }
 function abrir(id) {
   atual = S.pacientes.find(function (p) { return p.id === id; }) || (S.ultimos || {})[id]; if (!atual) { toast('Paciente não encontrado'); return; }
-  S.v[id] = S.v[id] || {};
+  S.v[id] = S.v[id] || {}; visSnap(S.hoje, id);
   desenharFicha(); $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0; document.body.classList.add('travado'); travar();
 }
 function fechar() { $('#sheet').classList.remove('open'); atual = null; travar(); render(); }
@@ -1092,7 +1111,10 @@ function desenharFicha() {
   var p = atual, v = S.v[p.id], t = p.tipo || tipoDe(p), todos = !!v._all;
   var h = '<div class="sh-top"><button class="back" data-close>‹</button><div class="t"><b>' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + '</b><span>' + (p.registro ? 'Reg ' + esc(p.registro) + ' · ' : '') + [p.po && p.po.label, p.dih != null && 'DIH ' + p.dih, p.idade && p.idade + ' anos', p.ic && 'INTERCONSULTA', p.alta && 'ALTA', p.ps && 'PS'].filter(Boolean).map(esc).join(' · ') + '</span></div><button class="hb2" data-temaciclo title="Modo noturno / claro">' + (document.documentElement.classList.contains('escuro') ? '☀️' : '🌙') + '</button><button class="syncmini" data-sync title="Sincronizar agora">' + iconeSync() + '</button></div><div class="sh-body">';
   h += fichaIG(p);
+  h += blocoPreOp(p);
+  h += blocoExames(p);
   h += blocoEvoAnterior(p);
+  h += blocoEvoAlt(p);
   CAMPOS.forEach(function (c) { if (todos || !c.when || c.when(t)) h += campo(c, v); });
   h += '<div class="row" style="margin:0 0 8px"><button class="btn ghost sm" data-all style="width:100%">' + (todos ? 'Mostrar só os campos do tipo de paciente' : 'Mostrar todos os campos (FO, dreno, imobilização, neuro…)') + '</button></div>';
   h += '<label class="q" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="exIgual"' + (v.exIgual ? ' checked' : '') + ' style="width:22px;height:22px;accent-color:var(--acc)"><div><b>Restante igual a ontem</b><div class="hint">O que você não marcou aqui entra como “mantido” na evolução, sem revisar campo por campo.</div></div></label>';
@@ -1132,7 +1154,8 @@ function campo(c, v) {
     var d = val || {};
     h += '<div class="opts">' + ['Sem dreno', 'Dreno'].map(function (o) { var on = (o === 'Sem dreno' ? d.sem : d.tem); return '<button class="op' + (on ? ' on' : '') + '" data-dr="' + o + '">' + o + '</button>'; }).join('') + '</div>';
     if (d.tem) {
-      h += '<div class="num"><input inputmode="numeric" data-drn="d" placeholder="D (ml)" value="' + esc(d.d || '') + '"><input inputmode="numeric" data-drn="e" placeholder="E (ml)" value="' + esc(d.e || '') + '"><input inputmode="numeric" data-drn="u" placeholder="Único (ml)" value="' + esc(d.u || '') + '"></div>';
+      h += '<div class="num"><input inputmode="numeric" data-drn="d" placeholder="D (ml)" value="' + esc(d.d || '') + '"><input inputmode="numeric" data-drn="e" placeholder="E (ml)" value="' + esc(d.e || '') + '"><input inputmode="numeric" data-drn="u" placeholder="Único (ml)" value="' + esc(d.u || '') + '"></div>' +
+        '<div class="num" style="margin-top:6px;align-items:center"><input inputmode="decimal" data-drn="h" placeholder="Período (h)" value="' + esc(d.h || '') + '" style="max-width:130px"><span class="hint" id="drTaxa" style="flex:1">' + (drenoTaxa(d) ? '= ' + drenoTaxa(d).soma + ' mL' + drenoTaxaTxt(d) : 'Ex.: 200 mL em 12 h → 16,7 mL/h (sem período = 24 h)') + '</span></div>';
       h += '<div class="opts" style="margin-top:6px">' + ['Hemático', 'Sero-hemático', 'Seroso', 'Com vácuo', 'Sem vácuo'].map(function (o) { return '<button class="op' + ((d.asp || []).indexOf(o) > -1 ? ' on' : '') + '" data-dra="' + o + '">' + o + '</button>'; }).join('') + '</div>';
     }
   } else if (c.tipo === 'neuro') {
@@ -1202,7 +1225,7 @@ function fichaIG(p) {
   h += '<details class="ig2"><summary>Orienta · Condutas · Exames</summary>' +
     (p.orientaLinhas && p.orientaLinhas.length ? '<div class="igs">Orienta' + (p.orientador ? ' — ' + esc(p.orientador) : '') + '</div>' + linhasHtml(p.orientaLinhas) : '') +
     (p.condutasLinhas && p.condutasLinhas.length ? '<div class="igs">Condutas</div>' + linhasHtml(p.condutasLinhas) : '') +
-    ((p.exames || []).length ? '<div class="igs">Exames</div>' + linhasHtml(p.exames, 'mono') : '') + '</details>';
+    ((p.exames || []).length ? '<div class="igs">Exames</div>' + examesHtml(p) : '') + '</details>';
   h += '<button class="btn sec sm bruto" data-bruto="1">📄 Ver texto original do internograma (como está no documento)</button><div id="brutoBox" hidden></div>';
   return h + '</div>';
 }
@@ -1216,10 +1239,12 @@ var HUB = [
   { g: 'PRONTO SOCORRO', itens: [
     { id: 'anamnese', n: 'Anamnese', i: '🗣', d: 'História do atendimento por toques: chamado, mecanismo, evolução e local da dor no boneco 3D.' },
     { id: 'exame', n: 'Exame Físico', i: '🩺', d: 'Exame ortopédico por segmento: “tudo normal” e marcar só o que está alterado.' },
-    { id: 'condutas', n: 'Condutas (Pronto Socorro)', i: '📋', d: 'Continuação e condutas para o prontuário: modelos, exames, medicação, “em tempo” e procedimentos.' } ] },
+    { id: 'condutas', n: 'Condutas (Pronto Socorro)', i: '📋', d: 'Continuação e condutas para o prontuário: modelos, exames, medicação, “em tempo” e procedimentos.' },
+    { id: 'novopac', n: 'Novo Paciente · Internograma SOT', i: '➕', d: 'Inserir paciente novo no internograma: colar a anamnese do PS, foto/print com leitura do texto ou preenchimento manual.' } ] },
   { g: 'AMBULATÓRIO E DOCUMENTOS', itens: [
-    { id: 'retornos', n: 'Solicitador de Retornos', i: '📅', d: 'Pedido de retorno ambulatorial: motivo, data rápida e texto pronto.' },
+    { id: 'retornos', n: 'Solicitador de Retornos', i: '📅', d: 'Versão final: dia do ambulatório, assistente, setor e data — texto pronto para o paciente agendar.' },
     { id: 'evoamb', n: 'Evolução Ambulatorial', i: '📝', d: 'Atualiza a evolução a partir da anterior, mantendo o padrão do serviço.' },
+    { id: 'avaliacao', n: 'Solicitador de Avaliações', i: '🫀', d: 'Pedido de avaliação anestésica / cardiológica no padrão do serviço (internados: botão na ficha já vem preenchido).' },
     { id: 'exames', n: 'Exames Updater', i: '🧪', d: 'Formata os exames laboratoriais em linha, prontos para colar na evolução.' },
     { id: 'relatorio', n: 'Realizador de Relatórios', i: '📄', d: 'Relatório de Ortopedia: identificação, CID-10 com busca, exames, internações e conduta.' } ] },
   { g: 'CENTRO CIRÚRGICO', itens: [
@@ -1243,9 +1268,9 @@ function abrirHub(id) {
   if (!fr) { fr = document.createElement('iframe'); fr.setAttribute('data-id', id); fr.src = 'hub/' + id + '.html'; box.appendChild(fr); }
   fr.classList.add('on');
   $('#hubTit').textContent = x.n; $('#hubNova').href = 'hub/' + id + '.html';
-  $('#hubView').classList.add('on'); document.body.classList.add('travado');
+  $('#hubView').classList.add('on'); travar();
 }
-function fecharHub() { $('#hubView').classList.remove('on'); if (!$('#sheet').classList.contains('open') && !$('#evoSheet').classList.contains('open')) document.body.classList.remove('travado'); }
+function fecharHub() { $('#hubView').classList.remove('on'); travar(); }
 function botaoApagar(p) {
   var v = (S.vis[S.hoje] || {})[p.id], temV = v && Object.keys(v).some(function (k) { return k.charAt(0) !== '_' || k === '_ok'; }), temE = !!evoHoje(p.id), temR = !!((S.rasc || {})[p.id]);
   if (!temV && !temE && !temR) return '';
@@ -1262,10 +1287,10 @@ function modalApagar(id) {
   $('#modal').classList.add('on');
   $('#mapagar').onclick = function () {
     var cv = $('#ap_vis'), ce = $('#ap_evo'), feito = [];
-    if (cv && cv.checked) { S.vis[S.hoje] = S.vis[S.hoje] || {}; S.vis[S.hoje][id] = { _at: Date.now(), _limpo: 1 }; feito.push('visita'); }
+    if (cv && cv.checked) { S.vis[S.hoje] = S.vis[S.hoje] || {}; if (VSNAP[S.hoje + '|' + id] == null) visSnap(S.hoje, id); S.vis[S.hoje][id] = { _at: relogio(), _limpo: 1, _by: S.eu || '' }; carimbarV(S.hoje, id); feito.push('visita'); }
     if (ce && ce.checked) {
       var L = (S.evo[id] || []).filter(function (e) { return e.data !== S.hoje; });
-      L.push({ data: S.hoje, txt: '', del: true, at: Date.now(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+      L.push({ data: S.hoje, txt: '', del: true, at: relogio(), by: S.eu || '' }); L.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
       S.evo[id] = L.slice(-5); if (S.rasc) delete S.rasc[id]; feito.push('evolução');
     }
     $('#modal').classList.remove('on');
@@ -1285,6 +1310,280 @@ function modalApagarAparelho() {
     try { var r = indexedDB.deleteDatabase('sot-fotos'); r.onsuccess = r.onerror = r.onblocked = fim; setTimeout(fim, 2500); } catch (e) { fim(); }
   };
 }
+/* ===== v14: exames do internograma — valores fora da referência em vermelho ===== */
+var LABREF = [
+  // nome (regex), [mín, máx], ajuste de unidade
+  { k: 'Hb', re: 'HB|HGB', min: 12, max: 17.5 },
+  { k: 'Ht', re: 'HT|HTC', min: 36, max: 52 },
+  { k: 'Leuco', re: 'LEUCO|LEUC|LEUCOS', min: 4000, max: 11000, mil: 100 },
+  { k: 'Plaq', re: 'PLAQ|PLAQUETAS', min: 150000, max: 450000, mil: 2000 },
+  { k: 'PCR', re: 'PCR', min: null, max: 10 },
+  { k: 'Cr', re: 'CR|CREAT', min: 0.5, max: 1.2 },
+  { k: 'Ur', re: 'UR|U|UREIA', min: 10, max: 50 },
+  { k: 'Na', re: 'NA', min: 135, max: 145 },
+  { k: 'K', re: 'K', min: 3.5, max: 5.0 },
+  { k: 'Mg', re: 'MG', min: 1.6, max: 2.6 },
+  { k: 'Glic', re: 'GLIC|GLICEMIA', min: 70, max: 99 },
+  { k: 'INR', re: 'INR|RNI', min: null, max: 1.2 },
+  { k: 'Fibri', re: 'FIBRI|FIB|FIBRINOGENIO', min: 200, max: 400 },
+  { k: 'TGO', re: 'TGO|AST', min: null, max: 40 },
+  { k: 'TGP', re: 'TGP|ALT', min: null, max: 41 }
+];
+var LABRE = new RegExp('(\\*?)\\b(' + LABREF.map(function (r) { return r.re; }).join('|') + ')\\b\\s*:?\\s*(\\*?)\\s*(\\d{1,3}(?:\\.\\d{3})+|\\d+(?:[.,]\\d+)?)\\s*(MIL\\b)?(%)?(\\*?)', 'gi');
+function labRef(nome) { var u = nome.toUpperCase(); for (var i = 0; i < LABREF.length; i++) if (new RegExp('^(' + LABREF[i].re + ')$').test(u)) return LABREF[i]; return null; }
+function labValor(r, txt, mil) {
+  var v;
+  if (/^\d{1,3}(\.\d{3})+$/.test(txt)) v = parseFloat(txt.replace(/\./g, ''));
+  else v = parseFloat(txt.replace(',', '.'));
+  if (isNaN(v)) return null;
+  if (mil) v *= 1000;
+  else if (r.mil && v < r.mil) v *= 1000;   // "Plaq 405" = 405 mil · "Leuco 7,9" = 7.900
+  return v;
+}
+function propostaCx(p) {
+  var tx = (p.agenda || []).map(function (a) { return a.txt; }).concat(p.condutasLinhas || [], p.orientaLinhas || [], (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; })).join(' \n ').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  var cx = /CIRURG|OSTEOSS|ARTROPLAST|ARTRODES|DESCOMPRESS|FIXAC|\bRAFI\b|\bTTO CIR|AMPUTA|DESBRID|LIMPEZA CIR|REDUCAO|ARTROSCOP|TENORRAF|ENXERT|\bCX\b|AVISO CC|MAPA CIR/;
+  var plano = /AVISO|PROGRAM|PROPOST|AGUARD|AGENDAD|MAPA|AMANHA|\bCC\b|SOLIC|PRE[- ]?OP|RESERVA/;
+  return (p.agenda || []).some(function (a) { return cx.test(a.txt.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '')); }) || tx.split('\n').some(function (l) { return cx.test(l) && plano.test(l); });
+}
+function marcarExameLinha(l, cx) {
+  var out = '', pos = 0;
+  l.replace(LABRE, function (m, a1, nome, a2, num, mil, pct, a3, off) {
+    var r = labRef(nome); if (!r) return m;
+    var v = labValor(r, num, !!mil); if (v == null) return m;
+    var baixo = r.min != null && v < r.min, alto = r.max != null && v > r.max, lab = !!(a1 || a2 || a3);
+    var cxBaixo = r.k === 'Hb' && cx && v <= 10;
+    out += esc(l.slice(pos, off));
+    var limpo = m.replace(/\*/g, '');
+    if (baixo || alto || lab || cxBaixo) out += '<span class="labf' + (cxBaixo ? ' labcx' : '') + '" title="' + esc(r.k + ': ' + (r.min != null ? r.min : '—') + ' a ' + (r.max != null ? r.max : '—') + (cxBaixo ? ' · proposta cirúrgica: Hb precisa ser > 10' : '')) + '">' + esc(limpo) + (baixo || cxBaixo ? ' ↓' : alto ? ' ↑' : '') + '</span>';
+    else out += esc(limpo);
+    pos = off + m.length; return m;
+  });
+  return out + esc(l.slice(pos));
+}
+function ultimoLab(p, k) {
+  var L = (p.exames || []), achado = null;
+  L.forEach(function (l) { l.replace(LABRE, function (m, a1, nome, a2, num, mil) { var r = labRef(nome); if (r && r.k === k) { var v = labValor(r, num, !!mil); if (v != null) achado = { v: v, txt: num, linha: l }; } return m; }); });
+  return achado;
+}
+function examesHtml(p) {
+  var L = p.exames || []; if (!L.length) return '';
+  var cx = propostaCx(p);
+  return '<ul class="lin mono">' + L.map(function (x) { return '<li>' + marcarExameLinha(x, cx) + '</li>'; }).join('') + '</ul>';
+}
+function blocoExames(p) {
+  var L = p.exames || []; if (!L.length) return '';
+  var cx = propostaCx(p), hb = ultimoLab(p, 'Hb'), h = '<div class="q"><div class="lb">🧪 Exames (internograma)' + (cx ? ' <span class="tag hj">proposta cirúrgica</span>' : '') + '</div>';
+  if (cx && hb && hb.v <= 10) h += '<div class="flagbox" style="margin:6px 0">⚠ Hb ' + esc(hb.txt) + ' — paciente com proposta cirúrgica precisa de <b>Hb &gt; 10</b>. Conferir reserva/transfusão antes do CC.</div>';
+  h += '<ul class="lin mono">' + L.slice(-3).map(function (x) { return '<li>' + marcarExameLinha(x, cx) + '</li>'; }).join('') + '</ul>';
+  if (L.length > 3) h += '<div class="hint">Exames mais antigos em “Orienta · Condutas · Exames”.</div>';
+  return h + '<div class="hint">Vermelho = fora da referência de adulto (ou marcado com * no internograma). ↓ baixo · ↑ alto.</div></div>';
+}
+function tagHb(p) {
+  var hb = ultimoLab(p, 'Hb'); if (!hb) return '';
+  if (propostaCx(p) && hb.v <= 10) return '<span class="tag red">Hb ' + esc(hb.txt) + ' · cx exige &gt;10</span>';
+  if (hb.v < 8) return '<span class="tag red">Hb ' + esc(hb.txt) + '</span>';
+  return '';
+}
+/* ===== v14: relógio, carimbo por campo da visita, versões de evolução e botão SAIR ===== */
+function relogio() { return Date.now() + ((S.sync && S.sync.skew) || 0); }
+var VSNAP = {}, META_VIS = { _at: 1, _by: 1, _t: 1, _limpo: 1 };
+function dadosV(v) { var o = {}; Object.keys(v || {}).forEach(function (k) { if (!META_VIS[k]) o[k] = v[k]; }); return o; }
+function visSnap(d, id) { var v = (S.vis[d] || {})[id]; VSNAP[d + '|' + id] = v ? JSON.stringify(dadosV(v)) : null; }
+function carimbarV(d, id) {
+  var v = (S.vis[d] || {})[id]; if (!v) return false;
+  var k0 = d + '|' + id, agora = relogio(), prev = VSNAP[k0] != null ? JSON.parse(VSNAP[k0]) : null, cur = dadosV(v), ks = {}, mudou = false;
+  v._t = v._t || {};
+  Object.keys(cur).forEach(function (k) { ks[k] = 1; }); if (prev) Object.keys(prev).forEach(function (k) { ks[k] = 1; });
+  Object.keys(ks).forEach(function (k) {
+    if (prev) { if (JSON.stringify(prev[k]) !== JSON.stringify(cur[k])) { v._t[k] = agora; mudou = true; } }
+    else if (!v._t[k]) { v._t[k] = agora; mudou = true; }
+  });
+  VSNAP[k0] = JSON.stringify(cur); return mudou;
+}
+function blocoEvoAlt(p) {
+  var L = ((S.evoAlt || {})[p.id] || []).filter(function (a) { return a.data >= addDiasISO(S.hoje, -2); });
+  if (!L.length) return '';
+  return '<details class="q" style="border-color:var(--warn)"><summary class="lb" style="cursor:pointer;color:var(--warn)">⚠ ' + L.length + ' versão(ões) de evolução substituída(s) por outro aparelho</summary>' +
+    L.slice().reverse().map(function (a, i) { return '<div class="hint" style="margin:8px 0 4px">' + brCurto(a.data) + ' · escrita por <b>' + esc(a.by || '?') + '</b> · substituída pela versão de <b>' + esc(a.porQuem || '?') + '</b></div><textarea class="mono" readonly style="width:100%;min-height:120px" id="evoAlt' + i + '">' + esc(a.txt) + '</textarea>'; }).join('') +
+    '<div class="hint" style="margin-top:6px">Nada foi perdido: se a versão que ficou estiver incompleta, copie daqui o que faltar.</div></details>';
+}
+function addDiasISO(iso, n) { var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+function esperar(pr, ms) { return Promise.race([pr, new Promise(function (r) { setTimeout(r, ms); })]); }
+function sairDoSistema() {
+  var pc = window.matchMedia && matchMedia('(pointer:fine)').matches;
+  $('#mbox').innerHTML = '<p style="margin:2px 2px 6px;font-size:17px"><b>⏻ Sair do sistema</b></p>' +
+    '<p class="hint" style="margin:0 2px 10px">Salva tudo, envia para o Google, desconecta a conta do app e tranca com a senha.</p>' +
+    '<label class="q" style="display:flex;gap:10px;align-items:center;margin:0 0 12px"><input type="checkbox" id="sairGoogle"' + (pc ? ' checked' : '') + ' style="width:22px;height:22px"><span>Também sair da conta Google deste navegador <span class="hint">(recomendado em computador do hospital)</span></span></label>' +
+    '<div id="sairPassos" class="hint" style="margin:0 2px 12px"></div>' +
+    '<div class="row"><button class="btn sec" data-cancel id="sairCancel">Cancelar</button><button class="btn" id="sairOk" style="background:var(--bad,#c0392b);border-color:var(--bad,#c0392b)">Sair</button></div>';
+  $('#modal').classList.add('on');
+  $('#sairOk').onclick = function () {
+    var passos = $('#sairPassos'), bt = $('#sairOk'), google = $('#sairGoogle').checked;
+    bt.disabled = true; $('#sairCancel').disabled = true;
+    var linha = function (t) { passos.innerHTML += '<div>' + t + '</div>'; };
+    try { save(); saveLocal(); } catch (e) {}
+    linha('✓ 1/3 Salvo neste aparelho');
+    var enviar = SYNC.temToken() ? esperar(SYNC.agora().then(function () { return SYNC.agora(); }), 25000) : Promise.resolve();
+    if (SYNC.temToken()) linha('… 2/3 Enviando para o Google');
+    enviar.then(function () {
+      var pend = SYNC.contarPend().total;
+      if (!SYNC.temToken()) linha('⚠ 2/3 Sem conexão com o Google — ' + (pend ? pend + ' item(ns) ficam guardados aqui e sobem no próximo login' : 'nada pendente'));
+      else if (pend) linha('⚠ 2/3 ' + pend + ' item(ns) não subiram (internet?) — ficam guardados neste aparelho e sobem no próximo login');
+      else linha('✓ 2/3 Tudo enviado para o Google');
+      var fim = function () {
+        SYNC.sair();
+        linha('✓ 3/3 Conta desconectada e app trancado');
+        setTimeout(function () {
+          $('#modal').classList.remove('on');
+          if (google) { try { sessionStorage.removeItem('sot-ok'); } catch (e) {} window.__semAviso = true; location.href = 'https://accounts.google.com/Logout'; }
+          else if (window.trancarApp) trancarApp();
+        }, 700);
+      };
+      if (pend && SYNC.temToken()) {
+        bt.disabled = false; $('#sairCancel').disabled = false; bt.textContent = 'Sair mesmo assim';
+        bt.onclick = fim;
+      } else fim();
+    });
+  };
+}
+// sair do programa pelo VOLTAR / fechar aba: salva e tenta enviar antes
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { try { saveLocal(); if (SYNC.temToken() && SYNC.contarPend().total) SYNC.agora(); } catch (e) {} } });
+/* ===== v15: solicitar avaliação (anestésica / cardiológica) + checklist pré-operatório ===== */
+var RE_CX = /CIRURG|OSTEOSS|ARTROPLAST|ARTRODES|DESCOMPRESS|FIXA[CÇ]|\bRAFI\b|AMPUTA|DESBRID|LIMPEZA|REDU[CÇ][AÃ]O|ARTROSCOP|TENORRAF|ENXERT|\bCX\b|\bCC\b|PROCEDIMENTO|TRATAMENTO CIR|RETIRADA DE|FASCIOTOM|OSTEOTOM|PROTESE|PRÓTESE/i;
+var RE_ANTICOAG = /\b(?:ENOXAPARINA|CLEXANE|HEPARINA|\bHBPM\b|\bHNF\b|RIVAROXABAN|XARELTO|APIXABAN|ELIQUIS|DABIGATRAN|PRADAXA|EDOXABAN|VARFARINA|MAREVAN|COUMADIN|FONDAPARINUX|CLOPIDOGREL|TICAGRELOR|PRASUGREL|CILOSTAZOL|AAS|ASPIRINA)[A-Z]*/gi;
+function norm0(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function proximaCx(p) {
+  var hoje = new Date(S.hoje + 'T12:00:00'), best = null;
+  (p.agenda || []).forEach(function (a) {
+    if (!RE_CX.test(norm0(a.txt)) || /\b(RE)?DISCUTIR\b|AVALIAR NECESSIDADE|\?/.test(norm0(a.txt))) return;   // "discutir cx" ainda não é cirurgia marcada
+    var m = a.txt.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/), d = m ? parseData(m[1], hoje) : null;
+    if (!best || a.dias < best.dias) best = { dias: a.dias, txt: a.txt, data: d };
+  });
+  return best;
+}
+function vaiOperar(p) { var c = proximaCx(p); if (c && c.dias <= 1) return c; return null; }
+function evoSecoes(p) {
+  var e = evoHoje(p.id) || evoBase(p.id); if (!e || !e.txt) return null;
+  var t = e.txt, o = { data: e.data };
+  var pega = function (re) { var m = t.match(re); return m ? m[1].replace(/\s+/g, ' ').trim() : ''; };
+  o.cmb = pega(/^\s*(?:CMB|COMORBIDADES|AP)\s*[:\-]?\s*(.+)$/im);
+  o.muc = pega(/^\s*MUC\s*[:\-]?\s*(.+)$/im);
+  o.alergia = pega(/^\s*ALERGIA[S]?\s*[:\-]?\s*(.+)$/im);
+  var bloco = t.split(/\n\s*-{3,}\s*\n/)[0] || '';
+  o.hd = bloco.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l && !/^(#|HMA|CMB|MUC|ALERG)/i.test(l) && l !== '.'; }).join(' / ');
+  return o;
+}
+function anticoagEmUso(p) {
+  var ev = evoSecoes(p) || {}, t = [((p.apL || {}).muc || []).join(' '), ev.muc || '', (p.condutasLinhas || []).join(' '), (p.orientaLinhas || []).join(' ')].join(' ');
+  var achados = {}; (norm0(t).match(RE_ANTICOAG) || []).forEach(function (x) { achados[x] = 1; });
+  return Object.keys(achados);
+}
+function difere(a, b) {
+  var pal = function (s) { var o = {}; (norm0(s).match(/[A-Z0-9]{3,}/g) || []).forEach(function (w) { if (!/^(COM|SEM|DOS|DAS|NOS|NAS|PARA|POR|NEGA)$/.test(w)) o[w] = 1; }); return Object.keys(o); };
+  var A = pal(a), B = pal(b); if (!A.length || !B.length) return false;
+  var menor = A.length <= B.length ? A : B, maior = A.length <= B.length ? B : A;
+  var comuns = menor.filter(function (w) { return maior.indexOf(w) > -1; }).length;
+  return !(comuns === menor.length && maior.length - menor.length <= 2 && comuns / maior.length >= 0.6) && !(comuns === A.length && comuns === B.length);
+}
+
+// ---------- bloco pré-operatório na ficha ----------
+function blocoPreOp(p) {
+  var c = proximaCx(p), cx = propostaCx(p);
+  var v = S.v[p.id] || {}, po = v.preop || {}, ac = anticoagEmUso(p), hb = ultimoLab(p, 'Hb');
+  var h = '';
+  if (c || cx) {
+    var quando = c ? (c.dias === 0 ? 'HOJE' : c.dias === 1 ? 'AMANHÃ' : 'em ' + c.dias + ' dias') : 'data a definir';
+    var forte = c && c.dias <= 1;
+    h += '<div class="q" style="border-color:' + (forte ? 'var(--bad,#c0392b)' : 'var(--warn)') + '"><div class="lb">🔪 Vai operar — ' + quando + '</div>' + (c ? '<div class="hint">' + esc(c.txt) + '</div>' : '');
+    var it = function (k, txt, extra) { return '<button class="op' + (po[k] ? ' on' : '') + '" data-preop="' + k + '" style="display:block;width:100%;text-align:left;margin:6px 0">' + (po[k] ? '✓ ' : '☐ ') + txt + (extra ? '<br><span class="hint" style="font-weight:600">' + extra + '</span>' : '') + '</button>'; };
+    h += it('jejum', 'Jejum prescrito (checado)');
+    h += it('hep', 'Heparina / anticoagulante suspenso (checado)', ac.length ? '⚠ Em uso: ' + esc(ac.join(', ')) + ' — conferir prazo de suspensão com a anestesia' : 'Nenhum anticoagulante encontrado no MUC/condutas — confirmar na prescrição');
+    h += it('hb', 'Hb > 10 / reserva de sangue', hb ? 'Último Hb: ' + esc(hb.txt) + (hb.v <= 10 ? ' ⚠ abaixo de 10' : '') : 'Sem Hb no internograma');
+    h += it('aval', 'Avaliações pré-operatórias (anestésica / cardiológica)');
+    h += '</div>';
+  }
+  h += '<div class="row" style="margin:0 0 12px"><button class="btn sec sm" data-aval="' + esc(p.id) + '" style="width:100%">📝 Solicitar avaliação (anestésica / cardiológica)</button></div>';
+  return h;
+}
+function tagPreOp(p) {
+  var c = vaiOperar(p); if (!c) return '';
+  var po = (S.v[p.id] || {}).preop || {}, falta = [];
+  if (!po.jejum) falta.push('jejum'); if (!po.hep) falta.push('heparina');
+  return falta.length ? '<span class="tag red">🔪 CX ' + (c.dias === 0 ? 'HOJE' : 'AMANHÃ') + ': checar ' + falta.join(' e ') + '</span>' : '<span class="tag evo">🔪 CX ' + (c.dias === 0 ? 'HOJE' : 'AMANHÃ') + ' · jejum ✓ heparina ✓</span>';
+}
+
+// ---------- solicitação de avaliação ----------
+var AVAL = null;
+function textoAvaliacao(a) {
+  var U = function (s) { return String(s || '').toUpperCase().trim(); };
+  var prog = U(a.proc);
+  var quando = a.adefinir || !a.data ? 'EM DATA A DEFINIR' : 'DIA ' + a.data.split('-').reverse().join('/');
+  return 'SOLICITO AVALIAÇÃO ' + U(a.tipo) + '\n' +
+    'PACIENTE: ' + U(a.nome) + '\nIDADE: ' + U(a.idade) + (a.idade && /^\d+$/.test(String(a.idade).trim()) ? ' ANOS' : '') + '\nREGISTRO: ' + U(a.registro) + '\n\n' +
+    'CMB: ' + U(a.cmb) + '\nMUC: ' + U(a.muc) + '\nALERGIAS: ' + U(a.alergia) + '\n\n' +
+    'HD: ' + U(a.hd) + '\n\n' +
+    'PROGRAMAÇÃO: ' + (prog ? prog + ' ' : '') + quando + '\n\nGRATO';
+}
+function modalAvaliacao(id) {
+  var p = S.pacientes.find(function (x) { return x.id === id; }) || atual; if (!p) return;
+  var ev = evoSecoes(p) || {}, ap = p.apL || { cmb: [], muc: [], alergia: [] }, c = proximaCx(p);
+  var limpa1 = function (x) { return String(x || '').replace(/^\s*(alergias?|muc|cmb|ap|comorbidades)\s*[:\-]?\s*/i, '').replace(/[\s,;.]+$/, '').trim(); };
+  var ig = { cmb: limpa1((ap.cmb || []).join(', ')), muc: limpa1((ap.muc || []).join(', ')), alergia: limpa1((ap.alergia || []).join(', ')), hd: (p.dxL && p.dxL.length ? p.dxL : [p.dx || '']).join(' / ') };
+  ['cmb', 'muc', 'alergia'].forEach(function (k) { ev[k] = limpa1(ev[k]); });
+  var d0 = c && c.data ? c.data.getFullYear() + '-' + ('0' + (c.data.getMonth() + 1)).slice(-2) + '-' + ('0' + c.data.getDate()).slice(-2) : '';
+  var proc = c ? c.txt.replace(/\(?\s*(EM|DIA|PARA)?\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*\)?/gi, ' ').replace(/^(cd|orienta)\s*:?\s*/i, '').replace(/\s+/g, ' ').trim() : '';
+  AVAL = { pid: p.id, tipo: 'ANESTÉSICA', nome: p.nome || '', idade: p.idade || '', registro: p.registro || '',
+    cmb: ig.cmb || ev.cmb || '', muc: ig.muc || ev.muc || '', alergia: ig.alergia || ev.alergia || '', hd: ig.hd || ev.hd || '',
+    proc: proc, data: d0, adefinir: !d0, pend: true, ig: ig, ev: ev };
+  desenharAval(); $('#modal').classList.add('on');
+}
+function desenharAval() {
+  var a = AVAL, ev = a.ev || {}, ig = a.ig || {};
+  var fonte = function (k, rot) {
+    var vIg = ig[k] || '', vEv = ev[k] || '', h = '';
+    if (vIg && vEv && difere(vIg, vEv)) h = '<div class="flagbox" style="margin:4px 0;font-size:12.5px">⚠ Internograma e evolução (' + brCurto(ev.data) + ') diferem — confira:<br><button class="btn ghost sm" data-avalusa="' + k + '|ig" style="margin:4px 4px 0 0">usar internograma</button><button class="btn ghost sm" data-avalusa="' + k + '|ev" style="margin-top:4px">usar evolução: “' + esc(vEv.slice(0, 60)) + (vEv.length > 60 ? '…' : '') + '”</button></div>';
+    else if (!vIg && !vEv) h = '<div class="hint" style="color:var(--warn)">⚠ Não encontrado no internograma nem na evolução — preencher</div>';
+    else h = '<div class="hint">fonte: ' + (vIg ? 'internograma' : 'evolução de ' + brCurto(ev.data)) + (vIg && vEv ? ' · confere com a evolução ✓' : '') + '</div>';
+    return '<label class="hint" style="display:block;margin-top:8px;font-weight:700">' + rot + '</label><textarea data-avalf="' + k + '" rows="2" style="width:100%">' + esc(a[k] || '') + '</textarea>' + h;
+  };
+  var tipos = ['ANESTÉSICA', 'CARDIOLÓGICA', 'ANESTÉSICA E CARDIOLÓGICA'];
+  $('#mbox').innerHTML = '<div style="max-height:78vh;overflow:auto;padding-right:4px"><p style="margin:2px 2px 8px;font-size:16px"><b>📝 Solicitar avaliação — ' + esc(a.nome) + '</b></p>' +
+    '<div class="opts">' + tipos.map(function (t) { return '<button class="op' + (a.tipo === t ? ' on' : '') + '" data-avaltipo="' + t + '">' + t.charAt(0) + t.slice(1).toLowerCase() + '</button>'; }).join('') + '</div>' +
+    '<input data-avalf="tipo" value="' + esc(a.tipo) + '" style="width:100%;margin-top:6px" placeholder="Tipo (pode digitar outra especialidade)">' +
+    '<div class="num" style="margin-top:8px;gap:6px"><input data-avalf="nome" value="' + esc(a.nome) + '" placeholder="Paciente"><input data-avalf="idade" value="' + esc(a.idade) + '" placeholder="Idade" style="max-width:80px"><input data-avalf="registro" value="' + esc(a.registro) + '" placeholder="Registro" style="max-width:120px"></div>' +
+    fonte('cmb', 'CMB') + fonte('muc', 'MUC') + fonte('alergia', 'ALERGIAS') + fonte('hd', 'HD') +
+    '<label class="hint" style="display:block;margin-top:8px;font-weight:700">PROGRAMAÇÃO</label><input data-avalf="proc" value="' + esc(a.proc) + '" style="width:100%" placeholder="Procedimento (ex.: osteossíntese de fêmur proximal)">' +
+    '<div class="row" style="margin-top:6px;gap:8px;align-items:center"><input type="date" data-avalf="data" value="' + esc(a.data) + '"' + (a.adefinir ? ' disabled' : '') + '><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-avaldef' + (a.adefinir ? ' checked' : '') + '> em data a definir</label></div>' +
+    '<label class="hint" style="display:block;margin-top:10px;font-weight:700">TEXTO</label><textarea id="avalTxt" class="mono" readonly style="width:100%;min-height:230px">' + esc(textoAvaliacao(a)) + '</textarea>' +
+    '<label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" data-avalpend' + (a.pend ? ' checked' : '') + '> criar pendência “aguardando avaliação”</label></div>' +
+    '<div class="row" style="margin-top:8px"><button class="btn sec" data-cancel>Fechar</button><button class="btn" id="avalCopiar">Copiar texto</button></div>';
+  $('#avalCopiar').onclick = function () {
+    copiar(textoAvaliacao(AVAL));
+    if (AVAL.pend && AVAL.pid) {
+      var t = 'Aguardando avaliação ' + AVAL.tipo.toLowerCase() + ' (solicitada ' + brCurto(S.hoje) + ')';
+      S.pend[AVAL.pid] = S.pend[AVAL.pid] || [];
+      if (!S.pend[AVAL.pid].some(function (x) { return x.t === t; })) S.pend[AVAL.pid].push({ t: t, ok: false, at: relogio(), by: S.eu || '' });
+      var v = S.v[AVAL.pid] = S.v[AVAL.pid] || {}; v.preop = v.preop || {}; save();
+    }
+    $('#modal').classList.remove('on'); toast('Texto copiado' + (AVAL.pend ? ' · pendência criada' : '')); if (atual) redesenhar(); render();
+  };
+}
+function avalAtualizaTexto() { var t = $('#avalTxt'); if (t) t.value = textoAvaliacao(AVAL); }
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!AVAL || !t.dataset || t.dataset.avalf == null || !$('#modal').classList.contains('on')) return;
+  AVAL[t.dataset.avalf] = t.value; avalAtualizaTexto();
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!AVAL || !$('#modal').classList.contains('on')) return;
+  if ('avaldef' in t.dataset) { AVAL.adefinir = t.checked; var di = document.querySelector('[data-avalf="data"]'); if (di) di.disabled = t.checked; avalAtualizaTexto(); }
+  if ('avalpend' in t.dataset) AVAL.pend = t.checked;
+});
+document.addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('[data-avaltipo],[data-avalusa]'); if (!b || !AVAL) return;
+  if (b.dataset.avaltipo) { AVAL.tipo = b.dataset.avaltipo; desenharAval(); return; }
+  var x = b.dataset.avalusa.split('|'); AVAL[x[0]] = (x[1] === 'ig' ? AVAL.ig : AVAL.ev)[x[0]] || ''; desenharAval();
+}, true);
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -1356,7 +1655,7 @@ $('#evoSave').onclick = function () { evoWaitSave = true; $('#evoFrame').content
 window.addEventListener('message', function (ev) {
   var d = ev.data || {}; if (d.src !== 'evo' || !evoAtual) return;
   if (d.type === 'evo-copied') salvarEvo(d.text);
-  if (d.type === 'evo-draft' && d.text) { S.rasc = S.rasc || {}; S.rasc[evoAtual.id] = { txt: d.text, at: Date.now(), data: S.hoje }; saveLocal(); }
+  if (d.type === 'evo-draft' && d.text) { S.rasc = S.rasc || {}; S.rasc[evoAtual.id] = { txt: d.text, at: relogio(), data: S.hoje }; saveLocal(); }
   if (d.type === 'evo-discard') { if (S.rasc) delete S.rasc[evoAtual.id]; saveLocal(); abrirEvo(evoAtual.id); }
   if (d.type === 'evo-base') { var b = evoBase(evoAtual.id); if (d.text && (!b || b.txt.trim() !== d.text.trim())) evoGuardar(evoAtual.id, isoAdd(S.hoje, -1), d.text); }
   if (d.type === 'evo-text' && evoWaitSave) {
@@ -1379,6 +1678,9 @@ document.addEventListener('click', function (ev) {
   if (ds.tema) { S.tema = ds.tema; saveLocal(); aplicarTema(); render(); return; }
   if (ds.apagarreg) { modalApagar(ds.apagarreg); return; }
   if ('apagaraparelho' in ds) { modalApagarAparelho(); return; }
+  if (ds.aval) { modalAvaliacao(ds.aval); return; }
+  if (ds.preop) { var vpo = S.v[atual.id]; vpo.preop = vpo.preop || {}; vpo.preop[ds.preop] = !vpo.preop[ds.preop]; save(); redesenhar(); return; }
+  if ('sairsis' in ds) { sairDoSistema(); return; }
   if (ds.hub) { abrirHub(ds.hub); return; }
   if ('hubclose' in ds) { fecharHub(); return; }
   if ('irhoje' in ds) { S.hoje = hojeISO(); recalc(); save(); render(); toast('Data: hoje'); return; }
@@ -1392,7 +1694,7 @@ document.addEventListener('click', function (ev) {
   if ('bkp' in ds) { baixarBackup(); return; }
   if ('viewer' in ds) { $('#viewer').classList.remove('on'); return; }
   if (ds.foto) { abrirFoto(ds.foto); return; }
-  if (ds.fdel) { confirmar('Apagar esta foto? (também sai do Drive na próxima sincronização)', function () { var F = S.fotos[atual.id], f = F.find(function (x) { return x.lid === ds.fdel; }); if (f) { f.del = true; f.at = Date.now(); } save(); redesenhar(); }); return; }
+  if (ds.fdel) { confirmar('Apagar esta foto? (também sai do Drive na próxima sincronização)', function () { var F = S.fotos[atual.id], f = F.find(function (x) { return x.lid === ds.fdel; }); if (f) { f.del = true; f.at = relogio(); } save(); redesenhar(); }); return; }
   if (ds.tab) { S.tab = ds.tab; save(); render(); window.scrollTo(0, 0); if (SYNC.temToken()) SYNC.agora(); return; }
   if (ds.f) { S.filtro = ds.f; save(); render(); return; }
   if (ds.evo) { abrirEvo(ds.evo); return; }
@@ -1407,7 +1709,7 @@ document.addEventListener('click', function (ev) {
   if ('copyall' in ds) { copiar(ativos().filter(evoluido).map(function (p) { return '>> ' + (p.leito || p.lugar || '') + ' - ' + U(p.nome) + '\n' + evoHoje(p.id).txt; }).join('\n\n')); return; }
   if ('cancel' in ds) { $('#modal').classList.remove('on'); return; }
   if (ds.pdel != null && t.classList.contains('x')) { var rm = S.pend[ds.pdel].splice(+ds.pi, 1)[0]; if (rm) (S.pendDel[ds.pdel] = S.pendDel[ds.pdel] || []).push(rm.t); save(); atual ? redesenhar() : render(); return; }
-  if ('padd' in ds) { var inp = $('#newp'); if (inp.value.trim()) { (S.pend[atual.id] = S.pend[atual.id] || []).push({ t: inp.value.trim(), ok: false, at: Date.now(), by: S.eu || '' }); save(); redesenhar(); } return; }
+  if ('padd' in ds) { var inp = $('#newp'); if (inp.value.trim()) { (S.pend[atual.id] = S.pend[atual.id] || []).push({ t: inp.value.trim(), ok: false, at: relogio(), by: S.eu || '' }); save(); redesenhar(); } return; }
   if ('proximo' in ds) { proximo(); return; }
   if (!atual) return;
   var v = S.v[atual.id];
@@ -1451,7 +1753,7 @@ document.addEventListener('change', function (ev) {
   if (t.id === 'hoje') { S.hoje = t.value || hojeISO(); recalc(); save(); render(); return; }
   if (t.id === 'altas') { S.mostrarAltas = t.checked; save(); render(); return; }
   if (t.dataset.conf) { S.conf[t.dataset.conf] = t.checked; save(); render(); return; }
-  if (t.dataset.pk) { var it0 = S.pend[t.dataset.pk][+t.dataset.pi]; it0.ok = t.checked; it0.at = Date.now(); it0.auto = false; save(); atual ? redesenhar() : render(); return; }
+  if (t.dataset.pk) { var it0 = S.pend[t.dataset.pk][+t.dataset.pi]; it0.ok = t.checked; it0.at = relogio(); it0.auto = false; save(); atual ? redesenhar() : render(); return; }
   if (!atual) return; var v = S.v[atual.id];
   if (t.id === 'exIgual') { v.exIgual = t.checked; save(); return; }
   if (t.dataset.ng) { var N = v.neuro; var bag = t.dataset.ng === 's' ? (N.s = N.s || {}) : (N.g = N.g || {}); if (t.value === '') delete bag[t.dataset.key]; else bag[t.dataset.key] = t.value; save(); redesenhar(); return; }
@@ -1460,7 +1762,7 @@ document.addEventListener('change', function (ev) {
 document.addEventListener('input', function (ev) {
   var t = ev.target; if (!atual) return; var v = S.v[atual.id];
   if (t.id === 'obs') v.obs = t.value;
-  else if (t.dataset.drn) v.dreno[t.dataset.drn] = t.value.replace(/[^\d,.]/g, '');
+  else if (t.dataset.drn) { v.dreno[t.dataset.drn] = t.value.replace(/[^\d,.]/g, ''); var dt0 = document.getElementById('drTaxa'); if (dt0) dt0.textContent = drenoTaxa(v.dreno) ? '= ' + drenoTaxa(v.dreno).soma + ' mL' + drenoTaxaTxt(v.dreno) : ''; }
   else if (t.dataset.ex) v[t.dataset.ex + '_x'] = t.value;
   else if (t.dataset.lppf === 'dim') v.lpp.itens[+t.dataset.i].dim = t.value;
   else return;
