@@ -43,10 +43,12 @@ var SYNC = (function () {
       callback: function (r) {
         if (r && r.access_token) {
           token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000;
-          try { sessionStorage.setItem('sot-tk', JSON.stringify({ t: token, e: tokenExp })); } catch (e) {}
+          try { localStorage.setItem('sot-tk', JSON.stringify({ t: token, e: tokenExp })); localStorage.setItem('sot-logou', '1'); } catch (e) {}
+          renovando = false;
           estado('ok', 'conectado'); agora();
-        } else estado('erro', 'login cancelado');
-      }
+        } else { renovando = false; estado('erro', 'login cancelado'); }
+      },
+      error_callback: function () { renovando = false; }
     });
     return true;
   }
@@ -54,15 +56,29 @@ var SYNC = (function () {
     if (window.__TEST_TOKEN) { agora(); return; }
     if (!configurado()) { toast('Falta configurar o CLIENT_ID (veja o guia)'); return; }
     if (!initGIS()) { toast('Login do Google ainda carregando… tente de novo em 2 s'); return; }
-    tokenClient.requestAccessToken({ prompt: token ? '' : 'consent' });
+    if (renovando && Date.now() - ultimaRenov < 10000) return;
+    renovando = true; ultimaRenov = Date.now();
+    tokenClient.requestAccessToken({ prompt: (token || jaLogou()) ? '' : 'consent' });
   }
-  try { var t0 = JSON.parse(sessionStorage.getItem('sot-tk') || 'null'); if (t0 && Date.now() < t0.e) { token = t0.t; tokenExp = t0.e; } } catch (e) {}
+  /* manter conectado: token guardado no aparelho (vale ~1 h) + renovação silenciosa no 1º toque */
+  var renovando = false, ultimaRenov = 0;
+  function jaLogou() { try { return localStorage.getItem('sot-logou') === '1'; } catch (e) { return false; } }
+  try { var t0 = JSON.parse(localStorage.getItem('sot-tk') || sessionStorage.getItem('sot-tk') || 'null'); if (t0 && Date.now() < t0.e) { token = t0.t; tokenExp = t0.e; } } catch (e) {}
+  function renovarSePreciso() {
+    if (window.__TEST_TOKEN || renovando || !configurado() || !jaLogou() || !navigator.onLine) return;
+    if (token && Date.now() < tokenExp - 5 * 60000) return;
+    if (Date.now() - ultimaRenov < 60000) return;
+    if (!initGIS()) return;
+    ultimaRenov = Date.now(); renovando = true;
+    try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) { renovando = false; }
+  }
+  document.addEventListener('pointerdown', renovarSePreciso, true);
 
   /* ---------- chamadas ao Drive ---------- */
   function req(url, opt) {
     opt = opt || {}; opt.headers = Object.assign({ Authorization: 'Bearer ' + tok() }, opt.headers || {});
     return fetch(url, opt).then(function (r) {
-      if (r.status === 401) { token = null; tokenExp = 0; throw { auth: true, msg: 'login expirado' }; }
+      if (r.status === 401) { token = null; tokenExp = 0; try { localStorage.removeItem('sot-tk'); } catch (e) {} throw { auth: true, msg: 'login expirado' }; }
       if (!r.ok) return r.text().then(function (t) { throw { status: r.status, msg: t.slice(0, 200) }; });
       return r;
     });
