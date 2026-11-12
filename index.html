@@ -171,6 +171,7 @@ details.ig2{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}deta
 details.hist .out{max-height:none}
 @media (min-width:900px){main{max-width:1180px}#main{display:block}.lista2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lista2 .card{margin:0}.sh-body{max-width:900px}.tabs{max-width:1180px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line)}}
 @media (min-width:600px) and (max-width:899px){main{max-width:860px}}
+.leito{position:relative}.chk{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;font-size:14px;line-height:24px;text-align:center;font-weight:800;box-shadow:0 0 0 2px var(--card)}.pt.done{border-color:var(--ok)}
 .hrow{display:flex;align-items:center;gap:8px}.hrow h1{flex:1;min-width:0}
 .hbtns{display:flex;gap:6px;flex:none}
 .hb{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:10px;min-width:38px;height:38px;font-size:17px;cursor:pointer;position:relative}
@@ -862,14 +863,13 @@ function vLeitos() {
   var lista = ativos().filter(function (p) { return S.filtro === 'Todos' || p.grupo === S.filtro; });
   if (!lista.length) return h + '<div class="empty">Nenhum paciente neste filtro.</div>';
   var pend = lista.filter(function (p) { return !visitado(p); }), feitos = lista.filter(visitado);
-  h += '<div class="lista2">' + pend.map(cardPac).join('') + '</div>';
-  if (feitos.length) h += '<h2>Visitados (' + feitos.length + ')</h2><div class="lista2">' + feitos.map(cardPac).join('') + '</div>';
+  h += '<div class="lista2">' + lista.map(cardPac).join('') + '</div>';
   return h;
 }
 function cardPac(p) {
   var np = (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).length;
   return '<div class="card pt' + (visitado(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '">' +
-    '<div class="leito">' + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small></div>' +
+    '<div class="leito">' + (visitado(p) ? '<span class="chk">✓</span>' : '') + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small></div>' +
     '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + '</div>' +
     '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div></div></div>';
 }
