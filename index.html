@@ -215,6 +215,14 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
 .tabs button{min-width:0}
 
 .labf{color:#c62828;font-weight:700;background:rgba(198,40,40,.08);border-radius:4px;padding:0 3px}html.escuro .labf{color:#ff8a80;background:rgba(255,138,128,.12)}.labcx{outline:2px solid #c62828}
+.subtabs{display:flex;gap:6px;margin:2px 0 12px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px;position:sticky;top:0;z-index:4}
+.subtabs button{flex:1;min-width:0;border:0;background:none;border-radius:10px;padding:8px 4px;font:inherit;font-size:12.5px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;cursor:pointer}
+.subtabs button b{font-size:17px;line-height:1.1}
+.subtabs button.on{background:var(--acc);color:#fff;font-weight:700}
+.subtabs .badge{position:absolute;top:2px;right:6px}
+body.sec-hub .top .sub, body.sec-hub .top .prog, body.sec-hub .top [data-doc]{display:none}
+.subtabs button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media (max-width:420px){.subtabs{gap:2px;padding:3px}.subtabs button{font-size:11px;padding:7px 1px}}
+@media (min-width:700px){.subtabs button{flex-direction:row;justify-content:center;gap:6px;font-size:14px;padding:10px}.subtabs .badge{position:static}}
 </style>
 </head>
 <body>
@@ -268,18 +276,15 @@ body.travado{overflow:hidden;height:100%}html:has(body.travado){overflow:hidden}
 </script>
 
 <div class="top">
-  <div class="hrow"><h1>SOT · Visita + Evolução</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
+  <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
   <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span></div>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
 <main id="main"></main>
 <nav class="tabs">
-  <button data-tab="leitos" class="on"><b>🛏</b>Leitos</button>
-  <button data-tab="pend"><b>☑</b><span>Pendências <span id="npend"></span></span></button>
-  <button data-tab="saida"><b>📝</b><span>Evoluções <span id="nevo"></span></span></button>
-  <button data-tab="config"><b>⚙</b>Internograma</button>
-  <button data-tab="hub"><b>🦴</b>OrthoHub</button>
+  <button data-sec="enf" class="on"><b>🏥</b><span>Enfermaria <span id="nenf"></span></span></button>
+  <button data-sec="hub"><b>🦴</b>OrthoHub</button>
 </nav>
 <div id="hubView"><div class="hubbar"><button class="hubx" data-hubclose>‹ OrthoHub</button><b id="hubTit"></b><a id="hubNova" target="_blank" title="Abrir em outra aba">↗</a></div><div id="hubFrames"></div></div>
 
@@ -767,6 +772,8 @@ window.addEventListener('beforeunload', function () { saveLocal(); });
     if (aberto('#hubView', 'on')) { fecharHub(); return; }
     if (aberto('#evoSheet', 'open')) { fecharEvo(); return; }
     if (aberto('#sheet', 'open')) { fechar(); return; }
+    if (typeof S !== 'undefined' && S.sec === 'hub' && S.hubAgenda) { S.hubAgenda = false; render(); window.scrollTo(0, 0); return; }
+    if (typeof S !== 'undefined' && S.sec && S.sec !== 'enf') { S.sec = 'enf'; render(); window.scrollTo(0, 0); return; }
     if (typeof S !== 'undefined' && S.tab && S.tab !== 'leitos' && S.pacientes && S.pacientes.length) { S.tab = 'leitos'; render(); window.scrollTo(0, 0); return; }
     perguntarSair();
   });
@@ -959,16 +966,24 @@ function render() {
   $('#resumo').textContent = a.length ? feitos + '/' + a.length + ' visitados · ' + evs + '/' + a.length + ' evoluídos' + (S.dataIG ? ' · IG ' + S.dataIG : '') : 'sem internograma';
   $('#progbar').style.width = a.length ? (100 * feitos / a.length) + '%' : 0;
   $('#progevo').style.width = a.length ? (100 * evs / a.length) + '%' : 0;
-  var np = pendAbertas(); $('#npend').innerHTML = np ? '<span class="badge">' + np + '</span>' : '';
-  var ne = a.filter(function (p) { return visitado(p) && !evoluido(p); }).length; $('#nevo').innerHTML = ne ? '<span class="badge" style="background:var(--evo)">' + ne + '</span>' : '';
+  var np = pendAbertas(), ne = a.filter(function (p) { return visitado(p) && !evoluido(p); }).length;
+  if (S.tab === 'hub') { S.tab = 'leitos'; S.sec = 'hub'; }
+  if (!S.sec) S.sec = 'enf';
   var m = $('#main');
-  if (!S.pacientes.length && S.tab !== 'config' && S.tab !== 'hub') S.tab = 'config';
-  if (S.tab === 'leitos') m.innerHTML = vLeitos();
-  if (S.tab === 'pend') m.innerHTML = vPend();
-  if (S.tab === 'saida') m.innerHTML = vSaida();
-  if (S.tab === 'config') m.innerHTML = vConfig();
-  if (S.tab === 'hub') m.innerHTML = vHub();
-  document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === S.tab); });
+  document.body.classList.remove('sec-enf', 'sec-agenda', 'sec-hub'); document.body.classList.add('sec-' + S.sec);
+  if (S.sec !== 'enf' && S.sec !== 'hub') S.sec = 'enf';
+  $('#titSec').textContent = 'SOT · ' + ({ enf: 'Enfermaria', hub: 'OrthoHub' })[S.sec];
+  $('#nenf').innerHTML = np ? '<span class="badge">' + np + '</span>' : '';
+  if (S.sec === 'enf') {
+    if (!S.pacientes.length && S.tab !== 'config') S.tab = 'config';
+    var sub = '<div class="subtabs">' + [['leitos', '🛏', 'Leitos', ''], ['pend', '☑', 'Pendências', np ? '<span class="badge">' + np + '</span>' : ''], ['saida', '📝', 'Evoluções', ne ? '<span class="badge" style="background:var(--evo)">' + ne + '</span>' : ''], ['agenda', '📅', 'Agenda', ''], ['config', '⚙', 'Internograma', '']].map(function (x) {
+      return '<button data-tab="' + x[0] + '" class="' + (S.tab === x[0] ? 'on' : '') + '"><b>' + x[1] + '</b><span>' + x[2] + '</span>' + x[3] + '</button>';
+    }).join('') + '</div>';
+    var corpo = S.tab === 'pend' ? vPend() : S.tab === 'saida' ? vSaida() : S.tab === 'agenda' ? vAgenda() : S.tab === 'config' ? vConfig() : vLeitos();
+    m.innerHTML = sub + corpo;
+  } else if (S.hubAgenda) m.innerHTML = '<button class="btn ghost sm" data-hubagendasai style="margin:0 0 10px">‹ OrthoHub</button>' + vAgenda();
+  else m.innerHTML = vHub();
+  document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.sec === S.sec); });
 }
 function grupos() { var g = ['Todos']; ativos().forEach(function (p) { if (g.indexOf(p.grupo) < 0) g.push(p.grupo); }); var i = g.indexOf('Hm'); if (i > -1) { g.splice(i, 1); g.push('Hm'); } return g; }
 function tagsPac(p) {
@@ -1255,7 +1270,8 @@ function hubItem(id) { var r = null; HUB.forEach(function (g) { g.itens.forEach(
 function vHub() {
   var h = '<div class="hubhead"><h2 style="margin:0">🦴 OrthoHub</h2><div class="hint">Os outros programas da equipe, do jeito que foram feitos. O que você preenche em cada um continua lá enquanto o app estiver aberto.</div></div>';
   HUB.forEach(function (g) {
-    h += '<h2>' + g.g + '</h2><div class="hubgrid">' + g.itens.map(function (x) {
+    var extra = /AMBULAT/.test(g.g) ? '<button class="card hubcard" data-hubagenda><span class="hubi">📅</span><span class="hubt"><b>Agenda</b><span class="hint">Google Agenda cirúrgico da equipe (o mesmo da Enfermaria).</span></span><span class="hubgo">›</span></button>' : '';
+    h += '<h2>' + g.g + '</h2><div class="hubgrid">' + extra + g.itens.map(function (x) {
       return '<button class="card hubcard" data-hub="' + x.id + '"><span class="hubi">' + x.i + '</span><span class="hubt"><b>' + x.n + '</b><span class="hint">' + x.d + '</span></span><span class="hubgo">›</span></button>';
     }).join('') + '</div>';
   });
@@ -1584,6 +1600,14 @@ document.addEventListener('click', function (e) {
   if (b.dataset.avaltipo) { AVAL.tipo = b.dataset.avaltipo; desenharAval(); return; }
   var x = b.dataset.avalusa.split('|'); AVAL[x[0]] = (x[1] === 'ig' ? AVAL.ig : AVAL.ev)[x[0]] || ''; desenharAval();
 }, true);
+function vAgenda() {
+  return '<div class="hubhead"><h2 style="margin:0">📅 Agenda cirúrgica</h2><div class="hint">Google Agenda da equipe (equipersot) dentro do programa.</div></div>' +
+    '<div class="card"><div class="lb" style="margin-bottom:6px">🚧 Em construção</div>' +
+    '<div class="hint">Esta aba vai mostrar os eventos do Google Agenda, que são marcados no padrão:</div>' +
+    '<div class="mono" style="margin:8px 0;padding:10px;border-radius:10px;background:var(--bg);font-size:13px">Nome do paciente, idade, P: prontuário, procedimento, Ass Dr. assistente</div>' +
+    '<div class="hint">As funções (lista do dia/semana, ligação com o paciente internado, avisos de jejum/heparina etc.) serão definidas na próxima etapa.</div>' +
+    '<div class="row" style="margin-top:10px"><a class="btn" href="https://calendar.google.com/calendar/r" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">Abrir o Google Agenda ↗</a></div></div>';
+}
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -1695,7 +1719,10 @@ document.addEventListener('click', function (ev) {
   if ('viewer' in ds) { $('#viewer').classList.remove('on'); return; }
   if (ds.foto) { abrirFoto(ds.foto); return; }
   if (ds.fdel) { confirmar('Apagar esta foto? (também sai do Drive na próxima sincronização)', function () { var F = S.fotos[atual.id], f = F.find(function (x) { return x.lid === ds.fdel; }); if (f) { f.del = true; f.at = relogio(); } save(); redesenhar(); }); return; }
-  if (ds.tab) { S.tab = ds.tab; save(); render(); window.scrollTo(0, 0); if (SYNC.temToken()) SYNC.agora(); return; }
+  if (ds.sec) { S.sec = ds.sec; S.hubAgenda = false; saveLocal(); render(); window.scrollTo(0, 0); return; }
+  if ('hubagenda' in ds) { S.sec = 'hub'; S.hubAgenda = true; render(); window.scrollTo(0, 0); return; }
+  if ('hubagendasai' in ds) { S.hubAgenda = false; render(); window.scrollTo(0, 0); return; }
+  if (ds.tab) { S.sec = 'enf'; S.tab = ds.tab; save(); render(); window.scrollTo(0, 0); if (SYNC.temToken()) SYNC.agora(); return; }
   if (ds.f) { S.filtro = ds.f; save(); render(); return; }
   if (ds.evo) { abrirEvo(ds.evo); return; }
   if (ds.copyevo) { var e = evoHoje(ds.copyevo); if (e) copiar(e.txt); return; }
