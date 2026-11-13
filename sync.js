@@ -385,7 +385,18 @@ var SYNC = (function () {
     try { if (tk && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(tk, function () {}); } catch (e) {}
     estado('login', 'desconectado — toque para conectar ao Google');
   }
-  return { temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  /* ---------- Mapa cirúrgico: pasta "MAPA CIRURGICO" no Drive da equipe ---------- */
+  function mapaArquivo(iso) {
+    return pasta('MAPA CIRURGICO').then(function (raizM) { return pasta(iso.slice(0, 7), raizM); }).then(function (pid) {
+      return req(API + '/files?q=' + q("name='mapa-" + iso + ".json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: (j.files || [])[0] || null }; });
+    });
+  }
+  function mapaBaixar(iso) { return mapaArquivo(iso).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
+  function mapaSalvar(iso, obj) {
+    var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+    return mapaArquivo(iso).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('mapa-' + iso + '.json', o.pai, b, 'application/json'); });
+  }
+  return { mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
