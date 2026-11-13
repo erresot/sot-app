@@ -1,0 +1,762 @@
+<!doctype html><html><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Anamnese PS Orto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: formulário em blocos clínicos à esquerda, texto final fixo à direita (barra inferior no celular) */
+:root{
+  --bg:#F2F5F8; --surface:#FFFFFF; --ink:#13202B; --muted:#5A6B79; --line:#D6DEE5;
+  --accent:#1D5BD0; --accent-ink:#FFFFFF; --accent-soft:#E3ECFB;
+  --neg:#2D4D7A; --neg-soft:#E4ECF6; --pos:#AE4219; --pos-soft:#F8E6DD;
+  --amarela:#D9A400; --vermelha:#C8322B; --verde:#2E8B57;
+  --body3d:#C3CED8; --body3d-hover:#9FB4C7;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D141A; --surface:#151F28; --ink:#E5ECF2; --muted:#93A3B1; --line:#25323E;
+  --accent:#6E9BFF; --accent-ink:#0B1220; --accent-soft:#1A2A47;
+  --neg:#A9C3EA; --neg-soft:#1B2A40; --pos:#F2936B; --pos-soft:#3A231A;
+  --body3d:#3C4C5B; --body3d-hover:#566C80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D141A; --surface:#151F28; --ink:#E5ECF2; --muted:#93A3B1; --line:#25323E;
+  --accent:#6E9BFF; --accent-ink:#0B1220; --accent-soft:#1A2A47;
+  --neg:#A9C3EA; --neg-soft:#1B2A40; --pos:#F2936B; --pos-soft:#3A231A;
+  --body3d:#3C4C5B; --body3d-hover:#566C80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{max-width:1240px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:20px 14px;border-bottom:1px solid var(--line)}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:1.55rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.top p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+.topR{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 12px;border-radius:7px;font-weight:600;font-size:.86rem;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--muted)}
+.ghost:hover{border-color:var(--muted);color:var(--ink)}
+.ghost.warn{border-color:var(--pos);color:var(--pos)}
+.wrap{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:20px;padding-top:16px}
+@media (min-width:980px){.wrap{grid-template-columns:minmax(0,1fr) 420px}body{padding-bottom:24px}.bar{display:none!important}}
+.form{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sec h2{font-family:var(--f-display);font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;margin:0;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sec h2 small{text-transform:none;letter-spacing:0;font-family:var(--f-body);font-weight:500}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>label,.lbl{font-size:.8rem;font-weight:600;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.row>.field{flex:1 1 150px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+input[type=text],input[type=number],input[type=date],input[type=time],textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+input:focus,textarea:focus{border-color:var(--accent);outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.88rem;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;gap:6px;transition:background .12s,border-color .12s}
+.chip:hover{border-color:var(--muted)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.chip.sm{padding:5px 0;min-width:34px;justify-content:center;font-variant-numeric:tabular-nums}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip.n{background:var(--neg-soft);border-color:transparent;color:var(--neg)}
+.chip.p{background:var(--pos-soft);border-color:var(--pos);color:var(--pos);font-weight:600}
+.chip.off{color:var(--muted);border-style:dashed}
+.chip .tag{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.add{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.86rem;width:130px}
+.tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:640px){.tpls{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tpl{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tpl b{font-family:var(--f-display);font-size:.95rem;font-weight:700}
+.tpl span{font-size:.75rem;color:var(--muted)}
+.tpl.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.body3d{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:640px){.body3d{grid-template-columns:260px minmax(0,1fr)}}
+.stage{position:relative;height:380px;border-radius:10px;background:var(--bg);border:1px solid var(--line);overflow:hidden;touch-action:none;cursor:grab;max-width:100%}
+.stage canvas{display:block}
+.stage .hud{position:absolute;left:8px;right:8px;bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:6px;pointer-events:none}
+.stage .hud>*{pointer-events:auto}
+.hover{font-size:.78rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 7px;pointer-events:none!important}
+.mini{display:flex;gap:4px}
+.mini button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:.75rem;cursor:pointer}
+.stage .side{position:absolute;top:8px;font-size:.66rem;font-weight:700;letter-spacing:.08em;color:var(--muted);pointer-events:none}
+.sel{display:flex;flex-wrap:wrap;gap:6px;min-height:30px}
+.sel .chip{background:var(--accent-soft);border-color:transparent;color:var(--ink);font-weight:600}
+.empty{font-size:.82rem;color:var(--muted)}
+.out{position:relative;min-width:0}
+.outbox{position:sticky;top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.outhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.outbox h2{font-family:var(--f-display);font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;margin:0;color:var(--muted)}
+#outTxt{font-family:var(--f-mono);font-size:.82rem;line-height:1.55;min-height:340px;resize:vertical;background:var(--bg);white-space:pre-wrap}
+#outTxt::placeholder{font-family:var(--f-body);color:var(--muted)}
+@media (min-width:980px){#outTxt{min-height:60vh}}
+.primary{background:var(--accent);color:var(--accent-ink);border:none;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:.95rem}
+.primary:disabled{opacity:.4;cursor:not-allowed}
+.primary:active:not(:disabled){transform:translateY(1px)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);display:flex;gap:8px;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .primary{flex:1}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;z-index:30}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div>
+    <h1>Anamnese PS Orto</h1>
+    <p>Toque nos itens; o texto se monta sozinho ao lado.</p>
+  </div>
+  <div class="topR">
+    <div class="seg" id="cMode" role="group" aria-label="Tipo de registro"></div>
+    <button class="ghost" id="resetBtn" type="button">Novo paciente</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="form">
+    <!-- ================= PS ================= -->
+    <section class="sec" data-m="ps">
+      <h2>Chamado e origem</h2>
+      <div class="field"><span class="lbl">Chamado pela equipe</span><div class="chips" id="cChamado"></div></div>
+      <div class="field"><span class="lbl">Regime</span><div class="chips" id="cRegime"></div></div>
+      <div id="interWrap" style="display:flex;flex-direction:column;gap:12px" hidden>
+        <div class="field" id="equipeWrap"><span class="lbl" id="equipeLbl">Aos cuidados da equipe</span><div class="chips" id="cEquipe"></div></div>
+        <div class="field"><label for="motivo">Internado por</label><input type="text" id="motivo" data-k="motivo" placeholder="ex.: TCE leve após queda · investigação de neoplasia vesical" autocomplete="off"></div>
+      </div>
+      <div class="field"><span class="lbl">Encaminhamento</span><div class="chips" id="cOrigem"></div></div>
+      <div class="field"><label for="cidade">Proveniente de</label><input type="text" id="cidade" data-k="cidade" placeholder="cidade ou serviço" autocomplete="off"></div>
+      <div class="field"><span class="lbl">Acompanhante</span><div class="chips" id="cAcomp"></div></div>
+      <div id="acompWrap" style="display:flex;flex-direction:column;gap:12px" hidden>
+        <div class="field"><span class="lbl">Acompanhado de</span><div class="chips" id="cQuem"></div></div>
+        <div class="field"><span class="lbl">Quem relata a história</span><div class="chips" id="cInf"></div></div>
+      </div>
+      <div class="field" id="devidoWrap"><label for="devido">Devido a</label><input type="text" id="devido" data-k="devido" placeholder="motivo do encaminhamento" autocomplete="off"></div>
+    </section>
+
+    <section class="sec" data-m="ps">
+      <h2>Modelo</h2>
+      <div class="tpls" id="cTpl"></div>
+    </section>
+
+    <section class="sec" id="secMech" data-m="ps" hidden>
+      <h2>Devido a · mecanismo</h2>
+      <div class="field"><span class="lbl">Devido a</span><div class="chips" id="cMech"></div></div>
+      <div class="field"><label for="devido2">Ou escreva</label><input type="text" id="devido2" data-k="devido" placeholder="substitui a seleção acima" autocomplete="off"></div>
+      <div class="field" id="alturaWrap" hidden><label for="altura">Altura da queda (m)</label><input type="number" id="altura" data-k="altura" inputmode="decimal" step="0.5" min="0" placeholder="ex.: 3" style="max-width:140px"></div>
+      <div class="field"><span class="lbl">Com (mecanismo de trauma)</span><div class="chips" id="cTipo"></div></div>
+    </section>
+
+    <section class="sec" id="secCir" data-m="ps" hidden>
+      <h2>Cirurgia prévia</h2>
+      <div class="row">
+        <div class="field" style="flex:2 1 220px"><label for="proc">Procedimento</label><input type="text" id="proc" data-k="proc" placeholder="ex.: osteossíntese de fêmur com haste cefalomedular" autocomplete="off"></div>
+        <div class="field"><label for="dataCir">Data da cirurgia</label><input type="date" id="dataCir" data-k="dataCir"></div>
+      </div>
+      <div class="field"><span class="lbl">Local</span><div class="chips" id="cLocalCir"></div></div>
+    </section>
+
+    <section class="sec" id="secAch" data-m="ps" hidden>
+      <h2>Achado de imagem</h2>
+      <div class="field"><label for="achado">Achado</label><input type="text" id="achado" data-k="achado" placeholder="ex.: lesão lítica sugestiva de metástase" autocomplete="off"></div>
+      <div class="field"><span class="lbl">Exame</span><div class="chips" id="cExame"></div></div>
+    </section>
+
+    <section class="sec" id="secData" data-m="ps" hidden>
+      <h2 id="dataTitle">Início dos sintomas</h2>
+      <div class="chips" id="cData"></div>
+      <div class="row">
+        <div class="field" id="diasWrap" hidden style="flex:0 1 140px"><label for="dias">Há quantos dias</label><input type="number" id="dias" data-k="dias" inputmode="numeric" min="1"></div>
+        <div class="field" id="dateWrap" hidden style="flex:0 1 200px"><label for="dataX">Data</label><input type="date" id="dataX" data-k="dataX"></div>
+        <div class="field" id="horaWrap" hidden style="flex:0 1 140px"><label for="hora">Aproximadamente às</label><input type="time" id="hora" data-k="hora"></div>
+      </div>
+      <div class="field" id="aposWrap" hidden><span class="lbl">Após</span><div class="chips" id="cApos"></div></div>
+    </section>
+
+    <!-- ================= ENFERMARIA ================= -->
+    <section class="sec" data-m="enf" hidden>
+      <h2>Situação</h2>
+      <div class="chips" id="eSit"></div>
+      <div class="row">
+        <div class="field" style="flex:2 1 220px"><label for="eproc" id="eprocLbl">Procedimento</label><input type="text" id="eproc" data-k="enf.eproc" placeholder="ex.: artroplastia parcial de quadril" autocomplete="off"></div>
+        <div class="field" style="flex:0 1 130px"><label for="enfN" id="enfNLbl">DPO</label><input type="number" id="enfN" data-k="enf.n" inputmode="numeric" min="0"></div>
+      </div>
+      <div class="field"><label for="diag">Diagnóstico</label><input type="text" id="diag" data-k="enf.diag" placeholder="ex.: fratura de colo de fêmur esquerdo" autocomplete="off"></div>
+    </section>
+
+    <section class="sec" data-m="enf" hidden>
+      <h2>Evolução <small>já vem no padrão; toque para mudar</small></h2>
+      <div class="grid">
+        <div class="field"><span class="lbl">Posição</span><div class="chips" id="eDecub"></div></div>
+        <div class="field"><span class="lbl">Diurese</span><div class="chips" id="eDiur"></div></div>
+        <div class="field"><span class="lbl">Evacuação</span><div class="chips" id="eEvac"></div>
+          <div id="evacWrap" hidden style="max-width:150px"><input type="number" id="evacDias" data-k="enf.evacDias" inputmode="numeric" min="1" placeholder="há quantos dias" aria-label="Evacuação ausente há quantos dias"></div></div>
+        <div class="field"><span class="lbl">Consciência</span><div class="chips" id="eConsc"></div></div>
+        <div class="field"><span class="lbl">Respiração</span><div class="chips" id="eResp"></div>
+          <div id="o2Wrap" hidden style="max-width:150px"><input type="number" id="o2" data-k="enf.o2" inputmode="decimal" min="0" step="0.5" placeholder="L/min" aria-label="Fluxo de O2 em L/min"></div></div>
+        <div class="field"><span class="lbl">Sono</span><div class="chips" id="eSono"></div></div>
+        <div class="field"><span class="lbl">Dieta</span><div class="chips" id="eDieta"></div></div>
+        <div class="field"><span class="lbl">Hemodinâmica</span><div class="chips" id="eHd"></div></div>
+        <div class="field"><span class="lbl">Perfusão</span><div class="chips" id="ePerf"></div></div>
+        <div class="field"><span class="lbl">Curativo</span><div class="chips" id="eCur"></div></div>
+      </div>
+      <div class="grid">
+        <div class="field"><span class="lbl">Dor · evolução</span><div class="chips" id="eDorT"></div></div>
+        <div class="field"><span class="lbl">Dor · intensidade</span><div class="chips" id="eDorI"></div></div>
+        <div class="field"><span class="lbl">Dor · piora à</span><div class="chips" id="eDorF"></div></div>
+      </div>
+      <p class="empty" style="margin:0">O local da dor vem do mapa abaixo; sem região marcada, sai “no membro”.</p>
+      <div class="grid">
+        <div class="field"><span class="lbl">Controles da enfermagem</span><div class="chips" id="eCtrl"></div>
+          <div id="tmaxWrap" hidden style="max-width:150px"><input type="text" id="tmax" data-k="enf.tmax" inputmode="decimal" placeholder="T máx (°C)" aria-label="Temperatura máxima"></div></div>
+        <div class="field"><span class="lbl">Fechamento</span><div class="chips" id="eFecha"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= COMUM ================= -->
+    <section class="sec">
+      <h2>Topografia <small id="topoHint">gire arrastando · toque para marcar</small></h2>
+      <div class="body3d">
+        <div class="stage" id="stage">
+          <span class="side" style="left:10px" id="sideL">D</span>
+          <span class="side" style="right:10px" id="sideR">E</span>
+          <div class="hud">
+            <span class="hover" id="hoverLbl">Toque numa região</span>
+            <div class="mini"><button type="button" id="vFront">Frente</button><button type="button" id="vBack">Costas</button></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <div class="field"><span class="lbl">Selecionadas</span><div class="sel" id="selTopo"></div></div>
+          <div class="field"><span class="lbl">Lado para a lista abaixo</span><div class="chips" id="cLado"></div></div>
+          <div class="field"><span class="lbl">Membros</span><div class="chips" id="cRegL"></div></div>
+          <div class="field"><span class="lbl">Axial</span><div class="chips" id="cRegM"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="secDor" data-m="ps" hidden>
+      <h2>Dor</h2>
+      <div class="field"><span class="lbl">Intensidade (EVA)</span><div class="chips" id="cEva"></div></div>
+      <div class="field"><span class="lbl">Características</span><div class="chips" id="cCar"></div></div>
+      <div class="field"><span class="lbl">Irradiação</span><div class="chips" id="cIrr"></div></div>
+      <div class="field" id="irrWrap" hidden><label for="irrPara">Irradia para</label><input type="text" id="irrPara" data-k="irrPara" placeholder="ex.: face posterior da coxa até o pé" autocomplete="off"></div>
+      <div class="field"><span class="lbl">Piora</span><div class="chips" id="cPiora"></div></div>
+      <div class="field"><span class="lbl">Melhora com</span><div class="chips" id="cMelhora"></div></div>
+    </section>
+
+    <section class="sec" id="secSym" data-m="ps" hidden>
+      <h2 id="symTitle">Outros sinais e sintomas</h2>
+      <div class="chips" id="cSym"></div>
+    </section>
+
+    <section class="sec" id="secNeg" data-m="ps" hidden>
+      <h2>Interrogatório <small>toque: nega → refere → omitir</small></h2>
+      <div class="chips" id="cNeg"></div>
+    </section>
+
+    <section class="sec" id="secEx" data-m="ps" hidden>
+      <h2>Complementos</h2>
+      <div id="dEx" style="display:flex;flex-direction:column;gap:12px"></div>
+    </section>
+
+    <section class="sec">
+      <h2>Imobilização / dispositivos</h2>
+      <div class="chips" id="cApar"></div>
+      <div class="field" id="aparOrigWrap" hidden><span class="lbl">Instalado</span><div class="chips" id="cAparOrig"></div></div>
+    </section>
+
+    <section class="sec" data-m="ps">
+      <h2>Estado atual <small>sala vermelha / amarela</small></h2>
+      <div class="field"><span class="lbl">Nível de consciência</span><div class="chips" id="cNivel"></div></div>
+      <div class="field"><label for="gcs">Glasgow</label><input type="text" id="gcs" data-k="gcs" placeholder="ex.: 15 · 3T" autocomplete="off" style="max-width:140px"></div>
+      <div class="field"><span class="lbl">Suporte</span><div class="chips" id="cSup"></div></div>
+      <div class="field"><span class="lbl">Informações obtidas com</span><div class="chips" id="cFonte"></div></div>
+    </section>
+
+    <section class="sec" data-m="ps">
+      <h2>Antecedentes pessoais <button type="button" class="ghost" id="negaAll" style="padding:3px 10px;font-size:.78rem;text-transform:none;letter-spacing:0">Nega todos</button></h2>
+      <div id="dHist" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div class="field"><span class="lbl">Jejum de sólidos e líquidos desde</span>
+        <div class="row" style="align-items:center"><input type="time" id="jejumH" data-k="jejumH" style="max-width:140px" aria-label="Hora do início do jejum"><div class="chips" id="cJejumD"></div></div></div>
+    </section>
+
+    <section class="sec">
+      <h2>Observações</h2>
+      <textarea id="obs" data-k="obs" rows="3" placeholder="Texto livre que entra ao fim"></textarea>
+    </section>
+  </div>
+
+  <aside class="out" id="outAside">
+    <div class="outbox">
+      <div class="outhead">
+        <h2>Texto para o prontuário</h2>
+        <button type="button" class="chip" id="capsBtn" aria-pressed="false">CAIXA ALTA</button>
+      </div>
+      <textarea id="outTxt" readonly aria-label="Texto da anamnese" placeholder="O texto aparece aqui conforme você preenche."></textarea>
+      <button class="primary" id="copyBtn" type="button">Copiar texto</button>
+    </div>
+  </aside>
+</main>
+
+<div class="bar">
+  <button class="ghost" id="seeBtn" type="button">Ver texto</button>
+  <button class="primary" id="copyBtn2" type="button">Copiar texto</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+function el(tag,a={},...kids){const e=document.createElement(tag);for(const k in a){if(k==='class')e.className=a[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),a[k]);else if(k==='text')e.textContent=a[k];else e.setAttribute(k,a[k]);}kids.flat().forEach(c=>c!=null&&e.append(c));return e;}
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+const isoToBr=s=>{if(!s)return '';const[y,m,d]=s.split('-');return `${d}/${m}/${y}`;};
+const joinPt=a=>a.length<=1?(a[0]||''):a.slice(0,-1).join(', ')+' e '+a[a.length-1];
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+const hh=t=>{if(!t)return '';const[h,m]=t.split(':');return `${parseInt(h,10)}h${m&&m!=='00'?m:''}`;};
+
+/* ---------- vocabulário PS ---------- */
+const CHAMADO=[['Sala Amarela','amarela'],['Sala Vermelha','vermelha'],['Enfermaria',''],['UTI','']];
+const ORIGEM=[['cross','CROSS','encaminhado via CROSS'],['esp','Demanda espontânea','por demanda espontânea'],['samu','SAMU','trazido pelo SAMU'],['resg','Resgate / Bombeiros','trazido pelo Resgate'],['transf','Transferência','transferido de outro serviço'],['int','Já internado','internado neste serviço']];
+const QUEM=[['da mãe','Mãe'],['do pai','Pai'],['do(a) filho(a)','Filho(a)'],['do(a) cônjuge','Cônjuge'],['do(a) irmão(ã)','Irmão(ã)'],['do(a) cuidador(a)','Cuidador(a)'],['de familiar','Familiar'],['da equipe do resgate','Resgate']];
+const MECH=['queda da própria altura','queda de altura','acidente motociclístico','acidente automobilístico','atropelamento','acidente de bicicleta','trauma esportivo','acidente de trabalho','agressão física','esmagamento','ferimento por arma de fogo','ferimento por arma branca','mordedura'];
+const TIPO=['trauma direto','entorse','torção','queda sobre a mão espalmada','hiperextensão','trauma indireto','trauma axial'];
+const DATAOPT=[['hoje','Hoje'],['ontem','Ontem'],['dias','Há N dias'],['data','Outra data']];
+const APOS=[['esforço físico','Esforço físico'],['movimento brusco','Movimento brusco'],['carregar peso','Carregar peso'],['queda','Queda'],['__sem','Sem fator desencadeante']];
+const CAR=[['em pontada','Pontada'],['em queimação','Queimação'],['latejante','Latejante'],['em peso','Peso'],['em choque','Choque'],['de caráter mecânico','Mecânica'],['de caráter inflamatório','Inflamatória'],['contínua','Contínua'],['intermitente','Intermitente']];
+const PIORA=[['aos movimentos','Movimentos'],['à carga','Carga'],['à palpação','Palpação'],['aos esforços','Esforços'],['ao repouso','Repouso'],['no período noturno','Noite']];
+const MELHORA=[['repouso','Repouso'],['analgesia','Analgesia'],['gelo','Gelo'],['imobilização','Imobilização'],['calor local','Calor'],['__sem','Sem fator de melhora']];
+
+const NEG={febre:'febre',calafrios:'calafrios',tce:'trauma cranioencefálico (TCE)',pc:'perda de consciência',rnc:'rebaixamento do nível de consciência',
+ vomito:'vômitos',convulsoes:'convulsões',sela:'parestesia em sela',fs:'alteração de força ou sensibilidade',incont:'incontinência fecal ou urinária',
+ cervical:'cervicalgia',dtorac:'dor torácica',dabd:'dor abdominal',dispneia:'dispneia',
+ trauma:'trauma local',proc:'procedimento ou infiltração articular recente',infec:'infecção recente (urinária, respiratória ou de pele)',
+ imuno:'imunossupressão',cortic:'uso crônico de corticoide',ep:'episódios prévios semelhantes',protese:'prótese articular no local',
+ poli:'acometimento de outras articulações',diur:'uso de diuréticos',alcool:'ingestão alcoólica recente',purina:'ingestão excessiva de carnes ou frutos do mar',
+ peso:'perda ponderal',neo:'história de neoplasia',noturna:'dor noturna ou em repouso',drogasev:'uso de drogas endovenosas',
+ sangr:'sangramento ativo',dpior:'piora progressiva da dor',atb:'uso de antibiótico após a alta',frat:'fratura prévia no local',
+ outrostraumas:'outros traumas associados',demais:'demais queixas no momento'};
+
+const SYM_TR=['edema','equimose','deformidade','redução da amplitude de movimento','impotência funcional','incapacidade de carga','crepitação','parestesia','ferida no local'];
+const SYM_ART=['edema','calor local','hiperemia','derrame articular','redução da amplitude de movimento','incapacidade de carga'];
+const SYM_PO=['saída de secreção','hiperemia','edema','calor local','dor','deiscência de ferida','flutuação','odor fétido'];
+const SYM_COL=['parestesia','perda de força','claudicação neurogênica','espasmo muscular','rigidez matinal'];
+const SYM_ACH=['dor','dor noturna','dor à carga','claudicação','incapacidade de carga','aumento de volume local'];
+const NEG_TR=['tce','pc','vomito','convulsoes','rnc','fs','sela','incont','dtorac','dabd','febre','outrostraumas','demais'];
+const NEG_TR_D=['tce','pc','vomito','convulsoes','outrostraumas','demais'];
+
+const EX={
+ deamb:{l:'Marcha',o:[['Deambula','Deambula sem auxílio.'],['Com dificuldade','Deambula com dificuldade.'],['Não deambula','Não deambula desde o ocorrido.'],['Em maca','Admitido em maca.']]},
+ dom:{l:'Membro dominante',o:[['Destro','Destro.'],['Canhoto','Canhoto.']]},
+ ferida:{l:'Ferida',o:[['Sem ferida','Sem ferimentos associados.'],['Escoriação','Escoriação em topografia do trauma.'],['Corto-contusa','Ferida corto-contusa em topografia do trauma.'],['Exposição óssea','Ferida com exposição óssea.']]},
+ tetano:{l:'Antitetânica',o:[['Em dia','Vacina antitetânica em dia.'],['Desatualizada','Vacina antitetânica desatualizada.'],['Desconhecida','Desconhece situação vacinal antitetânica.']]},
+ jejum:{l:'Jejum desde',type:'text',ph:'ex.: 08h',t:'Jejum desde {v}.'},
+ ep:{l:'Episódios',o:[['1º episódio','Primeiro episódio de luxação.'],['Recidivante','Luxação recidivante, com episódios prévios.']]},
+ redTent:{l:'Redução prévia',o:[['Não tentada','Sem tentativa prévia de redução.'],['Tentada, sem sucesso','Tentativa prévia de redução na origem, sem sucesso.'],['Reduzida na origem','Luxação reduzida na origem.']]},
+ atls:{l:'Admissão',multi:true,o:[['ATLS na Sala Vermelha','Avaliado inicialmente pela equipe da Sala Vermelha conforme protocolo ATLS.'],['Pan-TC realizada','Submetido a tomografia de corpo inteiro (pan-TC).'],['FAST negativo','FAST negativo.'],['FAST positivo','FAST positivo.']]},
+ secrecao:{l:'Aspecto da secreção',o:[['Serosa','Secreção de aspecto seroso.'],['Sero-hemática','Secreção de aspecto sero-hemático.'],['Seropurulenta','Secreção de aspecto seropurulento.'],['Purulenta','Secreção de aspecto purulento.']]}
+};
+
+const TPL=[
+ {id:'trauma',l:'Trauma / entorse',s:'Contusão, entorse, partes moles',k:'trauma',sym:SYM_TR,symD:['edema','redução da amplitude de movimento'],neg:NEG_TR,negD:NEG_TR_D,ex:['deamb','dom','ferida','tetano']},
+ {id:'fratura',l:'Suspeita de fratura',s:'Dor, deformidade, impotência',k:'trauma',sym:SYM_TR,symD:['edema','deformidade','impotência funcional'],neg:NEG_TR,negD:NEG_TR_D,ex:['ferida','tetano','dom','deamb']},
+ {id:'luxacao',l:'Luxação',s:'Ombro, cotovelo, quadril, dedos',k:'trauma',sym:SYM_TR,symD:['deformidade','impotência funcional'],neg:NEG_TR,negD:NEG_TR_D,ex:['ep','redTent','dom']},
+ {id:'poli',l:'Politrauma',s:'Sala vermelha, alta energia',k:'trauma',sym:SYM_TR,symD:['deformidade'],neg:NEG_TR.concat(['cervical','dispneia']),negD:['tce','pc','vomito','convulsoes','dtorac','dabd','fs','demais'],ex:['atls','ferida','tetano']},
+ {id:'coluna',l:'Lombalgia / coluna',s:'Bandeiras vermelhas',k:'clin',sym:SYM_COL,symD:[],topoD:['lomb|'],
+  neg:['trauma','febre','peso','neo','noturna','sela','fs','incont','drogasev','imuno','cortic','demais'],negD:['trauma','febre','peso','neo','sela','fs','incont','demais'],ex:['deamb']},
+ {id:'posop',l:'Ferida operatória',s:'Secreção, hiperemia, deiscência',k:'posop',sym:SYM_PO,symD:['saída de secreção','hiperemia'],
+  neg:['febre','calafrios','trauma','sangr','dpior','atb','demais'],negD:['febre','calafrios','trauma','demais'],ex:['secrecao','deamb']},
+ {id:'artrite',l:'Artrite séptica',s:'Monoartrite aguda',k:'clin',sym:SYM_ART,symD:['edema','calor local','hiperemia'],
+  neg:['febre','calafrios','trauma','proc','infec','imuno','cortic','drogasev','protese','ep','poli','demais'],negD:['febre','calafrios','trauma','proc','infec','imuno','ep','demais'],ex:['deamb']},
+ {id:'gota',l:'Gota / cristais',s:'Crise articular aguda',k:'clin',sym:SYM_ART,symD:['edema','calor local','hiperemia'],
+  neg:['febre','calafrios','trauma','ep','diur','alcool','purina','poli','demais'],negD:['febre','trauma','ep','demais'],ex:['deamb']},
+ {id:'achado',l:'Lesão óssea / achado',s:'Metástase, lesão lítica',k:'achado',sym:SYM_ACH,symD:[],
+  neg:['trauma','febre','peso','frat','fs','sela','incont','demais'],negD:['trauma','fs','demais'],ex:['deamb']}
+];
+const tplById=id=>TPL.find(t=>t.id===id);
+const EQUIPES=['Clínica Médica','Cirurgia Geral','Emergência','Neurocirurgia','Neurologia','Urologia','Oncologia','Cardiologia','Geriatria','Pediatria'];
+const EXAMES=[['à radiografia','Radiografia'],['à tomografia computadorizada','TC'],['à ressonância magnética','RM'],['à cintilografia óssea','Cintilografia'],['ao PET-CT','PET-CT']];
+const APAR=['tala gessada','talafix','tala metálica','gesso circular','bota gessada','tipoia','imobilizador de ombro','imobilizador de joelho','bota ortopédica','colar cervical','prancha rígida','enfaixamento com ataduras','curativo compressivo','fixador externo','tração esquelética','tração cutânea','torniquete'];
+const APAR_F=/^(tala|talafix|bota|tipoia|prancha|tração)/;
+const APAR_ORIG=[['na origem','Na origem'],['pelo resgate','Pelo resgate'],['neste serviço','Neste serviço']];
+const NIVEL=[['consciente e orientado','Consciente e orientado'],['confuso','Confuso'],['sonolento','Sonolento'],['agitado','Agitado'],['torporoso','Torporoso'],['sedado','Sedado']];
+const SUP=[['em IOT sob ventilação mecânica','IOT / VM'],['traqueostomizado','TQT'],['em O2 suplementar por cateter nasal','O₂ cateter'],['em O2 por máscara','Máscara O₂'],['em uso de noradrenalina','Noradrenalina'],['em uso de droga vasoativa','Outra DVA'],['em sedação contínua','Sedação contínua'],['com sonda vesical de demora','SVD'],['com sonda nasoenteral','SNE / SNG'],['hemodinamicamente estável','Estável HD'],['hemodinamicamente instável','Instável HD']];
+const FONTE=['equipe assistente','acompanhante','prontuário','equipe do resgate'];
+
+/* regiões */
+const REG_L=[['ombro','ombro',0],['clavicula','clavícula',1],['escapula','escápula',1],['braco','braço',0],['cotovelo','cotovelo',0],['antebraco','antebraço',0],['punho','punho',0],['mao','mão',1],['dedosmao','dedos da mão',1],
+ ['quadril','quadril',0],['coxa','coxa',1],['joelho','joelho',0],['perna','perna',1],['tornozelo','tornozelo',0],['pe','pé',0],['halux','hálux',0],['dedospe','dedos do pé',0]];
+const REG_M=[['cranio','crânio'],['face','face'],['cerv','coluna cervical'],['torac','coluna torácica'],['lomb','coluna lombar'],['sacro','sacro / cóccix'],['pelve','pelve'],['torax','tórax'],['abd','abdome']];
+const REG={};REG_L.forEach(r=>REG[r[0]]={n:r[1],f:r[2]});REG_M.forEach(r=>REG[r[0]]={n:r[1].replace(' / ','/'),f:0});
+function regName(key){const[b,s]=key.split('|');const r=REG[b];if(!r)return b;if(!s)return r.n;const adj=s==='D'?(r.f?'direita':'direito'):(r.f?'esquerda':'esquerdo');return `${r.n} ${adj}`;}
+
+const HIST={
+ comorb:{l:'Comorbidades (CMB)',t:'CMB',nega:'nega',o:['HAS','DM2','DM1','DLP','hipotireoidismo','DRC','ICC','DAC','FA','DPOC','asma','AVC prévio','osteoporose','artrite reumatoide','gota','neoplasia','HIV']},
+ muc:{l:'Medicações de uso contínuo (MUC)',t:'MUC',nega:'nega',o:['losartana','enalapril','hidroclorotiazida','anlodipino','metformina','glibenclamida','insulina','sinvastatina','AAS','clopidogrel','varfarina','rivaroxabana','apixabana','levotiroxina','prednisona','alopurinol','omeprazol']},
+ alerg:{l:'Alergias',t:'ALERGIAS',nega:'nega',o:['dipirona','AINE','penicilina','cefalosporina','sulfa','iodo / contraste','látex','esparadrapo']},
+ intern:{l:'Internações / cirurgias',t:'INTERNAÇÕES/CX',nega:'nega',o:[]},
+ hv:{l:'Hábitos e vícios (HV)',t:'HV',nega:'nega vícios',o:['tabagista','ex-tabagista','etilista','ex-etilista','usuário de drogas ilícitas']}
+};
+
+/* ---------- vocabulário enfermaria ---------- */
+const E={
+ sit:[['po','Pós-operatório'],['pre','Pré-operatório'],['cons','Conservador']],
+ decub:[['ddh','DDH','em decúbito dorsal horizontal'],['elev','Decúbito elevado','em decúbito elevado'],['lat','Decúbito lateral','em decúbito lateral'],['polt','Poltrona','sentado em poltrona'],['deamb','Deambulando','deambulando no quarto']],
+ diur:[['presente','Presente'],['ausente','Ausente'],['svd','SVD'],['fralda','Fralda']],
+ evac:[['presente','Presente'],['ausente','Ausente']],
+ consc:[['lo','Lúcido e orientado','lúcido e orientado'],['conf','Confuso','confuso'],['sono','Sonolento','sonolento'],['agit','Agitado','agitado'],['sed','Sedado','sedado']],
+ resp:[['aa','AA sem desconforto','respirando em AA sem desconforto respiratório'],['cat','O₂ cateter','em O2 por cateter nasal'],['masc','O₂ máscara','em O2 por máscara'],['desc','Desconforto','com desconforto respiratório'],['vm','VM','em ventilação mecânica']],
+ sono:[['pres','Preservado','sono preservado'],['prej','Prejudicado','sono prejudicado']],
+ dieta:[['bem','Aceita bem','aceitando bem a dieta'],['parc','Aceitação parcial','com aceitação parcial da dieta'],['baixa','Baixa aceitação','com baixa aceitação da dieta'],['jejum','Jejum p/ procedimento','em jejum para procedimento'],['zero','Dieta zero','em dieta zero'],['sne','SNE','com dieta por SNE']],
+ hd:[['est','Estável sem DVA','hemodinamicamente estável sem uso de DVA'],['dva','Em uso de DVA','em uso de DVA'],['inst','Instável','hemodinamicamente instável']],
+ perf:[['boa','Bem perfundidas, TEC < 3s','com extremidades bem perfundidas e TEC < 3s'],['lenta','TEC lentificado','com TEC lentificado']],
+ cur:[['limpo','Limpo e seco','curativo limpo e seco'],['serosa','Secreção serosa','curativo com secreção serosa'],['sh','Sero-hemática','curativo com secreção sero-hemática'],['pur','Purulenta','curativo com secreção purulenta'],['nao','Não avaliado','curativo não avaliado neste momento']],
+ dorT:[['mantem','Mantém'],['melhora','Melhora'],['piora','Piora']],
+ dorI:[['sem','Sem dor'],['discreta','Discreta'],['moderada','Moderada'],['intensa','Intensa']],
+ dorF:[['à mobilização','Mobilização'],['à palpação local','Palpação local'],['à carga','Carga'],['ao repouso','Repouso']],
+ ctrl:[['sem','Sem alterações'],['febre','Pico febril'],['pa','PA elevada'],['hipo','Hipotensão'],['taqui','Taquicardia'],['dessat','Dessaturação']],
+ fecha:[['nega','Nega febre e intercorrências'],['estavel','Estável no período']]
+};
+const CTRL_T={pa:'níveis pressóricos elevados',hipo:'hipotensão',taqui:'taquicardia',dessat:'dessaturação'};
+const ENF_EMPTY=()=>({sit:'',diag:'',eproc:'',n:'',decub:'',diur:'',evac:'',evacDias:'',consc:'',resp:'',o2:'',sono:'',dieta:'',hd:'',perf:'',cur:'',dorT:'',dorI:'',dorF:[],analg:'',ctrl:[],tmax:'',fecha:[]});
+const ENF_DEF=()=>Object.assign(ENF_EMPTY(),{decub:'ddh',diur:'presente',evac:'presente',consc:'lo',resp:'aa',sono:'pres',dieta:'bem',hd:'est',perf:'boa',dorT:'mantem',dorI:'discreta',dorF:['à mobilização','à palpação local'],ctrl:['sem'],fecha:['nega','estavel']});
+const pick=(list,id)=>{const o=list.find(x=>x[0]===id);return o?(o[2]||o[1]):'';};
+
+/* ---------- estado ---------- */
+const KEY='anamnesePSOrto.v2',CAPS='anamnesePSOrto.caps';
+function fresh(mode){return {mode:mode||'ps',tpl:'',chamado:'',regime:'',equipe:'',motivo:'',origem:'',cidade:'',acomp:'',acompQuem:'',inf:'pac',devido:'',
+ mech:[],tipo:[],altura:'',data:'',dias:'',dataX:'',hora:'',apos:[],proc:'',dataCir:'',localCir:'',achado:'',exame:'',
+ topo:[],lado:'D',sym:[],eva:'',car:[],irr:'',irrPara:'',piora:[],melhora:[],neg:{},ex:{},
+ aparato:[],aparOrig:'',nivel:'',gcs:'',suporte:[],fonte:[],hist:{comorb:[],muc:[],alerg:[],intern:[],hv:[]},obs:'',jejumH:'',jejumD:'',
+ enf:mode==='enf'?ENF_DEF():ENF_EMPTY(),custom:{}};}
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+if(S&&S.mode){const f=fresh(S.mode);S=Object.assign(f,S);S.hist=Object.assign(f.hist,S.hist);S.enf=Object.assign(ENF_EMPTY(),S.enf);}else S=fresh('ps');
+let caps=true;try{const c=localStorage.getItem(CAPS);if(c!==null)caps=c==='1';}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const getP=p=>p.split('.').reduce((o,k)=>o==null?o:o[k],S);
+const setP=(p,v)=>{const ks=p.split('.');let o=S;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=v;};
+
+/* ---------- componentes ---------- */
+function chip(label,on,onclick,extra){const b=el('button',{type:'button',class:'chip'+(on?' on':'')+(extra?' '+extra:''),'aria-pressed':on?'true':'false',onclick});
+ if(typeof label==='string')b.textContent=label;else b.append(...label);return b;}
+function toggleIn(arr,v){const i=arr.indexOf(v);i<0?arr.push(v):arr.splice(i,1);}
+function addInput(groupKey,onAdd){const i=el('input',{type:'text',class:'add',placeholder:'+ outro',autocomplete:'off','aria-label':'Adicionar outro item'});
+ const go=()=>{const v=i.value.trim();if(!v)return;S.custom[groupKey]=S.custom[groupKey]||[];if(!S.custom[groupKey].includes(v))S.custom[groupKey].push(v);onAdd(v);i.value='';renderAll();setTimeout(()=>{const n=document.querySelector(`[data-add="${groupKey}"]`);n&&n.focus();},0);};
+ i.dataset.add=groupKey;i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});i.addEventListener('blur',()=>{if(i.value.trim())go();});return i;}
+const norm=o=>Array.isArray(o)?o:[o,o];
+function single(id,opts,path,custom,after){const c=$('#'+id);c.innerHTML='';const cur=getP(path);
+ opts.concat(custom?(S.custom[custom]||[]):[]).map(norm).forEach(([v,l])=>c.append(chip(l,cur===v,()=>{setP(path,cur===v?'':v);after&&after(v);renderAll();})));
+ if(custom)c.append(addInput(custom,v=>setP(path,v)));}
+function multi(id,opts,path,custom,after){const c=$('#'+id);c.innerHTML='';const arr=getP(path);
+ opts.concat(custom?(S.custom[custom]||[]):[]).map(norm).forEach(([v,l])=>c.append(chip(l,arr.includes(v),()=>{toggleIn(arr,v);after&&after(v,arr.includes(v));renderAll();})));
+ if(custom)c.append(addInput(custom,v=>{if(!arr.includes(v))arr.push(v);after&&after(v,true);}));}
+
+/* ---------- render ---------- */
+function render(){
+ const enf=S.mode==='enf';const t=S.tpl?tplById(S.tpl):null;
+ const m=$('#cMode');m.innerHTML='';[['ps','PS / Interconsulta'],['enf','Evolução enfermaria']].forEach(([v,l])=>m.append(el('button',{type:'button',class:S.mode===v?'on':'','aria-pressed':S.mode===v?'true':'false',text:l,
+  onclick:()=>{if(S.mode===v)return;S.mode=v;if(v==='enf'&&!S.enf.decub&&!S.enf.consc)S.enf=Object.assign(ENF_DEF(),{diag:S.enf.diag,eproc:S.enf.eproc,n:S.enf.n,sit:S.enf.sit});renderAll();}})));
+ document.querySelectorAll('[data-m]').forEach(s=>{s.hidden=s.dataset.m!==(enf?'enf':'ps');});
+ if(!enf){
+  $('#secMech').hidden=!t||t.k!=='trauma';$('#devidoWrap').hidden=!!(t&&t.k==='trauma');$('#secCir').hidden=!t||t.k!=='posop';$('#secAch').hidden=!t||t.k!=='achado';
+  ['secData','secSym','secNeg','secDor'].forEach(id=>$('#'+id).hidden=!t);$('#secEx').hidden=!t||!t.ex.length;
+ }
+ // chamado
+ const c=$('#cChamado');c.innerHTML='';CHAMADO.forEach(([l,col])=>{const lab=[];if(col)lab.push(el('span',{class:'dot',style:`background:var(--${col})`}));lab.push(l);
+  c.append(chip(lab,S.chamado===l,()=>{S.chamado=S.chamado===l?'':l;if(['Sala Vermelha','Enfermaria','UTI'].includes(S.chamado))S.regime='inter';if(S.chamado==='Sala Vermelha')S.equipe='';renderAll();}));});
+ single('cRegime',[['direta','Avaliação direta'],['inter','Interconsulta']],'regime');
+ $('#interWrap').hidden=S.regime!=='inter';const intern=S.chamado==='Enfermaria'||S.chamado==='UTI';
+ $('#equipeWrap').hidden=S.chamado==='Sala Vermelha';$('#equipeLbl').textContent=intern?'Equipe solicitante (especialidade)':'Aos cuidados da equipe';
+ single('cEquipe',EQUIPES,'equipe','equipe');
+ single('cOrigem',ORIGEM,'origem');
+ single('cAcomp',[['des','Desacompanhado'],['acomp','Acompanhado']],'acomp',null,v=>{if(v==='des')S.inf='pac';});
+ $('#acompWrap').hidden=S.acomp!=='acomp';
+ single('cQuem',QUEM,'acompQuem','quem');
+ const ci=$('#cInf');ci.innerHTML='';[['pac','Paciente refere'],['acomp','Acompanhante refere']].forEach(([v,l])=>ci.append(chip(l,S.inf===v,()=>{S.inf=v;renderAll();})));
+ // modelos
+ const tg=$('#cTpl');tg.innerHTML='';TPL.forEach(tp=>{tg.append(el('button',{type:'button',class:'tpl'+(S.tpl===tp.id?' on':''),'aria-pressed':S.tpl===tp.id?'true':'false',
+  onclick:()=>{if(S.tpl===tp.id)return;S.tpl=tp.id;S.sym=tp.symD.slice();S.neg={};tp.negD.forEach(n=>S.neg[n]='n');S.ex={};
+   if(tp.k!=='trauma'){S.mech=[];S.tipo=[];S.hora='';}
+   if(tp.topoD&&!S.topo.length)S.topo=tp.topoD.slice();
+   if(tp.id==='poli'){S.chamado='Sala Vermelha';S.regime='inter';S.equipe='';}
+   renderAll();}},el('b',{text:tp.l}),el('span',{text:tp.s})));});
+ // mecanismo
+ multi('cMech',MECH,'mech','mech');$('#alturaWrap').hidden=!S.mech.includes('queda de altura');
+ multi('cTipo',TIPO,'tipo','tipo');
+ single('cLocalCir',[['neste serviço','Neste serviço'],['em outro serviço','Outro serviço']],'localCir');
+ single('cExame',EXAMES,'exame');
+ // data
+ const trauma=t&&t.k==='trauma';
+ $('#dataTitle').textContent=trauma?'Data e hora do trauma':'Início dos sintomas';
+ single('cData',DATAOPT,'data');
+ $('#diasWrap').hidden=S.data!=='dias';$('#dateWrap').hidden=S.data!=='data';$('#horaWrap').hidden=!trauma;
+ $('#aposWrap').hidden=!t||trauma||t.k==='posop';
+ multi('cApos',APOS,'apos','apos',(v,on)=>{if(!on)return;if(v==='__sem')S.apos.splice(0,S.apos.length,'__sem');else{const i=S.apos.indexOf('__sem');if(i>=0)S.apos.splice(i,1);}});
+ // topografia
+ const sel=$('#selTopo');sel.innerHTML='';
+ if(!S.topo.length)sel.append(el('span',{class:'empty',text:'Nenhuma região marcada'}));
+ S.topo.forEach(k=>sel.append(chip([regName(k),' ×'],false,()=>{toggleIn(S.topo,k);renderAll();})));
+ single('cLado',[['D','Direito'],['E','Esquerdo']],'lado');
+ const rl=$('#cRegL');rl.innerHTML='';REG_L.forEach(([id,n])=>{const k=`${id}|${S.lado||'D'}`;rl.append(chip(n,S.topo.includes(k),()=>{toggleIn(S.topo,k);renderAll();}));});
+ const rm=$('#cRegM');rm.innerHTML='';REG_M.forEach(([id,n])=>{const k=`${id}|`;rm.append(chip(n,S.topo.includes(k),()=>{toggleIn(S.topo,k);renderAll();}));});
+ // dor
+ const ev=$('#cEva');ev.innerHTML='';for(let i=0;i<=10;i++){const v=String(i);ev.append(chip(v,S.eva===v,()=>{S.eva=S.eva===v?'':v;renderAll();},'sm'));}
+ multi('cCar',CAR,'car');single('cIrr',[['sem','Sem irradiação'],['com','Com irradiação']],'irr');$('#irrWrap').hidden=S.irr!=='com';
+ multi('cPiora',PIORA,'piora','piora');
+ multi('cMelhora',MELHORA,'melhora','melhora',(v,on)=>{if(!on)return;if(v==='__sem')S.melhora.splice(0,S.melhora.length,'__sem');else{const i=S.melhora.indexOf('__sem');if(i>=0)S.melhora.splice(i,1);}});
+ // sintomas
+ if(t){$('#symTitle').textContent=t.k==='posop'?'Ferida operatória':t.k==='achado'?'Queixas':'Outros sinais e sintomas';multi('cSym',t.sym,'sym','sym_'+t.id);}
+ // interrogatório
+ const dn=$('#cNeg');dn.innerHTML='';
+ if(t){t.neg.concat(S.custom['neg_'+t.id]||[]).forEach(id=>{const st=S.neg[id];const lab=NEG[id]||id;
+  const tag=st==='n'?'nega':st==='p'?'refere':'';const parts=[];if(tag)parts.push(el('span',{class:'tag',text:tag}));parts.push(lab);
+  dn.append(chip(parts,false,()=>{S.neg[id]=st==='n'?'p':st==='p'?undefined:'n';if(!S.neg[id])delete S.neg[id];
+   renderAll();},st==='n'?'n':st==='p'?'p':'off'));});
+  dn.append(addInput('neg_'+t.id,v=>{S.neg[v]='n';}));}
+ // complementos
+ const de=$('#dEx');de.innerHTML='';
+ if(t)t.ex.forEach(id=>{const e=EX[id];const f=el('div',{class:'field'},el('span',{class:'lbl',text:e.l}));
+  if(e.type==='text'){const i=el('input',{type:'text',id:'ex_'+id,placeholder:e.ph||'',value:S.ex[id]||'',autocomplete:'off',style:'max-width:220px'});
+   i.addEventListener('input',()=>{S.ex[id]=i.value;out();save();});f.append(i);}
+  else{const cc=el('div',{class:'chips'});e.o.forEach(([l])=>{const on=e.multi?(S.ex[id]||[]).includes(l):S.ex[id]===l;
+   cc.append(chip(l,on,()=>{if(e.multi){S.ex[id]=S.ex[id]||[];toggleIn(S.ex[id],l);}else S.ex[id]=on?'':l;renderAll();}));});f.append(cc);}
+  de.append(f);});
+ // dispositivos
+ multi('cApar',APAR,'aparato','aparato');$('#aparOrigWrap').hidden=!S.aparato.length;single('cAparOrig',APAR_ORIG,'aparOrig');
+ // estado atual
+ single('cJejumD',[['hoje','Hoje'],['ontem','Ontem']],'jejumD');
+ single('cNivel',NIVEL,'nivel');multi('cSup',SUP,'suporte');multi('cFonte',FONTE,'fonte');
+ // antecedentes
+ const dh=$('#dHist');dh.innerHTML='';Object.keys(HIST).forEach(k=>{const h=HIST[k];const arr=S.hist[k];
+  const cc=el('div',{class:'chips'});const negOn=arr.includes('nega');
+  cc.append(chip(cap(h.nega),negOn,()=>{S.hist[k]=negOn?[]:['nega'];renderAll();}));
+  h.o.concat(S.custom['h_'+k]||[]).forEach(o=>cc.append(chip(o,arr.includes(o),()=>{const i=arr.indexOf('nega');if(i>=0)arr.splice(i,1);toggleIn(arr,o);renderAll();})));
+  cc.append(addInput('h_'+k,v=>{const i=arr.indexOf('nega');if(i>=0)arr.splice(i,1);if(!arr.includes(v))arr.push(v);}));
+  dh.append(el('div',{class:'field'},el('span',{class:'lbl',text:h.l}),cc));});
+ // enfermaria
+ single('eSit',E.sit,'enf.sit');
+ $('#enfNLbl').textContent=S.enf.sit==='po'?'DPO':'Dia de internação';
+ $('#eprocLbl').textContent=S.enf.sit==='pre'?'Aguardando (procedimento)':'Procedimento';
+ single('eDecub',E.decub,'enf.decub');single('eDiur',E.diur,'enf.diur');single('eEvac',E.evac,'enf.evac');$('#evacWrap').hidden=S.enf.evac!=='ausente';
+ single('eConsc',E.consc,'enf.consc');single('eResp',E.resp,'enf.resp');$('#o2Wrap').hidden=S.enf.resp!=='cat';
+ single('eSono',E.sono,'enf.sono');single('eDieta',E.dieta,'enf.dieta');single('eHd',E.hd,'enf.hd');single('ePerf',E.perf,'enf.perf');single('eCur',E.cur,'enf.cur');
+ single('eDorT',E.dorT,'enf.dorT');single('eDorI',E.dorI,'enf.dorI');multi('eDorF',E.dorF,'enf.dorF');
+ $('#eDorF').append(chip('Controlada c/ analgesia',S.enf.analg==='1',()=>{S.enf.analg=S.enf.analg==='1'?'':'1';renderAll();}));
+ multi('eCtrl',E.ctrl,'enf.ctrl',null,(v,on)=>{if(!on)return;const a=S.enf.ctrl;if(v==='sem')a.splice(0,a.length,'sem');else{const i=a.indexOf('sem');if(i>=0)a.splice(i,1);}});
+ $('#tmaxWrap').hidden=!S.enf.ctrl.includes('febre');
+ multi('eFecha',E.fecha,'enf.fecha');
+ $('#capsBtn').classList.toggle('on',caps);$('#capsBtn').setAttribute('aria-pressed',caps?'true':'false');
+}
+function syncInputs(){document.querySelectorAll('[data-k]').forEach(i=>{if(document.activeElement!==i)i.value=getP(i.dataset.k)||'';});}
+function renderAll(){render();syncInputs();out();paint3d();save();}
+
+/* ---------- texto PS ---------- */
+function mechList(){return S.mech.map(m=>m==='queda de altura'&&S.altura?`queda de altura (aproximadamente ${String(S.altura).replace('.',',')} m)`:m);}
+function autoDevido(t,topo){if(!t)return '';
+ if(t.k==='trauma')return joinPt(mechList())||joinPt(S.tipo);
+ if(t.k==='posop')return S.sym.length?`${joinPt(S.sym)} em ferida operatória`:'alteração em ferida operatória';
+ if(t.k==='achado')return S.achado.trim()?`achado de ${S.achado.trim()}`:'achado de imagem';
+ return topo?`dor em ${topo}`:'';}
+function outPS(){
+ const t=S.tpl?tplById(S.tpl):null;const acomp=S.inf==='acomp'&&S.acomp==='acomp';
+ const REF=acomp?'Acompanhante refere':'Refere',NEGA=acomp?'Acompanhante nega':'Nega',APR=acomp?'Acompanhante refere que paciente apresenta':'Apresenta';
+ const inter=S.regime==='inter';const topo=joinPt(S.topo.map(regName));const P=[];
+ // chamado
+ const intern=S.chamado==='Enfermaria'||S.chamado==='UTI',verm=S.chamado==='Sala Vermelha';
+ if(intern)P.push(S.equipe?`Sou chamado pela equipe de ${S.equipe} para avaliação ortopédica em regime de interconsulta.`:S.chamado==='UTI'?'Sou chamado pela equipe da UTI para avaliação ortopédica em regime de interconsulta.':'Sou chamado para avaliação ortopédica em regime de interconsulta.');
+ else if(inter)P.push(S.chamado?`Sou chamado pela equipe da ${S.chamado} para avaliação ortopédica em regime de interconsulta.`:'Sou chamado para avaliação ortopédica em regime de interconsulta.');
+ else if(S.chamado)P.push(`Avalio paciente a pedido da equipe da ${S.chamado}.`);
+ // P1
+ const p1=[];const cid=S.cidade.trim();
+ if(cid)p1.push(`proveniente de ${cid}`);
+ const og=ORIGEM.find(o=>o[0]===S.origem);if(og)p1.push(og[2]);
+ if(S.acomp==='des')p1.push('desacompanhado');
+ else if(S.acomp==='acomp'){const q=S.acompQuem;p1.push('acompanhado'+(q?(/^(d[aoe]s?|pel[ao]s?)\b|^do\(a\)/i.test(q)?' '+q:' de '+q):''));}
+ const mot=S.motivo.trim();
+ if(intern)p1.push(`internado ${S.chamado==='UTI'?'na UTI':'em enfermaria'}${mot?` por ${mot}`:''}`);
+ else if(verm)p1.push(`aos cuidados da equipe da Sala Vermelha${mot?` por ${mot}`:''}`);
+ else if(inter&&(S.equipe||mot))p1.push(S.equipe?`aos cuidados da ${S.equipe}${mot?` por ${mot}`:''}`:`internado por ${mot}`);
+ const auto=autoDevido(t,topo);$('#devido').placeholder=auto?`automático: ${auto}`:'motivo do encaminhamento';
+ const trauma=t&&t.k==='trauma';const today=new Date();const n=parseInt(S.dias,10);
+ if(trauma){const d=S.devido.trim()||joinPt(mechList());
+  const q=S.data==='hoje'?`hoje (${fmt(today)})`:S.data==='ontem'?`ontem (${fmt(new Date(Date.now()-864e5))})`:S.data==='dias'&&n?`há ${n} dia${n>1?'s':''} (${fmt(new Date(Date.now()-n*864e5))})`:S.data==='data'&&S.dataX?`em ${isoToBr(S.dataX)}`:'';
+  if(d||q||S.hora||S.tipo.length||topo||S.sym.length){let x=`devido a ${d||'trauma'}`;if(q)x+=` ${q}`;if(S.hora)x+=`, aproximadamente às ${hh(S.hora)}`;
+   if(S.tipo.length)x+=`, com ${joinPt(S.tipo)}${topo?` em ${topo}`:''}`;else if(topo)x+=`, com trauma em ${topo}`;
+   x+=`, evoluindo com ${joinPt(['dor'].concat(S.sym))}`;p1.push(x);}}
+ else{const dev=S.devido.trim()||auto;if(dev)p1.push(`devido a ${dev}`);}
+ if(p1.length)P.push(`Paciente ${p1.join(', ')}.`);
+ // P2
+ const H=[];
+ const dStart=S.data==='hoje'?'hoje':S.data==='ontem'?'ontem':S.data==='dias'?(n?`há ${n} dia${n>1?'s':''}`:''):S.data==='data'?(S.dataX?`em ${isoToBr(S.dataX)}`:''):'';
+ if(t&&t.k==='posop'){const pr=S.proc.trim();if(pr||S.dataCir||S.localCir)H.push(`Em pós-operatório de ${pr||'procedimento ortopédico'}${S.dataCir?` realizado em ${isoToBr(S.dataCir)}`:''}${S.localCir?` ${S.localCir}`:''}.`);}
+ if(t&&t.k==='achado'&&(S.achado.trim()||S.exame))H.push(`Apresenta achado de ${S.achado.trim()||'lesão óssea'}${topo?` em ${topo}`:''}${S.exame?` ${S.exame}`:''}.`);
+ if(t){let apos='',semF=false;
+  if(t.k==='trauma'){}
+  else if(t.k!=='posop'){semF=S.apos.includes('__sem');apos=joinPt(S.apos.filter(a=>a!=='__sem'));}
+  if(!trauma&&(dStart||apos||semF)){let s=`${REF} início dos sintomas`+(dStart?` ${dStart}`:'');
+   if(apos)s+=(dStart?', após ':' após ')+apos;else if(semF)s+=', sem fator desencadeante identificado';H.push(s+'.');}}
+ const hasDor=S.eva!==''||S.car.length||S.irr||S.piora.length||S.melhora.length;
+ const dorTopo=t&&(t.k==='trauma'||t.k==='clin')?topo:'';
+ let dorDone=false;
+ if(t&&(hasDor||(dorTopo&&!trauma))){let s=trauma?`${REF} dor`:`${APR} dor`+(dorTopo||(hasDor&&t.k!=='achado'&&topo)?` em ${dorTopo||topo}`:'');
+  if(S.eva!=='')s+=`, de intensidade ${S.eva}/10`;if(S.car.length)s+=`, ${joinPt(S.car)}`;
+  if(S.irr==='sem')s+=', sem irradiação';else if(S.irr==='com')s+=`, com irradiação${S.irrPara.trim()?` para ${S.irrPara.trim()}`:''}`;
+  H.push(s+'.');dorDone=true;
+  const mel=S.melhora.filter(x=>x!=='__sem'),semM=S.melhora.includes('__sem');
+  if(S.piora.length){let x=`${REF} piora ${joinPt(S.piora)}`;if(mel.length)x+=` e melhora com ${joinPt(mel)}`;else if(semM)x+=', sem fatores de melhora';H.push(x+'.');}
+  else if(mel.length)H.push(`${REF} melhora com ${joinPt(mel)}.`);else if(semM)H.push(`${REF} ausência de fatores de melhora.`);}
+ if(t&&!trauma&&S.sym.length){const sy=joinPt(S.sym);
+  if(t.k==='posop')H.push(`${APR} ${sy} em topografia de ferida operatória${topo?` de ${topo}`:''}.`);
+  else if(t.k==='achado')H.push(`${REF} ${sy}.`);
+  else H.push(dorDone?`Evolui com ${sy}.`:`${APR} ${sy}${topo?` em ${topo}`:''}.`);}
+ else if(t&&t.k==='achado'&&(S.achado.trim()||S.exame)&&!dorDone)H.push('Sem queixas ortopédicas no momento.');
+ if(H.length)P.push(H.join(' '));
+ // complementos + dispositivos
+ const X=[];if(t)t.ex.forEach(id=>{const e=EX[id];const v=S.ex[id];if(!v||(Array.isArray(v)&&!v.length))return;
+  if(e.type==='text'){if(v.trim())X.push(e.t.replace('{v}',v.trim()));return;}
+  (e.multi?e.o.filter(o=>v.includes(o[0])):e.o.filter(o=>o[0]===v)).forEach(o=>X.push(o[1]));});
+ const ap=aparTxt();if(ap)X.push(ap);if(X.length)P.push(X.join(' '));
+ // estado
+ const est=[];if(S.nivel)est.push(S.nivel);if(S.gcs.trim())est.push(`Glasgow ${S.gcs.trim()}`);SUP.forEach(s=>{if(S.suporte.includes(s[0]))est.push(s[0]);});
+ const EL=[];if(est.length)EL.push(`No momento, ${joinPt(est)}.`);if(S.fonte.length){const prej=S.nivel&&S.nivel!=='consciente e orientado'||S.suporte.some(x=>/IOT|sedação/.test(x));EL.push(prej?`Anamnese prejudicada; informações obtidas com ${joinPt(S.fonte)}.`:`Informações obtidas com ${joinPt(S.fonte)}.`);}
+ if(EL.length)P.push(EL.join(' '));
+ // interrogatório
+ if(t){const order=t.neg.concat(S.custom['neg_'+t.id]||[]);const pos=order.filter(i=>S.neg[i]==='p').map(i=>NEG[i]||i);const neg=order.filter(i=>S.neg[i]==='n').map(i=>NEG[i]||i);
+  const ni=[];if(pos.length)ni.push(`${REF} ${joinPt(pos)}.`);if(neg.length)ni.push(`${NEGA} ${joinPt(neg)}.`);if(ni.length)P.push(ni.join(' '));}
+ if(S.obs.trim())P.push(S.obs.trim());
+ // AP
+ const jej=S.jejumH?`${hh(S.jejumH)}${S.jejumD==='ontem'?` de ${fmt(new Date(Date.now()-864e5))}`:S.jejumD==='hoje'?` de ${fmt(new Date())}`:''}`:'';
+ const anyH=Object.keys(HIST).some(k=>S.hist[k].length)||!!jej;
+ if(!P.length&&!anyH)return '';
+ let txt=(inter?'# INTERCONSULTA ORTOPEDIA #':'# PS ORTOPEDIA #')+(P.length?'\n\n'+P.join('\n\n'):'');
+ if(anyH){txt+='\n---\n# AP\n'+Object.keys(HIST).map(k=>{const a=S.hist[k];const v=a.includes('nega')?HIST[k].nega:a.join(', ');return `${HIST[k].t}:${v?' '+v:''}`;}).join('\n')+`\nJejum de sólidos e líquidos desde${jej?' '+jej:''}`+'\n-----';}
+ return txt;
+}
+function aparTxt(){if(!S.aparato.length)return '';const fem=S.aparato.length===1&&APAR_F.test(S.aparato[0]);const part=S.aparato.length>1?'instalados':fem?'instalada':'instalado';
+ return `Em uso de ${joinPt(S.aparato)}${S.aparOrig?`, ${part} ${S.aparOrig}`:''}.`;}
+
+/* ---------- texto enfermaria ---------- */
+function outEnf(){
+ const e=S.enf;const P=[];const n=String(e.n||'').trim();const diag=e.diag.trim(),pr=e.eproc.trim();
+ if(e.sit==='po')P.push(`Paciente em ${n?n+'º DPO':'pós-operatório'} de ${pr||'procedimento ortopédico'}${diag?`, por ${diag}`:''}.`);
+ else if(e.sit==='pre')P.push(`Paciente internado${diag?` por ${diag}`:''}, aguardando ${pr||'procedimento cirúrgico'}${n?`, ${n}º dia de internação`:''}.`);
+ else if(e.sit==='cons')P.push(`Paciente internado${diag?` por ${diag}`:''}, em tratamento conservador${n?`, ${n}º dia de internação`:''}.`);
+ else if(diag)P.push(`Paciente internado por ${diag}${n?`, ${n}º dia de internação`:''}.`);
+ const B=[];
+ // posição + eliminações
+ const anyEv=e.decub||e.diur||e.evac||e.consc||e.resp||e.sono||e.dieta||e.hd||e.perf||e.dorI||e.dorT||e.dorF.length||e.cur||e.ctrl.length||e.fecha.length||S.aparato.length;
+ if(anyEv){let s=(e.decub==='polt'||e.decub==='deamb')?`Avalio paciente na enfermaria, ${pick(E.decub,e.decub)}`:`Avalio paciente em leito de enfermaria${e.decub?' '+pick(E.decub,e.decub):''}`;
+  const el2=[];
+  if(e.diur==='presente'&&e.evac==='presente')el2.push('diurese e evacuação presentes');
+  else{const dm={presente:'diurese presente',ausente:'diurese ausente',svd:'diurese por SVD',fralda:'diurese em fralda'};if(e.diur)el2.push(dm[e.diur]);
+   if(e.evac==='presente')el2.push('evacuação presente');else if(e.evac==='ausente'){const d=parseInt(e.evacDias,10);el2.push(`evacuação ausente${d?` há ${d} dia${d>1?'s':''}`:''}`);}}
+  if(el2.length)s+=`, com ${joinPt(el2)}`;B.push(s+'.');}
+ const G=[];if(e.consc)G.push(pick(E.consc,e.consc));
+ if(e.resp)G.push(e.resp==='cat'&&e.o2?`em O2 por cateter nasal a ${String(e.o2).replace('.',',')} L/min`:pick(E.resp,e.resp));
+ ['sono','dieta','hd','perf'].forEach(k=>{if(e[k])G.push(pick(E[k],e[k]));});
+ if(G.length)B.push(cap(G.join(', '))+'.');
+ // dor
+ const topo=joinPt(S.topo.map(regName));const loc=topo?`em ${topo}`:'no membro';const F=e.dorF.length?' '+joinPt(e.dorF):'';const I=e.dorI&&e.dorI!=='sem'?e.dorI:'';const an=e.analg==='1'?', controlada com analgesia':'';
+ if(e.dorI==='sem')B.push(e.dorT==='melhora'?'Refere melhora da dor, sem dor no momento.':'Nega dor no momento.');
+ else if(I||e.dorT||e.dorF.length){
+  if(e.dorT==='melhora')B.push(`Refere melhora da dor${I?`, atualmente ${I}`:''} ${loc}${F}${an}.`);
+  else if(e.dorT==='piora')B.push(`Refere piora da dor${I?`, atualmente ${I}`:''} ${loc}${F}${an}.`);
+  else B.push(`Refere ${e.dorT==='mantem'?'manter ':''}dor${I?' '+I:''} ${loc}${F}${an}.`);}
+ const ap=aparTxt();if(ap)B.push(ap);
+ if(e.cur)B.push(cap(pick(E.cur,e.cur))+'.');
+ const febre=e.ctrl.includes('febre');
+ if(e.ctrl.includes('sem'))B.push('Aos controles da enfermagem sem alterações.');
+ else if(e.ctrl.length){const it=e.ctrl.map(c=>c==='febre'?(e.tmax.trim()?`pico febril de ${e.tmax.trim().replace('.',',')} °C`:'pico febril'):CTRL_T[c]);B.push(`Aos controles da enfermagem, ${joinPt(it)}.`);}
+ if(e.fecha.includes('nega'))B.push(febre?'Nega demais intercorrências.':'Nega febre e demais intercorrências.');
+ if(e.fecha.includes('estavel'))B.push('Mantendo-se estável no período.');
+ if(B.length)P.push(B.join(' '));
+ if(S.obs.trim())P.push(S.obs.trim());
+ return P.join('\n\n');
+}
+function out(){let txt=S.mode==='enf'?outEnf():outPS();if(caps)txt=txt.toLocaleUpperCase('pt-BR');
+ $('#outTxt').value=txt;const dis=!txt;$('#copyBtn').disabled=dis;$('#copyBtn2').disabled=dis;}
+
+/* ---------- entradas ---------- */
+document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>{setP(i.dataset.k,i.value);
+ if(['altura','dias','dataX'].includes(i.dataset.k)||i.dataset.k==='achado'){}out();save();}));
+$('#negaAll').addEventListener('click',()=>{Object.keys(HIST).forEach(k=>{if(!S.hist[k].length)S.hist[k]=['nega'];});renderAll();});
+$('#capsBtn').addEventListener('click',()=>{caps=!caps;try{localStorage.setItem(CAPS,caps?'1':'0')}catch(e){}render();out();});
+
+/* ---------- copiar ---------- */
+let toastT;function toast(m){let t=$('.toast');if(!t){t=el('div',{class:'toast',role:'status'});document.body.append(t);}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1800);}
+function copy(){const ta=$('#outTxt');const txt=ta.value;if(!txt)return;
+ const fb=()=>{ta.focus();ta.select();toast('Texto selecionado; use Copiar do sistema');};
+ try{navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado'),fb);}catch(e){fb();}}
+$('#copyBtn').addEventListener('click',copy);$('#copyBtn2').addEventListener('click',copy);
+$('#seeBtn').addEventListener('click',()=>$('#outAside').scrollIntoView({behavior:'smooth',block:'start'}));
+let resetArm=null;$('#resetBtn').addEventListener('click',e=>{const b=e.currentTarget;
+ if(resetArm){clearTimeout(resetArm);resetArm=null;const custom=S.custom;S=fresh(S.mode);S.custom=custom;b.textContent='Novo paciente';b.classList.remove('warn');renderAll();toast('Formulário limpo');return;}
+ b.textContent='Toque de novo para limpar';b.classList.add('warn');resetArm=setTimeout(()=>{resetArm=null;b.textContent='Novo paciente';b.classList.remove('warn');},3000);});
+
+/* ---------- corpo 3D ---------- */
+let paint3d=()=>{};
+(function init3d(){
+ if(!window.THREE){$('#stage').hidden=true;$('#topoHint').textContent='use a lista';return;}
+ const stage=$('#stage');
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+ stage.prepend(renderer.domElement);
+ const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(32,1,0.1,100);cam.position.set(0,0.1,14.5);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x667788,0.85));const dl=new THREE.DirectionalLight(0xffffff,0.75);dl.position.set(3,6,8);scene.add(dl);
+ const dl2=new THREE.DirectionalLight(0xffffff,0.35);dl2.position.set(-4,2,-8);scene.add(dl2);
+ const body=new THREE.Group();scene.add(body);const meshes=[];
+ function add(geo,x,y,z,data,rz,sz){const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({roughness:.65,metalness:.05}));
+  m.position.set(x,y-3.95,z);if(rz)m.rotation.z=rz;if(sz)m.scale.z=sz;m.userData=data;body.add(m);meshes.push(m);return m;}
+ const S_=(r)=>new THREE.SphereGeometry(r,24,16),C=(a,b,h)=>new THREE.CylinderGeometry(a,b,h,22),B=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+ add(S_(.42),0,7.35,0,{front:'face|',back:'cranio|'});
+ add(C(.17,.19,.42),0,6.8,0,{key:'cerv|'});
+ add(C(.74,.62,1.35),0,5.95,0,{front:'torax|',back:'torac|'},0,.56);
+ add(C(.6,.58,.85),0,4.86,0,{front:'abd|',back:'lomb|'},0,.56);
+ add(C(.6,.68,.58),0,4.15,0,{pelvis:true},0,.62);
+ [[-1,'D'],[1,'E']].forEach(([g,s])=>{
+  add(S_(.27),g*.92,6.45,0,{key:`ombro|${s}`});
+  add(C(.065,.065,.62),g*.45,6.62,.2,{key:`clavicula|${s}`},Math.PI/2);
+  add(C(.17,.15,1.0),g*1.02,5.75,0,{key:`braco|${s}`},g*.06);
+  add(S_(.16),g*1.07,5.15,0,{key:`cotovelo|${s}`});
+  add(C(.14,.11,.95),g*1.12,4.58,0,{key:`antebraco|${s}`},g*.05);
+  add(S_(.115),g*1.15,4.04,0,{key:`punho|${s}`});
+  add(B(.24,.46,.11),g*1.17,3.72,0,{key:`mao|${s}`});
+  add(C(.28,.2,1.5),g*.36,3.15,0,{key:`coxa|${s}`});
+  add(S_(.21),g*.36,2.32,0,{key:`joelho|${s}`});
+  add(C(.18,.12,1.45),g*.36,1.5,0,{key:`perna|${s}`});
+  add(S_(.13),g*.36,.72,0,{key:`tornozelo|${s}`});
+  add(B(.24,.18,.64),g*.36,.56,.17,{key:`pe|${s}`});
+ });
+ const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();let hovered=null;
+ function keysOf(m){const d=m.userData;if(d.key)return[d.key];if(d.pelvis)return['quadril|D','quadril|E','pelve|','sacro|'];return[d.front,d.back];}
+ function pickHit(cx,cy){const r=renderer.domElement.getBoundingClientRect();ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,cam);const hit=ray.intersectObjects(meshes)[0];if(!hit)return null;const d=hit.object.userData;
+  if(d.key)return{m:hit.object,key:d.key};const lp=body.worldToLocal(hit.point.clone());const front=lp.z>0;
+  if(d.pelvis){if(!front&&Math.abs(lp.x)<.22)return{m:hit.object,key:'sacro|'};return{m:hit.object,key:`quadril|${lp.x<0?'D':'E'}`};}
+  return{m:hit.object,key:front?d.front:d.back};}
+ function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888';}
+ function draw(){renderer.render(scene,cam);}
+ paint3d=function(){const base=new THREE.Color(css('--body3d')),hov=new THREE.Color(css('--body3d-hover')),acc=new THREE.Color(css('--accent'));
+  meshes.forEach(m=>{const on=keysOf(m).some(k=>S.topo.includes(k));m.material.color.copy(on?acc:(hovered===m?hov:base));});draw();};
+ function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h);cam.aspect=w/h;
+  const th=2*Math.tan(cam.fov*Math.PI/360);cam.position.z=Math.max(8.5/th,3.4/(th*cam.aspect));cam.updateProjectionMatrix();draw();}
+ new ResizeObserver(size).observe(stage);size();
+ function sides(){const back=Math.cos(body.rotation.y)<0;$('#sideL').textContent=back?'E':'D';$('#sideR').textContent=back?'D':'E';}
+ let down=null;
+ stage.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,rot:body.rotation.y,moved:false};stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing';});
+ stage.addEventListener('pointermove',e=>{
+  if(down){const dx=e.clientX-down.x;if(Math.abs(dx)>6||Math.abs(e.clientY-down.y)>6)down.moved=true;if(down.moved){body.rotation.y=down.rot+dx*0.012;sides();draw();}return;}
+  if(e.pointerType!=='mouse')return;const p=pickHit(e.clientX,e.clientY);const m=p?p.m:null;
+  $('#hoverLbl').textContent=p?cap(regName(p.key)):'Toque numa região';if(m!==hovered){hovered=m;paint3d();}});
+ stage.addEventListener('pointerleave',()=>{if(hovered){hovered=null;paint3d();}});
+ stage.addEventListener('pointerup',e=>{stage.style.cursor='grab';if(down&&!down.moved){const p=pickHit(e.clientX,e.clientY);
+  if(p){toggleIn(S.topo,p.key);$('#hoverLbl').textContent=(S.topo.includes(p.key)?'Marcado: ':'Removido: ')+regName(p.key);renderAll();}}down=null;});
+ stage.addEventListener('pointercancel',()=>{down=null;stage.style.cursor='grab';});
+ $('#vFront').addEventListener('click',()=>{body.rotation.y=0;sides();draw();});
+ $('#vBack').addEventListener('click',()=>{body.rotation.y=Math.PI;sides();draw();});
+ try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>paint3d());}catch(e){}
+ new MutationObserver(()=>paint3d()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+})();
+
+renderAll();
+})();
+</script>
+
+</body></html>

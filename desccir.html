@@ -1,0 +1,521 @@
+<!doctype html><html><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Descrição Cirúrgica</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--tx:#1b2430;--mut:#5d6b7c;--bd:#d5dde6;--ac:#0f6cbd;--ac2:#e3effa;--warn:#b54708;--warnbg:#fff4e5;--ok:#1a7f37;--chip:#f1f4f8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141a;--card:#18202a;--tx:#e6edf3;--mut:#93a1b2;--bd:#2c3846;--ac:#4ea1ff;--ac2:#1c2d40;--warn:#ffb86b;--warnbg:#3a2a14;--ok:#4ac26b;--chip:#222c38}}
+:root[data-theme="dark"]{--bg:#0f141a;--card:#18202a;--tx:#e6edf3;--mut:#93a1b2;--bd:#2c3846;--ac:#4ea1ff;--ac2:#1c2d40;--warn:#ffb86b;--warnbg:#3a2a14;--ok:#4ac26b;--chip:#222c38}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:15px}
+header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--bd);padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+header h1{font-size:16px;margin:0 8px 0 0;white-space:nowrap}
+header h1 span{color:var(--ac)}
+.sel{display:flex;gap:6px;flex:1 1 520px;flex-wrap:wrap}
+.sel select,.sel input{flex:1 1 160px}
+select,input,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:7px;padding:7px 8px;width:100%}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:7px;padding:7px 11px;cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button:hover{filter:brightness(.97)}
+main{display:flex;gap:12px;padding:12px;align-items:flex-start}
+#form{flex:1 1 52%;min-width:0}
+#out{flex:1 1 48%;min-width:0;position:sticky;top:64px}
+fieldset{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:0 0 12px;padding:10px 12px 12px}
+legend{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--ac);padding:0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 12px}
+.fld label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:3px}
+.fld .req{color:var(--warn)}
+.fld input.other{margin-top:4px}
+.hid{display:none!important}
+.wide{grid-column:1/-1}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--chip);border:1px solid var(--bd);border-radius:20px;padding:5px 10px;font-size:13px}
+.chip.on{background:var(--ac2);border-color:var(--ac);color:var(--ac);font-weight:600}
+.step{display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-bottom:1px dashed var(--bd)}
+.step:last-child{border-bottom:0}
+.step input{width:auto;margin-top:3px;flex:0 0 auto}
+.step.off span{opacity:.45;text-decoration:line-through}
+.step span{font-size:14px;line-height:1.35}
+.step b{color:var(--ac);font-weight:600}
+.hint{font-size:12px;color:var(--mut);margin:4px 0 0}
+#texto{min-height:62vh;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.45;resize:vertical}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
+.badge{font-size:12px;font-weight:700;border-radius:20px;padding:3px 9px}
+.badge.pend{background:var(--warnbg);color:var(--warn)}
+.badge.ok{background:var(--ac2);color:var(--ok)}
+#manualMsg{background:var(--warnbg);color:var(--warn);font-size:13px;border-radius:7px;padding:6px 9px;margin-bottom:8px}
+#res{position:absolute;z-index:30;background:var(--card);border:1px solid var(--bd);border-radius:8px;max-height:50vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:280px}
+#res div{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--bd);font-size:14px}
+#res div:hover{background:var(--ac2)}
+#res small{color:var(--mut)}
+.srch{position:relative;flex:1 1 200px}
+.sig{font-size:12px;color:var(--mut);margin:-2px 0 8px}
+.tabs{display:none}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);max-width:520px;width:92vw}
+dialog li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)}
+dialog ul{list-style:none;padding:0;margin:8px 0}
+#printOut{display:none}
+@media (max-width:900px){
+ main{display:block;padding:8px}
+ #out{position:static}
+ .tabs{display:flex;gap:6px;width:100%}
+ .tabs button{flex:1}
+ .tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+ body.vtexto #form{display:none}
+ body:not(.vtexto) #out{display:none}
+ header h1{font-size:15px}
+ .grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+@media print{body *{visibility:hidden}#printOut,#printOut *{visibility:visible}#printOut{display:block;position:absolute;left:0;top:0;white-space:pre-wrap;font:12pt/1.45 Arial,sans-serif;color:#000;padding:1.5cm}}
+</style>
+</head>
+<body>
+<header>
+ <h1><span>OrthoHub</span> · Descrição cirúrgica</h1>
+ <div class="sel">
+  <select id="seg" aria-label="Segmento"></select>
+  <select id="proc" aria-label="Procedimento"></select>
+  <div class="srch"><input id="busca" placeholder="🔎 Buscar procedimento…" autocomplete="off"><div id="res" class="hid"></div></div>
+ </div>
+ <div class="tabs"><button id="tbF" class="on">Formulário</button><button id="tbT">Texto <span id="tbBadge"></span></button></div>
+</header>
+<main>
+ <section id="form"></section>
+ <section id="out">
+  <div class="bar">
+   <button class="pri" id="bCopiar">Copiar</button>
+   <button id="bTxt">Baixar .txt</button>
+   <button id="bPrint">Imprimir</button>
+   <button id="bSalvar">Salvar rascunho</button>
+   <button id="bAbrir">Rascunhos</button>
+   <button id="bNovo">Limpar caso</button>
+   <span id="badge" class="badge"></span>
+  </div>
+  <div id="manualMsg" class="hid">Texto editado manualmente — mudanças no formulário não serão aplicadas. <button id="bRegen">Regenerar</button></div>
+  <textarea id="texto" spellcheck="true"></textarea>
+  <p class="hint">“____” = campo pendente. O texto é um modelo: confira se descreve exatamente o que foi feito antes de assinar.</p>
+ </section>
+</main>
+<dialog id="dlg"><h3 style="margin:4px 0">Rascunhos salvos neste navegador</h3><ul id="dlgList"></ul><button id="dlgFechar">Fechar</button></dialog>
+<div id="printOut"></div>
+
+<script>
+/* ================== OPÇÕES COMUNS ================== */
+const ORI_STD=["manter membro elevado","crioterapia","analgesia conforme prescrição","controle neurovascular do membro","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"];
+const COMUNS={
+lado:{r:"Lateralidade",o:["direito","esquerdo","bilateral","não se aplica"],req:1,g:1},
+anestesia:{r:"Anestesia",o:["raquianestesia","raquianestesia associada a bloqueio periférico","anestesia geral","anestesia geral associada a bloqueio periférico","bloqueio de plexo braquial guiado por ultrassonografia","anestesia local com sedação","anestesia local sem garrote e sem sedação (WALANT)","bloqueio digital","sedação endovenosa"],g:2},
+posicao:{r:"Posicionamento",o:["decúbito dorsal horizontal","decúbito dorsal em mesa de tração, com membro contralateral em abdução e flexão","decúbito dorsal horizontal com o membro superior em mesa de mão","decúbito lateral com coxins de apoio","decúbito ventral com coxins","cadeira de praia","decúbito dorsal horizontal com coxim sob o quadril ipsilateral"],g:2,w:1},
+garrote:{r:"Garrote",o:["sem garrote","garrote pneumático na raiz da coxa a 300 mmHg, após exsanguinação com faixa de Esmarch","garrote pneumático na raiz da coxa a 300 mmHg, sem exsanguinação","garrote pneumático no braço a 250 mmHg, após exsanguinação com faixa de Esmarch","garrote pneumático no braço a 250 mmHg, sem exsanguinação","garrote digital"],g:2,w:1},
+tgarrote:{r:"Tempo de garrote (min)",t:"number",g:2},
+atb:{r:"Antibioticoprofilaxia",o:["cefazolina 2 g EV na indução anestésica","cefazolina 3 g EV na indução anestésica (peso ≥ 120 kg)","cefazolina 30 mg/kg EV na indução anestésica","clindamicina 900 mg EV na indução anestésica (alergia a betalactâmicos)","vancomicina 15 mg/kg EV iniciada 60–120 min antes da incisão","antibioticoterapia para fratura exposta já em curso","antibiótico postergado até a coleta de culturas","sem antibioticoprofilaxia"],g:2,w:1},
+antissepsia:{r:"Antissepsia",o:["degermação com clorexidina degermante 2% e antissepsia com clorexidina alcoólica 0,5%, com colocação de campos estéreis","degermação com clorexidina e antissepsia com clorexidina alcoólica, campos estéreis e campo adesivo iodado","antissepsia com PVPI degermante e tópico, com colocação de campos estéreis"],g:2,w:1},
+rx:{r:"Radioscopia",o:["controle radioscópico final em AP e perfil evidenciando redução e posicionamento do implante adequados","controle radioscópico em AP, perfil e oblíquas evidenciando redução adequada e ausência de implante intra-articular","controle radioscópico após a redução confirmando congruência articular","radioscopia não utilizada"],g:3,w:1},
+hemostasia:{r:"Lavagem e hemostasia",o:["lavagem abundante com SF 0,9% e revisão da hemostasia","lavagem abundante com SF 0,9%, revisão da hemostasia e ácido tranexâmico tópico","liberação do garrote, revisão da hemostasia e lavagem com SF 0,9%"],g:3,w:1},
+dreno:{r:"Drenagem",o:["sem drenagem","dreno de sucção a vácuo nº 3,2 exteriorizado por contra-abertura","dreno de sucção a vácuo nº 4,8 exteriorizado por contra-abertura","dreno de Penrose"],g:3},
+fechamento:{r:"Fechamento",o:["fechamento por planos: fáscia com Vicryl 0, subcutâneo com Vicryl 2-0 e pele com náilon 3-0","fechamento por planos: subcutâneo com Vicryl 2-0 e pele com náilon 4-0","fechamento por planos: fáscia com Vicryl 0, subcutâneo com Vicryl 2-0 e pele com grampos","pele com náilon 4-0 em pontos simples","pele com náilon 3-0 em pontos de Donatti","ferida mantida aberta"],g:3,w:1},
+curativo:{r:"Curativo",o:["curativo oclusivo estéril","curativo compressivo com algodão ortopédico e atadura","curativo com terapia de pressão negativa","curativo com gaze e esparadrapo"],g:3},
+imob:{r:"Imobilização",o:["sem imobilização","tipoia simples","tipoia tipo Velpeau","tipoia com coxim de abdução","tala axilopalmar com cotovelo a 90°","tala antebraquiopalmar","tala antebraquiopalmar com inclusão do polegar","tala antebraquiopalmar com dedos em posição intrínseca-plus","tala dorsal de bloqueio (punho a 20° de flexão, MF a 70°, IF em extensão)","tala com punho e MF em extensão","tala inguinomaleolar","imobilizador de joelho em extensão","órtese articulada de joelho","tala suropodálica","bota gessada","bota imobilizadora","tala suropodálica em equino","colar cervical","órtese toracolombar","aparelho gessado axilopalmar"],g:3},
+sangramento:{r:"Sangramento",o:["mínimo","estimado em 100 mL","estimado em 200 mL","estimado em 300 mL","estimado em 500 mL","estimado em 800 mL","estimado em 1.000 mL"],g:3},
+intercorrencias:{r:"Intercorrências",o:["sem intercorrências","sem intercorrências cirúrgicas ou anestésicas","fratura intraoperatória (descrever)","conversão para redução aberta (descrever)","lesão de estrutura identificada e reparada (descrever)"],g:3,w:1},
+destino:{r:"Destino",o:["sala de recuperação pós-anestésica, estável hemodinamicamente","UTI, estável hemodinamicamente","UTI, intubado e sob sedação","enfermaria (procedimento sob anestesia local)"],g:3,w:1},
+opme:{r:"OPME – etiquetas / lotes",o:["etiquetas anexadas à folha de consumo de sala e ao prontuário"],g:3,w:1},
+ori:{r:"Orientações pós-operatórias",t:"multi",o:["manter membro elevado","crioterapia","analgesia conforme prescrição","controle neurovascular do membro","profilaxia de TEV conforme protocolo","antibioticoprofilaxia por até 24 h","antibioticoterapia conforme culturas/CCIH","radiografia de controle pós-operatória","carga total conforme tolerado","carga parcial com andador/muletas","sem carga no membro operado","mobilização precoce / fisioterapia","precauções de luxação (artroplastia)","retirada do dreno em 24–48 h","curativo a cada 48 h","reabordagem programada em 48–72 h","retorno ambulatorial em 10–14 dias para retirada de pontos"],g:3,w:1}
+};
+
+/* ================== BLOCOS REUTILIZÁVEIS ================== */
+const RED={r:"Redução",o:["fechada","aberta","fechada com auxílio percutâneo (pinças/fios de Kirschner)"]};
+const BLQ={r:"Bloqueio distal",o:["estático","dinâmico"]};
+const DEDO={r:"Dedo",o:["polegar","indicador","médio","anelar","mínimo"]};
+const VOL={r:"Volume de lavagem",o:["3 L","6 L","9 L"]};
+const MS={anestesia:"bloqueio de plexo braquial guiado por ultrassonografia",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"garrote pneumático no braço a 250 mmHg, após exsanguinação com faixa de Esmarch"};
+const WAL={anestesia:"anestesia local sem garrote e sem sedação (WALANT)",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"sem garrote",rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização",destino:"enfermaria (procedimento sob anestesia local)",ori:["manter membro elevado","analgesia conforme prescrição","mobilização precoce / fisioterapia","retorno ambulatorial em 10–14 dias para retirada de pontos"]};
+const MI={anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"garrote pneumático na raiz da coxa a 300 mmHg, após exsanguinação com faixa de Esmarch"};
+const TRAC={anestesia:"raquianestesia",posicao:"decúbito dorsal em mesa de tração, com membro contralateral em abdução e flexão",garrote:"sem garrote",imob:"sem imobilização",ori:["analgesia conforme prescrição","profilaxia de TEV conforme protocolo","mobilização precoce / fisioterapia","carga total conforme tolerado","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]};
+const ESC={anestesia:"anestesia geral associada a bloqueio periférico",posicao:"cadeira de praia",garrote:"sem garrote"};
+const COL={anestesia:"anestesia geral",posicao:"decúbito ventral com coxins",garrote:"sem garrote",dreno:"dreno de sucção a vácuo nº 3,2 exteriorizado por contra-abertura",imob:"sem imobilização",ori:["analgesia conforme prescrição","profilaxia de TEV conforme protocolo","avaliação neurológica seriada","mobilização precoce / fisioterapia","retirada do dreno em 24–48 h","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]};
+const INC={rx:"controle radioscópico após a redução confirmando congruência articular",anestesia:"sedação endovenosa",posicao:"decúbito dorsal horizontal",garrote:"sem garrote"};
+
+/* ================== PROCEDIMENTOS ==================
+ Cada procedimento: id, n (nome), s (SIGTAP), d (padrões dos campos comuns),
+ c (campos específicos), p (passos com {variáveis}), x (sem incisão: omite antissepsia/fechamento).
+ Para incluir um novo, copie um bloco e ajuste. */
+const DB={
+"Coluna":[
+{id:"art_lombar",n:"Artrodese lombar posterior instrumentada",s:"04.08.03.026-7 (1 nível) / 04.08.03.029-1 (2 níveis)",d:{...COL},
+c:{class:{r:"Indicação / classificação",o:["espondilolistese degenerativa (Meyerding I)","espondilolistese ístmica (Meyerding II)","estenose do canal com instabilidade","fratura AO Spine A3/A4","lesão AO Spine B"]},niveis:{r:"Nível(is)",o:["L4-L5","L5-S1","L3-L4","L4-S1","L3-L5"]},via:{r:"Via",o:["incisão mediana posterior com dissecção subperiosteal","via paramediana de Wiltse","percutânea"]},desc:{r:"Descompressão",o:["laminectomia com foraminotomia bilateral","laminotomia unilateral","sem descompressão"]},inter:{r:"Intersomático",o:["sem cage","TLIF com cage de PEEK","PLIF com 2 cages"]},imp:{r:"Implante",o:["parafusos pediculares poliaxiais e hastes de titânio"]},med:{r:"Medidas",o:["parafusos 6,5 × 45 mm; hastes 50 mm","parafusos 6,0 × 45 mm","parafusos 7,0 × 50 mm"]},enx:{r:"Enxerto",o:["autólogo local (lâmina e processos espinhosos)","autólogo associado a aloenxerto","substituto ósseo sintético"]}},
+p:["Marcação radioscópica do(s) nível(is) {niveis}.","Acesso por {via}, com exposição até as facetas articulares e processos transversos.","Passagem dos parafusos pediculares por técnica de mão livre (ponto de entrada na junção do processo transverso com a faceta), com palpação das paredes do trajeto e controle radioscópico.","Descompressão: {desc}, com proteção do saco dural e das raízes.","Artrodese intersomática: {inter}.","Colocação das hastes ({imp}; {med}) com aperto final.","Decorticação e enxertia posterolateral com enxerto {enx}."]},
+{id:"discectomia",n:"Discectomia lombar",s:"04.08.03.039-9 (com microscópio: 04.08.03.038-0)",d:{...COL,dreno:"sem drenagem",fechamento:"fechamento por planos: fáscia com Vicryl 0, subcutâneo com Vicryl 2-0 e pele com náilon 3-0"},
+c:{niveis:{r:"Nível",o:["L4-L5","L5-S1","L3-L4"]},class:{r:"Tipo de hérnia",o:["protrusa","extrusa","sequestrada","recidiva"]},mag:{r:"Magnificação",o:["microscópio cirúrgico","lupa","sem magnificação"]}},
+p:["Marcação radioscópica do nível {niveis}.","Incisão mediana de cerca de 3 cm, abertura da fáscia e afastamento subperiosteal da musculatura paravertebral à {lado}.","Hemilaminotomia e flavectomia sob {mag}.","Afastamento medial da raiz e do saco dural; identificação da hérnia {class}.","Discectomia com remoção dos fragmentos livres; raiz descomprimida e livre ao final.","Hemostasia epidural com bipolar e material hemostático."]},
+{id:"acdf",n:"Artrodese cervical anterior (ACDF)",s:"04.08.03.011-9",d:{...COL,posicao:"decúbito dorsal horizontal com coxim interescapular e leve extensão cervical",imob:"colar cervical"},
+c:{niveis:{r:"Nível(is)",o:["C5-C6","C6-C7","C4-C5","C5-C7"]},class:{r:"Indicação",o:["hérnia discal cervical com radiculopatia","mielopatia espondilótica","lesão discoligamentar traumática (AO Spine B/C)"]},imp:{r:"Implante",o:["cage de PEEK associado a placa cervical anterior","cage stand-alone","cage de titânio associado a placa"]},med:{r:"Medidas",o:["cage 6 mm; placa 22 mm"]}},
+p:["Incisão transversa cervical anterior e abertura do platisma.","Dissecção pelo plano entre o feixe carotídeo (lateral) e traqueia/esôfago (medial); exposição da coluna e afastamento do músculo longo do pescoço.","Confirmação radioscópica do nível {niveis}.","Discectomia completa com retirada dos osteófitos posteriores e abertura do ligamento longitudinal posterior; descompressão medular/radicular.","Preparo das placas terminais e colocação de {imp} ({med})."]},
+{id:"fx_tl",n:"Fixação de fratura toracolombar",s:"a confirmar",d:{...COL},
+c:{niveis:{r:"Nível fraturado",o:["T12","L1","L2","T11"]},class:{r:"Classificação",o:["AO Spine A3","AO Spine A4","AO Spine B1","AO Spine B2","AO Spine C"]},via:{r:"Via",o:["percutânea","aberta mediana posterior"]},fix:{r:"Montagem",o:["curta (1 nível acima e 1 abaixo) com parafusos no nível fraturado","longa (2 níveis acima e 2 abaixo)"]},imp:{r:"Implante",o:["parafusos pediculares e hastes de titânio"]},med:{r:"Medidas",o:["parafusos 6,5 × 45 mm"]}},
+p:["Posicionamento favorecendo a redução postural; confirmação radioscópica do nível {niveis}.","Acesso {via}.","Passagem dos parafusos pediculares com montagem {fix}, sob controle radioscópico.","Redução por ligamentotaxia/lordotização das hastes e aperto final ({imp}; {med}).","Avaliação da necessidade de descompressão e artrodese conforme o padrão da lesão."]}
+],
+"Ombro e braço":[
+{id:"clavicula",n:"Fratura da clavícula – osteossíntese",s:"04.08.01.015-0",d:{...ESC,imob:"tipoia simples"},
+c:{class:{r:"Classificação",o:["AO/OTA 15.2A (simples)","AO/OTA 15.2B (em cunha)","AO/OTA 15.2C (multifragmentária)","terço lateral – Neer II"]},red:RED,via:{r:"Via",o:["incisão longitudinal sobre a borda anteroinferior da clavícula","incisão sobre a borda superior da clavícula"]},interf:{r:"Interfragmentário",o:["parafuso interfragmentário 2,7 mm","sem parafuso interfragmentário"]},imp:{r:"Implante",o:["placa bloqueada anatômica superior 3,5 mm","placa bloqueada anteroinferior 3,5 mm","placa de reconstrução 3,5 mm","placa bloqueada da clavícula lateral"]},med:{r:"Medidas",o:["8 furos, 3 parafusos de cada lado do foco"]}},
+p:["Acesso por {via}, com identificação e preservação, quando possível, dos nervos supraclaviculares.","Exposição do foco com preservação de partes moles e limpeza do hematoma.","Redução {red} com pinças pontiagudas; {interf}.","Fixação com {imp} ({med}), com brocagem protegida (proteção das estruturas subclávias)."]},
+{id:"ac",n:"Luxação acromioclavicular – estabilização",s:"a confirmar",d:{...ESC,imob:"tipoia simples"},
+c:{class:{r:"Classificação",o:["Rockwood III","Rockwood IV","Rockwood V"]},crono:{r:"Tempo de lesão",o:["aguda (< 3 semanas)","crônica"]},imp:{r:"Técnica / implante",o:["placa-gancho","sistema de botões corticais coracoclaviculares","reconstrução coracoclavicular com enxerto tendíneo"]},med:{r:"Medidas",o:["placa-gancho 15 mm, 6 furos"]}},
+p:["Incisão sobre a articulação acromioclavicular; lesão {crono}.","Abertura da fáscia deltotrapezoidal e exposição articular; limpeza do menisco e da fibrose.","Redução da clavícula sob controle visual e radioscópico.","Estabilização com {imp} ({med}).","Reparo cuidadoso da fáscia deltotrapezoidal."]},
+{id:"umero_prox",n:"Fratura do úmero proximal – osteossíntese",s:"04.08.02.033-4",d:{...ESC,imob:"tipoia tipo Velpeau"},
+c:{class:{r:"Classificação",o:["Neer 2 partes","Neer 3 partes","Neer 4 partes","AO/OTA 11A","AO/OTA 11B","AO/OTA 11C"]},red:RED,via:{r:"Via",o:["deltopeitoral, com veia cefálica rebatida lateralmente","transdeltoide anterolateral (MIPO), com identificação do nervo axilar"]},imp:{r:"Implante",o:["placa bloqueada anatômica do úmero proximal","haste intramedular bloqueada do úmero proximal","fios de Kirschner percutâneos"]},med:{r:"Medidas",o:["placa de 3 furos; 6 parafusos cefálicos"]},sut:{r:"Tuberosidades",o:["suturas de alta resistência nos tendões do manguito ancoradas à placa","sem suturas transósseas"]}},
+p:["Acesso {via}.","Exposição do foco e das tuberosidades; reparos de tração nos tendões do manguito rotador.","Redução {red} da cabeça e das tuberosidades, corrigindo o varo e restaurando a altura; fixação provisória com fios de Kirschner.","Fixação com {imp} ({med}), placa posicionada cerca de 8 mm distal ao topo da tuberosidade maior e lateral ao sulco bicipital; parafusos cefálicos subcondrais sem penetração articular (radioscopia dinâmica).","Tuberosidades: {sut}."]},
+{id:"manguito",n:"Reparo artroscópico do manguito rotador",s:"04.08.01.014-2",d:{...ESC,rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tipoia com coxim de abdução",ori:["crioterapia","analgesia conforme prescrição","uso contínuo da tipoia","mobilização passiva conforme protocolo","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Lesão",o:["supraespinal completa pequena (< 1 cm)","média (1–3 cm)","grande (3–5 cm)","maciça (> 5 cm)","parcial articular (PASTA)"]},tec:{r:"Técnica",o:["fileira simples","dupla fileira (suture-bridge)","transóssea equivalente"]},imp:{r:"Âncoras",o:["âncoras de titânio","âncoras bioabsorvíveis","âncoras all-suture"]},med:{r:"Quantidade",o:["1 âncora medial e 1 lateral","2 âncoras mediais e 2 laterais"]},assoc:{r:"Associados",o:["sem procedimentos associados","acromioplastia","tenotomia do bíceps","tenodese do bíceps"]}},
+p:["Portal posterior e inventário articular: lesão {class}.","Portais anterior e lateral; bursectomia subacromial.","Procedimentos associados: {assoc}.","Preparo da tuberosidade maior com decorticação superficial.","Reparo em {tec} com {imp} ({med}); tendão reduzido à sua pegada sem tensão excessiva."]},
+{id:"diaf_umero",n:"Fratura diafisária do úmero – osteossíntese",s:"04.08.02.039-3",d:{anestesia:"anestesia geral associada a bloqueio periférico",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",imob:"tipoia simples"},
+c:{class:{r:"Classificação",o:["AO/OTA 12A","AO/OTA 12B","AO/OTA 12C"]},red:RED,via:{r:"Via",o:["anterolateral (Henry), com divisão longitudinal do braquial","posterior (Gerwin), com identificação do nervo radial","MIPO anterior"]},radial:{r:"Nervo radial",o:["identificado, protegido e íntegro","não exposto (via sem exposição do nervo)","identificado com contusão, em continuidade"]},imp:{r:"Implante",o:["placa LCP 4,5 mm estreita","placa bloqueada 3,5 mm","haste intramedular anterógrada bloqueada"]},med:{r:"Medidas",o:["placa de 10 furos"]}},
+p:["Acesso {via}.","Nervo radial: {radial}.","Exposição e limpeza do foco; redução {red}.","Fixação com {imp} ({med}), com no mínimo 3 parafusos bicorticais de cada lado da fratura."]},
+{id:"lux_gu",n:"Redução incruenta de luxação glenoumeral sob anestesia",s:"a confirmar",x:1,d:{...INC,imob:"tipoia simples",ori:["analgesia conforme prescrição","controle neurovascular do membro","radiografia de controle pós-operatória","retorno ambulatorial em 7 dias"]},
+c:{class:{r:"Tipo",o:["anterior","posterior","inferior (luxatio erecta)"]},tec:{r:"Manobra",o:["tração-contratração","Kocher","FARES","Milch","Stimson"]},assoc:{r:"Lesão associada",o:["sem fratura associada","fratura da tuberosidade maior","lesão de Hill-Sachs/Bankart ósseo"]}},
+p:["Redução pela manobra de {tec}, com relaxamento muscular adequado.","Constatação clínica de redução e teste de estabilidade.","Achados: luxação {class}, {assoc}.","Exame neurovascular pós-redução: função do nervo axilar e pulso radial preservados."]}
+],
+"Cotovelo":[
+{id:"olecrano",n:"Fratura do olécrano – osteossíntese",s:"04.08.02.041-5 (confirmar)",d:{anestesia:"anestesia geral associada a bloqueio periférico",posicao:"decúbito lateral com coxins de apoio",garrote:"garrote pneumático no braço a 250 mmHg, após exsanguinação com faixa de Esmarch",imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Classificação",o:["Mayo I","Mayo IIA","Mayo IIB","Mayo IIIA","Mayo IIIB"]},red:RED,imp:{r:"Implante",o:["banda de tensão com 2 fios de Kirschner 2,0 mm e cerclagem com fio de aço 1,0 mm","placa bloqueada anatômica do olécrano","parafuso intramedular com banda de tensão"]},med:{r:"Medidas",o:["placa de 6 furos"]}},
+p:["Incisão posterior longitudinal contornando o olécrano lateralmente; nervo ulnar identificado e protegido.","Exposição do foco, limpeza do hematoma e redução {red} da superfície articular, conferida visualmente e por radioscopia; fixação provisória com pinça pontiaguda.","Fixação com {imp} ({med}); fios com pontas sepultadas sob o tríceps quando em banda de tensão.","Teste de flexoextensão com fixação estável."]},
+{id:"cabeca_radio",n:"Fratura da cabeça do rádio",s:"04.08.02.041-5 (confirmar)",d:{...MS,imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Classificação",o:["Mason II","Mason III","Mason IV"]},via:{r:"Via",o:["Kocher (entre ancôneo e extensor ulnar do carpo)","Kaplan (entre extensor comum dos dedos e extensores radiais do carpo)"]},imp:{r:"Tratamento",o:["2 parafusos sem cabeça 2,0/2,4 mm","placa bloqueada de cabeça do rádio na zona de segurança","prótese modular de cabeça do rádio","ressecção da cabeça do rádio"]},med:{r:"Medidas",o:["parafusos 2,4 × 20 mm"]},lcl:{r:"Complexo ligamentar lateral",o:["íntegro","reparado com âncora no epicôndilo lateral"]}},
+p:["Acesso lateral pela via de {via}, com antebraço em pronação para proteção do nervo interósseo posterior.","Artrotomia e exposição da cabeça do rádio; retirada de fragmentos livres.","Tratamento: {imp} ({med}), respeitando a zona de segurança.","Complexo ligamentar lateral: {lcl}.","Teste de estabilidade e de pronossupinação sem bloqueio mecânico."]},
+{id:"umero_distal",n:"Fratura do úmero distal (adulto)",s:"a confirmar",d:{anestesia:"anestesia geral",posicao:"decúbito lateral com coxins de apoio",garrote:"garrote pneumático no braço a 250 mmHg, sem exsanguinação",imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Classificação",o:["AO/OTA 13A","AO/OTA 13B","AO/OTA 13C1","AO/OTA 13C2","AO/OTA 13C3"]},via:{r:"Via",o:["posterior com osteotomia em chevron do olécrano","paratricipital (Alonso-Llames)","triceps-splitting"]},ulnar:{r:"Nervo ulnar",o:["identificado, protegido e transposto anteriormente","identificado e mantido in situ"]},imp:{r:"Implante",o:["dupla placa bloqueada anatômica (paralelas)","dupla placa bloqueada (perpendiculares 90-90)"]},med:{r:"Medidas",o:["placa medial 7 furos; placa lateral 7 furos"]}},
+p:["Incisão posterior; nervo ulnar {ulnar}.","Acesso {via}.","Redução da superfície articular e fixação provisória com fios de Kirschner.","Fixação das colunas medial e lateral com {imp} ({med}).","Síntese da osteotomia do olécrano, quando realizada.","Teste de amplitude de movimento com fixação estável."]},
+{id:"lux_cotovelo",n:"Luxação / fratura-luxação do cotovelo",s:"04.08.02.054-7",d:{...MS,imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Tipo",o:["luxação simples instável","tríade terrível","fratura-luxação transolecraniana","Monteggia posterior"]},imp:{r:"Tratamento",o:["reparo do complexo ligamentar lateral com âncoras","fixação do coronoide com sutura em laço e reparo ligamentar","fixador externo articulado","transfixação temporária com fios"]},med:{r:"Medidas",o:["2 âncoras de 3,5 mm"]}},
+p:["Redução da luxação e avaliação de estabilidade sob radioscopia.","Acesso lateral (Kocher), associado a acesso medial conforme as lesões.","Tratamento sequencial de profundo para superficial (coronoide, cabeça do rádio e complexo ligamentar lateral): {imp} ({med}).","Reavaliação da estabilidade em flexoextensão e pronossupinação."]}
+],
+"Antebraço":[
+{id:"ambos_ossos",n:"Fratura diafisária do antebraço",s:"04.08.02.042-3 (2 ossos) / 04.08.02.043-1 (1 osso)",d:{...MS,imob:"sem imobilização"},
+c:{class:{r:"Classificação",o:["AO/OTA 2R2/2U2 A","AO/OTA 2R2/2U2 B","AO/OTA 2R2/2U2 C","Monteggia (Bado I)","Galeazzi"]},ossos:{r:"Osso(s)",o:["rádio e ulna","rádio","ulna"]},viar:{r:"Via do rádio",o:["volar de Henry (entre braquiorradial e flexor radial do carpo)","dorsal de Thompson, com proteção do nervo interósseo posterior","rádio não abordado"]},red:RED,imp:{r:"Implante",o:["placas LCP 3,5 mm","placas bloqueadas 3,5 mm"]},med:{r:"Medidas",o:["rádio 7 furos; ulna 7 furos"]},druj:{r:"ARUD / ARUP",o:["estáveis após a fixação","ARUD instável – transfixação rádio-ulnar com fios em supinação","cabeça do rádio reduzida após fixação da ulna"]}},
+p:["Rádio: via {viar}, com mínima desperiostização.","Ulna: via direta subcutânea entre o extensor ulnar do carpo e o flexor ulnar do carpo.","Redução {red} de {ossos}, com restauração do comprimento e do arco radial.","Fixação com {imp} ({med}), com no mínimo 6 corticais de cada lado do foco.","Pronossupinação completa; {druj}."]}
+],
+"Punho e mão":[
+{id:"radio_volar",n:"Fratura do rádio distal – placa volar",s:"04.08.02.040-7",d:{...MS,imob:"tala antebraquiopalmar"},
+c:{class:{r:"Classificação",o:["AO/OTA 2R3A2","AO/OTA 2R3A3","AO/OTA 2R3B","AO/OTA 2R3C1","AO/OTA 2R3C2","AO/OTA 2R3C3"]},red:RED,imp:{r:"Implante",o:["placa volar bloqueada de ângulo variável","placa volar bloqueada de ângulo fixo"]},med:{r:"Medidas",o:["placa de 3 furos; 6 parafusos distais 2,4 mm"]},estiloide:{r:"Estiloide ulnar",o:["não fixada","fixada com banda de tensão"]},arud:{r:"ARUD",o:["estável","instável – fixada"]}},
+p:["Incisão volar sobre o flexor radial do carpo (Henry modificada); FRC rebatido ulnarmente com proteção do nervo mediano e artéria radial protegida radialmente.","Desinserção do pronador quadrado em L e exposição do foco.","Redução {red}, com fixação provisória com fios de Kirschner; restauração da inclinação radial, da altura radial e da inclinação volar.","Fixação com {imp} ({med}), proximal à linha watershed; parafusos distais subcondrais conferidos em perfil inclinado 20° e incidência dorsal tangencial, sem violar a cortical dorsal.","Estiloide ulnar {estiloide}; ARUD {arud}.","Reparo do pronador quadrado quando possível."]},
+{id:"radio_fios",n:"Fratura do rádio distal – fios de Kirschner / fixador externo",s:"04.08.02.040-7",d:{...MS,garrote:"sem garrote",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tala antebraquiopalmar",ori:["manter membro elevado","controle neurovascular do membro","curativo dos fios a cada 48 h","radiografia de controle pós-operatória","retorno ambulatorial em 7 dias"]},
+c:{class:{r:"Classificação",o:["AO/OTA 2R3A2","AO/OTA 2R3A3","AO/OTA 2R3C1","Frykman"]},red:{...RED,v:"fechada"},imp:{r:"Fixação",o:["fios de Kirschner percutâneos intrafocais (Kapandji)","fios de Kirschner cruzados (estiloide radial e canto dorsoulnar)","fixador externo transarticular rádio–2º metacarpiano","fixador externo associado a fios de Kirschner"]},med:{r:"Medidas",o:["3 fios de 1,8 mm","2 fios de 1,8 mm"]},pontas:{r:"Pontas dos fios",o:["pontas dobradas e mantidas exteriorizadas","pontas sepultadas no subcutâneo"]}},
+p:["Redução {red} sob tração e manobras, conferida por radioscopia.","Miniincisões e dissecção romba até o osso, com proteção do ramo superficial do nervo radial.","Estabilização com {imp} ({med}).","Fios: {pontas}."]},
+{id:"escafoide",n:"Fratura do escafoide – parafuso",s:"a confirmar",d:{...MS,imob:"tala antebraquiopalmar com inclusão do polegar"},
+c:{class:{r:"Classificação",o:["Herbert B1 (oblíqua)","Herbert B2 (cintura, completa)","Herbert B3 (polo proximal)","pseudartrose (Herbert D)"]},via:{r:"Via",o:["percutânea volar pelo tubérculo do escafoide","percutânea dorsal com punho em flexão","aberta volar","aberta dorsal"]},imp:{r:"Implante",o:["parafuso canulado sem cabeça de compressão"]},med:{r:"Medidas",o:["2,4 × 24 mm","3,0 × 22 mm"]},enx:{r:"Enxerto",o:["sem enxerto","enxerto do rádio distal","enxerto da crista ilíaca"]}},
+p:["Acesso {via}.","Fio-guia no eixo central do escafoide, confirmado em AP, perfil e oblíquas.","Medição e fresagem; introdução de {imp} ({med}), 2 mm mais curto que a medida e sepultado sob a cartilagem.","Enxerto: {enx}."]},
+{id:"metacarpo",n:"Fratura de metacarpiano",s:"04.08.02.037-7",d:{...MS,imob:"tala antebraquiopalmar com dedos em posição intrínseca-plus"},
+c:{qual:{r:"Metacarpiano",o:["1º","2º","3º","4º","5º"]},class:{r:"Padrão",o:["colo","diáfise transversa","diáfise oblíqua/espiral","base / fratura-luxação carpometacarpiana","Bennett","Rolando"]},red:RED,imp:{r:"Fixação",o:["fios de Kirschner intramedulares (bouquet)","fios de Kirschner transversos ao metacarpiano adjacente","miniplaca bloqueada 2,0 mm","parafusos interfragmentários 2,0 mm","parafuso intramedular sem cabeça"]},med:{r:"Medidas",o:["2 fios de 1,5 mm","placa de 6 furos"]},rot:{r:"Rotação",o:["sem desvio rotacional (cascata digital preservada)","desvio rotacional corrigido"]}},
+p:["Fratura do {qual} metacarpiano ({class}).","Redução {red} sob radioscopia.","Fixação com {imp} ({med}).","Avaliação da cascata digital pelo efeito tenodese: {rot}."]},
+{id:"falange",n:"Fratura de falange",s:"04.08.02.034-2",d:{...MS,imob:"tala antebraquiopalmar com dedos em posição intrínseca-plus"},
+c:{dedo:DEDO,class:{r:"Padrão",o:["falange proximal – diáfise","falange proximal – base","falange média","falange distal / mallet ósseo","intra-articular condilar"]},red:RED,imp:{r:"Fixação",o:["fios de Kirschner 1,0/1,2 mm cruzados","fios de Kirschner longitudinais","miniparafusos 1,5 mm","miniplaca 1,5 mm","bloqueio de extensão (Ishiguro)"]},med:{r:"Medidas",o:["2 fios de 1,0 mm"]}},
+p:["Fratura do dedo {dedo}: {class}.","Redução {red} sob radioscopia.","Fixação com {imp} ({med}).","Conferência da rotação e da mobilidade passiva."]},
+{id:"tunel",n:"Síndrome do túnel do carpo – liberação",s:"a confirmar (subgrupo 04.03)",d:{...WAL},
+c:{tec:{r:"Técnica",o:["aberta, por incisão palmar de 3 cm em linha com o 4º raio","miniaberta","endoscópica"]},achados:{r:"Achados",o:["nervo mediano com constrição e hiperemia em ampulheta","sinovite flexora","sem alterações anatômicas"]}},
+p:["Incisão {tec}, respeitando a linha cardinal de Kaplan e a prega distal do punho.","Abertura da fáscia palmar e secção completa do ligamento transverso do carpo sob visão direta, até a fáscia antebraquial distal.","Nervo mediano liberado e preservado, com atenção ao ramo motor tenar; achados: {achados}."]},
+{id:"gatilho",n:"Dedo em gatilho – liberação da polia A1",s:"04.08.02.032-6",d:{...WAL},
+c:{dedo:DEDO,class:{r:"Quinnell",o:["grau II","grau III","grau IV"]},tec:{r:"Técnica",o:["aberta, por incisão transversa sobre a polia A1","percutânea com agulha"]}},
+p:["Técnica {tec} no dedo {dedo} ({class}).","Dissecção romba com proteção dos feixes neurovasculares digitais.","Secção longitudinal completa da polia A1, preservando a polia A2.","Teste de flexoextensão ativa sem gatilho residual."]},
+{id:"flexores",n:"Tenorrafia de flexores",s:"04.08.06.048-4",d:{...MS,rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tala dorsal de bloqueio (punho a 20° de flexão, MF a 70°, IF em extensão)",ori:["manter membro elevado","analgesia conforme prescrição","não remover a tala","reabilitação precoce com terapeuta da mão","retorno ambulatorial em 7 dias"]},
+c:{dedo:DEDO,zona:{r:"Zona (Verdan)",o:["I","II","III","IV","V"]},tend:{r:"Tendão(ões)",o:["FPD","FPD e FSD","FLP"]},tec:{r:"Tenorrafia",o:["sutura central de 4 passadas com fio 3-0 associada a sutura epitendínea contínua 6-0","sutura central de 6 passadas associada a sutura epitendínea 6-0","sutura de Kessler modificada 3-0 associada a sutura epitendínea 5-0"]},nervo:{r:"Nervos / vasos",o:["nervos digitais íntegros","neurorrafia digital com náilon 9-0","neurorrafia digital radial e ulnar com náilon 9-0"]}},
+p:["Ampliação da ferida em zigue-zague (Bruner) no dedo {dedo}, zona {zona}.","Identificação dos cotos ({tend}); recuperação do coto proximal por ordenha ou contraincisão; preservação das polias A2 e A4.","Tenorrafia: {tec}.","Lesões associadas: {nervo}.","Teste de excursão tendínea sem gap e sem engatamento nas polias."]},
+{id:"extensores",n:"Tenorrafia de extensores",s:"04.08.06.045-0",d:{...MS,rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tala com punho e MF em extensão"},
+c:{dedo:DEDO,zona:{r:"Zona",o:["I","II","III","IV","V","VI","VII","VIII"]},tec:{r:"Tenorrafia",o:["sutura em U/8 com fio 4-0 inabsorvível","sutura de Kessler modificada 3-0 associada a sutura epitendínea","reinserção com âncora óssea (zona I)"]}},
+p:["Exploração da ferida no dedo {dedo}, zona {zona}; identificação dos cotos do tendão extensor.","Tenorrafia: {tec}.","Teste da tenodese com extensão completa."]},
+{id:"amput_dedo",n:"Amputação / regularização de dedo",s:"04.08.06.004-2",d:{anestesia:"bloqueio digital",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"garrote digital",rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização",destino:"enfermaria (procedimento sob anestesia local)"},
+c:{dedo:DEDO,nivel:{r:"Nível",o:["falange distal","interfalângica distal","falange média","interfalângica proximal","falange proximal"]},tec:{r:"Cobertura",o:["regularização óssea com fechamento primário","retalho V-Y (Atasoy)","retalho cross-finger","retalho de avanço volar (Moberg)"]}},
+p:["Desbridamento da ferida do dedo {dedo}, nível {nivel}.","Regularização do coto ósseo com rugina e lima, sem espículas.","Nervos digitais tracionados e seccionados proximalmente (prevenção de neuroma); ligadura das artérias digitais.","Cobertura: {tec}."]}
+],
+"Pelve e quadril":[
+{id:"tt_haste",n:"Fratura transtrocanteriana – haste cefalomedular",s:"04.08.05.063-2",d:{...TRAC},
+c:{class:{r:"Classificação",o:["AO/OTA 31A1","AO/OTA 31A2","AO/OTA 31A3"]},red:{...RED,v:"fechada"},imp:{r:"Implante",o:["haste cefalomedular curta","haste cefalomedular longa"]},med:{r:"Medidas",o:["130° × 10 × 200 mm; parafuso cefálico 90 mm","125° × 10 × 360 mm; lâmina cefálica 95 mm"]},blq:BLQ},
+p:["Redução {red} em mesa de tração com rotação interna, conferida em AP e perfil.","Incisão de cerca de 4 cm proximal ao trocânter maior, abertura da fáscia lata e divulsão do glúteo médio.","Fio-guia no ápice do trocânter maior, fresagem proximal e introdução de {imp} ({med}).","Fio-guia cefálico em posição centro-centro com TAD < 25 mm; introdução do parafuso/lâmina cefálica e compressão do foco.","Bloqueio distal {blq}."]},
+{id:"tt_dhs",n:"Fratura transtrocanteriana – DHS",s:"04.08.05.063-2",d:{...TRAC},
+c:{class:{r:"Classificação",o:["AO/OTA 31A1","AO/OTA 31A2.1"]},red:{...RED,v:"fechada"},imp:{r:"Implante",o:["DHS 135° com placa de 2 furos","DHS 135° com placa de 4 furos","DHS associado a placa de estabilização trocantérica"]},med:{r:"Medidas",o:["parafuso deslizante 90 mm"]}},
+p:["Redução {red} em mesa de tração, conferida em AP e perfil.","Incisão lateral sobre o fêmur proximal; abertura da fáscia lata e elevação do vasto lateral.","Fio-guia com guia de 135° em posição centro-centro na cabeça femoral, TAD < 25 mm.","Fresagem e introdução do parafuso deslizante; acoplamento da placa ({imp}; {med}) fixada com parafusos corticais 4,5 mm.","Compressão do foco."]},
+{id:"colo_canulados",n:"Fratura do colo do fêmur – osteossíntese",s:"04.08.05.048-9",d:{...TRAC},
+c:{class:{r:"Classificação",o:["Garden I","Garden II","Garden III (paciente jovem)","Pauwels II","Pauwels III"]},red:{...RED,v:"fechada"},imp:{r:"Implante",o:["3 parafusos canulados 7,0 mm em triângulo invertido","DHS associado a parafuso antirrotatório","sistema de fixação do colo femoral (FNS)"]},med:{r:"Medidas",o:["parafusos de 90, 95 e 100 mm"]}},
+p:["Redução {red} em mesa de tração, conferida em AP e perfil.","Miniincisão lateral; fios-guia paralelos, o inferior apoiado no calcar e o posterior junto à cortical posterior do colo.","Medição e introdução de {imp} ({med}), com compressão do foco e roscas além do traço de fratura."]},
+{id:"hemiartro",n:"Artroplastia parcial do quadril",s:"04.08.04.005-0",d:{anestesia:"raquianestesia",posicao:"decúbito lateral com coxins de apoio",garrote:"sem garrote",imob:"sem imobilização",ori:["analgesia conforme prescrição","profilaxia de TEV conforme protocolo","precauções de luxação (artroplastia)","carga total conforme tolerado","mobilização precoce / fisioterapia","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["Garden III","Garden IV"]},via:{r:"Via",o:["posterior, com reparo dos rotadores externos e da cápsula","lateral direta (Hardinge)","anterior direta"]},imp:{r:"Implante",o:["prótese bipolar cimentada","prótese bipolar não cimentada","prótese unipolar cimentada"]},med:{r:"Medidas",o:["cabeça 46 mm; haste nº __"]}},
+p:["Acesso {via}; nervo isquiático protegido na via posterior.","Capsulotomia, luxação da cabeça femoral, osteotomia do colo e medição da cabeça ({med}).","Preparo do canal femoral com raspas progressivas; redução de prova com avaliação de estabilidade, comprimento e offset.","Implantação de {imp}; na cimentada, técnica de 3ª geração com restritor e cimentação retrógrada, com aviso prévio à anestesia.","Redução, teste de estabilidade e reparo capsular/muscular."]},
+{id:"atq",n:"Artroplastia total do quadril primária",s:"04.08.04.009-2 (não cimentada/híbrida) / 04.08.04.008-4 (cimentada)",d:{anestesia:"raquianestesia",posicao:"decúbito lateral com coxins de apoio",garrote:"sem garrote",hemostasia:"lavagem abundante com SF 0,9%, revisão da hemostasia e ácido tranexâmico tópico",imob:"sem imobilização",ori:["analgesia conforme prescrição","profilaxia de TEV conforme protocolo","precauções de luxação (artroplastia)","carga total conforme tolerado","mobilização precoce / fisioterapia","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Diagnóstico",o:["coxartrose primária","osteonecrose da cabeça femoral (Ficat III/IV)","displasia do quadril (Crowe I/II)","fratura do colo em idoso ativo","artrite inflamatória"]},via:{r:"Via",o:["posterior, com reparo dos rotadores externos e da cápsula","lateral direta (Hardinge)","anterior direta"]},imp:{r:"Implante",o:["não cimentada (acetábulo press-fit e haste não cimentada)","híbrida (acetábulo não cimentado e haste cimentada)","cimentada","com cúpula de dupla mobilidade"]},med:{r:"Medidas",o:["acetábulo 52 mm; haste nº __; cabeça 32 mm +0; par cerâmica-polietileno"]}},
+p:["Acesso {via}.","Capsulotomia, luxação e osteotomia do colo conforme planejamento pré-operatório.","Exposição acetabular, fresagem progressiva até osso subcondral sangrante e implantação do componente acetabular com inclinação de cerca de 40° e anteversão de 15–20°.","Preparo femoral com raspas progressivas; redução de prova com testes de estabilidade, comprimento e offset.","Implantação definitiva: {imp} ({med}); redução.","Reparo da cápsula e dos rotadores/glúteo médio."]},
+{id:"lux_quadril",n:"Redução incruenta de luxação do quadril",s:"a confirmar",x:1,d:{...INC,anestesia:"raquianestesia",imob:"sem imobilização",ori:["controle neurovascular do membro","tomografia de controle pós-redução","sem carga no membro operado","retorno ambulatorial em 7 dias"]},
+c:{class:{r:"Tipo",o:["posterior simples (Thompson-Epstein I)","posterior com fratura da parede (Thompson-Epstein II/III)","Pipkin","anterior","luxação de artroplastia"]},tec:{r:"Manobra",o:["Allis","Bigelow","Captain Morgan","Stimson"]}},
+p:["Redução pela manobra de {tec}, com relaxamento muscular adequado.","Luxação {class}.","Teste de estabilidade em flexão, adução e rotação interna.","Exame neurovascular pós-redução com função do nervo isquiático preservada."]},
+{id:"pelve",n:"Fratura do anel pélvico – fixação",s:"04.08.04.026-2",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",imob:"sem imobilização"},
+c:{class:{r:"Classificação",o:["Young-Burgess APC II","Young-Burgess APC III","Young-Burgess LC I","Young-Burgess LC II","Tile B","Tile C"]},fix:{r:"Fixação",o:["placa na sínfise púbica","fixador externo supra-acetabular","parafuso iliossacral percutâneo","placa na sínfise e parafuso iliossacral"]},med:{r:"Medidas",o:["placa de reconstrução 3,5 mm de 6 furos","parafuso iliossacral 7,3 × 90 mm"]}},
+p:["Redução do anel pélvico por manobras externas, conferida em AP, inlet e outlet.","Sínfise: incisão de Pfannenstiel, abertura da linha alba sem desinserir o reto abdominal, proteção da bexiga no espaço de Retzius e atenção à corona mortis.","Iliossacral: fio-guia em zona segura no corpo de S1, conferido em inlet, outlet e perfil sacral verdadeiro.","Fixação: {fix} ({med})."]}
+],
+"Fêmur":[
+{id:"femur_haste",n:"Fratura diafisária do fêmur – haste",s:"04.08.05.051-9",d:{...TRAC,anestesia:"raquianestesia"},
+c:{class:{r:"Classificação",o:["AO/OTA 32A","AO/OTA 32B","AO/OTA 32C","exposta Gustilo I/II","exposta Gustilo IIIA"]},red:RED,entrada:{r:"Ponto de entrada",o:["fossa piriforme","ponta do trocânter maior","intercondilar (retrógrada)"]},imp:{r:"Implante",o:["haste intramedular anterógrada bloqueada","haste retrógrada bloqueada"]},med:{r:"Medidas",o:["11 × 380 mm"]},blq:BLQ},
+p:["Incisão proximal ao trocânter; ponto de entrada na {entrada}.","Redução {red} e passagem do fio-guia de ponta romba através do foco até a região metafisária distal.","Fresagem progressiva até 1–1,5 mm acima do diâmetro da haste.","Introdução de {imp} ({med}).","Bloqueio proximal com guia e distal à mão livre (técnica do círculo perfeito); bloqueio {blq}.","Conferência de comprimento e rotação comparada ao lado contralateral."]},
+{id:"femur_distal",n:"Fratura supracondiliana / intercondiliana do fêmur",s:"04.08.05.062-4 (supra) / 04.08.05.058-6 (côndilos)",d:{...MI,garrote:"sem garrote",imob:"sem imobilização"},
+c:{class:{r:"Classificação",o:["AO/OTA 33A","AO/OTA 33B","AO/OTA 33C1","AO/OTA 33C2","AO/OTA 33C3","periprotética"]},via:{r:"Via",o:["MIPO lateral com incisão distal de cerca de 6 cm","parapatelar lateral (artrotomia)","transpatelar mínima para haste retrógrada"]},red:RED,imp:{r:"Implante",o:["placa bloqueada anatômica do fêmur distal","haste retrógrada bloqueada","placa lateral associada a placa medial"]},med:{r:"Medidas",o:["placa de 13 furos"]}},
+p:["Acesso {via}.","Redução articular quando necessária, com fios de Kirschner e parafusos de compressão fora da área da placa.","Redução {red} do bloco metafisário à diáfise, restaurando comprimento, eixo e rotação.","Fixação com {imp} ({med}), com controle radioscópico do posicionamento no côndilo lateral."]}
+],
+"Joelho":[
+{id:"planalto",n:"Fratura do planalto tibial",s:"04.08.05.055-1",d:{...MI,imob:"órtese articulada de joelho",ori:["manter membro elevado","crioterapia","controle neurovascular do membro","sem carga no membro operado","profilaxia de TEV conforme protocolo","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["Schatzker I","Schatzker II","Schatzker III","Schatzker IV","Schatzker V","Schatzker VI"]},via:{r:"Via",o:["anterolateral (incisão em taco de hóquei, artrotomia submeniscal)","posteromedial (entre gastrocnêmio medial e pata de ganso)","dupla via (anterolateral e posteromedial)","percutânea assistida por artroscopia"]},red:RED,menisco:{r:"Menisco",o:["menisco íntegro","menisco desinserido – reinserido","lesão meniscal suturada"]},enx:{r:"Defeito metafisário",o:["sem enxerto","aloenxerto esponjoso","substituto ósseo","autoenxerto de crista ilíaca"]},imp:{r:"Implante",o:["placa bloqueada anatômica lateral 3,5 mm","placa de suporte posteromedial","dupla placa","parafusos canulados 6,5 mm subcondrais (rafting)"]},med:{r:"Medidas",o:["placa de 7 furos"]}},
+p:["Acesso {via}.","Artrotomia submeniscal e avaliação da superfície articular; menisco: {menisco}.","Elevação do fragmento afundado por janela cortical; redução {red} da superfície articular conferida sob visão direta e radioscopia.","Preenchimento do defeito metafisário: {enx}.","Fixação com {imp} ({med}), com parafusos subcondrais em rafting.","Teste de estabilidade em extensão em varo e valgo."]},
+{id:"patela",n:"Fratura da patela",s:"04.08.05.052-7",d:{...MI,imob:"imobilizador de joelho em extensão"},
+c:{class:{r:"Padrão",o:["transversa","cominutiva","polo inferior","vertical"]},imp:{r:"Fixação",o:["banda de tensão com 2 fios de Kirschner 2,0 mm e cerclagem em 8","2 parafusos canulados 4,0 mm associados a banda de tensão","patelectomia parcial com reinserção do tendão patelar","placa bloqueada de patela"]}},
+p:["Incisão longitudinal mediana sobre a patela.","Exposição do foco e dos retináculos; lavagem articular e limpeza do hematoma.","Redução anatômica da superfície articular, conferida por palpação através da lesão retinacular e radioscopia em perfil.","Fixação: {imp}.","Reparo dos retináculos medial e lateral; flexão até 90° com fixação estável."]},
+{id:"lca",n:"Reconstrução do LCA",s:"04.08.05.016-0",d:{...MI,posicao:"decúbito dorsal horizontal com suporte lateral e apoio para flexão de 90°",rx:"radioscopia não utilizada",fechamento:"fechamento por planos: subcutâneo com Vicryl 2-0 e pele com náilon 4-0",imob:"órtese articulada de joelho",ori:["crioterapia","analgesia conforme prescrição","profilaxia de TEV conforme protocolo","carga parcial com andador/muletas","fisioterapia conforme protocolo de LCA","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{enx:{r:"Enxerto",o:["flexores (semitendíneo e grácil) quádruplos","tendão patelar osso-tendão-osso","tendão quadricipital"]},tec:{r:"Túnel femoral",o:["pelo portal anteromedial","transtibial","outside-in"]},imp:{r:"Fixação",o:["botão cortical ajustável femoral e parafuso de interferência tibial","parafusos de interferência femoral e tibial"]},med:{r:"Medidas",o:["enxerto 8,5 mm; parafuso tibial 9 × 30 mm"]},assoc:{r:"Lesões associadas",o:["sem lesões associadas","meniscectomia parcial medial","meniscectomia parcial lateral","sutura meniscal","tenodese anterolateral"]}},
+p:["Portais anterolateral e anteromedial; inventário articular confirmando lesão do LCA; tratamento associado: {assoc}.","Retirada e preparo do enxerto: {enx}.","Túnel femoral {tec} no footprint anatômico; túnel tibial no centro do remanescente tibial.","Passagem do enxerto e fixação com {imp} ({med}), com o joelho em 20–30° de flexão e tensão no enxerto.","Lachman e pivot-shift negativos; ausência de impacto no intercôndilo em extensão."]},
+{id:"menisco",n:"Artroscopia de joelho – menisco",s:"04.08.05.089-6 (meniscectomia) / 04.08.05.088-8 (sutura)",d:{...MI,posicao:"decúbito dorsal horizontal com suporte lateral e apoio para flexão de 90°",rx:"radioscopia não utilizada",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização",ori:["crioterapia","analgesia conforme prescrição","carga total conforme tolerado","mobilização precoce / fisioterapia","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{menisc:{r:"Menisco",o:["medial","lateral","medial e lateral"]},lesao:{r:"Lesão",o:["alça de balde","radial","horizontal","longitudinal periférica","complexa","da raiz posterior"]},trat:{r:"Tratamento",o:["meniscectomia parcial com preservação da borda periférica","sutura meniscal all-inside","sutura meniscal inside-out","reparo transtibial da raiz"]},cond:{r:"Cartilagem",o:["sem lesões condrais","condropatia Outerbridge II","condropatia Outerbridge III","condropatia Outerbridge IV"]}},
+p:["Portais anterolateral e anteromedial; inventário articular sistemático.","Lesão do menisco {menisc}, tipo {lesao}; cartilagem: {cond}.","Tratamento: {trat}.","Lavagem articular e aspiração dos debris."]},
+{id:"atj",n:"Artroplastia total do joelho primária",s:"04.08.05.006-3",d:{...MI,hemostasia:"lavagem abundante com SF 0,9%, revisão da hemostasia e ácido tranexâmico tópico",imob:"sem imobilização",ori:["crioterapia","analgesia conforme prescrição","profilaxia de TEV conforme protocolo","carga total conforme tolerado","mobilização precoce / fisioterapia","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Diagnóstico",o:["gonartrose Ahlbäck III","gonartrose Ahlbäck IV","gonartrose Ahlbäck V","artrite inflamatória","osteonecrose"]},via:{r:"Artrotomia",o:["parapatelar medial","subvasto","midvasto"]},imp:{r:"Implante",o:["prótese cimentada com preservação do LCP (CR)","prótese cimentada posteroestabilizada (PS)","prótese PS fixada com cimento com antibiótico"]},med:{r:"Medidas",o:["fêmur nº __; tíbia nº __; polietileno __ mm"]},patela:{r:"Patela",o:["não substituída, com denervação periférica","substituída"]}},
+p:["Incisão mediana longitudinal e artrotomia {via}; luxação lateral da patela.","Ressecção dos meniscos e do LCA; remoção de osteófitos.","Corte tibial perpendicular ao eixo mecânico com guia extramedular; corte femoral distal com guia intramedular em valgo de 5–6°.","Balanço dos espaços em flexão e extensão; cortes anterior, posterior, chanfros e caixa intercondilar quando PS.","Componentes de prova com alinhamento, estabilidade e trajeto patelar adequados; patela {patela}.","Cimentação dos componentes definitivos ({imp}; {med}), remoção do excesso de cimento e colocação do polietileno definitivo."]},
+{id:"artrite_joelho",n:"Artrite séptica do joelho – lavagem",s:"04.08.06.055-7",d:{...MI,garrote:"garrote pneumático na raiz da coxa a 300 mmHg, sem exsanguinação",atb:"antibiótico postergado até a coleta de culturas",rx:"radioscopia não utilizada",fechamento:"pele com náilon 3-0 em pontos simples",dreno:"dreno de sucção a vácuo nº 4,8 exteriorizado por contra-abertura",imob:"sem imobilização",ori:["antibioticoterapia conforme culturas/CCIH","analgesia conforme prescrição","mobilização precoce / fisioterapia","retirada do dreno em 24–48 h","reavaliação clínica e laboratorial (PCR) seriada"]},
+c:{tec:{r:"Acesso",o:["artroscópico (portais anterolateral e anteromedial)","artrotomia parapatelar medial"]},liq:{r:"Líquido articular",o:["purulento","turvo","sero-hemático"]},gachter:{r:"Gächter",o:["estágio I","estágio II","estágio III","estágio IV"]},vol:VOL},
+p:["Acesso {tec}; saída de líquido {liq}.","Coleta de líquido sinovial e de fragmentos de sinóvia para cultura, Gram e anatomopatológico; antibiótico iniciado após a coleta.","Achados: {gachter}; sinovectomia parcial e desbridamento de fibrina.","Lavagem articular com {vol} de SF 0,9%."]}
+],
+"Perna e tíbia":[
+{id:"tibia_haste",n:"Fratura diafisária da tíbia – haste",s:"04.08.05.050-0",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",imob:"sem imobilização",ori:["manter membro elevado","controle neurovascular do membro","vigilância de síndrome compartimental","profilaxia de TEV conforme protocolo","carga parcial com andador/muletas","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["AO/OTA 42A","AO/OTA 42B","AO/OTA 42C","exposta Gustilo I","exposta Gustilo II","exposta Gustilo IIIA"]},red:RED,via:{r:"Via",o:["suprapatelar com joelho semiestendido (15–20°)","infrapatelar transtendínea","parapatelar medial"]},imp:{r:"Implante",o:["haste bloqueada fresada","haste bloqueada não fresada"]},med:{r:"Medidas",o:["10 × 330 mm"]},blq:BLQ},
+p:["Acesso {via}; ponto de entrada na face medial da espinha tibial lateral, na borda anterior da linha articular.","Redução {red} e passagem central do fio-guia; fresagem progressiva.","Introdução de {imp} ({med}); bloqueio {blq}.","Conferência de alinhamento e rotação; palpação dos compartimentos ao final."]},
+{id:"pilao_fix",n:"Pilão tibial / fratura-luxação do tornozelo – fixador transarticular",s:"a confirmar",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização",ori:["manter membro elevado","controle neurovascular do membro","cuidados com os pinos do fixador","tomografia após o fixador para planejamento","sem carga no membro operado"]},
+c:{class:{r:"Classificação",o:["Rüedi-Allgöwer I","Rüedi-Allgöwer II","Rüedi-Allgöwer III","AO/OTA 43C"]},imp:{r:"Fixador",o:["fixador externo em delta (tíbia–calcâneo)","fixador tíbia–calcâneo–1º metatarsiano"]},med:{r:"Pinos",o:["2 pinos de Schanz 5,0 mm na tíbia e pino transcalcaneano"]}},
+p:["Redução por ligamentotaxia sob radioscopia, restaurando comprimento e alinhamento.","Pinos tibiais anteromediais fora da futura zona de abordagem; pino transcalcaneano de medial para lateral (proteção do feixe tibial posterior).","Montagem do {imp} ({med}).","Fíbula: avaliada para fixação no tempo definitivo."]}
+],
+"Tornozelo e pé":[
+{id:"unimaleolar",n:"Fratura unimaleolar do tornozelo",s:"04.08.05.057-8",d:{...MI,imob:"tala suropodálica",ori:["manter membro elevado","controle neurovascular do membro","sem carga no membro operado","profilaxia de TEV conforme protocolo","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["Weber A","Weber B","Weber C","maléolo medial isolado"]},red:RED,imp:{r:"Fixação",o:["parafuso interfragmentário 3,5 mm e placa 1/3 de tubo de neutralização","placa bloqueada anatômica da fíbula distal","2 parafusos canulados 4,0 mm (maléolo medial)","banda de tensão (maléolo medial)"]},med:{r:"Medidas",o:["placa de 6 furos"]},sind:{r:"Sindesmose",o:["estável ao teste de Cotton e de rotação externa sob radioscopia","instável – fixada com parafuso 3,5 mm em 3 corticais","instável – fixada com botão de sutura"]}},
+p:["Acesso sobre o maléolo fraturado, com proteção do nervo fibular superficial (lateral) ou da veia safena (medial).","Limpeza do foco e redução {red}.","Fixação com {imp} ({med}).","Sindesmose: {sind}."]},
+{id:"bimaleolar",n:"Fratura bi/trimaleolar do tornozelo",s:"04.08.05.049-7",d:{...MI,imob:"tala suropodálica",ori:["manter membro elevado","controle neurovascular do membro","sem carga no membro operado","profilaxia de TEV conforme protocolo","radiografia de controle pós-operatória","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["Weber B bimaleolar","Weber C bimaleolar","trimaleolar","Lauge-Hansen SER IV","Lauge-Hansen PER IV","fratura-luxação"]},red:RED,imp:{r:"Fíbula",o:["parafuso interfragmentário 3,5 mm e placa 1/3 de tubo de neutralização","placa bloqueada anatômica da fíbula distal"]},med:{r:"Medidas",o:["placa de 6 furos"]},medial:{r:"Maléolo medial",o:["2 parafusos canulados 4,0 mm","banda de tensão","não fixado (estável)"]},posterior:{r:"Maléolo posterior",o:["não fixado","parafusos anteroposteriores","placa posterolateral"]},sind:{r:"Sindesmose",o:["estável ao teste de Cotton e de rotação externa sob radioscopia","instável – fixada com parafuso 3,5 mm em 3 corticais","instável – fixada com botão de sutura"]}},
+p:["Via lateral com proteção do nervo fibular superficial; redução {red} da fíbula e fixação com {imp} ({med}).","Via medial com proteção da veia safena; limpeza do periósteo interposto e fixação: {medial}.","Maléolo posterior: {posterior}.","Sindesmose: {sind}."]},
+{id:"aquiles",n:"Ruptura do tendão calcâneo – tenorrafia",s:"a confirmar",d:{...MI,posicao:"decúbito ventral com coxins",rx:"radioscopia não utilizada",imob:"tala suropodálica em equino",ori:["manter membro elevado","sem carga no membro operado","profilaxia de TEV conforme protocolo","reabilitação funcional conforme protocolo","retorno ambulatorial em 10–14 dias para retirada de pontos"]},
+c:{tec:{r:"Técnica",o:["aberta por incisão posteromedial","minimamente invasiva/percutânea"]},dist:{r:"Distância da inserção",o:["2 cm","4 cm","5 cm","6 cm"]},sut:{r:"Sutura",o:["Krackow com fio de alta resistência nº 2 em cada coto","Bunnell com fio de alta resistência","Kessler modificada"]}},
+p:["Técnica {tec}, com proteção do nervo sural.","Abertura do paratendão; lesão a cerca de {dist} da inserção; regularização dos cotos.","Tenorrafia com {sut}, tensão ajustada com o tornozelo em equino fisiológico comparado ao contralateral.","Sutura do paratendão com fio absorvível."]},
+{id:"calcaneo",n:"Fratura do calcâneo",s:"04.08.05.053-5",d:{...MI,posicao:"decúbito lateral com coxins de apoio",imob:"tala suropodálica",ori:["manter membro elevado","sem carga no membro operado","profilaxia de TEV conforme protocolo","radiografia de controle pós-operatória","retorno ambulatorial em 14 dias para retirada de pontos"]},
+c:{class:{r:"Classificação",o:["Sanders II","Sanders III","Sanders IV","em bico de pato (avulsão da tuberosidade)"]},via:{r:"Via",o:["seio do tarso","lateral estendida em L","percutânea"]},red:RED,imp:{r:"Implante",o:["placa de calcâneo de baixo perfil","parafusos canulados percutâneos","placa bloqueada lateral de calcâneo"]},med:{r:"Medidas",o:["placa de 6 furos"]}},
+p:["Acesso {via}, com proteção dos tendões fibulares e do nervo sural.","Redução {red} da faceta posterior e restauração do ângulo de Böhler, da altura e da largura, com desvarização da tuberosidade.","Fixação com {imp} ({med}), conferida em perfil, axial e Broden."]},
+{id:"metatarso",n:"Fratura de metatarsiano",s:"a confirmar",d:{...MI,imob:"bota imobilizadora"},
+c:{qual:{r:"Metatarsiano",o:["1º","2º","3º","4º","5º"]},class:{r:"Padrão",o:["diáfise","colo","base do 5º – zona II (Jones)","fratura-luxação tarsometatarsiana"]},red:RED,imp:{r:"Fixação",o:["fios de Kirschner intramedulares","parafuso intramedular canulado 4,5–5,5 mm","miniplaca bloqueada"]},med:{r:"Medidas",o:["parafuso 5,0 × 50 mm"]}},
+p:["Fratura do {qual} metatarsiano ({class}).","Redução {red} sob radioscopia.","Fixação com {imp} ({med})."]},
+{id:"amput_pe",n:"Amputação do pé / desarticulação de artelho",s:"04.08.05.002-0",d:{...MI,garrote:"sem garrote",atb:"antibiótico postergado até a coleta de culturas",rx:"radioscopia não utilizada",fechamento:"pele com náilon 3-0 em pontos de Donatti",imob:"sem imobilização",ori:["antibioticoterapia conforme culturas/CCIH","curativo a cada 48 h","sem carga no membro operado","controle glicêmico","retorno ambulatorial em 14 dias"]},
+c:{nivel:{r:"Nível",o:["desarticulação de artelho","amputação de raio","transmetatarsiana","Lisfranc","Chopart","Syme"]},motivo:{r:"Indicação",o:["pé diabético infectado","isquemia crítica","trauma"]},feridaf:{r:"Ferida",o:["fechamento primário","mantida parcialmente aberta"]}},
+p:["Indicação: {motivo}; amputação em nível {nivel}.","Desbridamento de todo tecido desvitalizado e coleta de fragmentos ósseos e de partes moles para cultura.","Regularização óssea, tenotomia e ressecção de tendões expostos; hemostasia.","Ferida: {feridaf}."]}
+],
+"Procedimentos gerais":[
+{id:"exposta",n:"Desbridamento de fratura exposta e fixador externo",s:"a confirmar (desbridamento fora do 04.08)",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",atb:"antibioticoterapia para fratura exposta já em curso",fechamento:"ferida mantida aberta",imob:"sem imobilização",ori:["manter membro elevado","controle neurovascular do membro","antibioticoterapia conforme protocolo de fratura exposta","profilaxia antitetânica conferida","reabordagem programada em 48–72 h","cuidados com os pinos do fixador"]},
+c:{local:{r:"Segmento",o:["tíbia","fêmur","antebraço","úmero","tornozelo"]},class:{r:"Gustilo (após desbridamento)",o:["I","II","IIIA","IIIB","IIIC"]},vol:VOL,imp:{r:"Fixador",o:["fixador externo linear unilateral","fixador externo em ponte transarticular","fixador externo circular"]},med:{r:"Pinos",o:["pinos de Schanz 5,0 mm, 2 por segmento"]},feridaf:{r:"Ferida",o:["fechamento primário","mantida aberta com terapia de pressão negativa","mantida aberta com curativo e reabordagem em 48–72 h"]}},
+p:["Ampliação longitudinal da ferida da {local}; desbridamento excisional sistemático da pele, subcutâneo, fáscia e músculo (cor, consistência, contratilidade e sangramento) e de fragmentos ósseos desvitalizados.","Classificação final: Gustilo {class}.","Lavagem com {vol} de SF 0,9% em baixa pressão.","Estabilização com {imp} ({med}), com pinos fora da zona de lesão e da futura via definitiva.","Ferida: {feridaf}."]},
+{id:"fixador",n:"Fixador externo – controle de danos",s:"sem código isolado no 04.08 (confirmar)",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização",ori:["manter membro elevado","controle neurovascular do membro","cuidados com os pinos do fixador","profilaxia de TEV conforme protocolo"]},
+c:{local:{r:"Local",o:["fêmur","tíbia","joelho (fêmur–tíbia, transarticular)","tornozelo (tíbia–calcâneo)","pelve (supra-acetabular)","úmero","punho"]},imp:{r:"Montagem",o:["linear unilateral","em ponte transarticular","em delta"]},med:{r:"Pinos",o:["pinos de Schanz 5,0 mm, 2 por segmento"]}},
+p:["Redução fechada grosseira restaurando comprimento, eixo e rotação, sob radioscopia.","Pinos inseridos em zonas seguras do segmento {local}, por miniincisões com dissecção romba e brocagem prévia.","Montagem do fixador {imp} ({med}) com barras e conectores, aperto final."]},
+{id:"ret_material",n:"Retirada de placa e/ou parafusos",s:"04.08.06.037-9",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",imob:"sem imobilização"},
+c:{local:{r:"Segmento",o:["tornozelo","tíbia","fêmur","antebraço","úmero","clavícula","olécrano","patela"]},class:{r:"Indicação",o:["material sintomático","infecção","falha do implante","consolidação, a pedido do paciente"]},imp:{r:"Material",o:["placa e parafusos","haste e parafusos de bloqueio","parafusos isolados","fios e cerclagem"]}},
+p:["Acesso pela cicatriz prévia no segmento {local}.","Exposição e retirada de {imp}; indicação: {class}.","Coleta de material para cultura quando houver suspeita de infecção.","Curetagem dos trajetos."]},
+{id:"ret_fixador",n:"Retirada de fixador externo / fios",s:"04.08.06.036-0 (fixador) / 04.08.06.035-2 (fios)",x:1,d:{anestesia:"sedação endovenosa",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",rx:"radioscopia não utilizada",imob:"sem imobilização",ori:["curativo dos trajetos a cada 48 h","retorno ambulatorial em 7 dias"]},
+c:{imp:{r:"Material",o:["fixador externo e pinos de Schanz","fios de Kirschner"]},local:{r:"Segmento",o:["tíbia","fêmur","punho","tornozelo","úmero"]}},
+p:["Antissepsia dos trajetos.","Retirada de {imp} do segmento {local}.","Curetagem e lavagem dos trajetos; curativo oclusivo."]},
+{id:"amput_mi",n:"Amputação de membro inferior",s:"04.08.05.001-2",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",rx:"radioscopia não utilizada",dreno:"dreno de Penrose",curativo:"curativo compressivo com algodão ortopédico e atadura",imob:"sem imobilização",ori:["analgesia conforme prescrição","profilaxia de TEV conforme protocolo","posicionamento do coto em extensão","curativo a cada 48 h","reabilitação / encaminhamento para protetização"]},
+c:{nivel:{r:"Nível",o:["transtibial (retalho posterior longo de Burgess)","transfemoral (retalhos anterior e posterior em boca de peixe, com miodese)","desarticulação do joelho"]},motivo:{r:"Indicação",o:["isquemia crítica","infecção","trauma (lesão não reconstruível)"]},tempo:{r:"Tempo",o:["definitiva","em guilhotina (1º tempo)"]}},
+p:["Amputação {tempo}, nível {nivel}; indicação: {motivo}.","Incisão conforme o desenho dos retalhos e secção muscular.","Identificação e ligadura dupla dos vasos principais.","Nervos tracionados, ligados e seccionados proximalmente.","Osteotomia com bisel anterior e regularização das bordas ósseas.","Mioplastia/miodese sobre o coto ósseo e fechamento do retalho sem tensão."]},
+{id:"fasciotomia",n:"Fasciotomia",s:"a confirmar",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",fechamento:"ferida mantida aberta",curativo:"curativo com terapia de pressão negativa",imob:"sem imobilização",ori:["manter membro na altura do coração","controle neurovascular do membro","dosagem seriada de CPK e função renal","reabordagem programada em 48–72 h"]},
+c:{local:{r:"Local",o:["perna – 2 incisões, 4 compartimentos","coxa","antebraço (volar com liberação do túnel do carpo e dorsal)","pé","mão"]},achados:{r:"Achados",o:["musculatura viável (cor, consistência, contratilidade e sangramento preservados)","necrose muscular parcial, desbridada"]}},
+p:["Fasciotomia: {local}, com incisões amplas.","Perna: incisão anterolateral 2 cm anterior à fíbula com abertura dos compartimentos anterior e lateral (proteção do nervo fibular superficial) e incisão posteromedial 2 cm posterior à tíbia com abertura dos compartimentos posterior superficial e profundo (proteção da veia safena).","Avaliação muscular: {achados}.","Pele mantida aberta."]},
+{id:"infeccao",n:"Desbridamento de infecção óssea / de sítio cirúrgico",s:"04.08.06.010-7 / 04.08.06.009-3 / 04.08.06.062-0 (confirmar)",d:{anestesia:"raquianestesia",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",atb:"antibiótico postergado até a coleta de culturas",dreno:"dreno de sucção a vácuo nº 4,8 exteriorizado por contra-abertura",imob:"sem imobilização",ori:["antibioticoterapia conforme culturas/CCIH","curativo a cada 48 h","retirada do dreno em 24–48 h","reavaliação clínica e laboratorial (PCR) seriada"]},
+c:{tipo:{r:"Situação",o:["osteomielite crônica – sequestrectomia e curetagem","infecção de sítio cirúrgico com implante estável – desbridamento e retenção do implante","infecção periprotética aguda – DAIR com troca dos componentes modulares","retirada de material infectado"]},local:{r:"Segmento",o:["tíbia","fêmur","quadril","joelho","tornozelo","úmero","antebraço"]},cult:{r:"Culturas",o:["5 amostras de tecido para cultura, com instrumentais distintos","3 amostras de tecido para cultura"]},abx:{r:"Antibiótico local",o:["sem antibiótico local","cimento com antibiótico (pérolas/espaçador)","sulfato de cálcio com antibiótico"]},vol:VOL},
+p:["Acesso pela cicatriz prévia no segmento {local}; {tipo}.","Coleta de {cult}; antibiótico iniciado após a coleta.","Desbridamento de todo tecido desvitalizado e do osso necrótico até osso sangrante.","Lavagem com {vol} de SF 0,9%.","Antibiótico local: {abx}."]}
+],
+"Ortopedia pediátrica":[
+{id:"supracond",n:"Fratura supracondiliana do úmero – fixação percutânea",s:"a confirmar",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"sem garrote",atb:"cefazolina 30 mg/kg EV na indução anestésica",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tala axilopalmar com cotovelo a 90°",ori:["manter membro elevado","controle neurovascular do membro","vigilância de síndrome compartimental","radiografia de controle pós-operatória","retorno ambulatorial em 7 dias","retirada dos fios em 3–4 semanas"]},
+c:{class:{r:"Gartland",o:["IIA","IIB","III","IV","flexão"]},red:{r:"Redução",o:["fechada","aberta por via anterior"]},imp:{r:"Fixação",o:["2 fios de Kirschner laterais divergentes","3 fios de Kirschner laterais divergentes","fios cruzados com miniincisão medial e proteção do nervo ulnar"]},med:{r:"Fios",o:["1,6 mm","2,0 mm"]},pontas:{r:"Pontas",o:["pontas dobradas e mantidas exteriorizadas","pontas sepultadas no subcutâneo"]},perfusao:{r:"Perfusão final",o:["mão rosada com pulso radial palpável","mão rosada sem pulso radial palpável – vigilância","mão sem perfusão – exploração da artéria braquial"]}},
+p:["Redução {red} com tração, correção dos desvios coronais e flexão com pressão no olécrano; conferida pelo ângulo de Baumann e pela linha umeral anterior.","Fixação com {imp} ({med}), com afastamento adequado no foco; estabilidade confirmada sob radioscopia dinâmica.","Fios: {pontas}.","Perfusão: {perfusao}."]},
+{id:"condilo",n:"Fratura do côndilo lateral do úmero",s:"a confirmar",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"garrote pneumático no braço a 250 mmHg, sem exsanguinação",atb:"cefazolina 30 mg/kg EV na indução anestésica",imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Classificação",o:["Jakob II","Jakob III","Milch I","Milch II"]},red:{r:"Redução",o:["aberta por via lateral (Kocher)","fechada percutânea"]},imp:{r:"Fixação",o:["2 fios de Kirschner divergentes","parafuso canulado metafisário"]},med:{r:"Medidas",o:["fios 1,6 mm","parafuso 4,0 mm"]}},
+p:["Redução {red}, evitando dissecção posterior (preservação da vascularização do fragmento).","Redução anatômica da superfície articular, conferida visualmente e por radioscopia (artrograma se necessário).","Fixação com {imp} ({med})."]},
+{id:"ten_antebraco",n:"Fratura do antebraço infantil – hastes flexíveis (TEN)",s:"04.08.02.042-3",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal com o membro superior em mesa de mão",garrote:"sem garrote",atb:"cefazolina 30 mg/kg EV na indução anestésica",fechamento:"pele com náilon 4-0 em pontos simples",imob:"tala axilopalmar com cotovelo a 90°"},
+c:{class:{r:"Padrão",o:["diáfise de ambos os ossos","diáfise do rádio","Monteggia pediátrica"]},red:RED,imp:{r:"Implante",o:["hastes elásticas de titânio no rádio e na ulna","haste elástica de titânio no rádio"]},med:{r:"Diâmetro",o:["2,0 mm","2,5 mm","1,5 mm"]}},
+p:["Rádio: miniincisão distal-radial proximal à fise, com proteção do ramo superficial do nervo radial; haste pré-curvada introduzida retrogradamente.","Ulna: entrada anterógrada pela metáfise proximal (olécrano lateral).","Redução {red} e passagem das hastes ({imp}, {med}) através dos focos.","Pontas cortadas e mantidas junto à cortical; pronossupinação completa."]},
+{id:"ten_femur",n:"Fratura do fêmur infantil – hastes flexíveis (TEN)",s:"04.08.05.051-9",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal",garrote:"sem garrote",atb:"cefazolina 30 mg/kg EV na indução anestésica",fechamento:"pele com náilon 4-0 em pontos simples",imob:"sem imobilização"},
+c:{class:{r:"Padrão",o:["transversa","oblíqua curta","espiral"]},red:{...RED,v:"fechada"},imp:{r:"Implante",o:["2 hastes elásticas de titânio retrógradas (medial e lateral)"]},med:{r:"Diâmetro",o:["3,0 mm","3,5 mm","4,0 mm"]}},
+p:["Miniincisões medial e lateral 2,5 cm proximais à fise femoral distal.","Hastes pré-curvadas com mesma curvatura, cada uma com diâmetro de cerca de 40% do canal medular ({imp}, {med}).","Redução {red} e progressão das hastes até a região proximal, configurando dupla curvatura (estabilidade elástica).","Pontas cortadas junto à cortical, sem irritar partes moles; conferência de comprimento e rotação."]},
+{id:"artrite_quadril_ped",n:"Artrite séptica do quadril (criança) – artrotomia",s:"04.08.06.055-7",d:{anestesia:"anestesia geral",posicao:"decúbito dorsal horizontal com coxim sob o quadril ipsilateral",garrote:"sem garrote",atb:"antibiótico postergado até a coleta de culturas",rx:"radioscopia não utilizada",dreno:"dreno de Penrose",imob:"sem imobilização",ori:["antibioticoterapia conforme culturas/CCIH","analgesia conforme prescrição","retirada do dreno em 24–48 h","reavaliação clínica e laboratorial (PCR) seriada"]},
+c:{via:{r:"Via",o:["anterior (Smith-Petersen modificada / bikini)","anterolateral"]},liq:{r:"Líquido",o:["purulento","turvo","sero-hemático"]},vol:VOL},
+p:["Acesso {via}, com proteção do nervo cutâneo femoral lateral.","Capsulotomia em janela; saída de líquido {liq}.","Coleta de líquido e de sinóvia para cultura, Gram e anatomopatológico; antibiótico iniciado após a coleta.","Lavagem articular com {vol} de SF 0,9%."]}
+],
+"Personalizado":[
+{id:"custom",n:"Procedimento personalizado",s:"{sig}",custom:1,d:{},
+c:{nome:{r:"Nome do procedimento",t:"text"},sig:{r:"Código SIGTAP",t:"text"},class:{r:"Classificação",t:"text"},via:{r:"Via de acesso",t:"text"},imp:{r:"Implante",t:"text"},med:{r:"Medidas",t:"text"}},
+p:["Acesso: {via}."]}
+]
+};
+
+/* ================== ESTADO ================== */
+const BLANK=new Set(["class","med","lado","dedo","qual","niveis","zona","nivel"]);
+const SKEY="orthohub_descricao_v1";
+let S={c:{},sp:{},st:{},ex:{},seg:Object.keys(DB)[0],pid:null};
+let manual=false;
+const $=i=>document.getElementById(i);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const ALL=[];Object.entries(DB).forEach(([sg,l])=>l.forEach(p=>ALL.push({...p,seg:sg})));
+const byId=id=>ALL.find(p=>p.id===id);
+// garante que os padrões dos procedimentos existam nas listas comuns
+ALL.forEach(p=>Object.entries(p.d||{}).forEach(([k,v])=>{const d=COMUNS[k];if(d&&d.o&&typeof v==="string"&&!d.o.includes(v))d.o.push(v)}));
+
+function store(){try{return JSON.parse(localStorage.getItem(SKEY)||"{}")}catch(e){return{}}}
+function persist(o){try{localStorage.setItem(SKEY,JSON.stringify(o))}catch(e){}}
+
+function defC(k,d){if(d.t==="multi")return [...ORI_STD];if(d.t||BLANK.has(k)||d.req)return "";return d.o?d.o[0]:""}
+function defS(k,d){if(d.v!==undefined)return d.v;if(d.t||BLANK.has(k))return "";return d.o?d.o[0]:""}
+const BASE={};for(const[k,d]of Object.entries(COMUNS))if(d.g!==1)BASE[k]=defC(k,d);
+function initCommon(){for(const[k,d]of Object.entries(COMUNS))if(S.c[k]===undefined)S.c[k]=defC(k,d)}
+function P(){return byId(S.pid)}
+function selectProc(id,applyDefaults=true){
+ S.pid=id;const p=P();S.seg=p.seg;
+ if(!S.sp[id]){S.sp[id]={};for(const[k,d]of Object.entries(p.c))S.sp[id][k]=defS(k,d)}
+ if(!S.st[id])S.st[id]=p.p.map(()=>true);
+ if(applyDefaults){for(const[k,v]of Object.entries(BASE))S.c[k]=Array.isArray(v)?[...v]:v;for(const[k,v]of Object.entries(p.d||{}))S.c[k]=Array.isArray(v)?[...v]:v}
+ manual=false;renderHeader();renderForm();gen();save();
+}
+
+/* ================== RENDER ================== */
+function renderHeader(){
+ $("seg").innerHTML=Object.keys(DB).map(s=>`<option ${s===S.seg?"selected":""}>${esc(s)}</option>`).join("");
+ $("proc").innerHTML=DB[S.seg].map(p=>`<option value="${p.id}" ${p.id===S.pid?"selected":""}>${esc(p.n)}</option>`).join("");
+}
+function field(k,d,v,scope){
+ const lab=`${esc(d.r)}${d.req?' <span class="req">*</span>':""}`;const w=d.w?" wide":"";
+ if(d.t==="multi"){return `<div class="fld wide"><label>${lab}</label><div class="chips">${d.o.map(o=>`<button type="button" class="chip ${(v||[]).includes(o)?"on":""}" data-k="${k}" data-sc="${scope}" data-chip="${esc(o)}">${esc(o)}</button>`).join("")}</div><input class="other" data-k="${k}" data-sc="${scope}" data-role="extra" placeholder="+ outra orientação (Enter)"></div>`}
+ if(d.t)return `<div class="fld${w}"><label>${lab}</label><input type="${d.t}" data-k="${k}" data-sc="${scope}" data-role="plain" value="${esc(v)}"></div>`;
+ const other=v!==""&&!d.o.includes(v);
+ const blankOpt=(BLANK.has(k)||d.req)?`<option value="" ${v===""?"selected":""}>— selecione —</option>`:"";
+ return `<div class="fld${w}"><label>${lab}</label><select data-k="${k}" data-sc="${scope}" data-role="sel">${blankOpt}${d.o.map(o=>`<option value="${esc(o)}" ${o===v?"selected":""}>${esc(o)}</option>`).join("")}<option value="__o" ${other?"selected":""}>✎ Outro / editar texto…</option></select><input class="other ${other?"":"hid"}" data-k="${k}" data-sc="${scope}" data-role="other" value="${other?esc(v):""}" placeholder="Digite o texto"></div>`;
+}
+function grp(title,keys){return `<fieldset><legend>${title}</legend><div class="grid">${keys.map(k=>field(k,COMUNS[k],S.c[k],"c")).join("")}</div></fieldset>`}
+function renderForm(){
+ const p=P();const sp=S.sp[p.id];
+ const keys=k=>Object.keys(COMUNS).filter(x=>COMUNS[x].g===k);
+ let h=`<fieldset><legend>1 · ${esc(p.n)}</legend><p class="sig">SIGTAP: ${esc(p.custom?"conforme preenchido":p.s)}</p><div class="grid">${field("lado",COMUNS.lado,S.c.lado,"c")}${Object.entries(p.c).map(([k,d])=>field(k,d,sp[k],"s")).join("")}</div></fieldset>`;
+ h+=grp("2 · Anestesia e preparo",keys(2));
+ h+=`<fieldset><legend>3 · Tempos cirúrgicos</legend><div id="steps"></div><div class="fld wide" style="margin-top:8px"><label>Passos adicionais (um por linha)</label><textarea id="extra" rows="3" placeholder="Ex.: Biópsia de fragmento para anatomopatológico.">${esc(S.ex[p.id]||"")}</textarea></div><p class="hint">Desmarque o que não se aplica ao caso.</p></fieldset>`;
+ h+=grp("4 · Fechamento e pós-operatório",keys(3));
+ $("form").innerHTML=h;renderSteps();
+}
+function renderSteps(){
+ const p=P();const st=S.st[p.id];
+ $("steps").innerHTML=p.p.map((s,i)=>`<label class="step ${st[i]?"":"off"}"><input type="checkbox" data-step="${i}" ${st[i]?"checked":""}><span>${s.replace(/\{(\w+)\}/g,(m,k)=>"<b>"+esc(val(k))+"</b>")}</span></label>`).join("");
+}
+
+/* ================== GERAÇÃO DO TEXTO ================== */
+function raw(k){const p=P();if(p.c[k])return S.sp[p.id][k];return S.c[k]}
+function val(k){let v=raw(k);if(Array.isArray(v))v=v.join("; ");return (v===undefined||v===null||String(v).trim()==="")?"____":v}
+const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>val(k));
+function gen(){
+ if(manual)return;
+ const p=P(),L=[],D=[];let n=1;const add=s=>{if(s)D.push(`${n++}. ${cap(fill(s)).replace(/\.\.$/,".")}`)};
+ const nome=p.custom?val("nome"):p.n, sig=p.custom?val("sig"):p.s;
+ L.push(`Procedimento realizado: ${nome} – lado ${val("lado")} (SIGTAP ${sig}).`);
+ if(p.c.imp)L.push(fill("Implante / OPME: {imp}")+(p.c.med?fill(" – {med}"):"")+fill(". Etiquetas/lotes: {opme}."));
+ if(p.c.class)L.push(fill("Classificação: {class}."));
+ L.push("","DESCRIÇÃO DO PROCEDIMENTO");
+ add("Paciente em {posicao}, sob {anestesia}, com proteção das proeminências ósseas.");
+ if(!p.x){add("{atb}.");add("{antissepsia}.");add("Time-out realizado com confirmação de identidade, procedimento e lateralidade ({lado}).");add(cap(val("garrote"))+".")}
+ p.p.forEach((s,i)=>{if(S.st[p.id][i])add(s)});
+ (S.ex[p.id]||"").split("\n").map(x=>x.trim()).filter(Boolean).forEach(x=>add(x.replace(/\.?$/,".")));
+ if(val("rx")!=="radioscopia não utilizada")add("{rx}.");
+ if(!p.x){
+  const gar=!/^sem garrote/.test(val("garrote"))&&val("garrote")!=="____";
+  add("{hemostasia}."+(gar?" Tempo de garrote: "+val("tgarrote")+" min.":""));
+  add("{dreno}.");add("{fechamento}.");add("{curativo}; {imob}.");
+ } else add("{imob}.");
+ add("Sangramento {sangramento}. {intercorrencias}.".replace("{intercorrencias}",cap(val("intercorrencias"))));
+ add("Paciente encaminhado à {destino}.");
+ L.push(...D,"","ORIENTAÇÕES PÓS-OPERATÓRIAS");
+ (raw("ori")||[]).forEach(o=>L.push("- "+cap(o)+"."));
+ $("texto").value=L.join("\n");badge();
+}
+function fmtData(d){if(!d)return "____";const[a,m,dd]=d.split("-");return dd&&m&&a?`${dd}/${m}/${a}`:d}
+function badge(){const n=($("texto").value.match(/____/g)||[]).length;const b=$("badge");b.className="badge "+(n?"pend":"ok");b.textContent=n?`${n} pendente(s)`:"✓ completo";$("tbBadge").textContent=n?`(${n})`:"✓"}
+
+/* ================== EVENTOS ================== */
+function setV(sc,k,v){if(sc==="c")S.c[k]=v;else S.sp[S.pid][k]=v;save()}
+function changed(){renderSteps();gen()}
+$("form").addEventListener("change",e=>{
+ const t=e.target;
+ if(t.dataset.step!==undefined){S.st[S.pid][+t.dataset.step]=t.checked;t.closest(".step").classList.toggle("off",!t.checked);gen();save();return}
+ if(t.dataset.role==="sel"){const inp=t.closest(".fld").querySelector('[data-role="other"]');
+  if(t.value==="__o"){inp.classList.remove("hid");if(!inp.value)inp.value=raw(t.dataset.k)||"";inp.focus();setV(t.dataset.sc,t.dataset.k,inp.value)}
+  else{inp.classList.add("hid");setV(t.dataset.sc,t.dataset.k,t.value)}changed()}
+});
+$("form").addEventListener("input",e=>{
+ const t=e.target;
+ if(t.id==="extra"){S.ex[S.pid]=t.value;gen();save();return}
+ if(t.dataset.role==="other"||t.dataset.role==="plain"){setV(t.dataset.sc,t.dataset.k,t.value);changed()}
+});
+$("form").addEventListener("click",e=>{
+ const t=e.target.closest("[data-chip]");if(!t)return;
+ const k=t.dataset.k,o=t.dataset.chip;let a=[...(S.c[k]||[])];
+ a=a.includes(o)?a.filter(x=>x!==o):[...a,o];
+ const ord=COMUNS[k].o;a.sort((x,y)=>{const i=ord.indexOf(x),j=ord.indexOf(y);return (i<0?999:i)-(j<0?999:j)});
+ S.c[k]=a;t.classList.toggle("on");gen();save();
+});
+$("form").addEventListener("keydown",e=>{
+ const t=e.target;if(t.dataset.role!=="extra"||e.key!=="Enter")return;e.preventDefault();
+ const v=t.value.trim();if(!v)return;const k=t.dataset.k;
+ if(!COMUNS[k].o.includes(v))COMUNS[k].o.push(v);S.c[k]=[...(S.c[k]||[]),v];renderForm();gen();save();
+});
+$("seg").onchange=()=>{S.seg=$("seg").value;selectProc(DB[S.seg][0].id)};
+$("proc").onchange=()=>selectProc($("proc").value);
+$("texto").addEventListener("input",()=>{manual=true;$("manualMsg").classList.remove("hid");badge()});
+$("bRegen").onclick=()=>{manual=false;$("manualMsg").classList.add("hid");gen()};
+
+// busca
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+$("busca").addEventListener("input",()=>{
+ const q=norm($("busca").value.trim());const r=$("res");
+ if(!q){r.classList.add("hid");return}
+ const m=ALL.filter(p=>norm(p.n+" "+p.seg+" "+p.s).includes(q)).slice(0,15);
+ r.innerHTML=m.length?m.map(p=>`<div data-id="${p.id}">${esc(p.n)}<br><small>${esc(p.seg)} · ${esc(p.s)}</small></div>`).join(""):"<div><small>Nada encontrado — use “Personalizado”.</small></div>";
+ r.classList.remove("hid");
+});
+$("res").addEventListener("click",e=>{const d=e.target.closest("[data-id]");if(!d)return;$("res").classList.add("hid");$("busca").value="";selectProc(d.dataset.id)});
+document.addEventListener("click",e=>{if(!e.target.closest(".srch"))$("res").classList.add("hid")});
+
+// ações
+function copiar(){const t=$("texto").value;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb();function ok(){flash("bCopiar","Copiado ✓")}function fb(){$("texto").select();try{document.execCommand("copy");ok()}catch(e){alert("Selecione e copie manualmente.")}}}
+function flash(id,txt){const b=$(id),o=b.textContent;b.textContent=txt;setTimeout(()=>b.textContent=o,1400)}
+$("bCopiar").onclick=copiar;
+$("bTxt").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("texto").value],{type:"text/plain;charset=utf-8"}));a.download=`descricao_${S.pid}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+$("bPrint").onclick=()=>{$("printOut").textContent=$("texto").value;window.print()};
+$("bNovo").onclick=()=>{if(!confirm("Restaurar os padrões deste procedimento (lado, classificação, medidas e escolhas)?"))return;delete S.sp[S.pid];delete S.st[S.pid];delete S.ex[S.pid];S.c.lado="";S.c.tgarrote="";selectProc(S.pid);manual=false;$("manualMsg").classList.add("hid");renderForm();gen();save()};
+$("bSalvar").onclick=()=>{const st=store();st.drafts=st.drafts||[];const nome=`${P().n} · lado ${S.c.lado||"?"}`;st.drafts.unshift({nome,ts:Date.now(),S:JSON.parse(JSON.stringify(S)),texto:manual?$("texto").value:null});st.drafts=st.drafts.slice(0,40);persist(st);flash("bSalvar","Salvo ✓")};
+$("bAbrir").onclick=()=>{const st=store(),l=st.drafts||[];$("dlgList").innerHTML=l.length?l.map((d,i)=>`<li><span>${esc(d.nome)}<br><small>${new Date(d.ts).toLocaleString("pt-BR")}</small></span><span><button data-load="${i}">Abrir</button> <button data-del="${i}">✕</button></span></li>`).join(""):"<li>Nenhum rascunho salvo.</li>";$("dlg").showModal()};
+$("dlgList").addEventListener("click",e=>{const st=store();const l=st.drafts||[];
+ if(e.target.dataset.load!==undefined){const d=l[+e.target.dataset.load];S=d.S;initCommon();$("dlg").close();selectProc(S.pid,false);if(d.texto){manual=true;$("texto").value=d.texto;$("manualMsg").classList.remove("hid");badge()}}
+ if(e.target.dataset.del!==undefined){l.splice(+e.target.dataset.del,1);st.drafts=l;persist(st);$("bAbrir").onclick()}});
+$("dlgFechar").onclick=()=>$("dlg").close();
+// abas (celular)
+$("tbF").onclick=()=>{document.body.classList.remove("vtexto");$("tbF").classList.add("on");$("tbT").classList.remove("on")};
+$("tbT").onclick=()=>{document.body.classList.add("vtexto");$("tbT").classList.add("on");$("tbF").classList.remove("on")};
+
+let tSave;function save(){clearTimeout(tSave);tSave=setTimeout(()=>{const st=store();st.atual=S;persist(st)},300)}
+
+/* ================== INÍCIO ================== */
+(function(){
+ const st=store();
+ if(st.atual&&st.atual.pid&&byId(st.atual.pid)){S=st.atual;S.ex=S.ex||{};initCommon();selectProc(S.pid,false)}
+ else{initCommon();selectProc(DB[S.seg][0].id)}
+})();
+</script>
+</body>
+</html>
+
+</body></html>

@@ -1,0 +1,239 @@
+<!doctype html><html><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Solicitador de Retornos — Versão Final</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#f3f6f6; --card:#ffffff; --fg:#17262a; --muted:#5b6f73; --line:#d5e0e1;
+  --accent:#0f6e74; --accent-soft:#e1f0f0; --ok:#1d7a46; --warn:#b4231a; --warn-soft:#fbe9e7;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --card:#172226; --fg:#e4eeef; --muted:#93a7aa; --line:#2a3a3e;
+  --accent:#4fb8be; --accent-soft:#1c3336; --ok:#5ccf8b; --warn:#ff8a7a; --warn-soft:#3a1d1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --card:#172226; --fg:#e4eeef; --muted:#93a7aa; --line:#2a3a3e;
+  --accent:#4fb8be; --accent-soft:#1c3336; --ok:#5ccf8b; --warn:#ff8a7a; --warn-soft:#3a1d1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-size:20px;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+.field{display:flex;flex-direction:column;gap:8px}
+label,.lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{flex:1;min-width:0;padding:12px 8px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);
+  border-radius:10px;font:500 15px var(--sans);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.days .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px}
+.days .chip small{font-size:11px;color:var(--muted);font-weight:400}
+.days .chip[aria-pressed="true"] small{color:var(--accent)}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.doc{text-align:left;padding:10px 12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);
+  border-radius:10px;font:500 15px var(--sans);cursor:pointer;line-height:1.25}
+.doc small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.doc[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.doc[aria-pressed="true"] small{color:var(--accent)}
+input[type=text],input[type=date]{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--fg);font:16px var(--sans)}
+input:focus-visible,.chip:focus-visible,.doc:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{padding:6px 10px;border:1px solid var(--line);background:transparent;color:var(--muted);
+  border-radius:999px;font:500 13px var(--sans);cursor:pointer}
+.quick button span{font-family:var(--mono);font-size:12px}
+.warn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-radius:10px;
+  background:var(--warn-soft);color:var(--warn);border:1.5px solid var(--warn);font-size:14px;font-weight:500}
+.warn button{padding:6px 10px;border:0;border-radius:8px;background:var(--warn);color:var(--card);font:600 13px var(--sans);cursor:pointer}
+.okline{font-size:13px;color:var(--ok);margin:0;font-weight:500}
+.checks{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:8px;cursor:pointer;
+  text-transform:none;letter-spacing:0;font-size:15px;font-weight:400;color:var(--fg)}
+.checks label:hover{background:var(--accent-soft)}
+.checks input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent);flex:none}
+.checks em{font-style:normal;color:var(--muted);font-size:13px}
+.out{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;
+  font-size:15px;line-height:1.55;white-space:pre-wrap;min-width:0;overflow-wrap:anywhere}
+.out b{color:var(--accent);font-weight:600}
+.out .d{font-family:var(--mono)}
+.copy{padding:14px;border:0;border-radius:12px;background:var(--accent);color:var(--card);
+  font:600 16px var(--sans);cursor:pointer}
+.copy.done{background:var(--ok)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.credit{text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:8px;border-top:1px solid var(--line)}
+.credit span{color:var(--accent);font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Solicitador de Retornos <small style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px;vertical-align:middle">Versão final</small></h1>
+    <p class="sub">Escolha o dia e o assistente — a data só fecha no dia certo do ambulatório.</p>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Dia do ambulatório</span>
+    <div class="chips days" id="days"></div>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Assistente responsável</span>
+    <div class="docs" id="docs"></div>
+    <p class="hint" id="docHint"></p>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Setor</span>
+    <div class="chips" id="motivos"></div>
+    <input type="text" id="motivo" value="curativo" aria-label="Setor (editável)">
+    <p class="hint">O assistente só define o dia; o texto vai sem nome para o paciente agendar na recepção.</p>
+  </div>
+
+  <div class="field">
+    <label for="data">Data do retorno</label>
+    <div class="quick" id="quick"></div>
+    <input type="date" id="data">
+    <div class="warn" id="warn" hidden></div>
+    <p class="okline" id="okline" hidden></p>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Texto</span>
+    <div class="out" id="out"></div>
+  </div>
+
+  <button class="copy" id="copy" type="button">Copiar texto</button>
+
+  <footer class="credit">Powered by <span>Fernando G.</span></footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// Escala do ambulatório — weekday: 1=seg … 5=sex
+const ESCALA=[
+  {n:'Dr. Fernando',e:'Pé e tornozelo',d:1},
+  {n:'Dr. Marcondes',e:'Coluna',d:1},
+  {n:'Dr. Emílio',e:'Coluna',d:1},
+  {n:'Dr. Amilton',e:'Pediátrica',d:1},
+  {n:'Dra. Maysa',e:'Pediátrica',d:1},
+  {n:'Equipe Pediátrica',e:'Pediátrica',d:1,eq:1},
+  {n:'Dr. Eduardo J.',e:'Mão',d:2},
+  {n:'Dr. Marcos V.',e:'Ombro e cotovelo',d:2},
+  {n:'Dr. Antoniassi',e:'Quadril',d:3},
+  {n:'Dr. Adriano',e:'Quadril',d:3},
+  {n:'Dr. Marcos Silveira',e:'Quadril',d:3},
+  {n:'Equipe Quadril',e:'Quadril',d:3,eq:1},
+  {n:'Dra. Laraya',e:'Joelho',d:4},
+  {n:'Dr. Everton',e:'Joelho',d:4},
+  {n:'Equipe Joelho',e:'Joelho',d:4,eq:1},
+  {n:'Dr. Toma',e:'Tumor',d:4},
+  {n:'Dr. Ederson',e:'Tumor',d:4},
+  {n:'Dr. Gustavo',e:'Coluna',d:5},
+  {n:'Dr. Rogério',e:'Trauma',d:5},
+  {n:'Dr. Ederson',e:'Trauma',d:5},
+];
+const CURTO=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+const PLURAL=['','SEGUNDAS-FEIRAS','TERÇAS-FEIRAS','QUARTAS-FEIRAS','QUINTAS-FEIRAS','SEXTAS-FEIRAS',''];
+const DIAS=['DOMINGO','SEGUNDA-FEIRA','TERÇA-FEIRA','QUARTA-FEIRA','QUINTA-FEIRA','SEXTA-FEIRA','SÁBADO'];
+const MOTIVOS=['curativo','gesso','internação'];
+
+let day=1, doc=null;
+const motivo=$('motivo'), data=$('data'), out=$('out'), copyBtn=$('copy');
+
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parse(v){const[y,m,d]=v.split('-');return new Date(+y,+m-1,+d)}
+function br(v){if(!v)return '__/__/__';const[y,m,d]=v.split('-');return d+'/'+m+'/'+y.slice(2)}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+// próxima ocorrência do dia (sempre depois de hoje) + n semanas
+function proxima(wd,weeks=0){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  while(d.getDay()!==wd)d.setDate(d.getDate()+1);d.setDate(d.getDate()+7*weeks);return d}
+function upper(s){return s.toLocaleUpperCase('pt-BR')}
+
+// --- dias
+const daysEl=$('days');
+for(let w=1;w<=5;w++){
+  const esp=[...new Set(ESCALA.filter(x=>x.d===w).map(x=>x.e))].join(' · ');
+  const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.w=w;
+  b.innerHTML=`${CURTO[w]}<small>${esp}</small>`;
+  b.addEventListener('click',()=>{setDay(w,true)});daysEl.appendChild(b);
+}
+function setDay(w,moveDate){
+  day=w;
+  if(doc&&doc.d!==w)doc=null;
+  if(moveDate){const cur=data.value?parse(data.value):null;
+    if(!cur||cur.getDay()!==w)data.value=iso(proxima(w,1));}
+  drawDocs();drawQuick();render();
+}
+// --- assistentes
+function drawDocs(){
+  daysEl.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===day));
+  const el=$('docs');el.innerHTML='';
+  ESCALA.filter(x=>x.d===day).forEach(x=>{
+    const b=document.createElement('button');b.type='button';b.className='doc';
+    b.setAttribute('aria-pressed',doc===x);
+    b.innerHTML=`${esc(x.n)}<small>${esc(x.e)}</small>`;
+    b.addEventListener('click',()=>{doc=(doc===x)?null:x;drawDocs();render()});
+    el.appendChild(b);
+  });
+  const outros=doc?ESCALA.filter(x=>x.n===doc.n&&x!==doc):[];
+  $('docHint').textContent=outros.length?`${doc.n} também atende ${outros.map(o=>DIAS[o.d].toLowerCase()+' ('+o.e.toLowerCase()+')').join(', ')}.`:'Opcional — toque de novo para desmarcar.';
+}
+// --- motivos
+const motEl=$('motivos');
+MOTIVOS.forEach(m=>{const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.m=m;
+  b.textContent=m[0].toUpperCase()+m.slice(1);b.addEventListener('click',()=>{motivo.value=m;render()});motEl.appendChild(b)});
+motivo.addEventListener('input',render);
+// --- datas rápidas (sempre no dia escolhido)
+function drawQuick(){
+  const el=$('quick');el.innerHTML='';
+  [[0,'Próxima'],[1,'+1 sem'],[2,'+2 sem'],[3,'+3 sem'],[4,'+4 sem'],[6,'+6 sem']].forEach(([w,t])=>{
+    const d=proxima(day,w);const b=document.createElement('button');b.type='button';
+    b.innerHTML=`${t} <span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span>`;
+    b.addEventListener('click',()=>{data.value=iso(d);render()});el.appendChild(b);
+  });
+}
+data.addEventListener('change',render);
+data.addEventListener('click',()=>{try{data.showPicker()}catch(e){}});
+
+// --- validação + texto
+function check(){
+  const warn=$('warn'),ok=$('okline');warn.hidden=true;ok.hidden=true;
+  if(!data.value)return;
+  const d=parse(data.value),wd=d.getDay(),hoje=new Date();hoje.setHours(0,0,0,0);
+  const fix=iso(proxima(day,0)>d?proxima(day,0):(()=>{const x=new Date(d);while(x.getDay()!==day)x.setDate(x.getDate()+1);return x})());
+  let msg='';
+  if(wd!==day) msg=`${br(data.value)} é ${DIAS[wd].toLowerCase()} — ${doc?doc.n+' atende':'o ambulatório escolhido é'} ${DIAS[day].toLowerCase()}.`;
+  else if(d<=hoje) msg=`Data ${d<hoje?'no passado':'é hoje'}.`;
+  if(msg){warn.innerHTML=`<span>${esc(msg)}</span><button type="button">Corrigir para ${CURTO[day]} ${br(fix).slice(0,5)}</button>`;
+    warn.querySelector('button').onclick=()=>{data.value=fix;render()};warn.hidden=false}
+  else{ok.textContent=`✓ ${DIAS[wd].toLowerCase()} — dia ${doc?'de '+doc.n:'do ambulatório'} confirmado`;ok.hidden=false}
+}
+function brFull(v){if(!v)return '__/__/____';const[y,m,d]=v.split('-');return d+'/'+m+'/'+y}
+const PL=['','segundas-feiras','terças-feiras','quartas-feiras','quintas-feiras','sextas-feiras',''];
+function partes(){return {mot:motivo.value.trim()||'___',dia:PL[day],data:brFull(data.value)}}
+function texto(){const p=partes();
+  return `Retorno em ambulatório ortopedia ${p.mot} às ${p.dia} dia ${p.data} às 7 horas.
+
+Ambulatório Mário Covas`}
+function render(){
+  const p=partes();
+  out.innerHTML=`Retorno em ambulatório ortopedia <b>${esc(p.mot)}</b> às <b>${p.dia}</b> dia <b class="d">${p.data}</b> às 7 horas.
+
+Ambulatório Mário Covas`;
+  const v=motivo.value.trim().toLowerCase();
+  motEl.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===v));
+  check();
+}
+copyBtn.addEventListener('click',()=>{
+  const t=texto();
+  const ok=()=>{copyBtn.textContent='Copiado';copyBtn.classList.add('done');
+    setTimeout(()=>{copyBtn.textContent='Copiar texto';copyBtn.classList.remove('done')},1600)};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents(out);const s=getSelection();s.removeAllRanges();s.addRange(r);
+    try{document.execCommand('copy');ok()}catch(e){copyBtn.textContent='Texto selecionado — copie manualmente'}};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,fallback); else fallback();
+});
+// início: próximo dia útil de ambulatório
+(()=>{const t=new Date();let w=t.getDay()+1;if(w>5||w<1)w=1;setDay(w,true)})();
+</script>
+
+</body></html>

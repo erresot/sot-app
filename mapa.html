@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa Cirúrgico SOT</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: barra de comandos no topo; abaixo, folhas A4 paisagem brancas (como o papel do mural), uma célula por cirurgia em 3 colunas. Tema único claro, por escolha: a folha é papel. */
+  color-scheme: light;
+  --fundo:#e4e8eb;
+  --papel:#ffffff;
+  --tinta:#14202b;
+  --tinta-2:#4c5b68;
+  --linha:#1d2a36;
+  --acento:#0b5f73;
+  --acento-claro:#dcecf0;
+  --falta:#fff1b8;
+  --alerta:#b3261e;
+  --alerta-claro:#fde7e5;
+  --ok:#1f6b3a;
+  --trava:#6a3fa0;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fundo);color:var(--tinta);font-family:var(--sans);font-size:14px;line-height:1.35}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acento);outline-offset:1px}
+
+.barra{position:sticky;top:0;z-index:5;background:var(--tinta);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.barra h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.02em}
+.barra .grupo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.barra label{font-size:12px;opacity:.8}
+.barra select{background:#fff;color:var(--tinta);border:0;border-radius:4px;padding:5px 8px}
+.btn{background:#fff;color:var(--tinta);border:1px solid transparent;border-radius:4px;padding:5px 10px;font-weight:500}
+.btn.pri{background:#ffd34d}
+.btn.fantasma{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.aba{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.aba.ativa{background:#fff;color:var(--tinta)}
+.pacs{display:flex;flex-wrap:wrap;gap:6px;max-width:1120px;margin:0 auto 10px}
+.pac{border:1px solid #9aa7b2;background:#fff;border-radius:5px;padding:5px 10px;text-align:left;font-size:13px}
+.pac small{display:block;font-family:var(--mono);color:var(--tinta-2);font-size:11px}
+.pac.ativa{border-color:var(--acento);box-shadow:inset 0 0 0 1px var(--acento);background:var(--acento-claro)}
+.folha.ind{width:auto;max-width:1120px}
+.linha{max-width:1120px;margin:0 auto;background:#fff;border:1px solid #9aa7b2;border-radius:5px;padding:10px 12px}
+.linha h3{margin:0 0 6px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.linha p{margin:0;font-family:var(--mono);font-size:12px;line-height:1.5;user-select:all;overflow-wrap:anywhere}
+.linha button{border:1px solid var(--acento);color:var(--acento);background:#fff;border-radius:4px;padding:3px 10px;font-weight:600}
+@media (max-width:760px){
+  .ind .corpo{grid-template-columns:1fr}
+  .ind .col + .col{border-left:0;border-top:1.6px solid var(--linha)}
+  .ind .duas{grid-template-columns:1fr}
+  .ind .origem{flex-direction:row;gap:8px;justify-content:flex-start;align-items:baseline}
+}
+.barra .estado{margin-left:auto;font-size:12px;opacity:.85}
+
+.aviso{max-width:1180px;margin:12px auto 0;padding:0 16px;font-size:13px;color:var(--tinta-2);display:flex;flex-wrap:wrap;gap:6px 18px}
+.aviso b{color:var(--tinta)}
+.leg{display:inline-flex;align-items:center;gap:5px}
+.leg i{display:inline-block;width:22px;height:12px;border-radius:2px}
+.leg .f{background:var(--falta);border:1px dashed #c9a400}
+.leg .o{background:#f1f4f6;border:1px solid #c3ccd3}
+.leg .t{border-bottom:2px dotted var(--trava)}
+.leg .a{background:var(--alerta-claro);border:1px solid var(--alerta)}
+
+.rolagem{overflow-x:auto;padding:14px 16px 40px}
+.folha{background:var(--papel);width:1120px;margin:0 auto 22px;padding:14px 16px;box-shadow:0 1px 6px rgba(20,32,43,.25);display:flex;flex-direction:column;gap:0}
+.folha-topo{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--linha);padding-bottom:4px;margin-bottom:6px;font-size:13px}
+.folha-topo b{font-size:15px}
+.celulas{display:flex;flex-direction:column;gap:5px}
+
+.cel{border:1.6px solid var(--linha);display:flex;flex-direction:column;break-inside:avoid}
+.cab{display:flex;gap:8px;align-items:baseline;border-bottom:1.6px solid var(--linha);padding:2px 6px;font-weight:600;font-size:12.5px;background:#f1f4f6}
+.cab .hora{font-family:var(--mono);font-weight:500;white-space:nowrap;font-size:11.5px}
+.cab .txt{flex:1}
+.corpo{display:grid;grid-template-columns:86px 1fr 31%;flex:1}
+.col{padding:4px 6px;min-width:0}
+.col + .col{border-left:1.6px solid var(--linha)}
+.origem{display:flex;flex-direction:column;justify-content:center;text-align:center;font-weight:700;font-size:13px}
+.origem small{display:block;font-weight:500;font-size:10px;color:var(--tinta-2);text-transform:uppercase;letter-spacing:.06em}
+
+.labs{font-family:var(--mono);font-size:11.5px;line-height:1.45}
+.labs .data{font-family:var(--sans);font-weight:700}
+.lab{white-space:nowrap}
+.lab + .lab::before{content:"/ ";color:var(--tinta-2)}
+.lab em{font-style:normal;color:var(--tinta-2)}
+.duas{display:grid;grid-template-columns:1.25fr 1fr;gap:0 10px;margin-top:3px;border-top:1px solid #9aa7b2;padding-top:3px}
+.lin{font-size:12px}
+.lin > b{font-weight:700;font-size:11px;letter-spacing:.03em}
+.pend{margin-top:3px;font-size:12px;font-weight:600;color:var(--alerta)}
+.pend .auto{cursor:pointer;background:var(--alerta-claro);border:1px solid var(--alerta);border-radius:3px;padding:0 4px;margin-right:4px;white-space:nowrap;display:inline-block;margin-bottom:1px}
+.dir .lin{margin-bottom:1px}
+.dir .lin > b{color:var(--tinta-2);font-weight:600}
+.dir .cir{font-weight:700;font-size:12.5px}
+
+.ed{outline:0;border-radius:2px;padding:0 2px;min-width:14px;display:inline}
+.ed:hover{background:var(--acento-claro)}
+.ed:focus{background:#fff;box-shadow:0 0 0 2px var(--acento)}
+.ed:empty{background:var(--falta);box-shadow:inset 0 0 0 1px #c9a400;display:inline-block;min-width:34px}
+.ed:empty::before{content:"\00a0"}
+.ed.opc:empty{background:#f1f4f6;box-shadow:inset 0 0 0 1px #c3ccd3}
+.ed.trava{border-bottom:2px dotted var(--trava)}
+.alergia-pos{font-weight:700;text-decoration:underline;text-transform:uppercase;color:var(--alerta)}
+
+.chips{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}
+.chip{border:1px solid #9aa7b2;background:#fff;border-radius:10px;font-size:10px;line-height:1;padding:2px 6px;color:var(--tinta-2)}
+.chip:hover{border-color:var(--acento);color:var(--acento)}
+.sug{margin-top:2px;font-size:11px;color:var(--acento);font-family:var(--sans)}
+.sug .chip{border-color:var(--acento);color:var(--acento)}
+
+.acoes{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:3px 6px;border-top:1px dashed #9aa7b2;background:#f7f9fa;font-size:11.5px}
+.acoes button{border:1px solid #9aa7b2;background:#fff;border-radius:4px;padding:2px 8px}
+.acoes button.cap{border-color:var(--acento);color:var(--acento);font-weight:600}
+.acoes .fonte{margin-left:auto;color:var(--tinta-2)}
+
+.modal{position:fixed;inset:0;background:rgba(20,32,43,.55);display:none;z-index:20;padding:16px;overflow:auto}
+.modal.aberto{display:block}
+.caixa{background:#fff;max-width:880px;margin:20px auto;border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.caixa h2{margin:0;font-size:16px}
+.caixa p{margin:0;color:var(--tinta-2);font-size:13px}
+.caixa textarea{width:100%;min-height:150px;border:1px solid #9aa7b2;border-radius:4px;padding:8px;font-family:var(--mono);font-size:12.5px}
+.caixa .lado{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.caixa img{max-width:100%;border:1px solid #9aa7b2;border-radius:4px}
+.caixa .rod{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.caixa .btn{border-color:#9aa7b2}
+.caixa .btn.pri{background:var(--acento);color:#fff;border-color:var(--acento)}
+.item{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:start;border:1px solid #c3ccd3;border-radius:5px;padding:8px;margin-bottom:6px;font-size:13px}
+.item img{width:64px;height:64px;object-fit:cover;border-radius:3px}
+.item .st{font-weight:600}
+.item .st.ok{color:var(--ok)} .item .st.er{color:var(--alerta)} .item .st.es{color:var(--tinta-2)}
+.item select{border:1px solid #9aa7b2;border-radius:4px;padding:3px 6px;max-width:100%}
+.item .lin2{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
+#capRes{font-size:12.5px;color:var(--ok);font-weight:500}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--tinta);color:#fff;padding:8px 14px;border-radius:5px;font-size:13px;z-index:30;display:none;max-width:90%}
+@media (max-width:640px){.caixa .lado{grid-template-columns:1fr}}
+
+/* marcas de conferência e de alteração */
+.ed.duv{background:#ffe2c2;box-shadow:inset 0 0 0 1px #d9822b}
+.q{border:0;background:#d9822b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;padding:0 5px;margin-left:2px;line-height:1.5;font-family:var(--sans)}
+.ed.alt{background:#dbe7ff}
+.ed.alt::after{content:"*";font-weight:700;color:#1d4fd8}
+.cnt{color:var(--acento);font-weight:600;white-space:nowrap}
+.leg .d{background:#ffe2c2;border:1px solid #d9822b}
+.leg .m{background:#dbe7ff;border:1px solid #1d4fd8}
+
+/* faixa de status */
+.status{max-width:1180px;margin:10px auto 0;padding:0 16px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+.pill{font-weight:700;border-radius:10px;padding:1px 10px;font-size:12px}
+.pill.rasc{background:#fff1b8;color:#6b5200}
+.pill.fech{background:#d6f0de;color:var(--ok)}
+.status input{border:1px solid #9aa7b2;border-radius:4px;padding:3px 6px;width:150px;background:#fff}
+.status button{border:1px solid var(--acento);color:var(--acento);background:#fff;border-radius:4px;padding:3px 10px;font-weight:600}
+.status .drive{color:var(--tinta-2);font-size:12px;font-family:var(--mono)}
+.status .quebra{flex-basis:100%;background:#fff;border-left:4px solid #d9822b;padding:5px 10px;border-radius:3px}
+.alts{max-width:1120px;margin:0 auto 30px;padding:0 16px;font-size:12.5px}
+.alts h3{font-size:13px;margin:0 0 4px}
+.alts ul{margin:0;padding-left:18px}
+.alts li{margin-bottom:2px}
+#medidor{position:absolute;left:-99999px;top:0;width:283mm;visibility:hidden;pointer-events:none}
+
+/* versão digital: tablet e celular (não vale para a folha de impressão) */
+@media (max-width:1180px){ #folhas:not(.pp) .folha{width:auto;max-width:1120px} }
+@media (max-width:820px){
+  .barra{position:static}
+  #folhas:not(.pp) .corpo{grid-template-columns:1fr}
+  #folhas:not(.pp) .col + .col{border-left:0;border-top:1.6px solid var(--linha)}
+  #folhas:not(.pp) .origem{flex-direction:row;gap:8px;justify-content:flex-start;align-items:baseline;text-align:left}
+  #folhas:not(.pp) .cab{flex-wrap:wrap}
+  #folhas:not(.pp) .labs{line-height:1.7}
+}
+@media (max-width:560px){
+  .rolagem{padding:10px 8px 30px}
+  #folhas:not(.pp) .folha{padding:8px}
+  #folhas:not(.pp) .duas{grid-template-columns:1fr}
+}
+
+/* folha A4 paisagem: vale na impressão e na medição da quebra de folha */
+@page{size:A4 landscape;margin:7mm}
+.pp{font-family:var(--sans);font-size:8pt;line-height:1.2;color:#000}
+.pp .acoes,.pp .chips,.pp .sug{display:none !important}
+.pp .lin.opc:has(.ed:empty),.pp .lab:has(.ed.opc:empty){display:none}
+.pp .pend:not(:has(.auto)):has(.ed:empty){display:none}
+.pp .labs{line-height:1.25;font-size:7.6pt}
+.pp .lab + .lab::before{content:""}
+.pp .lab{margin-right:2.4mm}
+.pp .col{padding:1mm 1.5mm}
+.pp .duas{margin-top:.6mm;padding-top:.6mm}
+.pp .pend{margin-top:.5mm}
+.pp .folha{width:283mm;height:194mm;margin:0 auto 22px;padding:0;box-shadow:none;background:#fff}
+.pp .folha.ind{height:auto}
+.pp .folha.ind .celulas{display:block}
+.pp .folha-topo{font-size:9pt;margin-bottom:1.5mm}
+.pp .celulas{flex:1;display:grid;grid-template-rows:repeat(var(--n),auto);align-content:start;gap:1.2mm;min-height:0}
+.pp .folha.cheia .celulas{align-content:stretch}
+.pp .cel{min-height:0}
+.pp .cab{font-size:8.2pt;background:#eee;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pp .cab .hora{font-size:7.6pt}
+.pp .lin,.pp .pend{font-size:8pt}
+.pp .lin > b{font-size:7.4pt}
+.pp .dir .cir{font-size:8.4pt}
+.pp .origem{font-size:9.5pt}
+.pp .corpo{grid-template-columns:20mm 1fr 31%}
+.pp .ed:empty{background:none;box-shadow:none;border-bottom:.5pt solid #000;min-width:12mm}
+.pp .ed.trava{border-bottom:0}
+.pp .ed.opc:empty{border-bottom:0;min-width:0}
+.pp .ed.opc:empty::before{content:"—"}
+.pp .pend .ed:empty::before{content:""}
+.pp .ed:hover,.pp .ed.duv,.pp .ed.alt{background:none;box-shadow:none}
+.pp .q{background:none;color:#000;padding:0;margin:0;font-size:7pt;vertical-align:super}
+.pp .ed.alt::after{color:#000}
+.pp .cnt{color:#000}
+.pp .pend .auto{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media print{
+  body{background:#fff}
+  .barra,.aviso,.modal,.toast,.pacs,.linha,.status,.alts,#medidor{display:none !important}
+  .rolagem{overflow:visible;padding:0}
+  .pp .folha{width:auto;margin:0;break-after:page}
+  .pp .folha:last-child{break-after:auto}
+}
+</style>
+</head>
+<body>
+<script>window.__SOT = (window.parent !== window);</script>
+<div class="barra">
+  <h1>Mapa Cirúrgico SOT</h1>
+  <div class="grupo">
+    <label for="selDia">Dia</label>
+    <select id="selDia"></select>
+  </div>
+  <div class="grupo abas" role="tablist">
+    <button class="btn aba ativa" id="abaMapa" role="tab">Mapa do dia</button>
+    <button class="btn aba" id="abaPac" role="tab">Por paciente</button>
+  </div>
+  <div class="grupo">
+    <label for="selN">Por folha</label>
+    <select id="selN"><option value="auto" selected>Automático</option><option value="4">Máx. 4</option><option value="5">Máx. 5</option><option value="6">Máx. 6</option></select>
+  </div>
+  <div class="grupo">
+    <button class="btn" id="btAtualizar" title="Relê o internograma sem apagar o que foi editado à mão">Atualizar do internograma</button>
+    <button class="btn" id="btFotos" title="Envie de uma vez as fotos ou prints dos pacientes ambulatoriais">Fotos dos ambulatoriais</button>
+    <input type="file" id="inFotos" accept="image/*" multiple hidden>
+    <button class="btn" id="btNova">+ Cirurgia</button>
+    <label for="inDia">Novo dia</label><input type="date" id="inDia" style="border:0;border-radius:4px;padding:4px 6px;background:#fff;color:#14202b">
+    <button class="btn fantasma" id="btRestaurar">Restaurar exemplo</button>
+    <button class="btn pri" id="btImprimir">Imprimir</button>
+  </div>
+  <span class="estado" id="estado"></span>
+</div>
+
+<div class="aviso">
+  <span><b>Protótipo com os dados das fotos de 10 e 11/11.</b> Toque em qualquer campo para editar.</span>
+  <span class="leg"><i class="f"></i> falta preencher</span>
+  <span class="leg"><i class="o"></i> sem dado ou não se aplica (imprime —)</span>
+  <span class="leg"><i class="t"></i> editado à mão (travado)</span>
+  <span class="leg"><i class="a"></i> pendência automática (toque para dispensar)</span>
+  <span class="leg"><i class="d"></i> leitura com dúvida: confira e toque no ?</span>
+  <span class="leg"><i class="m"></i> alterado depois de fechar (*)</span>
+</div>
+
+<div class="status" id="status"></div>
+<div class="rolagem"><div id="folhas"></div></div>
+<div class="alts" id="alts"></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="capTit">
+  <div class="caixa">
+    <h2 id="capTit">Captar dados</h2>
+    <p>Cole o laudo do sistema (copiar e colar) ou a linha de exames. O leitor é o mesmo do Exames Updater para laudos por extenso e também entende abreviações (Hb, Ht, Plaq...). Reconhece ainda a data e linhas iniciadas por CMB, MUC, Alergia, Peso, Mecanismo, Diagnóstico.</p>
+    <div class="lado">
+      <div>
+        <textarea id="capTxt" placeholder="Ex.: 03/11 Hb 14,3 Ht 44,7 Plaq 239.000 TP 11,7 INR 0,97&#10;CMB: DM, DLP&#10;MUC: Glifage, sinvastatina&#10;Alergia: nega"></textarea>
+      </div>
+      <div>
+        <label for="capFoto" style="font-size:13px;font-weight:600">Foto ou print da folha</label><br>
+        <input type="file" id="capFoto" accept="image/*">
+        <p style="margin-top:6px">Neste protótipo a foto aparece aqui para você conferir e digitar ao lado. A leitura automática (OCR) entra na versão do app.</p>
+        <div id="capImg"></div>
+      </div>
+    </div>
+    <span id="capRes"></span>
+    <div class="rod">
+      <button class="btn" id="capFechar">Fechar</button>
+      <button class="btn pri" id="capLer">Ler texto e preencher</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modalLote" role="dialog" aria-modal="true" aria-labelledby="loteTit">
+  <div class="caixa">
+    <h2 id="loteTit">Fotos dos ambulatoriais</h2>
+    <p id="loteMsg">Cada foto é lida, o paciente é localizado no mapa do dia e a célula dele é preenchida. Campos editados à mão não são alterados.</p>
+    <div id="loteLista"></div>
+    <div class="rod"><button class="btn" id="loteMais">Enviar mais fotos</button><button class="btn pri" id="loteFechar">Concluir</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* Motor de leitura de laudos do EXAMES UPDATER (hub/exames.html do SOT APP), sem alterações */
+(function(){
+
+// ═════════════════════════════ PARSER (puro, sem DOM) ═════════════════════════════
+const norm = txt => txt
+  .replace(/\r/g, '')
+  .replace(/[   \t]/g, ' ')
+  .replace(/[µμ]/g, 'u')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase()
+  .replace(/[–—]/g, '-')
+  .replace(/[ ]{2,}/g, ' ')
+  .replace(/ *\n */g, '\n')
+  .replace(/\n{2,}/g, '\n');
+
+const nameRe = src => new RegExp('(?<![a-z0-9])(?:' + src + ')(?![a-z0-9])', 'g');
+
+// Número: aceita < > ≤ ≥, sinal só quando permitido; ignora datas, horas e dígitos colados em letras (t4, pco2, hba1c, mm3)
+const NUM_RE = /(?<![\w.,\/:])((?:[<>]=?|[≤≥])\s*)?(-\s?)?(\d+(?:[.,]\d+)*)(?!\d|\s*\/\s*\d|:\d|[.,]\d)/g;
+
+function toNum(s, thousands) {
+  s = s.replace(/\s/g, '');
+  const hasC = s.includes(','), hasD = s.includes('.');
+  if (hasC && hasD) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (thousands && /^\d{1,3}([.,]\d{3})+$/.test(s)) {
+    s = s.replace(/[.,]/g, '');
+  } else {
+    s = s.replace(',', '.');
+  }
+  return parseFloat(s);
+}
+
+function numbersIn(w, signed) {
+  const out = [];
+  NUM_RE.lastIndex = 0;
+  let m;
+  while ((m = NUM_RE.exec(w))) {
+    out.push({
+      op: m[1] ? m[1].replace(/\s/g, '').replace('≤', '<=').replace('≥', '>=') : '',
+      neg: signed && !!m[2],
+      raw: m[3],
+      idx: m.index,
+      after: w.slice(m.index + m[0].length, m.index + m[0].length + 14)
+    });
+  }
+  return out;
+}
+
+// ── Catálogo de exames ──
+// nomes: fontes regex (texto já normalizado); prioridade pela ordem.
+// notAfter/notBefore: descartam ocorrências falsas (ex.: "hemoglobina corpuscular").
+// ref: {min,max,strict}; unit(w,v): referência alternativa conforme unidade encontrada.
+// plaus: faixa plausível — fora dela o número é descartado (evita pegar datas, IDs etc).
+const EXAMES = [
+  { ab: 'HB',    nomes: ['hemoglobina'], notAfter: /^\s*(corpuscular|glicada|glicosilada|a1c|fetal|media)/, notBefore: /(concentracao|media)\s+(de\s+)?$/, ref: { min: 10, max: 18 }, plaus: [1, 30] },
+  { ab: 'HT',    nomes: ['hematocrito'], ref: { min: 30, max: 54 }, plaus: [3, 90] },
+  { ab: 'RETIC', nomes: ['reticulocitos?'], ref: { min: 0.5, max: 2.5 }, plaus: [0, 60] },
+  { ab: 'LEUCO', nomes: ['leucocitos', 'globulos brancos'], count: 100, ref: { min: 4000, max: 11000 }, plaus: [50, 2000000] },
+  { ab: 'PLAQ',  nomes: ['plaquetas', 'contagem de plaquetas'], count: 2000, ref: { min: 150000, max: 400000 }, plaus: [500, 3000000] },
+  { ab: 'PCR',   nomes: ['proteina c[\\s\\-]*reativa', 'pcr'], notAfter: /^\s*(para|rt|em tempo|sars|covid)/,
+    ref: { min: null, max: 5, strict: true }, plaus: [0, 700],
+    unit: a => /^\s*mg\s*\/\s*dl/.test(a) ? { min: null, max: 0.5, strict: true, nota: 'mg/dL' } : null, unidadeNota: 'mg/L; em mg/dL usa < 0,5' },
+  { ab: 'VHS',   nomes: ['vhs', 'velocidade de hemossedimentacao', 'hemossedimentacao'], clean: w => w.replace(/(?<![\d.,])1\s*[aªo°º]?\s*h(ora)?\b/g, ' '), ref: { min: null, max: 20 }, plaus: [0, 200] },
+  { ab: 'GLIC',  nomes: ['glicose', 'glicemia'], notAfter: /^\s*(capilar|na urina|urinaria|pos|2h)/, ref: { min: 75, max: 99 }, plaus: [5, 3000] },
+  { ab: 'HBA1C', nomes: ['hemoglobina glicada', 'hemoglobina glicosilada', 'hba1c', 'a1c'], ref: { min: null, max: 5.6 }, plaus: [2, 25] },
+  { ab: 'CR',    nomes: ['creatinina'], notAfter: /^\s*(urinaria|na urina|em urina|de urina|urina)/, notBefore: /clearance\s+(de\s+)?$/, ref: { min: 0.5, max: 1.3 }, plaus: [0.05, 30],
+    sexAge: (sx) => sx === 'F' ? { min: 0.6, max: 1.0 } : sx === 'M' ? { min: 0.7, max: 1.25 } : null, sexNota: 'F 0,6–1,0 · M 0,7–1,25 (auto)' },
+  { ab: 'UR',    nomes: ['ureia'], notAfter: /^\s*(urinaria|na urina|urina)/, ref: { min: 10, max: 55 }, plaus: [1, 600],
+    sexAge: (sx, age) => age != null && age < 20 ? { min: 10.9, max: 44.9 } : sx === 'F' ? (age != null && age < 50 ? { min: 14.9, max: 40 } : { min: 20.9, max: 43 }) : sx === 'M' ? (age != null && age < 50 ? { min: 19, max: 44 } : { min: 17.9, max: 54.9 }) : null,
+    sexNota: 'por sexo/idade do laudo (auto)' },
+  { ab: 'NA',    nomes: ['sodio'], notAfter: /^\s*(urinario|na urina|urina)/, ref: { min: 136, max: 145 }, plaus: [90, 200] },
+  { ab: 'K',     nomes: ['potassio'], notAfter: /^\s*(urinario|na urina|urina)/, ref: { min: 3.5, max: 5.1 }, plaus: [1, 12] },
+  { ab: 'MG',    nomes: ['magnesio'], ref: { min: 1.6, max: 2.6 }, plaus: [0.2, 10] },
+  { ab: 'CAT',   nomes: ['calcio total', 'calcio'], notAfter: /^\s*(ionico|ionizado|ion|i\b|livre|urinario)/, ref: { min: 8.4, max: 10.2 }, plaus: [2, 20],
+    sexAge: (sx, age) => sx === 'M' && age > 60 ? { min: 8.8, max: 10.0 } : null, sexNota: 'H > 60 a: 8,8–10,0 (auto)' },
+  { ab: 'CA ION',nomes: ['calcio ionico', 'calcio ionizado', 'calcio livre'], ref: { min: 1.15, max: 1.35 }, plaus: [0.3, 8],
+    unit: (a, v) => /^\s*mg/.test(a) || v > 3 ? { min: 4.0, max: 5.4, nota: 'mg/dL' } : null, unidadeNota: 'mmol/L; em mg/dL usa 4,0–5,4' },
+  { ab: 'P',     nomes: ['fosforo'], ref: { min: 2.5, max: 4.5 }, plaus: [0.3, 20] },
+  { ab: 'CL',    nomes: ['cloreto', 'cloro'], ref: { min: 98, max: 107 }, plaus: [50, 160] },
+  { ab: 'TSH',   nomes: ['tsh', 'hormonio tireoestimulante', 'tireotrofina'], ref: { min: 0.4, max: 4.0 }, plaus: [0, 500] },
+  { ab: 'T4L',   nomes: ['t4 livre', 't4l', 'tiroxina livre'], ref: { min: 0.8, max: 1.8 }, plaus: [0, 20] },
+  { ab: 'TGO',   nomes: ['transaminase oxalacetica', 'aspartato aminotransferase', 'tgo', 'ast'], ref: { min: null, max: 40 }, plaus: [1, 50000] },
+  { ab: 'TGP',   nomes: ['transaminase piruvica', 'alanina aminotransferase', 'tgp', 'alt'], ref: { min: null, max: 55 }, plaus: [1, 50000] },
+  { ab: 'FA',    nomes: ['fosfatase alcalina'], ref: { min: 40, max: 150 }, plaus: [1, 10000], thousands: true },
+  { ab: 'GGT',   nomes: ['gama[\\s\\-]*glutamil[\\s\\-]*transferase', 'gama[\\s\\-]*glutamil', 'gama[\\s\\-]*gt', 'ggt'], ref: { min: 9, max: 64 }, plaus: [1, 10000], thousands: true },
+  { ab: 'AMILASE', nomes: ['amilase'], ref: { min: 25, max: 125 }, plaus: [1, 20000], thousands: true },
+  { ab: 'LIPASE',  nomes: ['lipase'], ref: { min: 13, max: 60 }, plaus: [1, 50000], thousands: true },
+  { ab: 'BT',    nomes: ['bilirrubinas?[\\s\\-]*total'], bili: 'total', ref: { min: 0.2, max: 1.2 }, plaus: [0, 60] },
+  { ab: 'BI',    nomes: ['bilirrubinas?[\\s\\-]*indireta'], bili: 'indireta', ref: { min: 0.2, max: 0.7 }, plaus: [0, 60] },
+  { ab: 'BD',    nomes: ['bilirrubinas?[\\s\\-]*direta'], bili: 'direta', ref: { min: 0, max: 0.5 }, plaus: [0, 60] },
+  { ab: 'PT',    nomes: ['proteinas totais', 'proteina total'], notAfter: /^\s*(urinaria|na urina|urina|24)/, ref: { min: 6.0, max: 8.0 }, plaus: [1, 15] },
+  { ab: 'ALB',   nomes: ['albumina'], notAfter: /^\s*(urinaria|na urina|urina)/, ref: { min: 3.5, max: 5.0 }, plaus: [0.5, 8] },
+  { ab: 'TP',    coag: 'tp',  ref: { min: 10, max: 14 }, plaus: [5, 200] },
+  { ab: 'ATV',   coag: 'atv', ref: { min: 70, max: 130 }, plaus: [1, 200] },
+  { ab: 'INR',   coag: 'inr', ref: { min: null, max: 1.24 }, plaus: [0.5, 20] },
+  { ab: 'TTPA',  nomes: ['tempo de tromboplastina parcial ativad[ao]', 'tromboplastina parcial ativad[ao]', 'tromboplastina parcial', 'ttpa', 'kptt', 'aptt'], secs: true, ref: { min: 22, max: 40 }, plaus: [10, 250] },
+  { ab: 'FIBRI', nomes: ['fibrinogenio'], ref: { min: 180, max: 350 }, plaus: [10, 2000], thousands: true },
+  { ab: 'AC LAT',nomes: ['acido lactico', 'lactato'], ref: { min: 4.5, max: 19.8 }, plaus: [0.1, 300],
+    unit: a => /^\s*mmol/.test(a) ? { min: 0.5, max: 2.2, nota: 'mmol/L' } : null, unidadeNota: 'mg/dL; em mmol/L usa 0,5–2,2' },
+  { ab: 'DDIM',  nomes: ['d[\\s\\-]*dimero', 'dimero[\\s\\-]*d', 'dimero'], thousands: true, ref: { min: null, max: 500, strict: true }, plaus: [0, 200000],
+    unit: (a, v) => (/^\s*(ug|mg)\s*(\/\s*(ml|l)\b|feu)/.test(a)) || (!/^\s*ng/.test(a) && v < 20) ? { min: null, max: 0.5, strict: true, nota: 'µg/mL' } : null,
+    unidadeNota: 'ng/mL; em µg/mL ou mg/L usa < 0,5' },
+  { ab: 'TROP',  nomes: ['troponina(?:\\s*[it])?(?:\\s*(?:ultra[\\s\\-]*sensivel|us|hs|de alta sensibilidade))?'], ref: { min: null, max: 0.04, strict: true }, plaus: [0, 100000],
+    unit: (a, v) => /^\s*(ng\s*\/\s*l\b|pg\s*\/\s*ml)/.test(a) || (!/^\s*ng\s*\/\s*ml/.test(a) && v >= 1) ? { min: null, max: 14, strict: true, nota: 'ng/L' } : null,
+    unidadeNota: 'ng/mL; em ng/L (alta sensib.) usa < 14' },
+  { ab: 'CKMB',  nomes: ['ck[\\s\\-]*mb'], ref: { min: null, max: 25, strict: true }, plaus: [0, 5000] },
+  { ab: 'CPK',   nomes: ['cpk', 'creatinofosfoquinase', 'creatinoquinase', 'creatina[\\s\\-]*(?:fosfo)?quinase', 'ck total', 'ck'], notAfter: /^[\s\-]*mb/, thousands: true, ref: { min: 30, max: 200 }, plaus: [1, 500000] },
+  { ab: 'BNP',   nomes: ['bnp'], ref: { min: null, max: 100, strict: true }, plaus: [0, 50000], thousands: true },
+  { ab: 'NTPROBNP', nomes: ['nt[\\s\\-]*pro[\\s\\-]*bnp', 'pro[\\s\\-]*bnp'], ref: { min: null, max: 125, strict: true }, plaus: [0, 100000], thousands: true },
+  { ab: 'BHCG',  nomes: ['gonadotrofina corionica(?: humana)?(?:[\\s\\-]*fracao beta| beta)?', 'beta[\\s\\-]*hcg', 'b[\\s\\-]*hcg', 'bhcg', 'hcg'], qual: true, ref: { min: null, max: 5, strict: true }, plaus: [0, 2000000], thousands: true },
+];
+
+// Grupos da aba "Exames lançados" e seleção padrão SOT (cirurgia ortopédica + manejo infeccioso)
+const GRUPOS = [
+  ['Hemograma', ['HB', 'HT', 'LEUCO', 'PLAQ', 'RETIC']],
+  ['Inflamação / infecção', ['PCR', 'VHS', 'AC LAT']],
+  ['Renal / eletrólitos', ['CR', 'UR', 'NA', 'K', 'MG', 'CAT', 'CA ION', 'P', 'CL']],
+  ['Coagulação', ['TP', 'ATV', 'INR', 'TTPA', 'FIBRI', 'DDIM']],
+  ['Metabólico / nutrição', ['GLIC', 'HBA1C', 'ALB']],
+  ['Músculo / trauma', ['CPK']],
+  ['Pré-operatório', ['BHCG']],
+  ['Fígado / pâncreas', ['TGO', 'TGP', 'FA', 'GGT', 'BT', 'BI', 'BD', 'PT', 'AMILASE', 'LIPASE']],
+  ['Cardíaco', ['TROP', 'CKMB', 'BNP', 'NTPROBNP']],
+  ['Tireoide', ['TSH', 'T4L']],
+];
+const PADRAO_SOT = new Set(['HB', 'HT', 'LEUCO', 'PLAQ', 'PCR', 'VHS', 'AC LAT', 'CR', 'UR', 'NA', 'K',
+  'TP', 'ATV', 'INR', 'TTPA', 'FIBRI', 'GLIC', 'HBA1C', 'ALB', 'CPK', 'BHCG']);
+EXAMES.forEach(e => { e.off = !PADRAO_SOT.has(e.ab); });
+const oculto = (ab, cfg) => { const d = (cfg.disabled || {})[ab]; return d === undefined ? !PADRAO_SOT.has(ab) : !!d; };
+
+// Nomes que não são exames da linha, mas servem de "parede" para não ler o valor do vizinho
+const STOPPERS = [
+  'hemacias', 'eritrocitos', 'vcm', 'hcm', 'chcm', 'rdw', 'vpm', 'volume corpuscular', 'volume plaquetario',
+  'concentracao de hemoglobina', 'hemoglobina corpuscular', 'hbcm', 'chbcm', 'eritroblastos', 'comentarios', 'etfg', 'ratio', 'pool normal', 'eosinofilos', 'basofilos', 'linfocitos', 'monocitos',
+  'neutrofilos', 'blastos', 'promielocitos', 'mielocitos', 'metamielocitos', 'bastonetes', 'bastoes', 'segmentados',
+  'valores? de referencia', 'valor referencial', 'intervalo de referencia', 'referencia', 'metodo', 'material',
+  'nota', 'observacao', 'obs', 'liberado', 'assinado', 'responsavel', 'coletado', 'data da coleta',
+  'atividade', 'inr', 'rni', 'relacao', 'tempo controle', 'controle', 'gasometria',
+];
+const DIFF = [
+  { k: 'mi',   nomes: ['mielocitos'] },
+  { k: 'meta', nomes: ['metamielocitos'] },
+  { k: 'bast', nomes: ['bastonetes', 'bastoes'] },
+  { k: 'seg',  nomes: ['segmentados'] },
+];
+
+// Gasometria — refs arterial (A) e venosa (V)
+const GASO = [
+  { ab: 'PH',   nomes: ['ph'], ref: { A: { min: 7.35, max: 7.45 }, V: { min: 7.35, max: 7.45 } }, plaus: [6.5, 8] },
+  { ab: 'PCO2', abA: 'PACO2', abV: 'PVCO2', nomes: ['paco2', 'pvco2', 'pco2', 'pressao parcial de co2'], ref: { A: { min: 35, max: 45 }, V: { min: 37, max: 50 } }, plaus: [5, 200] },
+  { ab: 'PO2',  abA: 'PAO2', abV: 'PVO2', nomes: ['pao2', 'pvo2', 'po2', 'pressao parcial de o2'], ref: { A: { min: 80, max: 100 }, V: null }, plaus: [5, 700] },
+  { ab: 'HCO3', nomes: ['c?hco3(?:[\\s\\-]*(?:std|padrao|real|act))?', 'bicarbonato(?:[\\s\\-]*(?:padrao|standard|real))?'], ref: { A: { min: 22, max: 26 }, V: { min: 22, max: 29 } }, plaus: [1, 70] },
+  { ab: 'BE',   nomes: ['excesso de bases?', 'base excess', 'beecf', 'beb', 'be'], signed: true, ref: { A: { min: -2, max: 2 }, V: { min: -2, max: 2 } }, plaus: [-40, 40] },
+  { ab: 'SATO2',abA: 'SATO2', abV: 'SVO2', nomes: ['sat\\.?\\s*o2', 'sao2', 'svo2', 'so2', 'saturacao(?: de (?:o2|oxigenio))?'], ref: { A: { min: 95, max: null }, V: null }, plaus: [5, 100] },
+  { ab: 'LAC',  nomes: ['lactato', 'acido lactico'], ref: { A: { min: null, max: 2.0 }, V: { min: null, max: 2.0 } }, plaus: [0, 40],
+    unit: a => /^\s*mg\s*\/\s*dl/.test(a) ? { min: null, max: 18 } : null },
+];
+const GASO_STOP = ['fio2', 'temperatura', 'hemoglobina', 'hb', 'sodio', 'potassio', 'cloro', 'cloreto', 'calcio', 'glicose', 'anion gap', 'tco2', 'co2 total', 'ctco2', 'p50', 'shunt', 'a-ado2', 'ado2', 'pao2\\/fio2'];
+
+function matchesOf(t, src) {
+  const re = nameRe(src), out = [];
+  let m;
+  while ((m = re.exec(t))) out.push({ start: m.index, end: m.index + m[0].length });
+  return out;
+}
+
+function validOcc(t, occ, ex) {
+  if (ex.notAfter && ex.notAfter.test(t.slice(occ.end, occ.end + 30))) return false;
+  if (ex.notBefore && ex.notBefore.test(t.slice(Math.max(0, occ.start - 30), occ.start))) return false;
+  return true;
+}
+
+// Monta índice de "paredes": inícios de todos os nomes conhecidos
+function buildWalls(t, groups) {
+  const walls = [];
+  groups.forEach(g => g.nomes.forEach(src => matchesOf(t, src).forEach(o => walls.push({ ...o, id: g.id }))));
+  walls.sort((a, b) => a.start - b.start);
+  return walls;
+}
+function windowAfter(t, occ, walls, selfId, maxLen) {
+  let end = Math.min(t.length, occ.end + maxLen);
+  for (const w of walls) {
+    if (w.start < occ.end) continue;
+    if (w.start >= end) break;
+    if (w.id === selfId) continue;
+    end = w.start; break;
+  }
+  return t.slice(occ.end, end);
+}
+
+function pickNumber(w, ex, opts = {}) {
+  let s = ex.clean ? ex.clean(w) : w;
+  const seq = [];
+  const rm = s.match(/resultado\s*[:.\-]?\s*/);
+  if (rm) seq.push(...numbersIn(s.slice(rm.index + rm[0].length), ex.signed).slice(0, 1));
+  seq.push(...numbersIn(s, ex.signed));
+  for (const n of seq) {
+    if (opts.needSecs && !/^\s*(s\b|seg|segundos)/.test(n.after)) continue;
+    let v = toNum(n.raw, ex.thousands || !!ex.count);
+    if (isNaN(v)) continue;
+    if (n.neg) v = -v;
+    let display = null;
+    if (/^\s*mil\b/.test(n.after)) v *= 1000;
+    if (ex.count && v < ex.count) v *= 1000;           // 7,5 (x10³) → 7500
+    if (ex.count || (ex.thousands && /^\d{1,3}([.,]\d{3})+$/.test(n.raw))) display = String(Math.round(v));
+    if (ex.plaus && !n.op && (v < ex.plaus[0] || v > ex.plaus[1])) continue;
+    if (display === null) display = (n.neg ? '-' : '') + n.raw.replace(/\.(?=\d{3}(?!\d))(?=.*,)/g, '').replace(/[.,]/, '#').replace(/[.,]/g, '').replace('#', '.');
+    return { v, display: (n.op || '') + display, op: n.op, w: s, a: n.after };
+  }
+  return null;
+}
+
+function extractGeneric(t, ex, walls) {
+  for (const src of ex.nomes) {
+    for (const occ of matchesOf(t, src)) {
+      if (!validOcc(t, occ, ex)) continue;
+      const w = windowAfter(t, occ, walls, ex.ab, 420);
+      const r = pickNumber(w, ex, { needSecs: ex.secs && /seg|\ds\b/.test(w) });
+      if (r) {
+        if (/^\s*pos[\s\-]*transfus/.test(t.slice(occ.end, occ.end + 25))) r.tag = 'PÓS-TX';
+        return r;
+      }
+      if (ex.qual) {
+        const q = w.slice(0, 160).match(/\b(nao reagente|negativo|reagente|positivo)\b/);
+        if (q) { const neg = /nao|negativo/.test(q[1]); return { qualTxt: neg ? 'NEG' : 'POS', altered: !neg }; }
+      }
+    }
+  }
+  return null;
+}
+
+// Bilirrubinas em bloco ("BILIRRUBINAS ... Total 0.8 / Direta 0.2 / Indireta 0.6")
+function extractBiliBlock(t, ex) {
+  for (const occ of matchesOf(t, 'bilirrubinas?')) {
+    const blk = t.slice(occ.end, occ.end + 400);
+    const m = blk.match(new RegExp('(?<![a-z])' + ex.bili + '(?![a-z])[^\\d\\n]{0,25}(\\d+(?:[.,]\\d+)?)'));
+    if (m) { const v = toNum(m[1]); if (v >= ex.plaus[0] && v <= ex.plaus[1]) return { v, display: m[1].replace(',', '.') }; }
+  }
+  return null;
+}
+
+// Coagulograma: TP (segundos), atividade (%), INR/RNI
+function extractCoag(t, which) {
+  const heads = ['tempo de protrombina', 'tempo e atividade de protrombina', 'tempo de atividade de protrombina', 'protrombina', 'tap', 'tp'];
+  const occs = [];
+  heads.forEach(h => matchesOf(t, h).forEach(o => occs.push(o)));
+  occs.sort((a, b) => a.start - b.start);
+  const blocks = occs.map(o => {
+    let blk = t.slice(o.end, o.end + 450);
+    const stop = blk.search(/tromboplastina|ttpa|kptt|aptt|fibrinogenio|plaquetas|d[\s\-]*dimero/);
+    return stop > 0 ? blk.slice(0, stop) : blk;
+  });
+  const NUM = '(\\d+(?:[.,]\\d+)?)';
+  if (which === 'inr') {
+    const zones = [...blocks, t];
+    for (const z of zones) {
+      const m = z.match(new RegExp('(?<![a-z])(?:inr|rni|r\\.n\\.i\\.?|i\\.n\\.r\\.?)(?![a-z])[^\\d\\n]{0,30}' + NUM));
+      if (m) { const v = toNum(m[1]); if (v >= 0.5 && v <= 20) return { v, display: m[1].replace(',', '.') }; }
+    }
+    return null;
+  }
+  for (const b of blocks) {
+    if (which === 'atv') {
+      let m = b.match(new RegExp('atividade[^\\d\\n]{0,40}' + NUM)) || b.match(new RegExp(NUM + '\\s*%'));
+      if (m) { const v = toNum(m[1]); if (v > 0 && v <= 200) return { v, display: m[1].replace(',', '.') }; }
+    } else {
+      let m = b.match(new RegExp('(?:tempo(?: do paciente)?|paciente|resultado)[^\\d\\n]{0,20}' + NUM + '\\s*(?:s\\b|seg)')) ||
+              b.match(new RegExp('(?<![\\d.,])' + NUM + '\\s*(?:s\\b|seg)'));
+      if (m) { const v = toNum(m[1]); if (v >= 5 && v <= 200) return { v, display: m[1].replace(',', '.') }; }
+    }
+  }
+  // fallback direto ("Atividade protrombínica 85 %")
+  if (which === 'atv') {
+    const m = t.match(new RegExp('atividade (?:de )?protrombin\\w*[^\\d\\n]{0,30}' + NUM));
+    if (m) return { v: toNum(m[1]), display: m[1].replace(',', '.') };
+  }
+  return null;
+}
+
+function extractDiff(t, walls) {
+  const res = {};
+  let found = 0;
+  for (const d of DIFF) {
+    res[d.k] = null;
+    outer: for (const src of d.nomes) {
+      for (const occ of matchesOf(t, src)) {
+        const w = windowAfter(t, occ, walls, 'diff_' + d.k, 120);
+        const m = w.match(/(?<![\w.,])(\d+(?:[.,]\d+)?)\s*%/) || (numbersIn(w)[0] && { 1: numbersIn(w)[0].raw });
+        if (m) { const v = toNum(m[1]); if (v >= 0 && v <= 100) { res[d.k] = m[1].replace(',', '.'); found++; break outer; } }
+      }
+    }
+  }
+  if (!found) return null;
+  return ['mi', 'meta', 'bast', 'seg'].map(k => res[k] ?? '0').join('-');
+}
+
+function detectarData(t) {
+  const lab = t.match(/(?:data\s*(?:da|de)?\s*coleta|coletad[oa]\s*(?:em)?|coleta|data\s*(?:do)?\s*(?:exame|atendimento|resultado))[^\d\n]{0,25}(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?/);
+  let m = lab;
+  if (!m) {
+    const re = /(?<![\d\/])(\d{2})\/(\d{2})\/(\d{2,4})(?![\d\/])/g;
+    let x;
+    while ((x = re.exec(t))) {
+      if (/nasc|dn\b|d\.n\./.test(t.slice(Math.max(0, x.index - 25), x.index))) continue;
+      m = x; break;
+    }
+  }
+  if (!m) return '';
+  const d = +m[1], mo = +m[2];
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return '';
+  const ano = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : '';
+  return String(d).padStart(2, '0') + '/' + String(mo).padStart(2, '0') + (ano ? '/' + ano : '');
+}
+
+function isAltered(v, ref) {
+  if (!ref) return false;
+  if (ref.min != null && v < ref.min) return true;
+  if (ref.max != null && (ref.strict ? v >= ref.max : v > ref.max)) return true;
+  return false;
+}
+
+function avaliarOp(op, v, ref) {
+  // "<5" com ref máx 5 → normal; ">200" com ref máx 40 → alterado
+  if (!ref) return false;
+  if (op.startsWith('<')) return ref.min != null && v <= ref.min;
+  if (op.startsWith('>')) return ref.max != null && v >= ref.max;
+  return isAltered(v, ref);
+}
+
+// Extras da gasometria (opcional): eletrólitos/metabólitos do mesmo painel
+const GASO_EXTRA = [
+  { ab: 'NA',     nomes: ['sodio'], ref: { min: 136, max: 145 }, plaus: [90, 200] },
+  { ab: 'K',      nomes: ['potassio'], ref: { min: 3.5, max: 5.1 }, plaus: [1, 12] },
+  { ab: 'CA ION', nomes: ['calcio ionico', 'calcio ionizado'], ref: { min: 1.15, max: 1.35 }, plaus: [0.3, 8] },
+  { ab: 'CL',     nomes: ['cloro', 'cloreto'], ref: { min: 98, max: 107 }, plaus: [50, 160] },
+  { ab: 'GLIC',   nomes: ['glicose'], ref: { min: 75, max: 99 }, plaus: [5, 3000] },
+  { ab: 'HB',     nomes: ['hb', 'hemoglobina'], notBefore: /(o2|co|h|met|oxi|carboxi)\s*$/, ref: { min: 10, max: 18 }, plaus: [1, 30] },
+  { ab: 'HT',     nomes: ['ht', 'hematocrito'], ref: { min: 30, max: 54 }, plaus: [3, 90] },
+];
+
+function detectarSexoIdade(t) {
+  const sx = t.match(/(?<![a-z])sexo\s*:?\s*(masculino|feminino|m|f)(?![a-z])/);
+  const id = t.match(/(?<![a-z])idade\s*:?\s*(\d{1,3})/);
+  return { sexo: sx ? sx[1][0].toUpperCase() : '', idade: id ? +id[1] : null };
+}
+
+// Divide o texto em laudos (um por cabeçalho "Requisição ... Data: dd/mm/aa hh:mm")
+function segmentar(t) {
+  const re = /requisicao\s*:?\s*\d+[^\n]*?\bdata\s*:?\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/g;
+  const heads = [];
+  let m;
+  while ((m = re.exec(t))) heads.push(m);
+  if (!heads.length) {
+    const d = detectarData(t);
+    return [{ txt: t, data: d, key: d ? (d.slice(6) || '0000') + d.slice(3, 5) + d.slice(0, 2) : '', hora: '' }];
+  }
+  return heads.map((h, i) => {
+    let ano = h[3].length === 2 ? '20' + h[3] : h[3];
+    const dd = h[1].padStart(2, '0'), mm = h[2].padStart(2, '0');
+    return {
+      txt: t.slice(h.index, i + 1 < heads.length ? heads[i + 1].index : t.length),
+      data: `${dd}/${mm}/${ano}`, key: `${ano}${mm}${dd}`,
+      hora: h[4] ? h[4].padStart(2, '0') + ':' + h[5] : ''
+    };
+  });
+}
+
+function refFor(ex, cfg, ctx) {
+  const user = (cfg.refs || {})[ex.ab];
+  if (user) return { ...ex.ref, ...user };
+  if (ex.sexAge && cfg.sexRef !== false) { const r = ex.sexAge(ctx.sexo, ctx.idade); if (r) return r; }
+  return { ...ex.ref };
+}
+
+// Processa UM laudo/segmento
+function processarSegmento(t, cfg, ctx) {
+  const disabled = cfg.disabled || {};
+  const mainGroups = EXAMES.filter(e => e.nomes).map(e => ({ id: e.ab, nomes: e.nomes }));
+  const gasoShared = new Set(['NA', 'K', 'CL', 'CA ION', 'CAT', 'GLIC', 'AC LAT', 'HB', 'HT']);
+  const strongWalls = buildWalls(t, mainGroups.filter(g => !gasoShared.has(g.id)).concat([{ id: 'hemo', nomes: ['hemograma', 'coagulograma', 'eritrograma', 'leucograma', 'urina', 'eas'] }]));
+  const gasoHeads = matchesOf(t, 'gasometria(?:\\s*[-:]?\\s*(?:arterial|venosa|venosa central|mista))?|gaso\\s*(?:arterial|venosa)');
+  const gasoBlocks = [];
+  gasoHeads.forEach((h, i) => {
+    const head = t.slice(h.start, h.end);
+    let end = Math.min(t.length, h.end + 1500);
+    if (gasoHeads[i + 1]) end = Math.min(end, gasoHeads[i + 1].start);
+    for (const w of strongWalls) { if (w.start > h.end + 5 && w.start < end) { end = w.start; break; } }
+    const tipo = /venosa/.test(head) ? 'V' : /arterial/.test(head) ? 'A' : '';
+    gasoBlocks.push({ start: h.start, end, tipo, txt: t.slice(h.end, end) });
+  });
+  let tMain = t;
+  for (const b of gasoBlocks) tMain = tMain.slice(0, b.start) + ' '.repeat(b.end - b.start) + tMain.slice(b.end);
+
+  const walls = buildWalls(tMain, mainGroups.concat(
+    [{ id: 'stop', nomes: STOPPERS }],
+    DIFF.map(d => ({ id: 'diff_' + d.k, nomes: d.nomes }))
+  ));
+  const itens = {};
+  for (const ex of EXAMES) {
+    let r = null;
+    if (ex.coag) r = extractCoag(tMain, ex.coag);
+    else {
+      r = extractGeneric(tMain, ex, walls);
+      if (!r && ex.bili) r = extractBiliBlock(tMain, ex);
+    }
+    if (!r) continue;
+    let item;
+    if (r.qualTxt) item = { val: r.qualTxt, alt: r.altered };
+    else {
+      let ref = refFor(ex, cfg, ctx);
+      if (ex.unit) { const u = ex.unit(r.a || '', r.v); if (u) ref = u; }
+      item = { val: r.display, v: r.v, alt: r.op ? avaliarOp(r.op, r.v, ref) : isAltered(r.v, ref), unidade: ref.nota || '', tag: r.tag || '' };
+    }
+    if (ex.ab === 'LEUCO' && cfg.diff !== false) item.diff = extractDiff(tMain, walls);
+    item.hidden = oculto(ex.ab, cfg);
+    itens[ex.ab] = item;
+  }
+
+  const gasos = [];
+  const extras = cfg.gasoExtra ? GASO_EXTRA : [];
+  const gWallsGroups = GASO.concat(extras).map(g => ({ id: g.ab, nomes: g.nomes })).concat([{ id: 'gstop', nomes: GASO_STOP.concat(STOPPERS) }]);
+  for (const b of gasoBlocks) {
+    const gw = buildWalls(b.txt, gWallsGroups);
+    const tipo = b.tipo || 'A';
+    const params = [];
+    for (const g of GASO) {
+      const r = extractGeneric(b.txt, g, gw);
+      const label = (tipo === 'V' ? g.abV : g.abA) || g.ab;
+      if (!r) { params.push({ ab: label, val: null }); continue; }
+      let ref = g.ref[tipo];
+      if (g.unit && ref) { const u = g.unit(r.a || '', r.v); if (u) ref = u; }
+      params.push({ ab: label, val: r.display, v: r.v, alt: ref ? isAltered(r.v, ref) : false });
+    }
+    for (const g of extras) {
+      const r = extractGeneric(b.txt, g, gw);
+      if (r) params.push({ ab: g.ab, val: r.display, v: r.v, alt: isAltered(r.v, g.ref) });
+    }
+    if (params.some(p => p.val !== null)) gasos.push({ label: b.tipo === 'V' ? 'GASO V' : b.tipo === 'A' ? 'GASO A' : 'GASO', params, hidden: !cfg.gaso });
+  }
+  return { itens, gasos };
+}
+
+// cfg: { refs, disabled, diff, sexRef, gasoExtra }
+// Retorna { dias: [{ data, itens:[{ab, vals:[...]}], gasos:[...] }], faltando, sexo, idade }
+function processar(raw, cfg = {}) {
+  const t = norm(raw);
+  const ctx = detectarSexoIdade(t);
+  const segs = segmentar(t).map((sg, i) => ({ ...sg, ordem: i, res: processarSegmento(sg.txt, cfg, ctx) }));
+  segs.sort((a, b) => (a.key + a.hora).localeCompare(b.key + b.hora) || a.ordem - b.ordem);
+
+  const diasMap = new Map();
+  for (const sg of segs) {
+    if (!diasMap.has(sg.key)) diasMap.set(sg.key, { data: sg.data, por: {}, gasos: [], ocultos: [] });
+    const dia = diasMap.get(sg.key);
+    for (const [ab, it] of Object.entries(sg.res.itens)) {
+      if (it.hidden) {
+        if (it.alt && !dia.ocultos.some(o => o.ab === ab && o.val === it.val)) dia.ocultos.push({ ab, val: it.val });
+        continue;
+      }
+      const lista = dia.por[ab] = dia.por[ab] || [];
+      const ult = lista[lista.length - 1];
+      const sig = it.val + '|' + (it.diff || '') + '|' + it.tag;
+      if (ult && ult.sig === sig) continue;            // mesmo valor repetido (ex.: plaquetas do hemograma + contagem)
+      lista.push({ ...it, sig, hora: sg.hora });
+    }
+    for (const g of sg.res.gasos) {
+      if (g.hidden) {
+        g.params.filter(p => p.alt).forEach(p => {
+          const ab = `${p.ab} (${g.label})`;
+          if (!dia.ocultos.some(o => o.ab === ab && o.val === p.val)) dia.ocultos.push({ ab, val: p.val });
+        });
+        continue;
+      }
+      const sig = g.label + JSON.stringify(g.params.map(p => p.val));
+      if (!dia.gasos.some(x => x.sig === sig)) dia.gasos.push({ ...g, sig, hora: sg.hora });
+    }
+  }
+  const encontrados = new Set();
+  const dias = [...diasMap.values()].map(d => ({
+    data: d.data,
+    itens: EXAMES.filter(e => d.por[e.ab]).map(e => { encontrados.add(e.ab); return { ab: e.ab, vals: d.por[e.ab] }; }),
+    gasos: d.gasos,
+    ocultos: d.ocultos
+  })).filter(d => d.itens.length || d.gasos.length || d.ocultos.length);
+  const faltando = EXAMES.filter(e => !encontrados.has(e.ab) && !oculto(e.ab, cfg)).map(e => e.ab);
+  return { dias, faltando, sexo: ctx.sexo, idade: ctx.idade, nSeg: segs.length };
+}
+
+if (typeof module !== 'undefined') module.exports = { processar, norm, toNum, EXAMES };
+
+window.ExamesSOT={processar:processar,EXAMES:EXAMES};
+})();
+</script>
+<script>
+"use strict";
+var LABS1=["Hb","Ht","Leuco","Plaq"], LABS2=["TP","INR","TTPA","Fib"], LABS3=["Cr","Ur","Na","K","Glic"];
+var LABS=LABS1.concat(LABS2,LABS3);
+
+function c(o){ // completa uma célula com campos padrão
+  var b={hora:"",cab:"",origem:"AMB",fonte:"amb",preData:"",labs:{},extras:"",cmb:"",muc:"",alergia:"",peso:"",
+         cardio:"",apa:"",rch:"",uti:"",pend:"",cir:"",dx:"",mec:"",cirPrev:"",fxPrev:"",laudos:"",obs:"",locked:{},ign:{},duv:{},alt:{}};
+  for(var k in o) b[k]=o[k];
+  b.id=b.id||("c"+Math.random().toString(36).slice(2,9));
+  return b;
+}
+function exemplo(){
+  return {
+  "2026-11-11":{titulo:"qua. 11 nov. 2026",cels:[
+    c({hora:"00:15–05:00",cab:"Jefferson Alves da Silva, 26a, P: 253571, retirada de fixador externo de bacia + osteossíntese de sínfise púbica + fechamento de sacroilíaca (VA + percutâneo VP), Ass. Dr. R. Toma",
+       origem:"UTI-C 1317",fonte:"internograma",preData:"08/11",labs:{Leuco:"7640",Plaq:"276k",TP:"12,5",INR:"1,05",TTPA:"22,8",Fib:"524",Cr:"0,62",Ur:"25"},
+       cmb:"HAS",muc:"Nega",alergia:"Nega",cardio:"—",apa:"—",rch:"2 CH ✓",uti:"✓",pend:"Hb/Ht pós-transfusão. IOT + sedação",
+       cir:"Retirada de fixador externo de bacia + osteossíntese de sínfise púbica + fechamento de sacroilíaca",dx:"Fx bacia open book (20/10)",mec:"Acidente de moto",
+       cirPrev:"Fixador externo de bacia (20/10)",fxPrev:"Fx rádio e ulna distal E",laudos:"—"}),
+    c({hora:"05:00–10:15",cab:"Maria Aparecida de Amorim, 73a, P: 561624, RMS de canulado + PTQ primária, Ass. Dr. Rodrigo Antoniassi",
+       preData:"22/07",labs:{Hb:"12,8",Plaq:"265k",TP:"11,2",INR:"0,88",TTPA:"20,0",Fib:"447",Cr:"0,58",Ur:"46",Na:"141",K:"4,2",Glic:"108"},
+       duv:{cmb:true,muc:true},cmb:"Chagas",muc:"Não sabe informar todas; complexo B, fluticasona + umeclidínio + vilanterol, anlodipino, metoprolol",alergia:"Nega",
+       cardio:"20/08: baixo risco",apa:"15/08: liberado, CH + UTI",rch:"2 CH ✓",uti:"✓",
+       cir:"RMS de parafuso canulado + PTQ primária E",dx:"Osteonecrose femoral E após soltura de material",mec:"—",
+       cirPrev:"Osteossíntese de quadril E (2021)",fxPrev:"Fx fêmur proximal E (2021)",laudos:"—"}),
+    c({hora:"10:15–15:00",cab:"Raone Willian Pereira, 32a, P: 777390, osteossíntese de rádio distal esquerdo, Ass. Dr. Amilton",
+       preData:"03/11",labs:{Hb:"16",Ht:"45",Plaq:"296k",TP:"11,5",INR:"0,96",TTPA:"21,1",Fib:"401"},
+       cmb:"Nega",muc:"Nega",alergia:"Nega",cardio:"—",apa:"—",rch:"—",uti:"—",
+       cir:"Osteossíntese de rádio distal E",dx:"Fx rádio distal E (02/11)",mec:"Queda de 2 m",cirPrev:"—",fxPrev:"—",laudos:"—"}),
+    c({hora:"15:00–20:00",cab:"Madalena Correia da Silva, 66a, P: 347097, osteossíntese de olécrano à esquerda, Ass. Dr. Adriano",
+       preData:"27/10",labs:{Hb:"14,3",Plaq:"132k",TP:"12,0",INR:"1,0",TTPA:"22,2",Fib:"401",Cr:"0,7",Ur:"41",Na:"140",K:"4,2",Glic:"115"},
+       cmb:"Nega",muc:"Nega",alergia:"Nega",cardio:"—",apa:"—",rch:"—",uti:"—",
+       cir:"Osteossíntese de olécrano E",dx:"Fx olécrano E (27/10)",mec:"Queda da própria altura",cirPrev:"—",fxPrev:"—",laudos:"—"}),
+    c({hora:"20:00–23:45",cab:"Daniela Meira dos Santos Belizário, 48a, P: 55226, tentativa de reparo do manguito rotador à direita (vídeo, cobrar material), Ass. Dr. Marcos Vinícius",
+       preData:"07/10",labs:{Hb:"14,5",Ht:"43",Plaq:"323k",TP:"11,4",INR:"0,95",TTPA:"22,8",Fib:"333",Cr:"0,82",Ur:"32",Na:"142",K:"4,0",Glic:"104"},
+       cmb:"HAS, fibromialgia",muc:"Losartana, pregabalina, duloxetina, trazodona, cannabis e Ozempic (SUSP 01/10)",alergia:"Nega",
+       cardio:"—",apa:"06/10: liberado; suspender Ozempic 15 d e cannabis 5 d",rch:"—",uti:"—",
+       cir:"Reparo artroscópico do manguito rotador D",dx:"Sd. do manguito rotador D",mec:"—",cirPrev:"—",fxPrev:"—",laudos:""})
+  ]},
+  "2026-11-10":{titulo:"ter. 10 nov. 2026",cels:[
+    c({hora:"00:00–05:00",cab:"Terezinha Botelho, 78a, P: 658579, PTJ à esquerda, Ass. Dr. Ewerton",
+       preData:"19/10",labs:{Hb:"14,3",Ht:"33",Leuco:"6480",Plaq:"145k",TP:"15,3",INR:"1,2",TTPA:"33,0",Fib:"391",Cr:"0,91",Ur:"31",Na:"139",K:"5,0",Glic:"108"},
+       cmb:"Obesidade, DM, HAS, DLP",muc:"Atenolol, clortalidona, quetiapina, sinvastatina, Glifage, escitalopram",duv:{alergia:true},alergia:"Tramadol",
+       cardio:"22/10: risco intermediário",apa:"26/10: liberado, pós em UTI",rch:"2 CH ✓",uti:"✓",
+       cir:"PTJ E",dx:"Gonartrose bilateral",mec:"—",cirPrev:"PTJ D (2025); osteossíntese de tíbia proximal D (2022); osteotomia valgizante (2010)",fxPrev:"—",laudos:"—"}),
+    c({hora:"05:00–10:00",cab:"Wagner Belarmino de Barros, 38a, P: 777344, osteossíntese bimaleolar à direita, Ass. Dr. Amilton",
+       preData:"01/11",labs:{Hb:"14,2",Ht:"42",Leuco:"10850",Plaq:"280k",TP:"12,1",INR:"1,01",TTPA:"21,1",Fib:"238"},
+       cmb:"Nega",muc:"Nega",alergia:"Nega",cardio:"—",apa:"—",rch:"—",uti:"—",
+       cir:"Osteossíntese bimaleolar D",dx:"Fx bimaleolar D (01/11)",mec:"Queda de cavalo",cirPrev:"—",fxPrev:"—",laudos:"—"}),
+    c({hora:"10:00–15:00",cab:"Wanda de Sousa Mantuani, 75a, P: 202846, revisão de PTQ à direita, Ass. Dr. Adriano",
+       origem:"ALA C 1351",fonte:"internograma",
+       cmb:"HAS, FA paroxística, DM2, DLP",muc:"NPH, Regular, atorvastatina, enalapril, Glifage, clonazepam, edoxabana (SUSP), metoprolol, amiodarona",alergia:"Nega",
+       cardio:"05/11: risco intermediário",apa:"SOLIC",rch:"2 CH ✓",uti:"✓",pend:"Hb/Ht pós",
+       cir:"Revisão de PTQ D",dx:"Fx periprotética de fêmur D (03/11)",mec:"",cirPrev:"PTQ D (2023)",fxPrev:"Fx colo de fêmur D (08/22)",laudos:"—"}),
+    c({hora:"15:00–20:00",cab:"Leonice dos Santos, 59a, P: 278119, PTQ primária, Ass. Dr. Antoniassi",
+       preData:"03/11",labs:{Hb:"14,3",Ht:"44,7",Plaq:"239k",TP:"11,7",INR:"0,97",TTPA:"24,9",Fib:"458",Cr:"0,72",Ur:"41",Na:"142",K:"4,5",Glic:"145"},
+       duv:{cmb:true,muc:true},cmb:"DM, DLP",muc:"Glifage, sinvastatina, duloxetina, vit. D, pregabalina",alergia:"Nega",
+       cardio:"05/11: baixo risco",apa:"09/11: liberado",rch:"2 CH ✓",uti:"✓",
+       cir:"PTQ primária E",dx:"Coxartrose E (doença de Perthes?)",mec:"—",cirPrev:"—",fxPrev:"—",laudos:"Gonartrose D"}),
+    c({hora:"20:00–24:00",cab:"Cleide Santos da Silva, 55a, P: 234868, PTQ cerâmica à direita, Ass. Dr. R. Antoniassi",
+       preData:"09/10",labs:{Hb:"12,5",Ht:"38,4",Plaq:"318k",TP:"11,7",INR:"0,97",TTPA:"25",Fib:"420",Cr:"0,68",Ur:"43",Na:"140",K:"3,9",Glic:"87"},
+       cmb:"Nega",muc:"Paroxetina",alergia:"Nega",cardio:"—",apa:"28/10: liberado",rch:"2 CH ✓",uti:"✓",
+       cir:"PTQ cerâmica D",dx:"Coxartrose D, dor há 7 anos",mec:"—",cirPrev:"—",fxPrev:"—",laudos:"—"})
+  ]}
+  };
+}
+// Simulação de uma releitura do internograma (valores fictícios, só para mostrar a trava)
+var INTERNOGRAMA_NOVO={"253571":{labs:{Hb:"8,9",Ht:"27"}},
+                       "202846":{preData:"09/11",labs:{Hb:"9,6",Ht:"29",Plaq:"198k",INR:"1,1"}}};
+function pront(x){var m=String(x.cab||"").match(/\b(?:P|ID|R|Reg)\s*[:.]?\s*(\d{3,})/i);return m?m[1]:"";}
+
+var CHAVE=window.__SOT?"mapaSOT.app":"mapaSOT.v4", dados, dia=window.__SOT?(function(){var d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);})():"2026-11-11";
+function carregar(){
+  try{var s=localStorage.getItem(CHAVE); if(s){dados=JSON.parse(s);}}catch(e){}
+  if(!dados){ dados=window.__SOT?{}:exemplo(); for(var k in dados) dados[k].cels.forEach(function(x){ CAMPOS_TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],k); }); }); }
+  for(var d in dados){ dados[d].status=dados[d].status||{fechado:false}; dados[d].log=dados[d].log||[]; dados[d].cels.forEach(function(x){x.duv=x.duv||{};x.alt=x.alt||{};x.ign=x.ign||{};x.locked=x.locked||{};}); }
+}
+// ---------- datas ----------
+var CAMPOS_TXT=["preData","extras","cmb","muc","cardio","apa","pend","obs","dx","mec","cirPrev","fxPrev","laudos"];
+function p2(n){return (n<10?"0":"")+n;}
+// DD/MM sem ano ganha o ano (relativo ao dia do mapa). Só com dois dígitos em cada parte, para não tocar em "1/3 distal".
+function anoDatas(s,iso){
+  var Y=+iso.slice(0,4), M=+iso.slice(5,7), D=+iso.slice(8,10);
+  s=String(s||"").replace(/(?<![\d\/])(\d{1,2})\/(\d{1,2})\/20(\d\d)(?![\d\/])/g,function(a,d,m,y){return p2(+d)+"/"+p2(+m)+"/"+y;});
+  return s.replace(/(?<![\d\/.,])(\d{2})\/(\d{2})(?![\d\/.,])/g,function(a,d,m){
+    d=+d; m=+m; if(d<1||d>31||m<1||m>12) return a;
+    var y=(m>M||(m===M&&d>D))?Y-1:Y; return p2(d)+"/"+p2(m)+"/"+String(y).slice(2);
+  });
+}
+// Dias entre a única data completa do texto e o DIA DA CIRURGIA (data do mapa)
+function contagem(s,max){
+  var re=/(?<![\d\/])(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})(?![\d\/])/g, ms=[], m;
+  while((m=re.exec(String(s||"")))) ms.push(m);
+  if(ms.length!==1) return null;
+  var y=+ms[0][3]; if(y<100) y+=2000;
+  var n=Math.round((Date.UTC(+dia.slice(0,4),+dia.slice(5,7)-1,+dia.slice(8,10))-Date.UTC(y,+ms[0][2]-1,+ms[0][1]))/864e5);
+  return (n>=0&&n<=max)?n:null;
+}
+function idade(x){var m=String(x.cab||"").match(/,\s*(\d{1,3})\s*(?:anos?|a)\b/i);return m?+m[1]:null;}
+function menor(x){var i=idade(x);return i!==null&&i<18;}
+var ROT={cab:"Cabeçalho",hora:"Horário",origem:"Origem",preData:"Data dos pré-ops",extras:"Exames extras",cmb:"CMB",muc:"MUC",alergia:"Alergia",peso:"Peso",cardio:"Av Cardio",apa:"APA",rch:"RCH",uti:"UTI",pend:"Pendências",obs:"OBS",cir:"Cirurgia",dx:"Dx",mec:"Mecanismo",cirPrev:"Cir. prévias",fxPrev:"Fx prévias/assoc.",laudos:"Laudos"};
+function rot(f){return f.indexOf("labs.")===0?f.slice(5):(ROT[f]||f);}
+function quando(t){var d=new Date(t);return p2(d.getDate())+"/"+p2(d.getMonth()+1)+"/"+String(d.getFullYear()).slice(2)+" "+p2(d.getHours())+":"+p2(d.getMinutes());}
+function salvar(){
+  var ok=true;
+  try{localStorage.setItem(CHAVE,JSON.stringify(dados));}catch(e){ok=false;}
+  if(window.__SOT&&dados[dia]){ try{ dados[dia].salvoEm=Date.now(); parent.postMessage({src:"mapa",type:"mapa-salvar",dia:dia,dados:dados[dia]},"*"); }catch(e){} }
+  var h=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  document.getElementById("estado").textContent=ok?("Salvo neste navegador às "+h+" (no app: Drive da equipe)"):"Sem salvamento neste navegador";
+}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function num(s){var m=String(s||"").replace(/\./g,"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;}
+function neg(s){return /^\s*(nega|negam?|não|nao|—|-|sem)\b/i.test(s||"")||/^\s*—\s*$/.test(s||"");}
+
+// ---------- regras automáticas ----------
+var ANTI=/(varfarina|marevan|rivaroxabana|xarelto|apixabana|eliquis|edoxabana|dabigatrana|pradaxa|enoxaparina|clexane|heparina|\baas\b|clopidogrel|ozempic|semaglutida|liraglutida|mounjaro)/i;
+function pendAuto(x){
+  var p=[], temLab=LABS.some(function(k){return x.labs[k];});
+  if(!temLab) p.push("Checar pré-ops");
+  else{
+    var hb=num(x.labs.Hb);
+    if(hb===null) p.push("Sem Hb: checar Hb/Ht");
+    else if(hb<=10) p.push("Hb "+x.labs.Hb+" (≤ 10): checar Hb/Ht");
+    if(!x.preData) p.push("Anotar data dos pré-ops");
+  }
+  var m=(x.muc||"").match(ANTI);
+  if(m && !/susp[^;,)]*\d{1,2}\/\d{1,2}/i.test(x.muc)) p.push("Checar suspensão de "+m[1].toLowerCase()+" (anotar data)");
+  if(/solic/i.test(x.rch)) p.push("Confirmar RCH");
+  if(/solic/i.test(x.uti)) p.push("Confirmar vaga de UTI");
+  if(/solic/i.test(x.apa)) p.push("Cobrar APA");
+  if(/solic/i.test(x.cardio)) p.push("Cobrar Av Cardio");
+  if(menor(x) && !x.peso) p.push("Peso (menor de 18 anos)");
+  var ig=x.ign||{};
+  return p.filter(function(t){return !ig[t.replace(/[\d,.]+/g,"#")];});
+}
+var SITU=[
+  [/tireoid|levotirox|puran|euthyrox/i,["TSH","T4L"]],
+  [/\bdm\d?\b|diabet|glifage|metformin|insulin|\bnph\b/i,["HbA1c"]],
+  [/\bdrc\b|renal cr|nefropat|dialis|diális/i,["TFG"]],
+  [/hepatopat|cirros|etilis/i,["TGO","TGP","BT","Alb"]],
+  [/varfarin|marevan/i,["INR do dia"]],
+  [/infec|séptic|septic|limpeza|osteomielit/i,["PCR","VHS"]]
+];
+function sugestoes(x){
+  var base=[x.cmb,x.muc,x.cir,x.dx].join(" "), out=[];
+  SITU.forEach(function(r){ if(r[0].test(base)) r[1].forEach(function(e){
+    if(out.indexOf(e)<0 && (x.extras||"").toLowerCase().indexOf(e.toLowerCase())<0) out.push(e);
+  });});
+  return out;
+}
+
+// ---------- desenho ----------
+function ed(x,f,extra){
+  var v=f.indexOf("labs.")===0?x.labs[f.slice(5)]:x[f];
+  var dv=x.duv&&x.duv[f], al=x.alt&&(f in x.alt);
+  var cls="ed"+(x.locked[f]?" trava":"")+(extra?" "+extra:"")+(dv?" duv":"")+(al?" alt":"");
+  return '<span class="'+cls+'" contenteditable="true" spellcheck="false" data-id="'+x.id+'" data-f="'+f+'"'+(al?' title="Antes de fechar: '+esc(x.alt[f]||"vazio")+'"':'')+'>'+esc(v||"")+'</span>'+
+    (dv?'<button class="q" data-id="'+x.id+'" data-duvok="'+f+'" title="Leitura com dúvida. Confira e toque para confirmar.">?</button>':'');
+}
+function labLinha(x,ks){
+  return ks.map(function(k){return '<span class="lab"><em>'+k+'</em> '+ed(x,"labs."+k,"opc")+'</span>';}).join(" ");
+}
+function chips(x,f){
+  return '<span class="chips">'+["✓","SOLIC","—"].map(function(v){
+    return '<button class="chip" data-id="'+x.id+'" data-set="'+f+'" data-v="'+v+'">'+v+'</button>';}).join("")+'</span>';
+}
+function celHTML(x){
+  var pa=pendAuto(x), sg=sugestoes(x);
+  var alPos=x.alergia && !neg(x.alergia);
+  var nTrav=Object.keys(x.locked).length;
+  var mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
+  var h='<div class="cel">';
+  h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>';
+  h+='<div class="corpo">';
+  h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
+  h+='<div class="col meio">';
+  h+='<div class="labs"><span class="data">PRÉ-OPS ('+ed(x,"preData","opc")+'):</span> '+labLinha(x,LABS1)+'<br>'+labLinha(x,LABS2)+'<br>'+labLinha(x,LABS3);
+  h+='<br><span class="lab"><em>+</em> '+ed(x,"extras","opc")+'</span><span class="chips"><button class="chip" data-id="'+x.id+'" data-ac="exame">+ exame</button></span>';
+  if(sg.length) h+='<div class="sug">Sugeridos pela CMB/MUC: '+sg.map(function(e){return '<button class="chip" data-id="'+x.id+'" data-add="'+esc(e)+'">+ '+esc(e)+'</button>';}).join(" ")+'</div>';
+  h+='</div>';
+  h+='<div class="duas"><div>';
+  h+='<div class="lin"><b>CMB:</b> '+ed(x,"cmb")+'</div>';
+  h+='<div class="lin"><b>MUC:</b> '+ed(x,"muc")+'</div>';
+  h+='<div class="lin"><b>ALERGIA:</b> '+ed(x,"alergia",alPos?"alergia-pos":"")+'</div>';
+  h+='<div class="lin'+(mn?'':' opc')+'"><b>PESO:</b> '+ed(x,"peso",mn?"":"opc")+'</div>';
+  h+='</div><div>';
+  h+='<div class="lin"><b>Av Cardio:</b> '+ed(x,"cardio","opc")+chips(x,"cardio")+'</div>';
+  h+='<div class="lin"><b>APA:</b> '+ed(x,"apa","opc")+chips(x,"apa")+'</div>';
+  h+='<div class="lin"><b>RCH:</b> '+ed(x,"rch","opc")+chips(x,"rch")+'</div>';
+  h+='<div class="lin"><b>UTI:</b> '+ed(x,"uti","opc")+chips(x,"uti")+'</div>';
+  h+='</div></div>';
+  h+='<div class="lin opc obs"><b>OBS:</b> '+ed(x,"obs","opc")+'</div>';
+  h+='<div class="pend">⚠ '+pa.map(function(p){return '<span class="auto" role="button" tabindex="0" title="Dispensar esta pendência" data-id="'+x.id+'" data-ign="'+esc(p)+'">'+esc(p)+'</span>';}).join("")+ed(x,"pend","opc")+'</div>';
+  h+='</div>';
+  h+='<div class="col dir">';
+  h+='<div class="lin cir">'+ed(x,"cir")+'</div>';
+  h+='<div class="lin"><b>Dx:</b> '+ed(x,"dx")+(nd!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+nd+' d</span>':'')+'</div>';
+  h+='<div class="lin"><b>Mecanismo:</b> '+ed(x,"mec","opc")+'</div>';
+  h+='<div class="lin"><b>Cir. prévias:</b> '+ed(x,"cirPrev","opc")+(npo!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+npo+'º PO</span>':'')+'</div>';
+  h+='<div class="lin"><b>Fx prévias/assoc.:</b> '+ed(x,"fxPrev","opc")+'</div>';
+  h+='<div class="lin"><b>Laudos:</b> '+ed(x,"laudos","opc")+'</div>';
+  h+='</div></div>';
+  h+='<div class="acoes"><button class="cap" data-id="'+x.id+'" data-ac="cap">Captar dados (texto ou foto)</button>'+
+     '<button data-id="'+x.id+'" data-ac="sobe" aria-label="Mover para cima">↑</button><button data-id="'+x.id+'" data-ac="desce" aria-label="Mover para baixo">↓</button>'+
+     (nDuv?'<button data-id="'+x.id+'" data-ac="okduv">Confirmar '+nDuv+' dúvida(s)</button>':'')+
+     (nTrav?'<button data-id="'+x.id+'" data-ac="destrava">Destravar '+nTrav+' campo(s)</button>':'')+
+     '<button data-id="'+x.id+'" data-ac="rem">Remover</button></div>';
+  h+='</div>';
+  return h;
+}
+var vista="mapa", pacSel=null;
+function linhaDados(x){
+  var labs=LABS.filter(function(k){return x.labs[k];}).map(function(k){return k+" "+x.labs[k];}).join(" / ");
+  var pend=pendAuto(x).concat(x.pend?[x.pend]:[]).join("; ");
+  var partes=[x.cab,"Origem: "+x.origem,
+    labs?("Pré-ops"+(x.preData?" ("+x.preData+")":"")+": "+labs+(x.extras?" / "+x.extras:"")):(x.extras?"Exames: "+x.extras:""),
+    x.cmb&&"CMB: "+x.cmb,x.muc&&"MUC: "+x.muc,x.alergia&&"Alergia: "+x.alergia,x.peso&&"Peso: "+x.peso,
+    "Av Cardio: "+(x.cardio||"—"),"APA: "+(x.apa||"—"),"RCH: "+(x.rch||"—"),"UTI: "+(x.uti||"—"),
+    x.cir&&"Cirurgia: "+x.cir,x.dx&&"Dx: "+x.dx,x.mec&&x.mec!=="—"&&"Mecanismo: "+x.mec,
+    x.cirPrev&&x.cirPrev!=="—"&&"Cir. prévias: "+x.cirPrev,x.fxPrev&&x.fxPrev!=="—"&&"Fx prévias/assoc.: "+x.fxPrev,
+    x.laudos&&x.laudos!=="—"&&"Laudos: "+x.laudos,x.obs&&"OBS: "+x.obs,pend&&"Pendências: "+pend];
+  return partes.filter(Boolean).join(" | ");
+}
+function copiarLinha(x){
+  var t=linhaDados(x);
+  try{ navigator.clipboard.writeText(t).then(function(){toast("Linha copiada.");},function(){toast("Não deu para copiar automaticamente. Toque no texto para selecionar e copie.");}); }
+  catch(e){ toast("Toque no texto para selecionar e copie."); }
+}
+function desenharPaciente(){
+  var a=dados[dia].cels; if(!a.length){document.getElementById("folhas").innerHTML='<p style="text-align:center">Nenhuma cirurgia neste dia.</p>';return;}
+  var x=achar(pacSel)||a[0]; pacSel=x.id;
+  var h='<div class="pacs">'+a.map(function(z){
+    return '<button class="pac'+(z.id===x.id?' ativa':'')+'" data-pac="'+z.id+'"><small>'+esc(z.hora)+'</small>'+esc(z.cab.split(",")[0])+'</button>';}).join("")+'</div>';
+  h+='<div class="folha ind" style="--n:1"><div class="folha-topo"><b>Mapa do paciente</b><span>'+esc(dados[dia].titulo)+'</span></div><div class="celulas">'+celHTML(x)+'</div></div>';
+  h+='<div class="linha"><h3>Linha de dados<button data-id="'+x.id+'" data-ac="copiar">Copiar</button></h3><p>'+esc(linhaDados(x))+'</p></div>';
+  document.getElementById("folhas").innerHTML=h;
+}
+var MED=null;
+function paginar(cels,max){
+  var r={pags:[],cheia:[],movidas:[],grandes:[]};
+  if(!cels.length){ r.pags=[[]]; r.cheia=[false]; return r; }
+  if(!MED){ MED=document.createElement("div"); MED.id="medidor"; MED.className="pp"; MED.setAttribute("aria-hidden","true"); document.body.appendChild(MED); }
+  MED.innerHTML='<div style="height:100mm;width:1px"></div><div class="folha" style="height:auto"><div class="folha-topo"><b>X</b><span>X</span></div><div class="celulas" style="display:block">'+cels.map(celHTML).join("")+'</div></div>';
+  var mm=MED.firstChild.offsetHeight/100, topo=MED.querySelector(".folha-topo");
+  var hs=[].map.call(MED.querySelectorAll(".cel"),function(e){return e.offsetHeight;});
+  var tH=topo.offsetHeight+(parseFloat(getComputedStyle(topo).marginBottom)||0);
+  MED.innerHTML="";
+  if(!mm){ var n=max<99?max:5; for(var i=0;i<cels.length;i+=n){ r.pags.push(cels.slice(i,i+n)); r.cheia.push(true); } return r; }
+  var disp=194*mm-tH-2, gap=1.2*mm, pag=[], uso=0;
+  function fecha(){ r.pags.push(pag); r.cheia.push(uso/disp>0.72); pag=[]; uso=0; }
+  cels.forEach(function(x,i){
+    var hx=hs[i], precisa=uso+(pag.length?gap:0)+hx;
+    if(pag.length && (pag.length>=max || precisa>disp)){
+      if(pag.length<max) r.movidas.push(x.cab.split(",")[0]);
+      fecha(); precisa=hx;
+    }
+    if(hx>disp) r.grandes.push(x.cab.split(",")[0]);
+    pag.push(x); uso=precisa;
+  });
+  fecha();
+  return r;
+}
+function statusTxt(d){
+  var s=d.status||{}, n=(d.log||[]).length;
+  return s.fechado?("Fechado em "+quando(s.em)+" por "+s.por+(n?" · "+n+" alteração(ões) depois (*)":"")):"RASCUNHO";
+}
+function desenharStatus(info){
+  var d=dados[dia], s=d.status||{}, n=(d.log||[]).length, q="";
+  try{ q=localStorage.getItem("mapaSOT.quem")||""; }catch(e){}
+  var h='<span class="pill '+(s.fechado?'fech':'rasc')+'">'+(s.fechado?'Fechado':'Rascunho')+'</span>';
+  if(s.fechado) h+='<span>em '+quando(s.em)+' por '+esc(s.por)+(n?' · <b>'+n+' alteração(ões) depois</b>':'')+'</span><button id="btReabrir">Reabrir mapa</button>';
+  else h+='<label for="quem">Responsável</label><input id="quem" autocomplete="off" value="'+esc(q)+'" placeholder="seu nome"><button id="btFechar">Fechar mapa</button>';
+  h+='<span class="drive">No app: Drive › MAPA CIRURGICO › '+dia.slice(0,7)+' › Mapa '+dia+' (dados + PDF)</span>';
+  if(info && info.pags.length>1) h+='<div class="quebra"><b>Este mapa ocupa '+info.pags.length+' folhas.</b> '+(info.movidas.length?('Para não cortar a célula, passou inteiro para a folha seguinte: '+esc(info.movidas.join(", "))+'.'):'')+'</div>';
+  if(info && info.grandes.length) h+='<div class="quebra"><b>Célula maior que uma folha:</b> '+esc(info.grandes.join(", "))+'. Reduza o texto para ela não ser cortada na impressão.</div>';
+  document.getElementById("status").innerHTML=h;
+  var a="";
+  if(n){ a='<h3>Alterações depois do fechamento</h3><ul>'+d.log.map(function(l){
+      return '<li>'+quando(l.em)+' · <b>'+esc(l.pac)+'</b> · '+esc(l.campo)+(l.de!==undefined?': “'+esc(l.de||"vazio")+'” → “'+esc(l.para||"vazio")+'”':'')+'</li>';}).join("")+'</ul>'; }
+  document.getElementById("alts").innerHTML=a;
+}
+function topoHTML(d,p,tot){
+  return '<div class="folha-topo"><b>Ortopedia Marília SOT · Mapa cirúrgico</b><span>'+esc(statusTxt(d))+' · '+esc(d.titulo)+(tot>1?" · folha "+(p+1)+"/"+tot:"")+'</span></div>';
+}
+function desenhar(){
+  if(vista==="pac"){ desenharStatus(null); desenharPaciente(); return; }
+  var d=dados[dia], sel=document.getElementById("selN").value, max=sel==="auto"?99:parseInt(sel,10);
+  var info=paginar(d.cels,max), tot=info.pags.length, h="";
+  info.pags.forEach(function(cs,p){
+    h+='<div class="folha'+(info.cheia[p]?' cheia':'')+'" style="--n:'+Math.max(1,cs.length)+'">'+topoHTML(d,p,tot)+'<div class="celulas">'+
+       (cs.length?cs.map(celHTML).join(""):'<p style="margin:10px">Nenhuma cirurgia neste dia. Use “+ Cirurgia”.</p>')+'</div></div>';
+  });
+  document.getElementById("folhas").innerHTML=h;
+  desenharStatus(info);
+}
+function achar(id){var a=dados[dia].cels;for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];return null;}
+function gravar(x,f,v,manual){
+  v=String(v).replace(/\s+/g," ").trim();
+  if(CAMPOS_TXT.indexOf(f)>=0) v=anoDatas(v,dia);
+  var antes=f.indexOf("labs.")===0?(x.labs[f.slice(5)]||""):(x[f]||"");
+  if(v===antes) return false;
+  if(f.indexOf("labs.")===0){ if(v) x.labs[f.slice(5)]=v; else delete x.labs[f.slice(5)]; } else x[f]=v;
+  if(manual) x.locked[f]=true;
+  if(x.duv) delete x.duv[f];
+  var d=dados[dia];
+  if(d.status&&d.status.fechado){
+    x.alt=x.alt||{};
+    if(!(f in x.alt)) x.alt[f]=antes; else if(x.alt[f]===v) delete x.alt[f];
+    d.log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:rot(f),de:antes,para:v});
+  }
+  return true;
+}
+function toast(t){var e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none";},3800);}
+
+// ---------- eventos ----------
+var folhas=document.getElementById("folhas");
+folhas.addEventListener("focusout",function(ev){
+  var t=ev.target; if(!t.classList||!t.classList.contains("ed")) return;
+  var x=achar(t.dataset.id); if(!x) return;
+  if(gravar(x,t.dataset.f,t.textContent,true)){ salvar(); setTimeout(function(){
+    var a=document.activeElement, k=(a&&a.classList&&a.classList.contains("ed"))?[a.dataset.id,a.dataset.f]:null;
+    desenhar(); if(k) focar(k[0],k[1]);
+  },0); }
+});
+function focar(id,f){
+  var e=folhas.querySelector('.ed[data-id="'+id+'"][data-f="'+f+'"]'); if(!e) return;
+  e.focus(); var r=document.createRange(); r.selectNodeContents(e); r.collapse(false);
+  var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+folhas.addEventListener("paste",function(ev){
+  if(!ev.target.closest||!ev.target.closest(".ed")) return;
+  ev.preventDefault();
+  var t=((ev.clipboardData||window.clipboardData).getData("text")||"").replace(/\s+/g," ");
+  var s=window.getSelection(); if(!s.rangeCount) return;
+  var r=s.getRangeAt(0); r.deleteContents(); r.insertNode(document.createTextNode(t)); r.collapse(false);
+});
+folhas.addEventListener("keydown",function(ev){
+  if(ev.key==="Enter" && ev.target.classList.contains("ed")){ev.preventDefault();ev.target.blur();}
+});
+folhas.addEventListener("click",function(ev){
+  var pb=ev.target.closest("[data-pac]"); if(pb){ pacSel=pb.dataset.pac; desenhar(); return; }
+  var b=ev.target.closest("button,[data-ign]"); if(!b) return;
+  var x=achar(b.dataset.id); if(!x) return;
+  var a=dados[dia].cels, i=a.indexOf(x);
+  if(b.dataset.duvok){ delete x.duv[b.dataset.duvok]; }
+  else if(b.dataset.ac==="okduv"){ x.duv={}; }
+  else if(b.dataset.ign){ x.ign=x.ign||{}; x.ign[b.dataset.ign.replace(/[\d,.]+/g,"#")]=true; }
+  else if(b.dataset.set){ gravar(x,b.dataset.set,b.dataset.v,true); }
+  else if(b.dataset.add){ x.extras=(x.extras?x.extras+" / ":"")+b.dataset.add+" —"; x.locked.extras=true; }
+  else if(b.dataset.ac==="cap"){ abrirCap(x); return; }
+  else if(b.dataset.ac==="exame"){ if(x.extras && !/\/\s*$/.test(x.extras)) x.extras+=" / "; desenhar(); focar(x.id,"extras"); return; }
+  else if(b.dataset.ac==="copiar"){ copiarLinha(x); return; }
+  else if(b.dataset.ac==="sobe"&&i>0){ a.splice(i-1,0,a.splice(i,1)[0]); }
+  else if(b.dataset.ac==="desce"&&i<a.length-1){ a.splice(i+1,0,a.splice(i,1)[0]); }
+  else if(b.dataset.ac==="destrava"){ x.locked={}; x.ign={}; }
+  else if(b.dataset.ac==="rem"){
+    if(b.dataset.conf){ a.splice(i,1); if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
+  }
+  salvar(); desenhar();
+});
+document.getElementById("selDia").addEventListener("change",function(){dia=this.value;pacSel=null;desenhar();});
+document.getElementById("selN").addEventListener("change",desenhar);
+function trocarVista(v){ vista=v; document.getElementById("abaMapa").classList.toggle("ativa",v==="mapa"); document.getElementById("abaPac").classList.toggle("ativa",v==="pac"); desenhar(); }
+document.getElementById("abaMapa").addEventListener("click",function(){trocarVista("mapa");});
+document.getElementById("abaPac").addEventListener("click",function(){trocarVista("pac");});
+document.getElementById("btNova").addEventListener("click",function(){
+  dados[dia].cels.push(c({hora:"__:__–__:__",cab:"Nome, idade, P: prontuário, cirurgia, Ass. Dr."}));
+  if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:"Nova cirurgia",campo:"célula adicionada"});
+  salvar(); desenhar(); toast("Célula nova no fim do mapa. No app ela vem do evento da agenda.");
+  var e=folhas.querySelector(".folha:last-child .cel:last-child"); if(e) e.scrollIntoView({block:"center"});
+});
+document.getElementById("btRestaurar").addEventListener("click",function(){
+  if(this.dataset.conf){ dados=null; try{localStorage.removeItem(CHAVE);}catch(e){} carregar(); salvar(); desenhar(); delete this.dataset.conf; this.textContent="Restaurar exemplo"; toast("Exemplo restaurado."); }
+  else { this.dataset.conf="1"; this.textContent="Confirmar: apagar edições"; }
+});
+document.getElementById("btAtualizar").addEventListener("click",function(){
+  var mud=0, mant=0;
+  dados[dia].cels.forEach(function(x){
+    var u=INTERNOGRAMA_NOVO[pront(x)]; if(!u) return;
+    function ap(f,v){ if(x.locked[f]){mant++;return;} if(gravar(x,f,v,false)) mud++; }
+    if(u.origem) ap("origem",u.origem);
+    if(u.preData) ap("preData",u.preData);
+    for(var k in (u.labs||{})) ap("labs."+k,u.labs[k]);
+  });
+  salvar(); desenhar();
+  toast("Simulação: "+mud+" campo(s) atualizado(s) do internograma, "+mant+" campo(s) travado(s) mantido(s).");
+});
+function modoFolha(on){ folhas.classList.toggle("pp",!!on); }
+window.addEventListener("beforeprint",function(){modoFolha(true);});
+window.addEventListener("afterprint",function(){modoFolha(false);});
+document.getElementById("btImprimir").addEventListener("click",function(){
+  modoFolha(true);
+  try{window.print();}catch(e){}
+  setTimeout(function(){modoFolha(false);},400);
+  toast("Se a janela de impressão não abrir aqui, abra o arquivo .html no navegador e use Ctrl+P (A4 paisagem).");
+});
+
+var stEl=document.getElementById("status");
+stEl.addEventListener("input",function(ev){ if(ev.target.id==="quem"){ try{localStorage.setItem("mapaSOT.quem",ev.target.value);}catch(e){} } });
+stEl.addEventListener("click",function(ev){
+  var d=dados[dia];
+  if(ev.target.id==="btFechar"){
+    var q=(document.getElementById("quem").value||"").trim();
+    if(!q){ toast("Escreva o nome do responsável antes de fechar o mapa."); document.getElementById("quem").focus(); return; }
+    d.status={fechado:true,por:q,em:Date.now()}; d.log=[]; d.cels.forEach(function(x){x.alt={};});
+    salvar(); desenhar(); toast("Mapa fechado. A partir de agora, toda alteração fica marcada com *.");
+  } else if(ev.target.id==="btReabrir"){
+    d.status={fechado:false}; salvar(); desenhar(); toast("Mapa reaberto como rascunho. As marcas de alteração somem no próximo fechamento.");
+  }
+});
+function tituloDia(iso){
+  var d=new Date(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8,10));
+  return d.toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"}).replace(/ de /g," ").replace(",","");
+}
+function montarDias(){
+  var s=document.getElementById("selDia"), ks=Object.keys(dados).sort().reverse();
+  s.innerHTML=ks.map(function(k){return '<option value="'+k+'">'+esc(dados[k].titulo)+'</option>';}).join("");
+  if(!dados[dia]) dia=ks[0]; s.value=dia;
+}
+document.getElementById("inDia").addEventListener("change",function(){
+  var iso=this.value; this.value=""; if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+  if(!dados[iso]) dados[iso]={titulo:tituloDia(iso),cels:[],status:{fechado:false},log:[]};
+  dia=iso; pacSel=null; montarDias(); salvar(); desenhar();
+  toast("Mapa de "+dados[iso].titulo+" aberto. No app, as cirurgias vêm da agenda.");
+});
+
+// ---------- captura ----------
+var capAlvo=null;
+function abrirCap(x){
+  capAlvo=x; document.getElementById("capTit").textContent="Captar dados: "+x.cab.split(",")[0];
+  document.getElementById("capTxt").value=""; document.getElementById("capRes").textContent="";
+  document.getElementById("capImg").innerHTML=""; document.getElementById("capFoto").value="";
+  document.getElementById("modal").classList.add("aberto"); document.getElementById("capTxt").focus();
+}
+function fecharCap(){document.getElementById("modal").classList.remove("aberto");capAlvo=null;}
+document.getElementById("capFechar").addEventListener("click",fecharCap);
+document.getElementById("modal").addEventListener("click",function(ev){if(ev.target===this) fecharCap();});
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){fecharCap();document.getElementById("modalLote").classList.remove("aberto");}});
+document.getElementById("capFoto").addEventListener("change",function(){
+  var f=this.files&&this.files[0]; if(!f) return;
+  var r=new FileReader(); r.onload=function(){document.getElementById("capImg").innerHTML='<img alt="Folha enviada" src="'+r.result+'">';}; r.readAsDataURL(f);
+});
+var RX={
+  Hb:/\b(?:hb|hemoglobina)(?!a1c)(?!\s*glic)\s*[:=]?\s*([\d.,]+)/i, Ht:/\b(?:ht|hto|hemat[óo]crito)\s*[:=]?\s*([\d.,]+)/i,
+  Leuco:/\bleuc\w*\s*[:=]?\s*([\d.,]+)/i, Plaq:/\bplaq\w*\s*[:=]?\s*([\d.,]+)\s*(k|mil)?/i,
+  TP:/\b(?:tp|tap)\s*[:=]?\s*([\d.,]+)/i, INR:/\b(?:inr|rni)\s*[:=]?\s*([\d.,]+)/i,
+  TTPA:/\bttpa?\s*[:=]?\s*([\d.,]+)/i, Fib:/\bfib\w*\s*[:=]?\s*([\d.,]+)/i,
+  Cr:/\b(?:cr|creat\w*)\s*[:=]?\s*([\d.,]+)/i, Ur:/\b(?:ur|ur[eé]ia)\s*[:=]?\s*([\d.,]+)/i,
+  Na:/\b(?:na|s[óo]dio)\s*[:=]?\s*([\d.,]+)/i, K:/\b(?:k|pot[áa]ssio)\s*[:=]?\s*([\d.,]+)/i,
+  Glic:/\bglic\w*\s*[:=]?\s*([\d.,]+)/i
+};
+var RXT={cmb:/^\s*(?:cmb|comorbidades?|ap)\s*[:=]\s*(.+)$/im, muc:/^\s*(?:muc|medica[çc][õo]es[^:]*)\s*[:=]\s*(.+)$/im,
+  alergia:/^\s*alergias?\s*[:=]\s*(.+)$/im, peso:/^\s*peso\s*[:=]\s*(.+)$/im,
+  mec:/^\s*mecanismo\s*[:=]\s*(.+)$/im, dx:/^\s*(?:dx|diagn[óo]stico|hd)\s*[:=]\s*(.+)$/im};
+// Exames de outra data não se misturam: ao chegar um conjunto com data nova, os antigos (não travados) saem
+function trocaData(x,nova){
+  if(!nova||!x.preData) return 0;
+  if(anoDatas(String(nova),dia)===x.preData) return 0;
+  var n=0; LABS.forEach(function(k){ if(x.labs[k]&&!x.locked["labs."+k]){ gravar(x,"labs."+k,"",false); n++; } });
+  return n;
+}
+var MAPA_AB={HB:"Hb",HT:"Ht",LEUCO:"Leuco",PLAQ:"Plaq",TP:"TP",INR:"INR",TTPA:"TTPA",FIBRI:"Fib",CR:"Cr",UR:"Ur",NA:"Na",K:"K",GLIC:"Glic"};
+var NOME_AB={HBA1C:"HbA1c",ALB:"Alb",BHCG:"β-hCG","AC LAT":"Lactato",FIBRI:"Fib"};
+// faixa plausível para valores vindos de abreviação: fora dela o valor é descartado (ex.: "na 2ª semana")
+var FAIXA={Hb:[3,25],Ht:[10,70],Leuco:[300,300000],Plaq:[5,2000],TP:[5,100],INR:[0.5,15],TTPA:[10,200],Fib:[30,1500],Cr:[0.1,20],Ur:[3,400],Na:[100,180],K:[1.5,9],Glic:[20,1000]};
+function lerTexto(t){
+  var r={labs:{},txt:{},duv:{},extras:[],dias:0}, k, m;
+  // 1) laudo por extenso: motor do Exames Updater
+  try{
+    var dis={}; window.ExamesSOT.EXAMES.forEach(function(e){dis[e.ab]=false;});
+    var res=window.ExamesSOT.processar(t,{disabled:dis}); r.dias=res.dias.length;
+    var d=res.dias[res.dias.length-1];
+    if(d){
+      if(d.data) r.data=d.data;
+      d.itens.forEach(function(it){
+        var v=it.vals[it.vals.length-1]; if(!v||v.val==null) return;
+        var val=String(v.val).replace(".",","), campo=MAPA_AB[it.ab];
+        if(campo){ r.labs[campo]=(campo==="Plaq"&&v.v>=1000)?Math.round(v.v/1000)+"k":val; if(it.vals.length>1) r.duv["labs."+campo]=true; }
+        else r.extras.push((NOME_AB[it.ab]||it.ab)+" "+val);
+      });
+    }
+  }catch(e){}
+  // 2) abreviações (Hb 14,3 / Ht 44...)
+  for(k in RX){
+    if(r.labs[k]) continue;
+    var g=new RegExp(RX[k].source,"gi"), vals=[], x;
+    while((x=g.exec(t))){
+      var v=x[1].replace(/[.,]$/,""), n;
+      if(k==="Plaq"){ n=num(v); n=(x[2]||n<1000)?Math.round(n):Math.round(n/1000); v=n+"k"; }
+      else if(k==="Leuco"){ n=num(v); v=String(n); }
+      else n=parseFloat(v.replace(",","."));
+      if(n===null||isNaN(n)||n<FAIXA[k][0]||n>FAIXA[k][1]) continue;
+      if(vals.indexOf(v)<0) vals.push(v);
+    }
+    if(vals.length){ r.labs[k]=vals[vals.length-1]; if(vals.length>1) r.duv["labs."+k]=true; }
+  }
+  for(k in RXT){ m=t.match(RXT[k]); if(m) r.txt[k]=m[1].trim(); }
+  if(!r.data){ m=t.match(/(?<![\d\/])(\d{2}\/\d{2}(?:\/\d{2,4})?)(?![\d\/])/); if(m) r.data=m[1]; }
+  return r;
+}
+document.getElementById("capLer").addEventListener("click",function(){
+  if(!capAlvo) return;
+  var r=lerTexto(document.getElementById("capTxt").value), n=0, k, nd=0;
+  var sub=Object.keys(r.labs).length?trocaData(capAlvo,r.data):0;
+  for(k in r.labs){ if(gravar(capAlvo,"labs."+k,r.labs[k],false)) n++; }
+  for(k in r.txt){ if(gravar(capAlvo,k,r.txt[k],false)) n++; }
+  if(r.extras.length){ var ex=(capAlvo.extras?capAlvo.extras+" / ":"")+r.extras.join(" / "); if(gravar(capAlvo,"extras",ex,false)) n++; }
+  if(r.data && Object.keys(r.labs).length && gravar(capAlvo,"preData",r.data,false)) n++;
+  for(k in r.duv){ capAlvo.duv[k]=true; nd++; }
+  if(r.dias>1){ capAlvo.duv.preData=true; nd++; }
+  salvar(); desenhar();
+  document.getElementById("capRes").textContent=n?(n+" campo(s) preenchido(s)."+(r.dias>1?" O texto tinha exames de "+r.dias+" dias: usei o mais recente.":"")+(sub?" Os exames da data anterior foram substituídos.":"")+(nd?" "+nd+" campo(s) marcado(s) com ? para conferir.":" Confira na célula antes de imprimir.")):"Nada reconhecido no texto. Confira o formato ou preencha direto na célula.";
+});
+
+// ---------- fotos em lote ----------
+var amostra=null, lote=[];
+if(window.claude&&window.claude.use){ window.claude.use("sample").then(function(s){amostra=s;}).catch(function(){}); }
+var PROMPT='Você lê uma foto ou print de ficha/exames de UM paciente de ortopedia (print do sistema ou folha digitada). Extraia apenas o que estiver legível, sem inventar. Responda SOMENTE um JSON com estas chaves (use "" quando não houver): '+
+ '{"nome":"","prontuario":"","data_exames":"DD/MM/AAAA","duvidas":["nomes das chaves cuja leitura ficou incerta, ex.: Hb, muc"],"labs":{"Hb":"","Ht":"","Leuco":"","Plaq":"","TP":"","INR":"","TTPA":"","Fib":"","Cr":"","Ur":"","Na":"","K":"","Glic":""},'+
+ '"outros_exames":"ex.: TSH 2,1 / T4L 1,0","cmb":"comorbidades","muc":"medicações de uso contínuo","alergia":"","peso":"","dx":"diagnóstico com lado D/E e data da fratura (DD/MM/AAAA) se houver","mec":"mecanismo do trauma","cirPrev":"cirurgias prévias","fxPrev":"fraturas prévias ou associadas","obs":"outras observações relevantes","cardio":"avaliação cardiológica: data e risco","apa":"avaliação pré-anestésica: data e resultado"}. '+
+ 'Valores numéricos como estão na folha, com vírgula decimal. Plaquetas em mil seguido de k (ex.: 276k).';
+function reduzir(file){
+  return new Promise(function(ok,er){
+    var u=URL.createObjectURL(file), im=new Image();
+    im.onload=function(){
+      var m=1800, k=Math.min(1,m/Math.max(im.width,im.height)), cv=document.createElement("canvas");
+      cv.width=Math.round(im.width*k); cv.height=Math.round(im.height*k);
+      cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+      cv.toBlob(function(b){ok({blob:b||file,url:u});},"image/jpeg",0.85);
+    };
+    im.onerror=function(){er(new Error("imagem inválida"));};
+    im.src=u;
+  });
+}
+function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
+function casar(r){
+  var a=dados[dia].cels, pr=String(r.prontuario||"").replace(/\D/g,""), nm=norm(r.nome).replace(/[^a-z ]/g," ").trim();
+  var ini=nm.split(/\s+/).filter(function(w){return w.length>2||nm.split(/\s+/).length<3;}).map(function(w){return w[0];}).join("");
+  var ach=null;
+  a.forEach(function(x){
+    if(ach) return;
+    var cab=norm(x.cab), dig=pront(x);
+    if(pr && dig && pr===dig) ach=x;
+    else if(nm.length>5 && cab.indexOf(nm)===0) ach=x;
+    else if(ini.length>=2 && cab.split(",")[0].replace(/[^a-z]/g,"")===ini) ach=x;
+  });
+  return ach;
+}
+function aplicar(x,r){
+  var n=0, k;
+  function ap(f,v){ v=String(v==null?"":v).trim(); if(!v||x.locked[f]) return; if(gravar(x,f,v,false)) n++; }
+  if(Object.keys(r.labs||{}).some(function(k){return r.labs[k];})) trocaData(x,r.data_exames);
+  for(k in (r.labs||{})) if(LABS.indexOf(k)>=0) ap("labs."+k,r.labs[k]);
+  ap("preData",r.data_exames); ap("extras",r.outros_exames);
+  (Array.isArray(r.duvidas)?r.duvidas:[]).forEach(function(k){
+    k=String(k); var f=LABS.indexOf(k)>=0?"labs."+k:(k==="data_exames"?"preData":k==="outros_exames"?"extras":k);
+    if(f.indexOf("labs.")===0||ROT[f]) x.duv[f]=true;
+  });
+  ["cmb","muc","alergia","peso","dx","mec","cirPrev","fxPrev","cardio","apa","obs"].forEach(function(f){ap(f,r[f]);});
+  return n;
+}
+function desenharLote(){
+  var ops=dados[dia].cels.map(function(x){return '<option value="'+x.id+'">'+esc(x.cab.split(",")[0])+" ("+esc(x.hora)+")</option>";}).join("");
+  document.getElementById("loteLista").innerHTML=lote.map(function(it,i){
+    var s='<div class="item"><img alt="" src="'+it.url+'"><div><div>'+esc(it.nome)+'</div>';
+    if(it.st==="espera") s+='<div class="st es">Na fila</div>';
+    else if(it.st==="lendo") s+='<div class="st es">Lendo a foto…</div>';
+    else if(it.st==="ok") s+='<div class="st ok">'+esc(it.msg)+'</div>';
+    else if(it.st==="erro") s+='<div class="st er">'+esc(it.msg)+'</div>';
+    else if(it.st==="semcel") s+='<div class="st er">'+esc(it.msg)+'</div><div class="lin2"><label for="lsel'+i+'">Aplicar em</label><select id="lsel'+i+'">'+ops+'</select><button class="btn" data-lote="'+i+'">Aplicar</button></div>';
+    return s+'</div></div>';
+  }).join("")||'<p>Nenhuma foto enviada ainda.</p>';
+}
+function processarLote(){
+  var it=null; for(var i=0;i<lote.length;i++) if(lote[i].st==="espera"){it=lote[i];break;}
+  if(!it) return;
+  it.st="lendo"; desenharLote();
+  amostra(PROMPT,{images:[it.blob],cache:false}).then(function(res){
+    var t=String(res&&res.text||""), a=t.indexOf("{"), b=t.lastIndexOf("}"), r=null;
+    try{r=JSON.parse(t.slice(a,b+1));}catch(e){}
+    if(!r){it.st="erro";it.msg="Não consegui ler esta foto. Use Captar dados na célula.";return;}
+    it.r=r;
+    var x=casar(r), quem=(r.nome||"sem nome")+(r.prontuario?" (P: "+r.prontuario+")":"");
+    if(x){ var n=aplicar(x,r); it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)."; salvar(); desenhar(); }
+    else { it.st="semcel"; it.msg="Li "+quem+", mas não achei esse paciente no mapa do dia."; }
+  }).catch(function(e){
+    it.st="erro";
+    it.msg=(e&&e.code==="not_granted")?"Leitura não autorizada nesta página.":(e&&e.code==="rate_limited")?"Limite de leituras atingido. Tente de novo em alguns minutos.":"Falha ao ler esta foto.";
+    if(e&&(e.code==="not_granted"||e.code==="rate_limited")) lote.forEach(function(o){ if(o.st==="espera"){o.st="erro";o.msg=it.msg;} });
+  }).then(function(){ desenharLote(); processarLote(); });
+}
+document.getElementById("btFotos").addEventListener("click",function(){
+  document.getElementById("modalLote").classList.add("aberto"); desenharLote();
+  if(!amostra){
+    document.getElementById("loteMsg").textContent="A leitura automática das fotos só funciona na página publicada no Claude (não no arquivo aberto direto no navegador). Se você está na página publicada, aguarde alguns segundos e abra de novo.";
+    return;
+  }
+  if(!lote.length) document.getElementById("inFotos").click();
+});
+document.getElementById("loteMais").addEventListener("click",function(){ if(amostra) document.getElementById("inFotos").click(); });
+document.getElementById("loteFechar").addEventListener("click",function(){document.getElementById("modalLote").classList.remove("aberto");});
+document.getElementById("inFotos").addEventListener("change",function(){
+  var fs=[].slice.call(this.files||[]); this.value="";
+  if(!fs.length||!amostra) return;
+  Promise.all(fs.map(function(f){
+    return reduzir(f).then(function(o){return {nome:f.name,blob:o.blob,url:o.url,st:"espera"};},function(){return {nome:f.name,url:"",st:"erro",msg:"Arquivo de imagem inválido."};});
+  })).then(function(novos){
+    var ocupado=lote.some(function(o){return o.st==="lendo";});
+    lote=lote.concat(novos); desenharLote(); if(!ocupado) processarLote();
+  });
+});
+document.getElementById("loteLista").addEventListener("click",function(ev){
+  var b=ev.target.closest("button[data-lote]"); if(!b) return;
+  var i=parseInt(b.dataset.lote,10), it=lote[i], x=achar(document.getElementById("lsel"+i).value);
+  if(!it||!x) return;
+  var n=aplicar(x,it.r); it.st="ok"; it.msg=(it.r.nome||"Foto")+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s).";
+  salvar(); desenhar(); desenharLote();
+});
+
+// ---------- início ----------
+carregar();
+if(window.__SOT&&!dados[dia]) dados[dia]={titulo:tituloDia(dia),cels:[],status:{fechado:false},log:[]};
+montarDias();
+desenhar();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){desenhar();});
+window.addEventListener("resize",function(){ clearTimeout(window.__rz); window.__rz=setTimeout(function(){ var a=document.activeElement; if(!(a&&a.classList&&a.classList.contains("ed"))) desenhar(); },250); });
+document.getElementById("estado").textContent=window.__SOT?"Salva automaticamente no aparelho e no Drive (pasta MAPA CIRURGICO)":"Salvamento automático neste navegador (no app: Drive da equipe)";
+/* ===== ponte com o SOT APP: as cirurgias vêm da Agenda, os dados do internograma ===== */
+(function(){
+  if(!window.__SOT) return;
+  var btR=document.getElementById("btRestaurar"); if(btR) btR.style.display="none";
+  var av=document.querySelector(".aviso span"); if(av) av.innerHTML="<b>Cirurgias da Agenda do dia; internados com dados do internograma.</b> Toque em qualquer campo para editar (fica travado e não é sobrescrito).";
+  function pedir(d){ parent.postMessage({src:"mapa",type:"mapa-pedir",dia:d||dia},"*"); }
+  function trocarBotao(id,fn){ var b=document.getElementById(id); if(!b) return; var n=b.cloneNode(true); b.parentNode.replaceChild(n,b); n.addEventListener("click",fn); return n; }
+  var bA=trocarBotao("btAtualizar",function(){ pedir(); toast("Relendo Agenda e internograma…"); }); if(bA) bA.textContent="Atualizar da Agenda/internograma";
+  document.getElementById("selDia").addEventListener("change",function(){ pedir(this.value); });
+  document.getElementById("inDia").addEventListener("change",function(){ setTimeout(function(){ pedir(dia); },50); });
+  var TXT=["preData","extras","cmb","muc","cardio","apa","pend","obs","dx","mec","cirPrev","fxPrev","laudos"];
+  window.addEventListener("message",function(e){
+    var m=e.data||{}; if(m.src!=="sot") return;
+    if(m.type==="mapa-dados"){
+      var iso=m.dia, loc=dados[iso], sv=m.salvo;
+      if(sv&&sv.cels&&(!loc||(sv.salvoEm||0)>(loc.salvoEm||0))){ dados[iso]=sv; loc=sv; loc.cels.forEach(function(x){x.duv=x.duv||{};x.alt=x.alt||{};x.ign=x.ign||{};x.locked=x.locked||{};x.labs=x.labs||{};}); loc.status=loc.status||{fechado:false}; loc.log=loc.log||[]; }
+      if(!loc){ loc=dados[iso]={titulo:m.titulo||tituloDia(iso),cels:[],status:{fechado:false},log:[]}; }
+      dia=iso; var novos=0, mud=0, mant=0;
+      (m.cels||[]).forEach(function(inc){
+        var x=null; loc.cels.forEach(function(z){ if(z.id===inc.id) x=z; });
+        if(!x){ x=c(inc); TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; loc.cels.push(x); novos++; return; }
+        Object.keys(inc).forEach(function(f){
+          if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
+          if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
+          var v=inc[f]; if(v==null||v==="") return;
+          if(x.locked[f]){ mant++; return; }
+          if(gravar(x,f,v,false)) mud++;
+        });
+      });
+      loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
+      pacSel=m.foco||pacSel; if(m.foco) trocarVista("pac");
+      montarDias(); salvar(); desenhar();
+      if(m.aviso!==false) toast((novos?novos+" cirurgia(s) nova(s) da Agenda. ":"")+mud+" campo(s) atualizado(s)"+(mant?", "+mant+" editado(s) à mão mantido(s)":"")+".");
+    }
+  });
+  parent.postMessage({src:"mapa",type:"mapa-pronto",dia:dia},"*");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,778 @@
+<!doctype html><html><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Condutas PS Ortopedia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: três colunas de trabalho — mapa 3D (seleção da região), formulário sequencial, prontuário gerado fixo à direita */
+:root{
+  --bg:#edf1f0; --surface:#ffffff; --surface-2:#f5f8f7; --ink:#15211e; --muted:#5a6b66; --line:#d2dcd8;
+  --accent:#1d6b58; --accent-ink:#ffffff; --accent-soft:#d5eae3; --bone:#d9d3c6; --bone-hover:#cfe3dc; --warn:#a94d17;
+  --paper:#fbfcfb; --paper-ink:#1b2724;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow","Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --surface:#162120; --surface-2:#1b2826; --ink:#e2ebe8; --muted:#90a39d; --line:#2b3b38;
+  --accent:#4dbb98; --accent-ink:#06201a; --accent-soft:#1c3832; --bone:#56625f; --bone-hover:#3b5b52; --warn:#e08a52;
+  --paper:#111a19; --paper-ink:#dbe6e2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --surface:#162120; --surface-2:#1b2826; --ink:#e2ebe8; --muted:#90a39d; --line:#2b3b38;
+  --accent:#4dbb98; --accent-ink:#06201a; --accent-soft:#1c3832; --bone:#56625f; --bone-hover:#3b5b52; --warn:#e08a52;
+  --paper:#111a19; --paper-ink:#dbe6e2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 24px;margin-bottom:14px}
+.top h1{font-size:30px;font-weight:700;letter-spacing:.01em;line-height:1}
+.top .tag{font-family:var(--f-display);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.frag{display:flex;gap:6px;font-family:var(--f-display);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.frag span{padding:4px 9px;border:1px solid var(--line);border-radius:4px;color:var(--muted)}
+.frag span.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.presets .lbl{font-family:var(--f-display);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.pbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:14px}
+.pbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+.grid{display:grid;gap:16px;grid-template-columns:300px minmax(0,1fr) 420px;align-items:start}
+@media (max-width:1280px){.grid{grid-template-columns:minmax(0,1fr) 400px}.col-map{grid-column:1}.col-form{grid-column:1}.col-out{grid-column:2;grid-row:1 / span 2}}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.col-out{grid-column:1;grid-row:auto}}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.col-map{position:sticky;top:12px}
+@media (max-width:1280px){.col-map{position:static}}
+.map{padding:12px}
+.map h2{font-size:17px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.map .hint{font-size:13px;color:var(--muted);margin:2px 0 8px}
+.stage{position:relative;height:440px;border-radius:8px;background:var(--surface-2);overflow:hidden;touch-action:none;cursor:grab}
+@media (max-width:1280px){.stage{height:360px}}
+.stage canvas{display:block;width:100%;height:100%}
+.side-lbl{position:absolute;bottom:10px;font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--muted);pointer-events:none}
+.side-lbl.l{left:12px}.side-lbl.r{right:12px}
+.view-lbl{position:absolute;top:8px;left:0;right:0;text-align:center;font-family:var(--f-display);font-size:12px;letter-spacing:.14em;color:var(--muted);pointer-events:none}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-family:var(--f-display);font-size:13px;letter-spacing:.04em;padding:3px 7px;border-radius:4px;transform:translate(-50%,-130%);white-space:nowrap}
+.viewbtns{display:flex;gap:6px;margin-top:8px}
+.viewbtns button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px;cursor:pointer;font-size:13px}
+.manual{display:flex;gap:6px;margin-top:8px}
+.manual select{flex:1;min-width:0}
+.selregs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:30px}
+.rchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--ink);border-radius:5px;padding:4px 6px 4px 9px;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.03em}
+.rchip button{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 2px}
+.empty{font-size:13px;color:var(--muted)}
+
+.col-form{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sec{padding:14px 16px 16px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.sec-h .n{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--accent);min-width:18px}
+.sec-h h3{font-size:19px;font-weight:600;letter-spacing:.02em}
+.sec-h .sub{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}
+.row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;margin-top:10px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld>span{font-family:var(--f-display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;text-transform:uppercase}
+input[type=number]{width:84px}
+.w-sm{width:120px}.w-md{width:220px}.w-lg{flex:1 1 260px}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:7px;overflow:hidden;width:fit-content;max-width:100%}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.03em;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:5px 9px;cursor:pointer;font-size:13px;text-align:left}
+.chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+.chip .s{color:var(--muted);font-weight:400}
+.grp-l{font-family:var(--f-display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 5px}
+
+.proc{border-top:1px solid var(--line);padding:10px 0 2px}
+.proc:first-of-type{border-top:0;padding-top:0}
+.proc>label{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.proc .body{padding-left:26px}
+.proc .body[hidden]{display:none!important}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex:none}
+
+.items{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.item{display:flex;gap:9px;align-items:flex-start;padding:5px 6px;border-radius:5px;cursor:pointer;font-family:var(--f-mono);font-size:12.5px;line-height:1.45}
+.item:hover{background:var(--surface-2)}
+.item input{margin-top:2px}
+.item.off span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.item .x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.addline{display:flex;gap:8px;margin-top:8px}
+.addline input{flex:1}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:7px 14px;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.04em}
+.btn.ghost{background:transparent;color:var(--accent)}
+.note{font-size:13px;color:var(--muted);margin-top:6px}
+
+.col-out{position:sticky;top:12px;min-width:0}
+@media (max-width:900px){.col-out{position:static}}
+.out{padding:14px}
+.out-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.out-h h2{font-size:17px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.paper{background:var(--paper);color:var(--paper-ink);border:1px solid var(--line);border-radius:6px;padding:14px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:260px;max-height:calc(100vh - 170px);overflow:auto;margin:0}
+@media (max-width:900px){.paper{max-height:none}}
+.opts{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px;color:var(--muted)}
+.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:6px;font-family:var(--f-display);font-size:15px;letter-spacing:.04em;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+<header class="top">
+  <div>
+    <div class="tag">Pronto-socorro · Ortopedia e Traumatologia</div>
+    <h1>Condutas e seguimento</h1>
+  </div>
+  <div class="frag" aria-label="Fragmentos do programa"><span>1 Anamnese</span><span>2 Exame físico</span><span class="on">3 Continuação e condutas</span></div>
+</header>
+
+<div class="presets">
+  <span class="lbl">Modelos</span>
+  <button class="pbtn" data-preset="reav">Solicito RX · reavaliar após</button>
+  <button class="pbtn" data-preset="semfx">PS sem fratura</button>
+  <button class="pbtn" data-preset="mmss">Conservador MMSS (Velpeau)</button>
+  <button class="pbtn" data-preset="reducao">Redução + gesso</button>
+  <button class="pbtn" data-preset="sutura">Sutura</button>
+  <button class="pbtn" data-preset="intern">Internação cirúrgica</button>
+  <button class="pbtn" data-preset="coluna">Coluna</button>
+  <button class="pbtn" data-preset="limpar">Limpar</button>
+</div>
+
+<div class="grid">
+  <!-- MAPA 3D -->
+  <aside class="col-map card map">
+    <h2>Região acometida</h2>
+    <p class="hint">Clique para marcar · arraste para girar</p>
+    <div class="stage" id="stage">
+      <div class="view-lbl" id="viewLbl">VISTA ANTERIOR</div>
+      <div class="side-lbl l" id="lblL">D</div><div class="side-lbl r" id="lblR">E</div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="viewbtns"><button id="vFront">Anterior</button><button id="vBack">Posterior</button></div>
+    <div class="manual">
+      <select id="manReg" aria-label="Adicionar região manualmente"></select>
+      <select id="manSide" aria-label="Lado" class="w-sm"><option value="D">DIREITO</option><option value="E">ESQUERDO</option></select>
+      <button class="btn ghost" id="manAdd">+</button>
+    </div>
+    <div class="selregs" id="selRegs"></div>
+  </aside>
+
+  <!-- FORMULÁRIO -->
+  <main class="col-form">
+    <section class="card sec">
+      <div class="sec-h"><span class="n">1</span><h3>Momento do registro</h3></div>
+      <div class="seg" id="faseSeg">
+        <button data-v="inicial">Conduta inicial (solicitar exames)</button>
+        <button data-v="tempo">Em tempo (resultado + desfecho)</button>
+      </div>
+    </section>
+
+    <!-- INICIAL -->
+    <section class="card sec" id="secInicial">
+      <div class="sec-h"><span class="n">2</span><h3>Solicitações e medicação</h3><span class="sub">Antes do resultado dos exames</span></div>
+      <div class="grp-l">Exames de imagem</div>
+      <div class="chips" id="iniExames"></div>
+      <div class="row">
+        <label class="fld w-lg"><span>Medicação no PS</span><input type="text" id="iniMed" list="dlMed"></label>
+      </div>
+      <datalist id="dlMed">
+        <option value="ANALGESIA EV CONFORME PRESCRIÇÃO"></option>
+        <option value="DIPIRONA 1G EV + CETOPROFENO 100MG EV"></option>
+        <option value="DIPIRONA 1G EV + TRAMADOL 100MG EV DILUÍDO"></option>
+        <option value="ANALGESIA IM CONFORME PRESCRIÇÃO"></option>
+      </datalist>
+      <div class="grp-l">Itens</div>
+      <div class="items" id="itemsIni"></div>
+    </section>
+
+    <!-- RESULTADO -->
+    <section class="card sec" id="secResultado">
+      <div class="sec-h"><span class="n">2</span><h3>Em tempo · resultado do exame</h3></div>
+      <div class="row" style="margin-top:0">
+        <label class="fld"><span>Exame</span>
+          <select id="exame" class="w-md">
+            <option>RADIOGRAFIAS</option><option>TOMOGRAFIA COMPUTADORIZADA</option><option>ULTRASSONOGRAFIA</option><option>RESSONÂNCIA MAGNÉTICA</option>
+          </select></label>
+        <div class="fld"><span>Resultado</span>
+          <div class="seg" id="resSeg"><button data-v="normal">Sem fratura / luxação</button><button data-v="achado">Com achado</button></div></div>
+      </div>
+      <div id="achWrap">
+        <div id="achList"></div>
+        <div class="grp-l">Características</div>
+        <div class="chips" id="descChips"></div>
+        <div class="row"><label class="fld w-lg"><span>Outro achado (texto livre)</span><input type="text" id="achLivre" placeholder="EX.: FRATURA DE BASE DO 1º METACARPO À DIREITA"></label></div>
+      </div>
+      <div class="row">
+        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="melhora"><span>Paciente refere melhora do quadro após analgesia</span></label>
+      </div>
+      <div class="row"><label class="fld w-lg"><span>Complemento</span><input type="text" id="resExtra" placeholder="EX.: CONTROLE RADIOGRÁFICO PÓS-REDUÇÃO SATISFATÓRIO"></label></div>
+    </section>
+
+    <!-- PROCEDIMENTOS -->
+    <section class="card sec" id="secProcs">
+      <div class="sec-h"><span class="n">3</span><h3>Procedimentos realizados no PS</h3><span class="sub">Local em branco usa a região marcada</span></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="reducao">Redução incruenta</label>
+        <div class="body"><div class="row">
+          <label class="fld"><span>Anestesia</span><select id="redAnest" class="w-md"><option value="">—</option><option>ANALGESIA E SEDAÇÃO</option><option>BLOQUEIO DE HEMATOMA</option><option>BLOQUEIO REGIONAL</option><option>ANESTESIA LOCAL</option></select></label>
+          <label class="fld"><span>Controle radiográfico</span><select id="redCtrl" class="w-sm"><option>SATISFATÓRIO</option><option>ACEITÁVEL</option><option>INSATISFATÓRIO</option></select></label>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="imob">Imobilização</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>Tipo</span><select id="imobTipo"></select></label>
+          <label class="fld"><span>Duração</span><input type="number" id="imobSem" min="0" max="120"></label>
+          <label class="fld"><span>Unidade</span><select id="imobUn" class="w-sm"><option>SEMANAS</option><option>DIAS</option></select></label>
+        </div>
+        <div class="row">
+          <label class="fld w-lg"><span>Depois (sequência)</span><select id="imob2"></select></label>
+          <label class="fld"><span>Duração</span><input type="number" id="imob2Sem" min="0" max="120"></label>
+          <label class="fld"><span>Unidade</span><select id="imob2Un" class="w-sm"><option>SEMANAS</option><option>DIAS</option></select></label>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="sutura">Sutura</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>Local</span><input type="text" id="sutLocal"></label>
+          <label class="fld"><span>Tamanho (cm)</span><input type="number" id="sutCm" min="0"></label>
+        </div><div class="row">
+          <label class="fld"><span>Fio</span><select id="sutFio" class="w-sm"><option>NYLON 2-0</option><option>NYLON 3-0</option><option selected>NYLON 4-0</option><option>NYLON 5-0</option></select></label>
+          <label class="fld"><span>Pontos</span><input type="number" id="sutPts" min="0"></label>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="puncao">Punção articular (artrocentese)</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>Articulação</span><input type="text" id="punLocal"></label>
+          <label class="fld"><span>Volume (mL)</span><input type="number" id="punVol" min="0"></label>
+        </div><div class="row">
+          <label class="fld"><span>Aspecto</span><select id="punAsp" class="w-md"><option>CITRINO</option><option>HEMÁTICO</option><option>HEMÁTICO COM GOTÍCULAS DE GORDURA</option><option>TURVO</option><option>PURULENTO</option></select></label>
+          <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="punEnvio"><span>Enviado para análise</span></label>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="regul">Amputação / regularização de coto</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>Segmento</span><input type="text" id="regLocal" placeholder="EX.: FALANGE DISTAL DO 3º QUIRODÁCTILO DIREITO"></label>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="drenagem">Drenagem</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>O quê / onde</span><input type="text" id="drenTxt" list="dlDren"></label>
+          <datalist id="dlDren"><option value="HEMATOMA SUBUNGUEAL"></option><option value="ABSCESSO"></option><option value="PARONÍQUIA"></option><option value="HEMATOMA"></option></datalist>
+        </div></div></div>
+
+      <div class="proc"><label><input type="checkbox" data-proc="outro">Outro procedimento</label>
+        <div class="body"><div class="row">
+          <label class="fld w-lg"><span>Descrição</span><input type="text" id="outroTxt" placeholder="EX.: RETIRADA DE CORPO ESTRANHO DE ..."></label>
+        </div></div></div>
+
+      <div class="row"><label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="neuro"><span>Registrar exame neurovascular distal preservado após o procedimento</span></label></div>
+    </section>
+
+    <!-- DESFECHO -->
+    <section class="card sec" id="secDesf">
+      <div class="sec-h"><span class="n">4</span><h3>Conduta e seguimento</h3></div>
+      <div class="seg" id="desfSeg">
+        <button data-v="alta">Alta PS</button>
+        <button data-v="conserv">Conservador + retorno</button>
+        <button data-v="intern">Internação cirúrgica</button>
+        <button data-v="coluna">Coluna</button>
+        <button data-v="encam">Encaminhamento</button>
+      </div>
+
+      <div id="segBlock">
+        <div class="row">
+          <label class="fld"><span>Carga</span><select id="carga" class="w-md">
+            <option value="">—</option><option>SEM CARGA NO MEMBRO ACOMETIDO</option><option>CARGA PARCIAL COM AUXÍLIO DE MULETAS</option><option>CARGA CONFORME TOLERÂNCIA</option><option>SEM CARGA ATÉ SEGUNDA ORDEM</option></select></label>
+        </div>
+        <div class="row" id="retRow">
+          <label class="fld"><span>Retorno em (dias)</span><input type="number" id="retDias" min="0"></label>
+          <label class="fld"><span>Dia do ambulatório</span><select id="retDia" class="w-md">
+            <option value="">—</option><option>SEGUNDAS-FEIRAS</option><option>TERÇAS-FEIRAS</option><option>QUARTAS-FEIRAS</option><option>QUINTAS-FEIRAS</option><option>SEXTAS-FEIRAS</option></select></label>
+          <label class="fld w-lg"><span>Ambulatório</span><input type="text" id="retAmb" list="dlAmb"></label>
+          <datalist id="dlAmb"><option value="AMBULATÓRIO DE GESSO"></option><option value="AMBULATÓRIO DE ORTOPEDIA"></option><option value="AMBULATÓRIO DE TRAUMA"></option><option value="AMBULATÓRIO DE MÃO"></option><option value="AMBULATÓRIO DE OMBRO"></option><option value="AMBULATÓRIO DE JOELHO"></option><option value="AMBULATÓRIO DE PÉ E TORNOZELO"></option><option value="AMBULATÓRIO DE COLUNA"></option><option value="AMBULATÓRIO DE QUADRIL"></option><option value="UBS"></option></datalist>
+        </div>
+        <div class="grp-l" id="motL">Motivo do retorno</div>
+        <div class="chips" id="motChips"></div>
+        <p class="note" id="dataPrev"></p>
+      </div>
+
+      <div id="cirBlock" class="row">
+        <label class="fld"><span>Data da cirurgia</span><input type="date" id="cirData"></label>
+        <span class="note">Em branco: "DATA A DEFINIR"</span>
+      </div>
+
+      <div class="grp-l">Itens da conduta</div>
+      <div class="items" id="itemsDesf"></div>
+      <div class="addline"><input type="text" id="novaLinha" placeholder="ADICIONAR LINHA À CONDUTA"><button class="btn ghost" id="addLinha">Adicionar</button></div>
+      <div class="items" id="extras"></div>
+    </section>
+
+    <!-- ASSINATURA -->
+    <section class="card sec">
+      <div class="sec-h"><span class="n">5</span><h3>Discussão e assinatura</h3></div>
+      <div class="row" style="margin-top:0">
+        <label class="fld w-lg"><span>Assistente (ASS DR)</span><input type="text" id="ass" list="dlAss" placeholder="NOME DO ASSISTENTE"></label>
+        <datalist id="dlAss"></datalist>
+        <button class="btn ghost" id="salvaAss" title="Guarda o nome e o dia de ambulatório deste assistente neste navegador">Salvar assistente + dia</button>
+      </div>
+      <div class="row">
+        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="discutido"><span>Incluir "Discutido com"</span></label>
+      </div>
+      <p class="note" id="assNote"></p>
+    </section>
+  </main>
+
+  <!-- SAÍDA -->
+  <aside class="col-out card out">
+    <div class="out-h"><h2>Prontuário</h2><button class="btn" id="copiar">Copiar texto</button></div>
+    <pre class="paper" id="saida"></pre>
+    <div class="opts">
+      <label><input type="checkbox" id="hifen">Hífen nos itens</label>
+      <label><input type="checkbox" id="sepTraco">Separadores "---"</label>
+    </div>
+  </aside>
+</div>
+<div class="toast" id="toast">Copiado para a área de transferência</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+
+/* ---------- Dados ---------- */
+const REG={
+ cervical:{n:'COLUNA CERVICAL',g:'f',seg:'COLUNA',lat:false,ach:['FRATURA DE C1','FRATURA DE C2 (ODONTOIDE)','FRATURA DE COLUNA CERVICAL BAIXA','LUXAÇÃO FACETÁRIA CERVICAL']},
+ toracica:{n:'COLUNA TORÁCICA',g:'f',seg:'COLUNA',lat:false,ach:['FRATURA DE CORPO VERTEBRAL TORÁCICO','FRATURA DE ARCOS COSTAIS','FRATURA DE ESTERNO']},
+ lombar:{n:'COLUNA LOMBAR',g:'f',seg:'COLUNA',lat:false,ach:['FRATURA DE CORPO VERTEBRAL LOMBAR','FRATURA DE PROCESSO TRANSVERSO','FRATURA DE SACRO']},
+ pelve:{n:'BACIA',g:'f',seg:'MMII',lat:false,ach:['FRATURA DE RAMOS ILIO E ISQUIOPÚBICOS','FRATURA DE ANEL PÉLVICO','FRATURA DE ACETÁBULO','FRATURA DE ASA DO ILÍACO']},
+ ombro:{n:'OMBRO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE ÚMERO PROXIMAL','FRATURA DE CLAVÍCULA','FRATURA DE ESCÁPULA','FRATURA DE TUBÉRCULO MAIOR','LUXAÇÃO GLENOUMERAL','LUXAÇÃO ACROMIOCLAVICULAR']},
+ braco:{n:'BRAÇO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE DIÁFISE DO ÚMERO']},
+ cotovelo:{n:'COTOVELO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA SUPRACONDILIANA DO ÚMERO','FRATURA DE ÚMERO DISTAL','FRATURA DE OLÉCRANO','FRATURA DE CABEÇA DO RÁDIO','LUXAÇÃO DE COTOVELO']},
+ antebraco:{n:'ANTEBRAÇO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE DIÁFISE DOS OSSOS DO ANTEBRAÇO','FRATURA DE DIÁFISE DO RÁDIO','FRATURA DE DIÁFISE DA ULNA','FRATURA-LUXAÇÃO DE MONTEGGIA','FRATURA-LUXAÇÃO DE GALEAZZI']},
+ punho:{n:'PUNHO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE RÁDIO DISTAL','FRATURA DE ESTILOIDE ULNAR','FRATURA DE ESCAFOIDE','LUXAÇÃO PERILUNAR']},
+ mao:{n:'MÃO',g:'f',seg:'MMSS',lat:true,ach:['FRATURA DE 5º METACARPO','FRATURA DE METACARPO','FRATURA DE FALANGE PROXIMAL','FRATURA DE FALANGE MÉDIA','FRATURA DE FALANGE DISTAL','LUXAÇÃO INTERFALANGEANA']},
+ quadril:{n:'QUADRIL',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE COLO DO FÊMUR','FRATURA TRANSTROCANTERIANA','FRATURA SUBTROCANTERIANA','LUXAÇÃO DE QUADRIL','LUXAÇÃO DE ARTROPLASTIA DE QUADRIL']},
+ coxa:{n:'COXA',g:'f',seg:'MMII',lat:true,ach:['FRATURA DE DIÁFISE DO FÊMUR']},
+ joelho:{n:'JOELHO',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE PATELA','FRATURA DE PLATÔ TIBIAL','FRATURA DE FÊMUR DISTAL','LUXAÇÃO DE PATELA','DERRAME ARTICULAR']},
+ perna:{n:'PERNA',g:'f',seg:'MMII',lat:true,ach:['FRATURA DE DIÁFISE DA TÍBIA','FRATURA DE DIÁFISE DA FÍBULA','FRATURA DE DIÁFISE DOS OSSOS DA PERNA']},
+ tornozelo:{n:'TORNOZELO',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE MALÉOLO LATERAL','FRATURA DE MALÉOLO MEDIAL','FRATURA BIMALEOLAR','FRATURA TRIMALEOLAR','FRATURA DE PILÃO TIBIAL','FRATURA-LUXAÇÃO DE TORNOZELO']},
+ pe:{n:'PÉ',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE CALCÂNEO','FRATURA DE BASE DO 5º METATARSO','FRATURA DE METATARSO','FRATURA DE FALANGE DO PÉ','FRATURA DE HÁLUX','LESÃO DE LISFRANC']}
+};
+const IMOB={
+ MMSS:['TIPOIA SIMPLES','VELPEAU','TALA AXILOPALMAR','GESSO AXILOPALMAR','TALA ANTEBRAQUIOPALMAR','GESSO ANTEBRAQUIOPALMAR','GESSO PINÇA DE CONFEITEIRO','LUVA GESSADA','TALA GESSADA EM GOTEIRA ULNAR','GESSO COM INCLUSÃO DO POLEGAR (SPICA)','TALA METÁLICA','SINDACTILIZAÇÃO (ESPARADRAPAGEM)'],
+ MMII:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA GESSADA COM SALTO','TALA INGUINOMALEOLAR','GESSO INGUINOMALEOLAR','GESSO INGUINOPODÁLICO','IMOBILIZADOR DE JOELHO','BOTA IMOBILIZADORA (ROBOFOOT)','ENFAIXAMENTO COMPRESSIVO','SINDACTILIZAÇÃO (ESPARADRAPAGEM)'],
+ COLUNA:['COLAR CERVICAL','COLETE TLSO','COLETE DE JEWETT']
+};
+const DESC=['SEM DESVIO','DESVIADA','COMINUTIVA','INTRA-ARTICULAR','EXPOSTA','PATOLÓGICA'];
+const EXAMES_INI=['RADIOGRAFIAS','TOMOGRAFIA COMPUTADORIZADA','ULTRASSONOGRAFIA','RESSONÂNCIA MAGNÉTICA','EXAMES LABORATORIAIS'];
+const MOTIVOS=['RADIOGRAFIA DE CONTROLE','REAVALIAÇÃO','TROCA DE IMOBILIZAÇÃO','RETIRADA DE IMOBILIZAÇÃO','RETIRADA DE PONTOS','CURATIVO'];
+const DOW={'SEGUNDAS-FEIRAS':1,'TERÇAS-FEIRAS':2,'QUARTAS-FEIRAS':3,'QUINTAS-FEIRAS':4,'SEXTAS-FEIRAS':5};
+
+/* ---------- Estado ---------- */
+function blank(){return{
+ regs:[], fase:'tempo',
+ ini:{exames:['RADIOGRAFIAS'], med:'ANALGESIA EV CONFORME PRESCRIÇÃO'},
+ exame:'RADIOGRAFIAS', res:'normal', ach:[], desc:[], achLivre:'', melhora:false, resExtra:'',
+ procs:{reducao:false,imob:false,sutura:false,puncao:false,regul:false,drenagem:false,outro:false},
+ redAnest:'', redCtrl:'SATISFATÓRIO', imobTipo:'', imobSem:'', imobUn:'SEMANAS', imob2:'', imob2Sem:'', imob2Un:'SEMANAS',
+ sutLocal:'', sutCm:'', sutFio:'NYLON 4-0', sutPts:'', punLocal:'', punVol:'', punAsp:'CITRINO', punEnvio:false,
+ regLocal:'', drenTxt:'', outroTxt:'', neuro:false,
+ desf:'alta', carga:'', retDias:'', retDia:'', retAmb:'', mot:['RADIOGRAFIA DE CONTROLE','REAVALIAÇÃO'], cirData:'',
+ chk:{}, extras:[], ass:'', discutido:false, hifen:true, sepTraco:true
+};}
+let S=blank();
+
+/* ---------- Texto ---------- */
+const U=s=>(s||'').toString().trim().toUpperCase();
+const lado=(side,g)=>side==='D'?(g==='f'?'DIREITA':'DIREITO'):side==='E'?(g==='f'?'ESQUERDA':'ESQUERDO'):'';
+const nomeReg=r=>{const R=REG[r.k];return R.n+(r.side?' '+lado(r.side,R.g):'');};
+const joinE=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' E '+a[a.length-1];
+const regsTxt=()=>S.regs.length?joinE(S.regs.map(nomeReg)):'___';
+const segs=()=>[...new Set(S.regs.map(r=>REG[r.k].seg))];
+const fmtData=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+
+function dataRetorno(){
+  const n=parseInt(S.retDias,10); if(!(n>=0)) return null;
+  const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n);
+  if(S.retDia&&DOW[S.retDia]!=null){while(d.getDay()!==DOW[S.retDia]) d.setDate(d.getDate()+1);}
+  return d;
+}
+function dur(n,un){if(!n)return '';const u=un||'SEMANAS';return ' '+n+' '+(n=='1'?u.slice(0,-1):u);}
+function imobLine(){
+  if(!S.imobTipo) return '';
+  let t=S.imobTipo+dur(S.imobSem,S.imobUn);
+  if(S.imob2) t+=' + '+S.imob2+dur(S.imob2Sem,S.imob2Un);
+  return t;
+}
+function retLine(){
+  const n=parseInt(S.retDias,10);
+  let t='RETORNO';
+  if(n>=0) t+=' EM '+n+(n===1?' DIA':' DIAS');
+  if(S.retDia) t+=', ÀS '+S.retDia;
+  const d=dataRetorno(); if(d&&n>=0) t+=' ('+fmtData(d)+')';
+  if(U(S.retAmb)) t+=', NO '+U(S.retAmb);
+  if(S.mot.length) t+=', PARA '+joinE(S.mot);
+  return t;
+}
+const temExposta=()=>S.res==='achado'&&S.desc.includes('EXPOSTA');
+
+function itemsFor(key){
+  const L=[]; const add=(id,t,def)=>{if(t) L.push({id:key+':'+id,t,def});};
+  const imob=imobLine();
+  if(key==='inicial'){
+    const im=S.ini.exames.filter(e=>e!=='EXAMES LABORATORIAIS');
+    if(im.length) add('sol','SOLICITO '+joinE(im)+' DE '+regsTxt(),true);
+    if(S.ini.exames.includes('EXAMES LABORATORIAIS')) add('lab','SOLICITO EXAMES LABORATORIAIS',true);
+    add('med',U(S.ini.med),true);
+    add('tala','IMOBILIZAÇÃO PROVISÓRIA COM TALA GESSADA',false);
+    add('reav','REAVALIAR APÓS',true);
+    return L;
+  }
+  if(key==='alta'){
+    add('analg','AINES + ANALGESIA VO CONFORME DOR',true);
+    add('rep','REPOUSO RELATIVO',true);
+    add('crio','CRIOTERAPIA',true);
+    add('elev','ELEVAÇÃO DO MEMBRO ACOMETIDO',false);
+    if(imob) add('imob',imob,true);
+    if(S.carga) add('carga',S.carga,true);
+    if(S.procs.sutura){add('cur','CURATIVO DIÁRIO COM SF 0,9%',true);add('pts','RETIRADA DE PONTOS EM 10 A 14 DIAS NA UBS',true);add('tet','PROFILAXIA ANTITETÂNICA CONFORME CARTÃO VACINAL',true);}
+    add('ret',retLine(),false);
+    add('orient','ORIENTAÇÕES GERAIS + SINAIS DE ALARME',true);
+    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);
+    add('ciente','PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES',true);
+  }
+  if(key==='conserv'){
+    if(imob) add('imob',imob,true);
+    add('analg','ANALGESIA VO CONFORME DOR',true);
+    add('rep','REPOUSO RELATIVO',true);
+    add('elev','ELEVAÇÃO DO MEMBRO ACOMETIDO',false);
+    add('crio','CRIOTERAPIA',false);
+    if(S.carga) add('carga',S.carga,true);
+    add('cuidgesso','CUIDADOS COM A IMOBILIZAÇÃO (NÃO MOLHAR, NÃO RETIRAR)',false);
+    if(S.procs.sutura){add('cur','CURATIVO DIÁRIO COM SF 0,9%',true);add('tet','PROFILAXIA ANTITETÂNICA CONFORME CARTÃO VACINAL',true);}
+    add('ret',retLine(),true);
+    add('orient','ORIENTAÇÕES GERAIS + SINAIS DE ALARME (DOR INTENSA, EDEMA, PARESTESIA, ALTERAÇÃO DE COR DAS EXTREMIDADES)',true);
+    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);
+    add('ciente','PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES',true);
+  }
+  if(key==='intern'){
+    add('disc','CD DISCUTIDA E ORIENTADA PELO ASS DR '+(U(S.ass)||'___'),true);
+    add('int','INTERNAÇÃO HOSPITALAR',true);
+    let dc='DATA A DEFINIR'; if(S.cirData){const p=S.cirData.split('-');dc=p[2]+'/'+p[1]+'/'+p[0];}
+    add('cir','PROCEDIMENTO CIRÚRGICO EM '+dc,true);
+    add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
+    add('rch','RCH (SOLICITAR)',true);
+    add('uti','UTI (SOLICITAR)',false);
+    add('cc','AVISO CC (NO OPERA)',true);
+    add('jej','JEJUM CONFORME PROGRAMAÇÃO CIRÚRGICA',false);
+    add('tala','MANTER '+(S.imobTipo||'TALA')+' ATÉ SEGUNDA ORDEM',true);
+    add('carga','SEM CARGA ATÉ SEGUNDA ORDEM',true);
+    add('analg','ANALGESIA CONFORME PRESCRIÇÃO',false);
+    add('tev','PROFILAXIA DE TEV CONFORME PROTOCOLO',false);
+    add('atb','ANTIBIOTICOTERAPIA + PROFILAXIA ANTITETÂNICA',temExposta());
+    add('orient','ORIENTAÇÕES GERAIS',true);
+    add('ciente','PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES',true);
+  }
+  if(key==='coluna'){
+    add('dec','DECÚBITO DORSAL HORIZONTAL + MOVIMENTO EM BLOCO'+(S.regs.some(r=>r.k==='cervical')||S.imobTipo==='COLAR CERVICAL'?' + COLAR CERVICAL':''),true);
+    add('analg','CICLO DE ANALGESIA',true);
+    add('reav','REAVALIAÇÃO PERIÓDICA',true);
+    add('neuro','EXAME NEUROLÓGICO SERIADO',false);
+    add('tc','SOLICITO TOMOGRAFIA COMPUTADORIZADA DE '+regsTxt(),false);
+    if(S.imobTipo&&S.imobTipo!=='COLAR CERVICAL') add('colete','USO DE '+S.imobTipo,false);
+    add('sentar','ORIENTO NÃO SENTAR E NÃO LEVANTAR',true);
+    add('orient','ORIENTAÇÕES GERAIS',true);
+    add('ciente','PACIENTE CIENTE DO QUADRO E DE SUAS POSSÍVEIS COMPLICAÇÕES',true);
+  }
+  if(key==='encam'){
+    add('analg','ANALGESIA VO CONFORME DOR',true);
+    add('rep','REPOUSO RELATIVO',true);
+    if(imob) add('imob',imob,true);
+    add('enc','ENCAMINHO AO '+(U(S.retAmb)||'AMBULATÓRIO DE ORTOPEDIA')+' PARA SEGUIMENTO ELETIVO',true);
+    add('ret',retLine(),false);
+    add('orient','ORIENTAÇÕES GERAIS + SINAIS DE ALARME',true);
+    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);
+    add('ciente','PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES',true);
+  }
+  return L;
+}
+const isOn=it=>S.chk[it.id]!=null?S.chk[it.id]:it.def;
+
+function procLines(){
+  const L=[],P=S.procs,R=regsTxt();
+  if(P.reducao) L.push('REALIZADA REDUÇÃO INCRUENTA'+(S.redAnest?' SOB '+S.redAnest:'')+' COM CONTROLE RADIOGRÁFICO '+S.redCtrl);
+  if(P.imob&&S.imobTipo) L.push('IMOBILIZAÇÃO COM '+S.imobTipo);
+  if(P.sutura) L.push('REALIZADA ASSEPSIA E ANTISSEPSIA + ANESTESIA LOCAL COM LIDOCAÍNA 2% SEM VASOCONSTRITOR + LAVAGEM EXAUSTIVA COM SF 0,9% + SUTURA DE FERIMENTO CORTOCONTUSO'+(S.sutCm?' DE '+S.sutCm+' CM':'')+' EM '+(U(S.sutLocal)||R)+' COM '+S.sutFio+(S.sutPts?', '+S.sutPts+' PONTOS':'')+' + CURATIVO OCLUSIVO');
+  if(P.puncao) L.push('REALIZADA ARTROCENTESE DE '+(U(S.punLocal)||R)+' EM TÉCNICA ASSÉPTICA, COM SAÍDA DE '+(S.punVol?S.punVol+' ML DE ':'')+'LÍQUIDO '+S.punAsp+(S.punEnvio?', MATERIAL ENVIADO PARA ANÁLISE (CITOLOGIA, BIOQUÍMICA, GRAM E CULTURA)':''));
+  if(P.regul) L.push('REALIZADA REGULARIZAÇÃO DE COTO DE AMPUTAÇÃO TRAUMÁTICA DE '+(U(S.regLocal)||R)+' SOB BLOQUEIO ANESTÉSICO + HEMOSTASIA + SUTURA + CURATIVO');
+  if(P.drenagem) L.push('REALIZADA DRENAGEM DE '+(U(S.drenTxt)||'___')+' SOB ANESTESIA LOCAL + CURATIVO');
+  if(P.outro&&U(S.outroTxt)) L.push(U(S.outroTxt));
+  if(L.length&&S.neuro) L.push('EXAME NEUROVASCULAR DISTAL PRESERVADO APÓS O PROCEDIMENTO');
+  return L;
+}
+
+function gerar(){
+  const b=S.hifen?'- ':'', sep=S.sepTraco?'---':'';
+  const out=[];
+  const fecho=()=>{ if(S.discutido) out.push('DISCUTIDO COM DR '+(U(S.ass)||'___')); out.push('ASS DR '+(U(S.ass)||'')); };
+  if(S.fase==='inicial'){
+    out.push('#CONDUTA');
+    itemsFor('inicial').filter(isOn).forEach(i=>out.push(b+i.t));
+    S.extras.forEach(e=>out.push(b+e));
+    fecho(); return out.join('\n');
+  }
+  out.push('# EM TEMPO #');
+  let r=S.exame+' DE '+regsTxt();
+  if(S.res==='normal') r+=' SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES';
+  else{
+    const a=S.ach.map(x=>x.t+(x.side?' À '+(x.side==='D'?'DIREITA':'ESQUERDA'):''));
+    if(U(S.achLivre)) a.push(U(S.achLivre));
+    r+=' COM EVIDÊNCIAS NÍTIDAS DE '+(a.length?joinE(a):'___');
+    if(S.desc.length) r+=', '+S.desc.join(', ');
+  }
+  if(S.melhora) r+=', PACIENTE REFERE MELHORA DO QUADRO APÓS USO DE ANALGESIA';
+  out.push(r);
+  if(U(S.resExtra)) out.push(U(S.resExtra));
+  const pl=procLines();
+  if(pl.length){ if(sep) out.push(sep); pl.forEach(l=>out.push(l)); }
+  if(sep) out.push(sep);
+  out.push('CD:');
+  itemsFor(S.desf).filter(isOn).forEach(i=>out.push(b+i.t));
+  S.extras.forEach(e=>out.push(b+e));
+  fecho();
+  return out.join('\n');
+}
+
+/* ---------- UI ---------- */
+function segBind(id,get,set){
+  const el=$(id);
+  el.addEventListener('click',e=>{const bt=e.target.closest('button[data-v]');if(!bt)return;set(bt.dataset.v);update();});
+  return ()=>el.querySelectorAll('button').forEach(bt=>bt.setAttribute('aria-pressed',String(bt.dataset.v===get())));
+}
+const syncFase=segBind('faseSeg',()=>S.fase,v=>S.fase=v);
+const syncRes=segBind('resSeg',()=>S.res,v=>S.res=v);
+const syncDesf=segBind('desfSeg',()=>S.desf,v=>{S.desf=v; if(v==='intern'&&!S.carga) S.carga='';});
+
+const TXT=['iniMed','exame','achLivre','resExtra','redAnest','redCtrl','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','sutLocal','sutCm','sutFio','sutPts','punLocal','punVol','punAsp','regLocal','drenTxt','outroTxt','carga','retDias','retDia','retAmb','cirData','ass'];
+const CHK=['melhora','punEnvio','neuro','discutido','hifen','sepTraco'];
+TXT.forEach(id=>{const el=$(id);const h=()=>{ if(id==='iniMed') S.ini.med=el.value; else S[id]=el.value;
+  if(id==='imobTipo'&&el.value&&!S.procs.imob){S.procs.imob=true;}
+  if(id==='ass') assLookup();
+  update(id);};
+  el.addEventListener('input',h); el.addEventListener('change',h);});
+CHK.forEach(id=>$(id).addEventListener('change',e=>{S[id]=e.target.checked;update();}));
+document.querySelectorAll('[data-proc]').forEach(cb=>cb.addEventListener('change',e=>{S.procs[cb.dataset.proc]=cb.checked;update();}));
+
+function writeForm(){
+  TXT.forEach(id=>{const el=$(id);const v=id==='iniMed'?S.ini.med:S[id];if(el.value!==String(v??'')) el.value=v??'';});
+  CHK.forEach(id=>$(id).checked=!!S[id]);
+  document.querySelectorAll('[data-proc]').forEach(cb=>{cb.checked=!!S.procs[cb.dataset.proc];});
+}
+
+function fillImob(){
+  const sg=segs(); const groups=sg.length?sg:['MMSS','MMII','COLUNA'];
+  const build=(sel,cur)=>{
+    let h='<option value="">—</option>';
+    groups.forEach(g=>{h+='<optgroup label="'+g+'">'+IMOB[g].map(o=>'<option'+(o===cur?' selected':'')+'>'+o+'</option>').join('')+'</optgroup>';});
+    if(cur&&!groups.some(g=>IMOB[g].includes(cur))) h+='<option selected>'+cur+'</option>';
+    sel.innerHTML=h;
+  };
+  build($('imobTipo'),S.imobTipo); build($('imob2'),S.imob2);
+}
+
+function chipsHTML(list,sel,attr){return list.map(o=>'<button class="chip" '+attr+'="'+o+'" aria-pressed="'+sel.includes(o)+'">'+o+'</button>').join('');}
+
+function renderItems(el,key){
+  const its=itemsFor(key);
+  el.innerHTML=its.map(it=>{const on=isOn(it);return '<label class="item'+(on?'':' off')+'"><input type="checkbox" data-item="'+it.id+'"'+(on?' checked':'')+'><span>'+esc(it.t)+'</span></label>';}).join('');
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.item;if(id){S.chk[id]=e.target.checked;update();}});
+
+function renderRegs(){
+  $('selRegs').innerHTML=S.regs.length?S.regs.map((r,i)=>'<span class="rchip">'+nomeReg(r)+'<button data-rm="'+i+'" aria-label="Remover">×</button></span>').join(''):'<span class="empty">Nenhuma região marcada</span>';
+  // achados
+  let h='';
+  S.regs.forEach(r=>{const R=REG[r.k];
+    h+='<div class="grp-l">'+nomeReg(r)+'</div><div class="chips">'+R.ach.map(a=>{const on=S.ach.some(x=>x.t===a&&x.k===r.k&&x.side===r.side);
+      return '<button class="chip" data-ach="'+a+'" data-k="'+r.k+'" data-side="'+r.side+'" aria-pressed="'+on+'">'+a+'</button>';}).join('')+'</div>';});
+  $('achList').innerHTML=h||'<p class="note">Marque a região no modelo para ver os achados mais comuns.</p>';
+}
+$('selRegs').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;const r=S.regs.splice(+b.dataset.rm,1)[0];S.ach=S.ach.filter(a=>!(a.k===r.k&&a.side===r.side));update();});
+$('achList').addEventListener('click',e=>{const b=e.target.closest('[data-ach]');if(!b)return;const a={t:b.dataset.ach,k:b.dataset.k,side:b.dataset.side};
+  const i=S.ach.findIndex(x=>x.t===a.t&&x.k===a.k&&x.side===a.side); if(i>=0)S.ach.splice(i,1); else {S.ach.push(a);S.res='achado';} update();});
+$('descChips').addEventListener('click',e=>{const b=e.target.closest('[data-desc]');if(!b)return;const v=b.dataset.desc;const i=S.desc.indexOf(v);if(i>=0)S.desc.splice(i,1);else{
+  if(v==='SEM DESVIO')S.desc=S.desc.filter(d=>d!=='DESVIADA'); if(v==='DESVIADA')S.desc=S.desc.filter(d=>d!=='SEM DESVIO'); S.desc.push(v);} update();});
+$('iniExames').addEventListener('click',e=>{const b=e.target.closest('[data-ex]');if(!b)return;const v=b.dataset.ex,a=S.ini.exames,i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v);update();});
+$('motChips').addEventListener('click',e=>{const b=e.target.closest('[data-mot]');if(!b)return;const v=b.dataset.mot,i=S.mot.indexOf(v);if(i>=0)S.mot.splice(i,1);else S.mot.push(v);update();});
+
+function toggleReg(k,side){
+  side=REG[k].lat?side:'';
+  const i=S.regs.findIndex(r=>r.k===k&&r.side===side);
+  if(i>=0){S.regs.splice(i,1);S.ach=S.ach.filter(a=>!(a.k===k&&a.side===side));}
+  else S.regs.push({k,side});
+  update();
+}
+$('manReg').innerHTML=Object.keys(REG).map(k=>'<option value="'+k+'">'+REG[k].n+'</option>').join('');
+$('manAdd').addEventListener('click',()=>{const k=$('manReg').value; if(!S.regs.some(r=>r.k===k&&r.side===(REG[k].lat?$('manSide').value:''))) toggleReg(k,$('manSide').value);});
+$('manReg').addEventListener('change',()=>{$('manSide').disabled=!REG[$('manReg').value].lat;});
+
+$('addLinha').addEventListener('click',addLinha);
+$('novaLinha').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addLinha();}});
+function addLinha(){const v=U($('novaLinha').value);if(!v)return;S.extras.push(v);$('novaLinha').value='';update();}
+$('extras').addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;S.extras.splice(+b.dataset.x,1);update();});
+
+/* Assistentes salvos (somente neste navegador) */
+function loadAss(){try{return JSON.parse(localStorage.getItem('cd_assistentes')||'{}')||{};}catch(e){return{};}}
+function saveAssMap(m){try{localStorage.setItem('cd_assistentes',JSON.stringify(m));return true;}catch(e){return false;}}
+function renderAss(){const m=loadAss();$('dlAss').innerHTML=Object.keys(m).map(n=>'<option value="'+esc(n)+'"></option>').join('');}
+function assLookup(){const m=loadAss();const n=U(S.ass);if(m[n]){if(m[n].dia)S.retDia=m[n].dia;if(m[n].amb)S.retAmb=m[n].amb;$('assNote').textContent='Dia de ambulatório de '+n+': '+(m[n].dia||'—')+'.';}else $('assNote').textContent='';}
+$('salvaAss').addEventListener('click',()=>{const n=U(S.ass);if(!n){toast('Digite o nome do assistente');return;}
+  const m=loadAss();m[n]={dia:S.retDia,amb:U(S.retAmb)};toast(saveAssMap(m)?'Assistente salvo: '+n+(S.retDia?' · '+S.retDia:''):'Não foi possível salvar neste navegador');renderAss();});
+
+/* Presets */
+const PRE={
+ reav:()=>{S.fase='inicial';S.ini.exames=['RADIOGRAFIAS'];},
+ semfx:()=>{S.fase='tempo';S.res='normal';S.ach=[];S.desc=[];S.melhora=true;S.desf='alta';S.procs={...blank().procs};S.imobTipo='';},
+ mmss:()=>{S.fase='tempo';S.regs=[{k:'ombro',side:'D'}];S.res='achado';S.ach=[{t:'FRATURA DE ÚMERO PROXIMAL',k:'ombro',side:'D'}];S.desc=['SEM DESVIO'];
+   S.procs={...blank().procs,imob:true};S.imobTipo='VELPEAU';S.imobSem='4';S.desf='conserv';S.retDias='28';S.retDia='TERÇAS-FEIRAS';S.retAmb='AMBULATÓRIO DE ORTOPEDIA';S.mot=['RADIOGRAFIA DE CONTROLE','REAVALIAÇÃO'];S.discutido=true;},
+ reducao:()=>{S.fase='tempo';S.regs=[{k:'punho',side:'E'}];S.res='achado';S.ach=[{t:'FRATURA DE RÁDIO DISTAL',k:'punho',side:'E'}];S.desc=['DESVIADA'];
+   S.procs={...blank().procs,reducao:true,imob:true};S.redAnest='BLOQUEIO DE HEMATOMA';S.imobTipo='GESSO AXILOPALMAR';S.imobSem='3';S.imob2='TALA AXILOPALMAR';S.imob2Sem='3';S.neuro=true;
+   S.desf='conserv';S.retDias='7';S.retDia='SEGUNDAS-FEIRAS';S.retAmb='AMBULATÓRIO DE GESSO';S.mot=['RADIOGRAFIA DE CONTROLE','REAVALIAÇÃO'];},
+ sutura:()=>{S.fase='tempo';S.regs=[{k:'mao',side:'D'}];S.res='normal';S.ach=[];S.desc=[];S.procs={...blank().procs,sutura:true};S.sutPts='4';S.sutCm='3';S.desf='alta';S.imobTipo='';},
+ intern:()=>{S.fase='tempo';S.regs=[{k:'tornozelo',side:'D'}];S.res='achado';S.ach=[{t:'FRATURA TRIMALEOLAR',k:'tornozelo',side:'D'}];S.desc=['DESVIADA'];
+   S.procs={...blank().procs,reducao:true,imob:true};S.redAnest='ANALGESIA E SEDAÇÃO';S.redCtrl='ACEITÁVEL';S.imobTipo='TALA SUROPODÁLICA';S.imobSem='';S.imob2='';S.neuro=true;S.desf='intern';},
+ coluna:()=>{S.fase='tempo';S.regs=[{k:'lombar',side:''}];S.exame='TOMOGRAFIA COMPUTADORIZADA';S.res='achado';S.ach=[{t:'FRATURA DE CORPO VERTEBRAL LOMBAR',k:'lombar',side:''}];S.desc=[];S.procs={...blank().procs};S.imobTipo='';S.desf='coluna';},
+ limpar:()=>{const a=S.ass,h=S.hifen,t=S.sepTraco;S=blank();S.ass=a;S.hifen=h;S.sepTraco=t;}
+};
+document.querySelector('.presets').addEventListener('click',e=>{const b=e.target.closest('[data-preset]');if(!b)return;
+  S.chk={};S.extras=[];PRE[b.dataset.preset]();writeForm();update();});
+
+/* Atualização geral */
+function update(src){
+  syncFase();syncRes();syncDesf();
+  const ini=S.fase==='inicial';
+  $('secInicial').hidden=!ini;['secResultado','secProcs','secDesf'].forEach(id=>$(id).hidden=ini);
+  $('achWrap').hidden=S.res!=='achado';
+  document.querySelectorAll('.proc .body').forEach(b=>{const cb=b.parentNode.querySelector('[data-proc]');b.hidden=!S.procs[cb.dataset.proc];});
+  if(src!=='imobTipo'&&src!=='imob2') fillImob();
+  if(src!=='retDia') $('retDia').value=S.retDia; if(src!=='retAmb') $('retAmb').value=S.retAmb;
+  $('iniExames').innerHTML=chipsHTML(EXAMES_INI,S.ini.exames,'data-ex');
+  $('descChips').innerHTML=chipsHTML(DESC,S.desc,'data-desc');
+  $('motChips').innerHTML=chipsHTML(MOTIVOS,S.mot,'data-mot');
+  renderRegs();
+  const d=S.desf;
+  $('segBlock').hidden=(d==='intern'||d==='coluna');
+  $('cirBlock').hidden=d!=='intern';
+  const dr=dataRetorno(); $('dataPrev').textContent=dr&&parseInt(S.retDias,10)>=0?'Data prevista do retorno: '+fmtData(dr)+(S.retDia?' (ajustada para o próximo dia de ambulatório)':''):'';
+  renderItems($('itemsIni'),'inicial');
+  renderItems($('itemsDesf'),S.desf);
+  $('extras').innerHTML=S.extras.map((e,i)=>'<div class="item"><span>'+esc(e)+'</span><button class="x" data-x="'+i+'" aria-label="Remover linha">×</button></div>').join('');
+  $('saida').textContent=gerar();
+  if(window.__map) window.__map.sync();
+}
+
+/* Copiar */
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800);}
+$('copiar').addEventListener('click',()=>{const txt=$('saida').textContent;
+  const fb=()=>{const r=document.createRange();r.selectNodeContents($('saida'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Texto selecionado — use Ctrl+C');};
+  try{navigator.clipboard.writeText(txt).then(()=>toast('Copiado para a área de transferência'),fb);}catch(e){fb();}});
+
+/* ---------- Modelo 3D ---------- */
+function initMap(){
+  const stage=$('stage');
+  if(!window.THREE){stage.insertAdjacentHTML('beforeend','<p class="note" style="padding:40px 16px">Modelo 3D indisponível. Use a seleção manual abaixo.</p>');return;}
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch(e){stage.insertAdjacentHTML('beforeend','<p class="note" style="padding:40px 16px">WebGL indisponível. Use a seleção manual abaixo.</p>');return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  stage.appendChild(renderer.domElement);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(28,1,.1,20);
+  cam.position.set(0,.95,4.3);cam.lookAt(0,.86,0);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x667770,.85));
+  const dl=new THREE.DirectionalLight(0xffffff,.65);dl.position.set(1.5,3,3);scene.add(dl);
+  const dl2=new THREE.DirectionalLight(0xffffff,.35);dl2.position.set(-2,1,-3);scene.add(dl2);
+  const body=new THREE.Group();scene.add(body);
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const pick=[];
+  const V=(x,y,z)=>new THREE.Vector3(x,y,z||0);
+  function mat(){return new THREE.MeshStandardMaterial({color:css('--bone'),roughness:.75,metalness:0});}
+  function add(geo,pos,key,side,quat){const m=new THREE.Mesh(geo,mat());m.position.copy(pos);if(quat)m.quaternion.copy(quat);m.userData={key,side};body.add(m);if(key)pick.push(m);return m;}
+  function limb(a,b,r,key,side){const d=new THREE.Vector3().subVectors(b,a);const len=d.length();const q=new THREE.Quaternion().setFromUnitVectors(V(0,1,0),d.clone().normalize());
+    return add(new THREE.CylinderGeometry(r*.88,r,len,24),a.clone().add(b).multiplyScalar(.5),key,side,q);}
+  const sph=(r)=>new THREE.SphereGeometry(r,24,18);
+  // tronco
+  add(sph(.105),V(0,1.64),null,'');
+  add(new THREE.CylinderGeometry(.048,.052,.13,20),V(0,1.49),'cervical','');
+  add(new THREE.BoxGeometry(.36,.30,.19),V(0,1.27),'toracica','');
+  add(new THREE.BoxGeometry(.30,.17,.17),V(0,1.03),'lombar','');
+  add(new THREE.BoxGeometry(.28,.12,.19),V(0,.885),'pelve','');
+  [[-1,'D'],[1,'E']].forEach(([s,side])=>{
+    add(sph(.075),V(s*.225,1.38),'ombro',side);
+    limb(V(s*.245,1.33),V(s*.272,1.105),.05,'braco',side);
+    add(sph(.052),V(s*.277,1.072),'cotovelo',side);
+    limb(V(s*.282,1.04),V(s*.296,.845),.043,'antebraco',side);
+    add(sph(.037),V(s*.298,.815),'punho',side);
+    add(new THREE.BoxGeometry(.035,.12,.075),V(s*.302,.73),'mao',side);
+    add(sph(.07),V(s*.135,.805),'quadril',side);
+    limb(V(s*.12,.77),V(s*.113,.53),.072,'coxa',side);
+    add(sph(.064),V(s*.112,.488),'joelho',side);
+    limb(V(s*.112,.45),V(s*.11,.135),.052,'perna',side);
+    add(sph(.045),V(s*.11,.098),'tornozelo',side);
+    add(new THREE.BoxGeometry(.085,.055,.21),V(s*.11,.035,.055),'pe',side);
+  });
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(.42,48),new THREE.MeshBasicMaterial({color:css('--line'),transparent:true,opacity:.6}));
+  floor.rotation.x=-Math.PI/2;floor.position.y=.005;scene.add(floor);
+
+  let hover=null,need=true;
+  const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+  function colors(){
+    const bone=new THREE.Color(css('--bone')),acc=new THREE.Color(css('--accent')),hov=new THREE.Color(css('--bone-hover'));
+    body.children.forEach(m=>{const u=m.userData;if(!u)return;
+      const sel=u.key&&S.regs.some(r=>r.k===u.key&&r.side===(REG[u.key].lat?u.side:''));
+      m.material.color.copy(sel?acc:(m===hover?hov:bone));});
+    floor.material.color.set(css('--line'));
+    const front=Math.cos(body.rotation.y)>=0;
+    $('lblL').textContent=front?'D':'E';$('lblR').textContent=front?'E':'D';
+    $('viewLbl').textContent=front?'VISTA ANTERIOR':'VISTA POSTERIOR';
+    need=true;
+  }
+  function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;
+    const fit=Math.max(1,1.9/ (cam.aspect*1.25));cam.position.set(0,.95,4.3*Math.min(fit,1.7));cam.lookAt(0,.86,0);cam.updateProjectionMatrix();need=true;}
+  new ResizeObserver(resize).observe(stage);resize();
+  function hit(ev){const r=stage.getBoundingClientRect();ndc.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,cam);
+    const h=ray.intersectObjects(pick,false);return h.length?h[0].object:null;}
+  let down=null,dragged=false,targetRot=0;
+  stage.addEventListener('pointerdown',e=>{down={x:e.clientX,rot:body.rotation.y};dragged=false;stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing';});
+  stage.addEventListener('pointermove',e=>{
+    if(down){const dx=e.clientX-down.x;if(Math.abs(dx)>4)dragged=true;if(dragged){body.rotation.y=down.rot+dx*.012;targetRot=body.rotation.y;colors();}return;}
+    const o=hit(e);if(o!==hover){hover=o;colors();}
+    const tip=$('tip');
+    if(o){const R=REG[o.userData.key];tip.hidden=false;tip.textContent=R.n+(R.lat?' '+lado(o.userData.side,R.g):'');const r=stage.getBoundingClientRect();tip.style.left=(e.clientX-r.left)+'px';tip.style.top=(e.clientY-r.top)+'px';stage.style.cursor='pointer';}
+    else{tip.hidden=true;stage.style.cursor='grab';}
+  });
+  const endDrag=e=>{if(!down)return;if(!dragged){const o=hit(e);if(o)toggleReg(o.userData.key,o.userData.side);}down=null;stage.style.cursor='grab';};
+  stage.addEventListener('pointerup',endDrag);
+  stage.addEventListener('pointercancel',()=>{down=null;});
+  stage.addEventListener('pointerleave',()=>{if(!down){hover=null;$('tip').hidden=true;colors();}});
+  let anim=null;
+  function rotTo(t){const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let cur=body.rotation.y;const tau=Math.PI*2;cur=((cur%tau)+tau)%tau;body.rotation.y=cur;let d=t-cur;if(d>Math.PI)d-=tau;if(d<-Math.PI)d+=tau;targetRot=cur+d;
+    if(reduce){body.rotation.y=targetRot;colors();return;}
+    cancelAnimationFrame(anim);const step=()=>{body.rotation.y+=(targetRot-body.rotation.y)*.18;colors();if(Math.abs(targetRot-body.rotation.y)>.002)anim=requestAnimationFrame(step);else{body.rotation.y=targetRot;colors();}};step();}
+  $('vFront').addEventListener('click',()=>rotTo(0));
+  $('vBack').addEventListener('click',()=>rotTo(Math.PI));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>setTimeout(colors,30));
+  new MutationObserver(()=>setTimeout(colors,30)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  (function loop(){if(need){renderer.render(scene,cam);need=false;}requestAnimationFrame(loop);})();
+  window.__map={sync:colors};colors();
+}
+
+renderAss();writeForm();initMap();update();
+})();
+</script>
+
+</body></html>
