@@ -1607,37 +1607,75 @@ document.addEventListener('click', function (e) {
 function isoLocal(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
 function nomeNorm(s) { return norm0(s).replace(/[^A-Z ]/g, ' ').replace(/\b(DE|DA|DO|DOS|DAS|E)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
 function parseEvento(e) {
-  var t = (e.summary || '').replace(/\s+/g, ' ').trim(), partes = t.split(/\s*[,;]\s*/).filter(Boolean);
+  var t = (e.summary || '').replace(/\s+/g, ' ').trim(), partes = t.split(/\s*(?:[,;|\/]|\s[-–—]\s)\s*/).filter(Boolean);
   var o = { id: e.id, titulo: t, link: e.htmlLink || '', desc: e.description || '' };
   var ini = (e.start || {}).dateTime || (e.start || {}).date || '';
   o.data = ini.length === 10 ? ini : ini ? isoLocal(new Date(ini)) : '';
   o.hora = (e.start || {}).dateTime ? new Date(e.start.dateTime).toTimeString().slice(0, 5) : '';
-  var mP = t.match(/\bP(?:RONT(?:UARIO)?)?\s*[:.]?\s*(\d{4,9})\b/i); o.P = mP ? mP[1] : '';
-  var mI = t.match(/\b(\d{1,3})\s*(anos|ano|a\b|meses|m\b)/i); o.idade = mI ? mI[1] + (/^m/i.test(mI[2]) ? ' meses' : ' anos') : '';
-  var mA = t.match(/\bAss(?:ist(?:ente)?)?\.?\s*:?\s*(?:Dr[a]?\.?\s*)?([^,;]+)$/i) || t.match(/\bDr[a]?\.?\s+([A-Za-zÀ-ÿ][^,;]*)$/);
+  var tudo = t + ' ' + (e.description || '').replace(/<[^>]+>/g, ' ');
+  var mP = t.match(/\b(?:P|PR|PRONT\w*|RG|REG(?:ISTRO)?|HC)\s*[:.\-º°]?\s*(\d{4,9})\b/i);
+  o.P = mP ? mP[1] : ''; o.Pchute = '';
+  if (!o.P) { var nums = tudo.match(/\b\d{5,8}\b/g) || []; o.Pchute = nums.filter(function (n) { return !/^(19|20)\d{2}$/.test(n); })[0] || ''; }
+  o.nums = (tudo.match(/\b\d{4,9}\b/g) || []);
+  var mI = t.match(/\b(\d{1,3})\s*(anos?|a\b|a\.|meses|m\b|mes)/i); o.idade = mI ? mI[1] + (/^m/i.test(mI[2]) ? ' meses' : ' anos') : '';
+  var mA = t.match(/\bAss(?:ist(?:ente)?)?\.?\s*[:.\-]?\s*(?:Dr[a]?\.?\s*)?([A-Za-zÀ-ÿ][^,;|]*)$/i) || t.match(/\b(?:Dr[a]?|DR[A]?)\.?\s+([A-Za-zÀ-ÿ][^,;|]*)$/);
   o.ass = mA ? mA[1].trim() : '';
-  o.nome = partes[0] && !/\d/.test(partes[0]) ? partes[0] : '';
-  o.proc = partes.filter(function (x, i) {
-    if (i === 0 && o.nome) return false;
-    if (/^\d{1,3}\s*(anos|ano|a|meses|m)\.?$/i.test(x)) return false;
-    if (/^P(RONT(UARIO)?)?\s*[:.]?\s*\d{4,9}$/i.test(x)) return false;
-    if (/^Ass|^Dr[a]?\.?\s/i.test(x)) return false;
-    return true;
-  }).join(', ');
+  var p0 = (partes[0] || '').replace(/\b\d.*$/, '').replace(/\bP\s*:?\s*$/i, '').trim();
+  o.nome = p0 && p0.split(' ').length >= 2 ? p0 : (partes[0] && !/\d/.test(partes[0]) ? partes[0] : '');
+  o.nome = o.nome.replace(/^(sra?\.?|sr\.?|pcte|paciente)\s+/i, '');
+  var corte = o.nome.search(/\s(fx|fratura|osteo\w*|artro\w*|[uú]mero|f[eê]mur|tíbia|tibia|r[aá]dio|coluna|joelho|quadril|ombro|tornozelo|m[aã]o|p[eé]\b|limpeza|retirada|rafi|ptq|ptj|atq|atj|desbrid\w*|amput\w*|biópsia|biopsia|exérese|exerese|reconstru\w*|lca|menisc\w*|epifisi\w*)\b/i);
+  if (corte > 0) o.nome = o.nome.slice(0, corte).trim();
+  o.texto = tudo;
+  var resto = t;
+  [o.nome, mI && mI[0], mP && mP[0], o.Pchute, mA && mA[0]].forEach(function (x) { if (x) resto = resto.replace(x, ' | '); });
+  o.proc = resto.replace(/\b(sra?|sr\.?|paciente|pcte|pac)\b\.?/gi, ' ').replace(/\b(P|PR|PRONT\w*|RG|REG\w*|HC)\s*[:.\-º°]?\s*(?=\||$)/gi, ' ')
+    .split(/\s*(?:[,;|\/]|\s[-–—]\s|^[-–—]|[-–—]$)\s*/).map(function (x) { return x.replace(/^[-–—:.\s]+|[-–—:\s]+$/g, '').trim(); }).filter(function (x) { return x; }).join(', ');
   var anexos = e.attachments || [];
   o.anexos = anexos.map(function (a) { return { titulo: a.title || 'anexo', url: a.fileUrl || '', tipo: a.mimeType || '' }; });
   o.imgs = o.anexos.filter(function (a) { return /image|pdf|dicom/i.test(a.tipo) || /\.(jpe?g|png|heic|webp|pdf|dcm)$/i.test(a.titulo); }).length;
   o.linksImg = (o.desc.match(/https?:\/\/(drive|photos|docs)\.google\.com\/[^\s"<]+/g) || []).length;
   o.falta = [];
-  if (!o.nome) o.falta.push('nome'); if (!o.idade) o.falta.push('idade'); if (!o.P) o.falta.push('P:'); if (!o.proc) o.falta.push('procedimento'); if (!o.ass) o.falta.push('Ass Dr.');
+  if (!o.nome) o.falta.push('nome'); if (!o.idade) o.falta.push('idade'); if (!o.P) o.falta.push(o.Pchute ? '“P:” antes do número' : 'P:'); if (!o.proc) o.falta.push('procedimento'); if (!o.ass) o.falta.push('Ass Dr.');
   return o;
 }
 function eventosAgenda() { return ((S.ag || {}).ev || []); }
-function pacientePorEvento(ev) {
-  if (ev.P) { var p = S.pacientes.find(function (x) { return x.registro === ev.P || (x.regs || []).indexOf(ev.P) > -1; }); if (p) return p; }
-  var n = nomeNorm(ev.nome); if (n.split(' ').length < 2) return null;
-  return S.pacientes.find(function (x) { var m = nomeNorm(x.nome); return m && (m === n || (m.split(' ')[0] === n.split(' ')[0] && m.split(' ').pop() === n.split(' ').pop())); }) || null;
+function agCals() { return S.agCals && S.agCals.length ? S.agCals : S.agCal ? [S.agCal] : []; }
+function lev1(a, b) {   // diferença de no máximo 1 letra (erro de digitação)
+  if (a === b) return true; if (Math.abs(a.length - b.length) > 1 || a.length < 5) return false;
+  var i = 0, j = 0, d = 0;
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+  return d + (a.length - i) + (b.length - j) <= 1;
 }
+var MATCH_CACHE = {};
+function matchEvento(ev) {
+  var k = ev.id + '|' + S.pacientes.length + '|' + ((S.agLink || {})[ev.id] || ''); if (MATCH_CACHE[k] !== undefined) return MATCH_CACHE[k];
+  var r = matchEvento0(ev); MATCH_CACHE[k] = r; return r;
+}
+function matchEvento0(ev) {
+  var L = (S.agLink || {})[ev.id];
+  if (L === 'amb') return null;
+  if (L) { var pm = S.pacientes.find(function (x) { return x.id === L; }); if (pm) return { p: pm, como: 'manual' }; }
+  var porReg = function (n) { return n && S.pacientes.find(function (x) { return x.registro === n || (x.regs || []).indexOf(n) > -1; }); };
+  var p = porReg(ev.P); if (p) return { p: p, como: 'P' };
+  for (var i = 0; i < ev.nums.length; i++) { p = porReg(ev.nums[i]); if (p) return { p: p, como: 'número' }; }
+  var tk = nomeNorm(ev.texto || ev.titulo).split(' ').filter(function (w) { return w.length >= 3; });
+  var melhor = null, segundo = 0;
+  S.pacientes.forEach(function (x) {
+    var nm = nomeNorm(x.nome).split(' ').filter(function (w) { return w.length >= 3; }); if (!nm.length) return;
+    var acha = function (w) { return tk.some(function (t) { return t === w || lev1(t, w); }); };
+    var sc = nm.filter(acha).length, primeiro = acha(nm[0]);
+    var data = cxIG(x).some(function (c) { return c.data === ev.data; });
+    var pts = sc * 2 + (primeiro ? 1 : 0) + (data ? 2 : 0);
+    var Pdiferente = !!(ev.P || ev.Pchute);   // evento tem prontuário que não é de nenhum internado → só aceita nome bem parecido
+    var aceita = (sc >= 2 && primeiro) || sc >= 3 || (!Pdiferente && sc >= 1 && data && primeiro);
+    if (!aceita) return;
+    if (!melhor || pts > melhor.pts) { segundo = melhor ? melhor.pts : 0; melhor = { p: x, pts: pts, como: sc >= 2 ? 'nome' : 'provável', sc: sc }; }
+    else if (pts > segundo) segundo = pts;
+  });
+  if (melhor && melhor.pts > segundo) return { p: melhor.p, como: melhor.como };
+  return null;
+}
+function pacientePorEvento(ev) { var m = matchEvento(ev); return m ? m.p : null; }
 function eventosDe(p) { return eventosAgenda().filter(function (ev) { var q = pacientePorEvento(ev); return q && q.id === p.id; }); }
 function cxIG(p) {
   var hoje = new Date(hojeISO() + 'T12:00:00');
@@ -1687,12 +1725,14 @@ function agendaDaCx(p) {   // para o 🔪 "vai operar" usar também o Agenda
 }
 var agCarregando = false;
 function carregarAgenda(forcar) {
-  if (!S.agCal || !SYNC.temAgenda() || agCarregando || !navigator.onLine) return Promise.resolve();
-  if (!forcar && S.ag && S.ag.cal === S.agCal && Date.now() - S.ag.at < 4 * 60000) return Promise.resolve();
-  agCarregando = true;
-  var h = new Date(hojeISO() + 'T00:00:00'), min = new Date(h), max = new Date(h); min.setDate(min.getDate() - 3); max.setDate(max.getDate() + 30);
-  return SYNC.calEventos(S.agCal, min, max).then(function (L) {
-    S.ag = { cal: S.agCal, at: Date.now(), de: isoLocal(min), ate: isoLocal(max), ev: L.filter(function (e) { return e.status !== 'cancelled'; }).map(parseEvento).sort(function (a, b) { return (a.data + (a.hora || '00:00')) < (b.data + (b.hora || '00:00')) ? -1 : 1; }) };
+  var cs = agCals(), chave = cs.join('|');
+  if (!cs.length || !SYNC.temAgenda() || agCarregando || !navigator.onLine) return Promise.resolve();
+  if (!forcar && S.ag && S.ag.cal === chave && Date.now() - S.ag.at < 4 * 60000) return Promise.resolve();
+  agCarregando = true; MATCH_CACHE = {};
+  var h = new Date(hojeISO() + 'T00:00:00'), min = new Date(h), max = new Date(h); min.setDate(min.getDate() - 3); max.setDate(max.getDate() + 45);
+  return Promise.all(cs.map(function (c) { return SYNC.calEventos(c, min, max).catch(function () { return []; }); })).then(function (LL) {
+    var vistos = {}, L = [].concat.apply([], LL).filter(function (e) { var k = e.id || ((e.summary || '') + JSON.stringify(e.start)); if (vistos[k]) return false; vistos[k] = 1; return true; });
+    S.ag = { cal: chave, at: Date.now(), de: isoLocal(min), ate: isoLocal(max), ev: L.filter(function (e) { return e.status !== 'cancelled'; }).map(parseEvento).sort(function (a, b) { return (a.data + (a.hora || '00:00')) < (b.data + (b.hora || '00:00')) ? -1 : 1; }) };
     saveLocal(); agCarregando = false; render(); if (typeof atual !== 'undefined' && atual) redesenhar();
   }).catch(function (e) { agCarregando = false; S.agErro = (e && (e.msg || e.status)) || 'erro'; render(); });
 }
@@ -1706,13 +1746,13 @@ function vAgenda() {
   var h = '<div class="hubhead"><h2 style="margin:0">📅 Agenda cirúrgica</h2></div>';
   if (!SYNC.temToken()) return h + '<div class="card"><div class="hint">Conecte ao Google (☁︎ no topo) para ver a Agenda.</div><div class="row" style="margin-top:8px"><button class="btn" data-sync>Conectar ao Google</button></div></div>';
   if (!SYNC.temAgenda()) return h + '<div class="card"><div class="lb">Falta uma permissão</div><div class="hint" style="margin:6px 0 10px">O app precisa de permissão para <b>ver</b> (só ver) as agendas da conta equipersot. O Google vai abrir uma janela — marque a opção da Agenda e confirme.</div><button class="btn" data-agperm>Permitir acesso à Agenda</button></div>';
-  if (!S.agCal || S.agTrocar) {
+  if (!agCals().length || S.agTrocar) {
     if (!AG_CALS) { SYNC.calListar().then(function (L) { AG_CALS = L; render(); }).catch(function (e) { AG_CALS = []; S.agErro = e.msg || 'erro'; render(); }); return h + '<div class="card hint">Carregando as agendas da conta…</div>'; }
     var L = AG_CALS.slice().sort(function (a, b) { var sa = /cir|cc|centro|sot|ortop|agenda/i.test(a.summaryOverride || a.summary) ? 0 : 1, sb = /cir|cc|centro|sot|ortop|agenda/i.test(b.summaryOverride || b.summary) ? 0 : 1; return sa - sb; });
     return h + '<div class="card"><div class="lb">Qual é a agenda cirúrgica?</div><div class="hint" style="margin:4px 0 10px">Escolha uma vez (fica salvo neste aparelho).</div>' +
-      (L.length ? L.map(function (c) { return '<button class="op" data-agcal="' + esc(c.id) + '" data-agnome="' + esc(c.summaryOverride || c.summary) + '" style="display:block;width:100%;text-align:left;margin:6px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + esc(c.backgroundColor || '#888') + ';margin-right:8px"></span>' + esc(c.summaryOverride || c.summary) + (c.primary ? ' <span class="hint">(agenda pessoal da conta)</span>' : '') + '</button>'; }).join('') : '<div class="hint">Nenhuma agenda encontrada nesta conta. Confira se a agenda foi compartilhada com a equipersot.</div>') + '</div>';
+      (L.length ? '<div class="hint" style="margin-bottom:6px">Marque <b>todas</b> as agendas onde vocês colocam cirurgias (na dúvida, marque todas).</div>' + L.map(function (c) { var on = agCals().length ? agCals().indexOf(c.id) > -1 : true; return '<label class="op" style="display:flex;gap:10px;align-items:center;width:100%;margin:6px 0"><input type="checkbox" class="agck" value="' + esc(c.id) + '" data-nome="' + esc(c.summaryOverride || c.summary) + '"' + (on ? ' checked' : '') + ' style="width:20px;height:20px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + esc(c.backgroundColor || '#888') + '"></span>' + esc(c.summaryOverride || c.summary) + (c.primary ? ' <span class="hint">(agenda principal da conta)</span>' : '') + '</label>'; }).join('') + '<button class="btn" data-agusar style="width:100%;margin-top:8px">Usar as agendas marcadas</button>' : '<div class="hint">Nenhuma agenda encontrada nesta conta. Confira se a agenda foi compartilhada com a equipersot.</div>') + '</div>';
   }
-  var ag = S.ag && S.ag.cal === S.agCal ? S.ag : null;
+  var ag = S.ag && S.ag.cal === agCals().join('|') ? S.ag : null;
   h += '<div class="row" style="margin:0 0 8px;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint" style="flex:1">' + esc(S.agCalNome || '') + (ag ? ' · atualizado ' + new Date(ag.at).toTimeString().slice(0, 5) : '') + (agCarregando ? ' · carregando…' : '') + '</span><button class="btn ghost sm" data-agrecarregar>⟳ Atualizar</button><button class="btn ghost sm" data-agtrocar>trocar agenda</button></div>';
   if (S.agErro) h += '<div class="flagbox">Erro ao ler a agenda: ' + esc(String(S.agErro).slice(0, 140)) + '</div>';
   if (!ag) { carregarAgenda(true); return h + '<div class="card hint">Carregando eventos…</div>'; }
@@ -1732,8 +1772,14 @@ function vAgenda() {
   c.dataDif.forEach(function (x) {
     h += '<div class="q" style="margin-top:10px;border-color:var(--warn)"><div class="lb">🟠 Datas diferentes — ' + esc(x.p.nome) + '</div><div class="hint">Agenda: ' + brCurto(x.ev.data) + ' · Internograma: ' + x.ig.map(function (g) { return brCurto(g.data) + ' (' + esc(g.proc.slice(0, 50)) + ')'; }).join(', ') + '</div><div class="row" style="margin-top:6px"><button class="btn ghost sm" data-open="' + esc(x.p.id) + '">abrir paciente</button></div></div>';
   });
+  var semLiga = eventosAgenda().filter(function (ev) { return ev.data >= hoje && !matchEvento(ev) && !((S.agLink || {})[ev.id]); });
+  var provaveis = eventosAgenda().filter(function (ev) { var m = matchEvento(ev); return ev.data >= hoje && m && m.como === 'provável'; });
+  var opcoesPac = function (ev) { return '<select data-aglink="' + esc(ev.id) + '" style="width:100%;margin-top:4px"><option value="">ligar a um paciente do internograma…</option><option value="amb">não é internado (ambulatorial)</option>' + S.pacientes.slice().sort(function (a, b) { return a.nome < b.nome ? -1 : 1; }).map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.nome) + (x.registro ? ' · ' + esc(x.registro) : '') + '</option>'; }).join('') + '</select>'; };
+  if (provaveis.length) h += '<div class="q" style="margin-top:10px;border-color:var(--warn)"><div class="lb">🟠 ' + provaveis.length + ' evento(s) ligados por aproximação — confirme</div>' + provaveis.map(function (ev) { var m = matchEvento(ev); return '<div class="hint" style="margin:8px 0 2px">' + brCurto(ev.data) + ' · “' + esc(ev.titulo) + '” → <b>' + esc(m.p.nome) + '</b>?</div><div class="row" style="gap:6px"><button class="btn sm" data-aglinkok="' + esc(ev.id) + '|' + esc(m.p.id) + '">Sim, é</button><button class="btn ghost sm" data-aglinkok="' + esc(ev.id) + '|amb">Não é</button></div>'; }).join('') + '</div>';
+  if (semLiga.length) h += '<details class="q" style="margin-top:10px"' + (semLiga.length <= 6 ? ' open' : '') + '><summary class="lb" style="cursor:pointer">🔍 ' + semLiga.length + ' evento(s) que não reconheci como internado</summary><div class="hint" style="margin:4px 0 8px">Se algum for de paciente do internograma (marcado fora do padrão), ligue abaixo — fica salvo.</div>' + semLiga.map(function (ev) { return '<div style="margin:8px 0"><div class="hint">' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' · “' + esc(ev.titulo || '(sem título)') + '”</div>' + opcoesPac(ev) + '</div>'; }).join('') + '</details>';
   if (c.foraPadrao.length) h += '<details class="q" style="margin-top:10px"><summary class="lb" style="cursor:pointer">🟡 ' + c.foraPadrao.length + ' evento(s) fora do padrão</summary>' + c.foraPadrao.map(function (ev) { return '<div class="hint" style="margin:6px 0">' + brCurto(ev.data) + ' · ' + esc(ev.titulo || '(sem título)') + '<br><b>falta: ' + ev.falta.join(', ') + '</b></div>'; }).join('') + '<div class="hint">Padrão: Nome, idade, P: prontuário, procedimento, Ass Dr. assistente</div></details>';
   if (c.semImg.length) h += '<details class="q" style="margin-top:10px"><summary class="lb" style="cursor:pointer">📎 ' + c.semImg.length + ' cirurgia(s) sem imagem anexada</summary>' + c.semImg.map(function (ev) { return '<div class="hint" style="margin:6px 0">' + brCurto(ev.data) + ' · ' + esc(ev.nome || ev.titulo) + ' — ' + esc(ev.proc) + '</div>'; }).join('') + '<div class="hint">Anexe a radiografia ao evento no Google Agenda (📎 Adicionar anexo).</div></details>';
+  h += '<details class="q" style="margin-top:10px"><summary class="lb" style="cursor:pointer">🔎 Como o app leu cada evento (diagnóstico)</summary>' + eventosAgenda().filter(function (ev) { return ev.data >= hoje; }).map(function (ev) { var m = matchEvento(ev); return '<div class="hint" style="margin:8px 0;border-bottom:1px solid var(--line);padding-bottom:6px">' + brCurto(ev.data) + ' · “' + esc(ev.titulo) + '”<br>nome: <b>' + esc(ev.nome || '—') + '</b> · idade: ' + esc(ev.idade || '—') + ' · P: ' + esc(ev.P || (ev.Pchute ? ev.Pchute + ' (sem “P:”)' : '—')) + ' · proc.: ' + esc(ev.proc || '—') + ' · Ass: ' + esc(ev.ass || '—') + '<br>→ ' + (m ? '🏥 ' + esc(m.p.nome) + ' (por ' + m.como + ')' : 'não ligado a internado') + '</div>'; }).join('') + '</details>';
   h += '</div>';
   // ---- lista por dia ----
   var F = [['todos', 'Todos'], ['int', 'Internados'], ['amb', 'Ambulatoriais'], ['prob', 'Com alerta']];
@@ -1783,6 +1829,7 @@ function tagAgenda(p) {
   if (evs.some(function (ev) { return !ev.imgs && !ev.linksImg; })) t += '<span class="tag red">📎 sem imagem</span>';
   return t;
 }
+document.addEventListener('change', function (e) { var t = e.target; if (t.dataset && t.dataset.aglink != null && t.value) { S.agLink = S.agLink || {}; S.agLink[t.dataset.aglink] = t.value; MATCH_CACHE = {}; saveLocal(); render(); toast('Evento ligado'); } });
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -1878,6 +1925,8 @@ document.addEventListener('click', function (ev) {
   if (ds.apagarreg) { modalApagar(ds.apagarreg); return; }
   if ('apagaraparelho' in ds) { modalApagarAparelho(); return; }
   if ('agperm' in ds) { SYNC.pedirAgenda(); return; }
+  if ('agusar' in ds) { var cks = Array.prototype.slice.call(document.querySelectorAll('.agck:checked')); if (!cks.length) { toast('Marque ao menos uma agenda'); return; } S.agCals = cks.map(function (x) { return x.value; }); S.agCal = S.agCals[0]; S.agCalNome = cks.map(function (x) { return x.dataset.nome; }).join(' + '); S.agTrocar = false; S.ag = null; S.agErro = ''; saveLocal(); render(); carregarAgenda(true); return; }
+  if (ds.aglinkok) { var pr = ds.aglinkok.split('|'); S.agLink = S.agLink || {}; S.agLink[pr[0]] = pr[1]; MATCH_CACHE = {}; saveLocal(); render(); return; }
   if (ds.agcal) { S.agCal = ds.agcal; S.agCalNome = ds.agnome || ''; S.agTrocar = false; S.ag = null; S.agErro = ''; saveLocal(); render(); carregarAgenda(true); return; }
   if ('agtrocar' in ds) { S.agTrocar = true; AG_CALS = null; render(); return; }
   if ('agrecarregar' in ds) { S.agErro = ''; carregarAgenda(true); render(); return; }
