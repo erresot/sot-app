@@ -221,6 +221,10 @@ button{cursor:pointer}
   .pp .folha{width:auto;margin:0;break-after:page}
   .pp .folha:last-child{break-after:auto}
 }
+.xo{border:0;background:none;color:#c62828;cursor:pointer;font:700 12px/1 system-ui,sans-serif;opacity:.35;padding:0 2px;margin:0 0 0 1px;vertical-align:super}
+.xo:hover,.xo:focus{opacity:1}.pp .xo{display:none}
+@media print{.xo{display:none!important}}
+.ed[data-f="dx"],.ed[data-f="cirPrev"],.ed[data-f="fxPrev"],.ed[data-f="laudos"]{white-space:pre-line;display:inline-block;vertical-align:top}
 </style>
 </head>
 <body>
@@ -902,7 +906,7 @@ function salvar(){
   try{localStorage.setItem(CHAVE,JSON.stringify(dados));}catch(e){ok=false;}
   if(window.__SOT&&dados[dia]){ try{ dados[dia].salvoEm=Date.now(); parent.postMessage({src:"mapa",type:"mapa-salvar",dia:dia,dados:dados[dia]},"*"); }catch(e){} }
   var h=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-  document.getElementById("estado").textContent=ok?("Salvo neste navegador às "+h+" (no app: Drive da equipe)"):"Sem salvamento neste navegador";
+  document.getElementById("estado").textContent=ok?(window.__SOT?("Salvo às "+h+" no aparelho · Drive em seguida"):("Salvo neste navegador às "+h+" (no app: Drive da equipe)")):"Sem salvamento neste navegador";
 }
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function num(s){var m=String(s||"").replace(/\./g,"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;}
@@ -911,11 +915,11 @@ function neg(s){return /^\s*(nega|negam?|não|nao|—|-|sem)\b/i.test(s||"")||/^
 // ---------- regras automáticas ----------
 var ANTI=/(varfarina|marevan|rivaroxabana|xarelto|apixabana|eliquis|edoxabana|dabigatrana|pradaxa|enoxaparina|clexane|heparina|\baas\b|clopidogrel|ozempic|semaglutida|liraglutida|mounjaro)/i;
 function pendAuto(x){
-  var p=[], temLab=LABS.some(function(k){return x.labs[k];});
+  var p=[], temLab=LABS.some(function(k){return x.labs[k];})||LABS.every(function(k){return oc(x,"labs."+k);});
   if(!temLab) p.push("Checar pré-ops");
   else{
     var hb=num(x.labs.Hb);
-    if(hb===null) p.push("Sem Hb: checar Hb/Ht");
+    if(hb===null&&!oc(x,"labs.Hb")) p.push("Sem Hb: checar Hb/Ht");
     else if(hb<=10) p.push("Hb "+x.labs.Hb+" (≤ 10): checar Hb/Ht");
     if(!x.preData) p.push("Anotar data dos pré-ops");
   }
@@ -950,8 +954,12 @@ var REFM={Hb:[12,17.5],Ht:[36,52],Leuco:[4000,11000],Plaq:[150,450],TP:[null,14]
   TSH:[0.4,4.5],T4L:[0.7,1.8],PCR:[null,10],Mg:[1.6,2.6],TGO:[null,40],TGP:[null,41],VHS:[null,20],Lactato:[null,2],CK:[null,200]};
 function numLab(k,v){ var t=String(v||"").replace(/\(.*?\)/g,"").replace(/\*/g,"").trim(); var n=parseFloat(t.replace(/\.(?=\d{3}\b)/g,"").replace(",",".")); if(isNaN(n)) return null; if(k==="Plaq"&&n>=2000) n=n/1000; if(k==="Leuco"&&n<100) n=n*1000; return n; }
 function foraLab(k,v){ if(/\*/.test(String(v||""))) return true; var r=REFM[k], n=numLab(k,v); if(!r||n==null) return false; return (r[0]!=null&&n<r[0])||(r[1]!=null&&n>r[1]); }
+var LINHAS=["dx","cirPrev","fxPrev","laudos"];
+function oc(x,f){ return !!(x.ocultos&&x.ocultos[f]); }
+function xo(x,f){ return '<button class="xo" data-id="'+x.id+'" data-oc="'+f+'" title="Tirar este item desta célula" aria-label="Tirar item">×</button>'; }
 function marcaVal(f,v){
   v=v||""; if(!v) return "";
+  if(LINHAS.indexOf(f)>=0){ var it=String(v).split(/\s+\/\s+/).map(function(s){return s.trim();}).filter(Boolean); return it.length>1?it.map(function(s){return "• "+esc(s);}).join("\n"):esc(v); }
   if(f.indexOf("labs.")===0){ var k=f.slice(5), cx=(k==="Hb"&&numLab(k,v)!=null&&numLab(k,v)<=10); return foraLab(k,v)||cx?'<u class="labf'+(cx?' labcx':'')+'">'+esc(v)+'</u>':esc(v); }
   if(f==="extras") return String(v).split(/(\s+\/\s+|\s*·\s*)/).map(function(seg){ var m=seg.match(/^\s*([A-Za-z][A-Za-z0-9]{0,9})\s+(\*?[\d.,]+\*?)/); if(m&&foraLab(m[1],m[2])) return '<u class="labf">'+esc(seg)+'</u>'; return esc(seg); }).join("");
   return esc(v);
@@ -964,7 +972,7 @@ function ed(x,f,extra){
     (dv?'<button class="q" data-id="'+x.id+'" data-duvok="'+f+'" title="Leitura com dúvida. Confira e toque para confirmar.">?</button>':'');
 }
 function labLinha(x,ks){
-  return ks.map(function(k){return '<span class="lab"><em>'+k+'</em> '+ed(x,"labs."+k,"opc")+'</span>';}).join(" ");
+  return ks.filter(function(k){return !oc(x,"labs."+k);}).map(function(k){return '<span class="lab"><em>'+k+'</em>'+xo(x,"labs."+k)+' '+ed(x,"labs."+k,"opc")+'</span>';}).join(" ");
 }
 function chips(x,f){
   return '<span class="chips">'+["✓","SOLIC","—"].map(function(v){
@@ -974,49 +982,50 @@ function celHTML(x){
   var pa=pendAuto(x), sg=sugestoes(x);
   var alPos=x.alergia && !neg(x.alergia);
   var nTrav=Object.keys(x.locked).length;
-  var mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
+  var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
   var h='<div class="cel">';
   h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>';
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
   h+='<div class="col meio">';
   h+='<div class="labs"><span class="data">PRÉ-OPS ('+ed(x,"preData","opc")+'):</span> '+labLinha(x,LABS1)+'<br>'+labLinha(x,LABS2)+'<br>'+labLinha(x,LABS3);
-  h+='<br><span class="lab"><em>+</em> '+ed(x,"extras","opc")+'</span><span class="chips"><button class="chip" data-id="'+x.id+'" data-ac="exame">+ exame</button></span>';
+  h+='<br><span class="lab"><em>+</em>'+xo(x,"extras")+' '+ed(x,"extras","opc")+'</span><span class="chips"><button class="chip" data-id="'+x.id+'" data-ac="exame">+ exame</button></span>';
   if(sg.length) h+='<div class="sug">Sugeridos pela CMB/MUC: '+sg.map(function(e){return '<button class="chip" data-id="'+x.id+'" data-add="'+esc(e)+'">+ '+esc(e)+'</button>';}).join(" ")+'</div>';
   h+='</div>';
   h+='<div class="duas"><div>';
-  h+='<div class="lin"><b>CMB:</b> '+ed(x,"cmb")+'</div>';
-  h+='<div class="lin"><b>MUC:</b> '+ed(x,"muc")+'</div>';
-  h+='<div class="lin"><b>ALERGIA:</b> '+ed(x,"alergia",alPos?"alergia-pos":"")+'</div>';
-  h+='<div class="lin'+(mn?'':' opc')+'"><b>PESO:</b> '+ed(x,"peso",mn?"":"opc")+'</div>';
+  if(!oc(x,"cmb")) h+='<div class="lin"><b>CMB:</b>'+xo(x,"cmb")+' '+ed(x,"cmb")+'</div>';
+  if(!oc(x,"muc")) h+='<div class="lin"><b>MUC:</b>'+xo(x,"muc")+' '+ed(x,"muc")+'</div>';
+  if(!oc(x,"alergia")) h+='<div class="lin"><b>ALERGIA:</b>'+xo(x,"alergia")+' '+ed(x,"alergia",alPos?"alergia-pos":"")+'</div>';
+  if(!oc(x,"peso")) h+='<div class="lin'+(mn?'':' opc')+'"><b>PESO:</b>'+xo(x,"peso")+' '+ed(x,"peso",mn?"":"opc")+'</div>';
   h+='</div><div>';
-  h+='<div class="lin"><b>Av Cardio:</b> '+ed(x,"cardio","opc")+chips(x,"cardio")+'</div>';
-  h+='<div class="lin"><b>APA:</b> '+ed(x,"apa","opc")+chips(x,"apa")+'</div>';
-  h+='<div class="lin"><b>RCH:</b> '+ed(x,"rch","opc")+chips(x,"rch")+'</div>';
-  h+='<div class="lin"><b>UTI:</b> '+ed(x,"uti","opc")+chips(x,"uti")+'</div>';
+  if(!oc(x,"cardio")) h+='<div class="lin"><b>Av Cardio:</b>'+xo(x,"cardio")+' '+ed(x,"cardio","opc")+chips(x,"cardio")+'</div>';
+  if(!oc(x,"apa")) h+='<div class="lin"><b>APA:</b>'+xo(x,"apa")+' '+ed(x,"apa","opc")+chips(x,"apa")+'</div>';
+  if(!oc(x,"rch")) h+='<div class="lin"><b>RCH:</b>'+xo(x,"rch")+' '+ed(x,"rch","opc")+chips(x,"rch")+'</div>';
+  if(!oc(x,"uti")) h+='<div class="lin"><b>UTI:</b>'+xo(x,"uti")+' '+ed(x,"uti","opc")+chips(x,"uti")+'</div>';
   h+='</div></div>';
-  h+='<div class="lin opc obs"><b>OBS:</b> '+ed(x,"obs","opc")+'</div>';
+  if(!oc(x,"obs")) h+='<div class="lin opc obs"><b>OBS:</b>'+xo(x,"obs")+' '+ed(x,"obs","opc")+'</div>';
   h+='<div class="pend">⚠ '+pa.map(function(p){return '<span class="auto" role="button" tabindex="0" title="Dispensar esta pendência" data-id="'+x.id+'" data-ign="'+esc(p)+'">'+esc(p)+'</span>';}).join("")+ed(x,"pend","opc")+'</div>';
   h+='</div>';
   h+='<div class="col dir">';
   h+='<div class="lin cir">'+ed(x,"cir")+'</div>';
-  h+='<div class="lin"><b>Dx:</b> '+ed(x,"dx")+(nd!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+nd+' d</span>':'')+'</div>';
-  h+='<div class="lin"><b>Mecanismo:</b> '+ed(x,"mec","opc")+'</div>';
-  h+='<div class="lin"><b>Cir. prévias:</b> '+ed(x,"cirPrev","opc")+(npo!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+npo+'º PO</span>':'')+'</div>';
-  h+='<div class="lin"><b>Fx prévias/assoc.:</b> '+ed(x,"fxPrev","opc")+'</div>';
-  h+='<div class="lin"><b>Laudos:</b> '+ed(x,"laudos","opc")+'</div>';
+  if(!oc(x,"dx")) h+='<div class="lin"><b>Dx:</b>'+xo(x,"dx")+' '+ed(x,"dx")+(nd!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+nd+' d</span>':'')+'</div>';
+  if(!oc(x,"mec")) h+='<div class="lin"><b>Mecanismo:</b>'+xo(x,"mec")+' '+ed(x,"mec","opc")+'</div>';
+  if(!oc(x,"cirPrev")) h+='<div class="lin"><b>Cir. prévias:</b>'+xo(x,"cirPrev")+' '+ed(x,"cirPrev","opc")+(npo!==null?' <span class="cnt" title="Contado até o dia da cirurgia">· '+npo+'º PO</span>':'')+'</div>';
+  if(!oc(x,"fxPrev")) h+='<div class="lin"><b>Fx prévias/assoc.:</b>'+xo(x,"fxPrev")+' '+ed(x,"fxPrev","opc")+'</div>';
+  if(!oc(x,"laudos")) h+='<div class="lin"><b>Laudos:</b>'+xo(x,"laudos")+' '+ed(x,"laudos","opc")+'</div>';
   h+='</div></div>';
   h+='<div class="acoes"><button class="cap" data-id="'+x.id+'" data-ac="cap">Captar dados (texto ou foto)</button>'+
      '<button data-id="'+x.id+'" data-ac="sobe" aria-label="Mover para cima">↑</button><button data-id="'+x.id+'" data-ac="desce" aria-label="Mover para baixo">↓</button>'+
      (nDuv?'<button data-id="'+x.id+'" data-ac="okduv">Confirmar '+nDuv+' dúvida(s)</button>':'')+
      (nTrav?'<button data-id="'+x.id+'" data-ac="destrava">Destravar '+nTrav+' campo(s)</button>':'')+
+     (nOc?'<button data-id="'+x.id+'" data-ac="mostrar" title="Volta os itens tirados com ×">Mostrar '+nOc+' item(ns) tirado(s)</button>':'')+
      '<button data-id="'+x.id+'" data-ac="rem">Remover</button></div>';
   h+='</div>';
   return h;
 }
 var vista="mapa", pacSel=null;
 function linhaDados(x){
-  var labs=LABS.filter(function(k){return x.labs[k];}).map(function(k){return k+" "+x.labs[k];}).join(" / ");
+  var labs=LABS.filter(function(k){return x.labs[k]&&!oc(x,"labs."+k);}).map(function(k){return k+" "+x.labs[k];}).join(" / ");
   var pend=pendAuto(x).concat(x.pend?[x.pend]:[]).join("; ");
   var partes=[x.cab,"Origem: "+x.origem,
     labs?("Pré-ops"+(x.preData?" ("+x.preData+")":"")+": "+labs+(x.extras?" / "+x.extras:"")):(x.extras?"Exames: "+x.extras:""),
@@ -1101,6 +1110,7 @@ function desenhar(){
 }
 function achar(id){var a=dados[dia].cels;for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];return null;}
 function gravar(x,f,v,manual){
+  if(LINHAS.indexOf(f)>=0) v=String(v).split(/\n+/).map(function(s){return s.replace(/^\s*•\s*/,"").trim();}).filter(Boolean).join(" / ");
   v=String(v).replace(/\s+/g," ").trim();
   if(CAMPOS_TXT.indexOf(f)>=0) v=anoDatas(v,dia);
   var antes=f.indexOf("labs.")===0?(x.labs[f.slice(5)]||""):(x[f]||"");
@@ -1148,7 +1158,9 @@ folhas.addEventListener("click",function(ev){
   var b=ev.target.closest("button,[data-ign]"); if(!b) return;
   var x=achar(b.dataset.id); if(!x) return;
   var a=dados[dia].cels, i=a.indexOf(x);
-  if(b.dataset.duvok){ delete x.duv[b.dataset.duvok]; }
+  if(b.dataset.oc){ x.ocultos=x.ocultos||{}; x.ocultos[b.dataset.oc]=1; delete x.duv[b.dataset.oc]; }
+  else if(b.dataset.ac==="mostrar"){ x.ocultos={}; }
+  else if(b.dataset.duvok){ delete x.duv[b.dataset.duvok]; }
   else if(b.dataset.ac==="okduv"){ x.duv={}; }
   else if(b.dataset.ign){ x.ign=x.ign||{}; x.ign[b.dataset.ign.replace(/[\d,.]+/g,"#")]=true; }
   else if(b.dataset.set){ gravar(x,b.dataset.set,b.dataset.v,true); }
@@ -1160,7 +1172,7 @@ folhas.addEventListener("click",function(ev){
   else if(b.dataset.ac==="desce"&&i<a.length-1){ a.splice(i+1,0,a.splice(i,1)[0]); }
   else if(b.dataset.ac==="destrava"){ x.locked={}; x.ign={}; }
   else if(b.dataset.ac==="rem"){
-    if(b.dataset.conf){ a.splice(i,1); if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
+    if(b.dataset.conf){ a.splice(i,1); if(/^ev_/.test(x.id)){ var rr=dados[dia].removidos=dados[dia].removidos||[]; if(rr.indexOf(x.id)<0) rr.push(x.id); } if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
   }
   salvar(); desenhar();
 });
@@ -1463,8 +1475,18 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       var iso=m.dia, loc=dados[iso], sv=m.salvo;
       if(sv&&sv.cels&&(!loc||(sv.salvoEm||0)>(loc.salvoEm||0))){ dados[iso]=sv; loc=sv; loc.cels.forEach(function(x){x.duv=x.duv||{};x.alt=x.alt||{};x.ign=x.ign||{};x.locked=x.locked||{};x.labs=x.labs||{};}); loc.status=loc.status||{fechado:false}; loc.log=loc.log||[]; }
       if(!loc){ loc=dados[iso]={titulo:m.titulo||tituloDia(iso),cels:[],status:{fechado:false},log:[]}; }
-      dia=iso; var novos=0, mud=0, mant=0;
+      dia=iso; var novos=0, mud=0, mant=0, tirados=0;
+      var NAOPAC=/^\s*(proclama|feriado|ponto facultativo|f[eé]rias|folga|sala\s*\d|sala\b|congresso|plant[aã]o|reuni[aã]o|tiradentes|natal|finados|independ[eê]ncia|carnaval|ano novo|corpus christi|sexta.feira santa|consci[eê]ncia negra|nossa senhora|aniversário)/i;
+      var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=1; });
+      loc.cels=loc.cels.filter(function(z){
+        var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
+        if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
+        if(/^ev_/.test(z.id)&&(m.cels||[]).length&&!ids[z.id]&&!Object.keys(z.locked||{}).length&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
+        return true;
+      });
+      var REM=loc.removidos||[];
       (m.cels||[]).forEach(function(inc){
+        if(REM.indexOf(inc.id)>=0) return;
         var x=null; loc.cels.forEach(function(z){ if(z.id===inc.id) x=z; });
         if(!x){ x=c(inc); TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; loc.cels.push(x); novos++; return; }
         Object.keys(inc).forEach(function(f){

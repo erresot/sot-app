@@ -342,12 +342,47 @@ S.ficha=function(text,hdr){
     else if(/\bEM\s+\d{1,2}\/\d{1,2}\/\d{2,4}/.test(t)&&t.length<160&&/^[^A-Z]{0,4}(?:\S+\s+){0,3}?(OSTEOSS|ARTROPLAST|RESSEC|RETIRADA DE MATERIAL|ARTROSCOP|RECONSTRU|BIOPSIA|AMPUTA|ARTRODESE|REDUCAO|LIMPEZA|DESBRID|TENORRAF|EXERESE|OSTEOTOM|ENXERT|FIXAC|SINTESE|CORRECAO|REVISAO)/.test(t))obs.unshift('Cx: '+L);
   });
   r.obs=obs.join(' / ');
+  if(!r.alergia)r.alergia='NEGA';
   // exames
   var ex=S.exames(T,ano);
   r.labs=ex.labs;r.outros_exames=ex.outrosTxt;r.data_exames=ex.data;
   ex.duv.forEach(function(k){r.duvidas.push(k);});
   if(/\?/.test(ex.outrosTxt))r.duvidas.push('outros_exames');
   return r;
+};
+
+/* ---------------- laudos (RX, TC, RM, USG, anatomopatológico) ---------------- */
+var SEC=/^\s*(T[ÉE]CNICA|M[ÉE]TODO|INDICA[ÇC][ÃA]O|INFORMA[ÇC][ÕO]ES CL[ÍI]NICAS|HIST[ÓO]RIA CL[ÍI]NICA|RELAT[ÓO]RIO|AN[ÁA]LISE|ACHADOS|DESCRI[ÇC][ÃA]O|EXAME|MACROSCOPIA|MICROSCOPIA|COMPARA[ÇC][ÃA]O|CONCLUS[ÃA]O|IMPRESS[ÃA]O(?: DIAGN[ÓO]STICA)?|OPINI[ÃA]O|DIAGN[ÓO]STICO|NOTA|OBSERVA[ÇC][ÕO]ES?)\s*[:.\-]?\s*(.*)$/i;
+S.laudo=function(text){
+  var L=S.limparTexto(text).split('\n').map(function(l){return l.replace(/\s+/g,' ').trim();});
+  // tira linhas de ruído (poucas letras, só símbolos)
+  L=L.filter(function(l){if(!l)return true;var al=(l.match(/[A-Za-zÀ-ÿ0-9]/g)||[]).length;return al>=3&&al/l.length>=.6;});
+  var blocos=[],cur={tit:'',txt:[]},titulo='',data='',m;
+  L.forEach(function(l,i){
+    if(!data&&(m=l.match(/\b(\d{2}\/\d{2}\/\d{4})\b/)))data=m[1];
+    if(!titulo&&/^(RADIOGRAFIA|RX|TOMOGRAFIA|TC|RESSON[AÂ]NCIA|RM|RNM|ULTRASSONOGRAFIA|USG|US\b|DENSITOMETRIA|CINTILOGRAFIA|ANGIO|ELETRO|ANATOMOPATOL|EXAME ANATOMO|BI[ÓO]PSIA)/i.test(deacc(l).toUpperCase())&&l.length<90){titulo=l;return;}
+    var sm=l.match(SEC);
+    if(sm&&sm[1].length>=4&&(l.length<60||/:/.test(l))){if(cur.tit||cur.txt.length)blocos.push(cur);cur={tit:sm[1].toUpperCase(),txt:sm[2]?[sm[2]]:[]};return;}
+    if(!l){cur.txt.push('');return;}
+    cur.txt.push(l);
+  });
+  if(cur.tit||cur.txt.length)blocos.push(cur);
+  // junta linhas quebradas em parágrafos
+  blocos.forEach(function(b){
+    var par=[],at='';
+    b.txt.forEach(function(l){
+      if(!l){if(at)par.push(at);at='';return;}
+      if(/^[-•*·]\s|^\d+[.)]\s/.test(l)){if(at)par.push(at);at=l;return;}
+      at=at?(/[-]$/.test(at)?at.slice(0,-1)+l:at+' '+l):l;
+      if(/[.:;]$/.test(l)&&l.length<70){par.push(at);at='';}
+    });
+    if(at)par.push(at);b.par=par;
+  });
+  var ASS=/\bCRM\b|ASSINAD|RESPONS[AÁ]VEL|^DRA?\.?\s|M[EÉ]DIC[OA] RADIOLOG|LIBERADO EM|DIGITADO/i;
+  blocos.forEach(function(b){var k=b.par.findIndex(function(x){return ASS.test(x);});b.ass=k>=0?b.par.slice(k):[];if(k>=0)b.par=b.par.slice(0,k);});
+  var concl=blocos.filter(function(b){return /CONCLUS|IMPRESS|OPINI|DIAGN/.test(deacc(b.tit));}).map(function(b){return b.par.join(' ');}).join(' ');
+  var txt=(titulo?titulo.toUpperCase()+(data?' ('+data+')':'')+'\n\n':'')+blocos.map(function(b){return (b.tit?b.tit+':\n':'')+b.par.concat(b.ass).join('\n');}).join('\n\n');
+  return {titulo:titulo,data:data,conclusao:concl,texto:txt.trim()};
 };
 
 G.SOTOCR=S;

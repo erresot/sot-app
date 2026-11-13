@@ -248,6 +248,12 @@ body.sec-hub .top .sub, body.sec-hub .top .prog, body.sec-hub .top [data-doc]{di
 .agh{font-weight:700;color:var(--mut);font-size:12px}
 @media (max-width:899px){.agdcol.vazio.passado{display:none}.agdcol.vazio .agdbody{display:none}.agdcol.vazio .agdhead{padding:5px 10px;opacity:.7}}
 @media (min-width:900px){.agsemana{grid-template-columns:repeat(7,1fr)}.agdcol.vazio .agdhead small{visibility:hidden}.agdhead{flex-direction:column;align-items:center;gap:0}.agdhead small{margin:2px 0 0;font-size:11px}.agdbody{min-height:160px}.agdbody .agev{white-space:normal}}
+.tag.segura{background:#b71c1c;color:#fff;font-weight:800;letter-spacing:.3px}
+.laudo{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;background:#fafbfa}
+.laudo summary{cursor:pointer;list-style:none}.laudo summary::-webkit-details-marker{display:none}
+.laudo summary::before{content:'▸ ';color:#5d6b66}.laudo[open] summary::before{content:'▾ '}
+.laudo .lconc{font-size:13px;margin-top:3px;color:#24302c}
+.laudo .ltxt{white-space:pre-wrap;font-size:12.5px;max-height:60vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -1059,7 +1065,7 @@ function render() {
 }
 function grupos() { var g = ['Todos']; ativos().forEach(function (p) { if (g.indexOf(p.grupo) < 0) g.push(p.grupo); }); var i = g.indexOf('Hm'); if (i > -1) { g.splice(i, 1); g.push('Hm'); } return g; }
 function tagsPac(p) {
-  var t = '';
+  var t = tagSegurar(p);
   var al0 = alergiaInfo(p); if (al0.tem) t += '<span class="tag red">⚠ ALERGIA</span>';
   if (p.mudou) t += '<span class="tag ic">↪ ' + esc(p.mudou) + '</span>';
   if (p.alta) t += '<span class="tag hj">ALTA</span>';
@@ -1213,7 +1219,7 @@ function desenharFicha() {
   var L = S.pend[p.id] || [];
   h += '<div class="q"><div class="lb">Pendências deste paciente</div>' + (L.length ? L.map(function (x, i) { return linhaPend(p.id, x, i); }).join('') : '<div class="hint">Nenhuma.</div>') +
     '<div class="add"><input id="newp" placeholder="Ex.: pedir RX controle, ver cultura…"><button data-padd>+</button></div></div>';
-  h += blocoFotos(p, 'rx') + blocoFotos(p, 'pele') + blocoHistorico(p) + botaoApagar(p);
+  h += blocoFotos(p, 'rx') + blocoFotos(p, 'rxpoi') + blocoFotos(p, 'pele') + blocoFotos(p, 'laudo') + blocoLaudos(p) + blocoHistorico(p) + botaoApagar(p);
   h += blocoEvo(p);
   h += '</div><div class="foot"><button class="btn evos" data-evo="' + esc(p.id) + '" style="flex:1">' + (evoluido(p) ? 'Refazer evolução' : 'Evoluir') + '</button><button class="btn" data-proximo style="flex:1.4">' + (v._ok ? 'Próximo leito →' : '✓ Visitado · próximo') + '</button></div>';
   $('#sheet').innerHTML = h;
@@ -2075,7 +2081,7 @@ function celulaMapa(ev) {
     cab: [p.nome, idade ? idade + 'a' : '', 'P: ' + (p.registro || ev.P || ''), ev.proc || '', 'Ass. Dr. ' + (ev.ass || assDe(p) || '')].filter(function (x) { return x && x !== 'P: ' && x !== 'Ass. Dr. '; }).join(', '),
     origem: ((p.lugar || p.local || '') + ' ' + (p.leito || '')).replace(/\s+/g, ' ').trim().toUpperCase() || 'INTERNADO', fonte: 'internograma',
     preData: lb.data, labs: lb.labs, extras: lb.extras,
-    cmb: limpa((ap.cmb || []).join(', ') || evs.cmb), muc: limpa((ap.muc || []).join(', ') || evs.muc), alergia: limpa((ap.alergia || []).join(', ') || evs.alergia),
+    cmb: limpa((ap.cmb || []).join(', ') || evs.cmb), muc: limpa((ap.muc || []).join(', ') || evs.muc), alergia: limpa((ap.alergia || []).join(', ') || evs.alergia) || 'NEGA', laudos: (typeof laudosMapa === 'function' ? laudosMapa(p) : ''),
     cardio: trechoIG(p, /AV(?:ALIA[ÇC][AÃ]O)?\.?\s*CARDIO[^;\n]{0,60}/i), apa: trechoIG(p, /(?:\bAPA\b|AV(?:ALIA[ÇC][AÃ]O)?\.?\s*ANEST)[^;\n]{0,60}/i),
     rch: trechoIG(p, /\bRCH\b[^;\n-]{0,30}/i), uti: trechoIG(p, /\b(?:SOLIC(?:ITAR|ITADA)?|RESERVA|VAGA)\s+(?:DE\s+)?UTI\b[^;\n]{0,30}|\bUTI\b\s*(?:SOLIC\w*|OK|✓)/i),
     pend: ((S.pend || {})[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; }).filter(function (t) { return /AVISO|RCH|UTI|AV\.?\s*CARDIO|APA|JEJUM|HEPARIN|ENOXA|RESERVA|PR[EÉ][- ]?OP|EXAME|HB\b/i.test(t); }).slice(0, 4).join('; '),
@@ -2114,6 +2120,56 @@ window.addEventListener('message', function (e) {
     tMapaSalvar = setTimeout(function () { if (SYNC.temToken() && navigator.onLine) SYNC.mapaSalvar(m.dia, m.dados).catch(function () {}); }, 2500);
   }
 });
+// ===================== v24: SEGURAR ALTA · Laudos (OCR) · RX POI =====================
+var RE_SEGURA = /\bSEGUR(?:AR|A|EM|O)\s+(?:A\s+)?ALTA\b|\bN[AÃ]O\s+(?:DAR|DE|D[ÊE]|PODE\s+(?:TER|DAR|RECEBER)|TEM|TER)\s+ALTA\b|\bSEM\s+ALTA\b|\bALTA\s+(?:SUSPENSA|BLOQUEADA|SEGURADA|CANCELADA|PROIBIDA|CONTRAINDICADA|N[AÃ]O\s+AUTORIZADA)\b|\bALTA\s+(?:S[ÓO]|SOMENTE|APENAS|SOMENTE\s+AP[ÓO]S|CONDICIONADA)\s+(?:AP[ÓO]S|COM|QUANDO|SE)\b|\bAGUARD(?:AR|A)\s+(?:\S+\s+){0,3}?(?:PARA|ANTES\s+D[AE])\s+(?:A\s+)?ALTA\b|\bALTA\s+(?:AGUARDA|AGUARDANDO|DEPENDE|PENDENTE)\b|\bSEGURAR\s+(?:O\s+|A\s+)?PACIENTE\b|\bN[AÃ]O\s+LIBERAR\b|\bAGUARDAR\s+LIBERA[ÇC][AÃ]O\s+(?:DO\s+|DA\s+)?(?:ASSISTENTE|CHEFE|DR)/;
+function textoSegurar(p) {
+  var T = [].concat(p.orientaLinhas || [], p.condutasLinhas || [], [p.dx || '', p.mecanismo || '', p.ass || '', p.ap || ''], p.exames || [], (p.agenda || []).map(function (a) { return a.txt; }), ((S.pend || {})[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; }));
+  for (var i = 0; i < T.length; i++) { var u = norm0(String(T[i] || '')), m = u.match(RE_SEGURA); if (m) return String(T[i]).trim(); }
+  return '';
+}
+function tagSegurar(p) { var t = textoSegurar(p); return t ? '<span class="tag segura" title="' + esc(t) + '">✋ SEGURAR ALTA</span>' : ''; }
+
+var FT_TIT = { rx: '🩻 Radiografias (pré)', rxpoi: '🩻 Radiografia POI', pele: '📷 Pele / ferida', laudo: '📄 Laudos (foto)' };
+var FT_NOME = { rx: 'Radiografia', rxpoi: 'Radiografia POI', pele: 'Pele', laudo: 'Laudo' };
+var LAUDO_LENDO = {};
+function carregarOCR() {
+  if (window.SOTOCR) return Promise.resolve(window.SOTOCR);
+  return new Promise(function (ok, er) { var s = document.createElement('script'); s.src = 'hub/ocr/sot-ocr.js'; s.onload = ok; s.onerror = function () { er('leitor de texto não encontrado (pasta hub/ocr)'); }; document.head.appendChild(s); })
+    .then(function () { SOTOCR._base = new URL('hub/ocr/', location.href).href; return SOTOCR; });
+}
+function lerLaudo(pid, lid, blob) {
+  LAUDO_LENDO[lid] = 1; redesenhar();
+  var u = null;
+  var fonte = blob ? Promise.resolve(blob) : FDB.get(lid);
+  return carregarOCR().then(function () { return fonte; }).then(function (b) {
+    if (!b) throw 'foto não está neste aparelho';
+    u = URL.createObjectURL(b);
+    return new Promise(function (ok, er) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { er('imagem inválida'); }; im.src = u; });
+  }).then(function (im) { return SOTOCR.ler(SOTOCR.prep(im, 0, 2200), { semCab: true }); })
+    .then(function (o) {
+      var r = SOTOCR.laudo(o.text), f = ((S.fotos || {})[pid] || []).find(function (x) { return x.lid === lid; });
+      if (f) { f.ocr = r.texto; f.concl = r.conclusao; f.ltit = r.titulo; f.ldata = r.data; f.at = Date.now(); save(); }
+      toast('Laudo lido — confira o texto');
+    }).catch(function (e) { toast('Não consegui ler o laudo: ' + ((e && e.message) || e)); })
+    .then(function () { delete LAUDO_LENDO[lid]; if (u) URL.revokeObjectURL(u); redesenhar(); });
+}
+function blocoLaudos(p) {
+  var F = ((S.fotos || {})[p.id] || []).filter(function (f) { return f.tipo === 'laudo' && !f.del; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  if (!F.length) return '';
+  var h = '<div class="q"><div class="lb">📄 Laudos (texto)<span>' + F.length + '</span></div>';
+  h += F.map(function (f) {
+    var tit = [brCurto(f.data), f.legenda, f.ltit].filter(Boolean).join(' · ');
+    if (LAUDO_LENDO[f.lid]) return '<div class="laudo"><div class="hint" style="margin:0">⏳ Lendo o laudo ' + esc(tit) + '…</div></div>';
+    if (!f.ocr) return '<div class="laudo"><b>' + esc(tit) + '</b> — sem texto. <button class="btn ghost sm" data-lreler="' + f.lid + '">Ler texto da foto</button></div>';
+    return '<details class="laudo"><summary><b>' + esc(tit) + '</b>' + (f.concl ? '<div class="lconc">' + esc(f.concl.length > 180 ? f.concl.slice(0, 177) + '…' : f.concl) + '</div>' : '') + '</summary>' +
+      '<pre class="mono ltxt">' + esc(f.ocr) + '</pre><div class="row" style="gap:6px"><button class="btn sec sm" data-lcopy="' + f.lid + '">Copiar</button><button class="btn ghost sm" data-lreler="' + f.lid + '">Ler de novo</button><button class="btn ghost sm" data-foto="' + f.lid + '">Ver foto</button></div></details>';
+  }).join('');
+  return h + '<div class="hint">Texto lido da foto no aparelho. Toque no laudo para expandir. Confira com a foto antes de usar.</div></div>';
+}
+function laudosMapa(p) {
+  return ((S.fotos || {})[p.id] || []).filter(function (f) { return f.tipo === 'laudo' && !f.del && (f.concl || f.ltit); })
+    .map(function (f) { return [(f.legenda || f.ltit || 'Laudo') + (f.ldata ? ' ' + f.ldata.slice(0, 5) : f.data ? ' ' + brCurto(f.data) : ''), f.concl].filter(Boolean).join(': '); }).join(' / ');
+}
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -2238,6 +2294,8 @@ document.addEventListener('click', function (ev) {
   if ('bkp' in ds) { baixarBackup(); return; }
   if ('viewer' in ds) { $('#viewer').classList.remove('on'); return; }
   if (ds.foto) { abrirFoto(ds.foto); return; }
+  if (ds.lreler) { lerLaudo(atual.id, ds.lreler, null); return; }
+  if (ds.lcopy) { var lf = ((S.fotos || {})[atual.id] || []).find(function (x) { return x.lid === ds.lcopy; }); if (lf && lf.ocr) { (navigator.clipboard ? navigator.clipboard.writeText(lf.ocr) : Promise.reject()).then(function () { toast('Laudo copiado'); }, function () { toast('Não consegui copiar'); }); } return; }
   if (ds.fdel) { confirmar('Apagar esta foto? (também sai do Drive na próxima sincronização)', function () { var F = S.fotos[atual.id], f = F.find(function (x) { return x.lid === ds.fdel; }); if (f) { f.del = true; f.at = relogio(); } save(); redesenhar(); }); return; }
   if (ds.sec) { S.sec = ds.sec; S.hubAgenda = false; saveLocal(); render(); window.scrollTo(0, 0); return; }
   if ('hubagenda' in ds) { S.sec = 'hub'; S.hubAgenda = true; render(); window.scrollTo(0, 0); return; }
@@ -2295,7 +2353,7 @@ document.addEventListener('change', function (ev) {
   if (t.id === 'bkpIn' && t.files[0]) { restaurarBackup(t.files[0]); t.value = ''; return; }
   if (t.dataset.cam && t.files && t.files.length) { var tipo = t.dataset.cam, leg = ($('#leg_' + tipo) || {}).value || '', fs = Array.prototype.slice.call(t.files); t.value = '';
     toast('Salvando ' + fs.length + ' foto(s)…');
-    fs.reduce(function (pr, f) { return pr.then(function () { return FOTO.adicionar(atual.id, tipo, f, leg); }); }, Promise.resolve()).then(function () { redesenhar(); toast('Foto salva no aparelho' + (navigator.onLine ? ' — enviando ao Drive' : ' — vai para o Drive quando houver internet')); }).catch(function (e) { toast('Erro na foto: ' + e); });
+    fs.reduce(function (pr, f) { return pr.then(function () { var pid0 = atual.id; return FOTO.adicionar(pid0, tipo, f, leg).then(function (lid) { if (tipo === 'laudo') lerLaudo(pid0, lid, f); return lid; }); }); }, Promise.resolve()).then(function () { redesenhar(); toast('Foto salva no aparelho' + (navigator.onLine ? ' — enviando ao Drive' : ' — vai para o Drive quando houver internet')); }).catch(function (e) { toast('Erro na foto: ' + e); });
     return; }
   if (t.id === 'hoje') { S.hoje = t.value || hojeISO(); recalc(); save(); render(); return; }
   if (t.id === 'altas') { S.mostrarAltas = t.checked; save(); render(); return; }
@@ -2367,8 +2425,9 @@ function recalc() {
 // ===================== fotos (Radiografias / Pele) =====================
 var LEG = { rx: ['AP', 'Perfil', 'Oblíqua', 'Axial', 'Panorâmica', 'Escanometria', 'Tela do PACS'], pele: ['FO', 'LPP', 'Flictenas', 'Fixador', 'Pinos/fios', 'Edema', 'Lesão'] };
 function blocoFotos(p, tipo) {
+  if (!LEG.rxpoi) { LEG.rxpoi = LEG.rx.slice(); LEG.laudo = ['RX', 'TC', 'RM', 'USG', 'Anatomopatológico', 'ENMG', 'Densitometria', 'Eco/ECG', 'Outro']; }
   var F = ((S.fotos || {})[p.id] || []).filter(function (f) { return f.tipo === tipo && !f.del; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
-  var h = '<div class="q"><div class="lb">' + (tipo === 'rx' ? '🩻 Radiografias' : '📷 Pele / ferida') + '<span>' + F.length + ' foto(s)</span></div>';
+  var h = '<div class="q"><div class="lb">' + (FT_TIT[tipo] || tipo) + '<span>' + F.length + ' foto(s)</span></div>';
   h += '<div class="camrow"><select id="leg_' + tipo + '" style="font:inherit;font-size:13px;padding:7px;border:1px solid var(--line);border-radius:9px;background:var(--bg2)"><option value="">Legenda…</option>' + LEG[tipo].map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>' +
     '<label class="btn sm">📸 Câmera<input type="file" accept="image/*" capture="environment" data-cam="' + tipo + '" hidden></label>' +
     '<label class="btn sec sm">🖼 Arquivo<input type="file" accept="image/*" multiple data-cam="' + tipo + '" hidden></label></div>';
@@ -2385,7 +2444,7 @@ function blocoFotos(p, tipo) {
 function abrirFoto(lid) {
   var f = null; Object.keys(S.fotos || {}).some(function (k) { f = S.fotos[k].find(function (x) { return x.lid === lid; }); return f; });
   if (!f) return;
-  FOTO.url(f).then(function (u) { if (!u) { toast('Foto ainda não disponível neste aparelho'); return; } $('#viewerImg').src = u; $('#viewerCap').textContent = (f.tipo === 'rx' ? 'Radiografia' : 'Pele') + ' · ' + br(f.data) + ' ' + (f.hora ? f.hora.slice(0, 2) + ':' + f.hora.slice(2) : '') + ' · ' + (f.legenda || '') + (f.by ? ' · ' + f.by : '') + ' — toque para fechar'; $('#viewer').classList.add('on'); });
+  FOTO.url(f).then(function (u) { if (!u) { toast('Foto ainda não disponível neste aparelho'); return; } $('#viewerImg').src = u; $('#viewerCap').textContent = (FT_NOME[f.tipo] || 'Foto') + ' · ' + br(f.data) + ' ' + (f.hora ? f.hora.slice(0, 2) + ':' + f.hora.slice(2) : '') + ' · ' + (f.legenda || '') + (f.by ? ' · ' + f.by : '') + ' — toque para fechar'; $('#viewer').classList.add('on'); });
 }
 // ===================== internograma direto do Google Doc =====================
 function carregarDoc() {

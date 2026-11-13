@@ -419,7 +419,7 @@ var FOTO = {
       var p = S.pacientes.find(function (x) { return x.id === pid; }) || {};
       var agora = new Date(), lid = 'f' + agora.getTime() + Math.random().toString(36).slice(2, 6);
       var carimbo = S.hoje + '_' + ('0' + agora.getHours()).slice(-2) + ('0' + agora.getMinutes()).slice(-2);
-      var nome = [(p.leito || p.lugar || 'sem-leito'), (p.registro || ''), tipo === 'rx' ? 'RX' : 'PELE', carimbo, (legenda || '').replace(/[^\wÀ-ÿ -]/g, '').trim()].filter(Boolean).join('_').replace(/\s+/g, '-') + '.jpg';
+      var nome = [(p.leito || p.lugar || 'sem-leito'), (p.registro || ''), ({ rx: 'RX', rxpoi: 'RX-POI', pele: 'PELE', laudo: 'LAUDO' }[tipo] || 'FOTO'), carimbo, (legenda || '').replace(/[^\wÀ-ÿ -]/g, '').trim()].filter(Boolean).join('_').replace(/\s+/g, '-') + '.jpg';
       return FDB.put(lid, blob).then(function () {
         S.fotos = S.fotos || {}; (S.fotos[pid] = S.fotos[pid] || []).push({ lid: lid, tipo: tipo, data: S.hoje, hora: carimbo.slice(-4), legenda: legenda || '', nome: nome, by: S.eu || '', at: Date.now() });
         save(); return lid;
