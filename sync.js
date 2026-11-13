@@ -3,7 +3,9 @@
    Tudo é salvo primeiro no aparelho; a nuvem recebe quando houver rede.
    ===================================================================== */
 var CFG = window.SOT_CONFIG || {};
-var SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+var SCOPE_CAL = 'https://www.googleapis.com/auth/calendar.readonly';
+var SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly ' + SCOPE_CAL;
+var CAL = 'https://www.googleapis.com/calendar/v3';
 var API = 'https://www.googleapis.com/drive/v3', UP = 'https://www.googleapis.com/upload/drive/v3';
 
 /* ---------------- fotos guardadas no aparelho (IndexedDB) ---------------- */
@@ -42,8 +44,9 @@ var SYNC = (function () {
       client_id: CFG.CLIENT_ID, scope: SCOPES, hint: CFG.CONTA || undefined,
       callback: function (r) {
         if (r && r.access_token) {
-          token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000;
-          try { localStorage.setItem('sot-tk', JSON.stringify({ t: token, e: tokenExp })); localStorage.setItem('sot-logou', '1'); } catch (e) {}
+          token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000; tokScope = r.scope || '';
+          try { localStorage.setItem('sot-tk', JSON.stringify({ t: token, e: tokenExp, s: tokScope })); localStorage.setItem('sot-logou', '1'); } catch (e) {}
+          if (typeof window.aoGanharAgenda === 'function' && temAgenda()) setTimeout(window.aoGanharAgenda, 300);
           renovando = false;
           estado('ok', 'conectado'); agora();
         } else { renovando = false; estado('erro', 'login cancelado'); }
@@ -63,7 +66,23 @@ var SYNC = (function () {
   /* manter conectado: token guardado no aparelho (vale ~1 h) + renovação silenciosa no 1º toque */
   var renovando = false, ultimaRenov = 0;
   function jaLogou() { try { return localStorage.getItem('sot-logou') === '1'; } catch (e) { return false; } }
-  try { var t0 = JSON.parse(localStorage.getItem('sot-tk') || sessionStorage.getItem('sot-tk') || 'null'); if (t0 && Date.now() < t0.e) { token = t0.t; tokenExp = t0.e; } } catch (e) {}
+  var tokScope = '';
+  try { var t0 = JSON.parse(localStorage.getItem('sot-tk') || sessionStorage.getItem('sot-tk') || 'null'); if (t0 && Date.now() < t0.e) { token = t0.t; tokenExp = t0.e; tokScope = t0.s || ''; } } catch (e) {}
+  /* ---------- Google Agenda (só leitura) ---------- */
+  function temAgenda() { return !!window.__TEST_TOKEN || (temToken() && tokScope.indexOf('calendar') > -1); }
+  function pedirAgenda() {
+    if (!configurado() || !initGIS()) { toast('Login do Google ainda carregando… tente de novo'); return; }
+    renovando = true; ultimaRenov = Date.now();
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  }
+  function calListar() {
+    return req(CAL + '/users/me/calendarList?minAccessRole=reader&fields=items(id,summary,summaryOverride,primary,accessRole,backgroundColor)').then(function (r) { return r.json(); }).then(function (j) { return j.items || []; });
+  }
+  function calEventos(id, min, max) {
+    var url = CAL + '/calendars/' + encodeURIComponent(id) + '/events?singleEvents=true&orderBy=startTime&maxResults=500&timeMin=' + q(min.toISOString()) + '&timeMax=' + q(max.toISOString()) +
+      '&fields=items(id,summary,description,start,end,attachments,htmlLink,updated,status)';
+    return req(url).then(function (r) { return r.json(); }).then(function (j) { return j.items || []; });
+  }
   function renovarSePreciso() {
     if (window.__TEST_TOKEN || renovando || !configurado() || !jaLogou() || !navigator.onLine) return;
     if (token && Date.now() < tokenExp - 5 * 60000) return;
@@ -361,12 +380,12 @@ var SYNC = (function () {
 
   function sair() {
     var tk = token;
-    token = null; tokenExp = 0;
+    token = null; tokenExp = 0; tokScope = '';
     try { localStorage.removeItem('sot-tk'); localStorage.removeItem('sot-logou'); sessionStorage.removeItem('sot-tk'); } catch (e) {}
     try { if (tk && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(tk, function () {}); } catch (e) {}
     estado('login', 'desconectado — toque para conectar ao Google');
   }
-  return { sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
