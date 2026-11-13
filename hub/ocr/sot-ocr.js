@@ -85,7 +85,7 @@ function notaPac(l){var u=deacc(l).toUpperCase(),m=u.match(/PACIENTE\s*:?\s*(\S+
   var n=0;if(/^\d{6,7}$/.test(m[1]))n+=3;else if(/^\d{5,9}$/.test(m[1]))n+=1;
   var nm=m[2].trim();if(nm.length>=6)n+=1;if(/^[A-Z' ]+$/.test(nm))n+=2;n+=Math.min(3,nm.split(' ').length)*0.1;return n;}
 function limpaPac(l){
-  var m=l.match(/^(.*?Paciente\s*:?\s*)([\dOIl|]{5,9})\s+(.*)$/i);if(!m)return l;
+  var m=l.match(/^(.*?Paciente\s*:?\s*)([\dOIl|]{5,9})[^\sA-Za-z0-9]{0,2}\s+(.*)$/i);if(!m)return l;
   var resto=m[3],id=resto.match(/\bIdade\s*:?\s*\d{1,3}/i),nome=(id?resto.slice(0,id.index):resto).split(/\s{2,}/)[0];
   var ws=nome.replace(/[^A-Za-zÀ-ÿ' ]/g,' ').trim().split(/\s+/),k=ws.length;
   while(k>1&&(ws[k-1]!==ws[k-1].toUpperCase()||(ws[k-1].length<3&&!/^(DE|DA|DO|DOS|DAS|E)$/.test(ws[k-1]))))k--;
@@ -93,7 +93,7 @@ function limpaPac(l){
 }
 /* junta o cabeçalho ao texto principal: substitui a linha "Paciente ..." ruim pela do cabeçalho */
 S.juntar=function(text,hdr){
-  var L=S.linhasCab(hdr);if(!L.length)return String(text).split('\n').map(function(l){return /^\W{0,3}Paciente\s*:?\s*[\dOIl|]{5,9}\s/i.test(l)?limpaPac(l):l;}).join('\n');
+  var L=S.linhasCab(hdr);if(!L.length)return String(text).split('\n').map(function(l){return /^\W{0,3}Paciente\s*:?\s*[\dOIl|]{5,9}[^\sA-Za-z0-9]{0,2}\s/i.test(l)?limpaPac(l):l;}).join('\n');
   var lines=String(text).split('\n'),out=[],trocou=false;
   var pac=L.filter(function(l){return /PACIENTE/i.test(deacc(l));})[0];
   lines.forEach(function(l){
@@ -278,7 +278,7 @@ S.ficha=function(text,hdr){
   var m,i,all=U.join('\n');
   // identificação
   for(i=0;i<U.length;i++){
-    if(m=U[i].match(/PACIENTE\s*:?\s*([\dOIL|]{5,9})\s+([A-Z][A-Z' ]{4,}?)(?=\s{2,}|\s+IDADE\b|$)/)){
+    if(m=U[i].match(/PACIENTE\s*:?\s*([\dOIL|]{5,9})[^\sA-Z0-9]{0,2}\s+([A-Z][A-Z' ]{4,}?)(?=\s{2,}|\s+IDADE\b|$)/)){
       r.prontuario=m[1].replace(/O/g,'0').replace(/[IL|]/g,'1');
       var st=U[i].indexOf(m[2]);r.nome=lines[i].substr(st,m[2].length).replace(/[^A-Za-zÀ-ÿ' ]/g,'').replace(/\s+/g,' ').trim();
       var ws=r.nome.split(' '),k2=ws.length;while(k2>1&&(ws[k2-1]!==ws[k2-1].toUpperCase()||ws[k2-1].length<2&&!/^[EY]$/.test(ws[k2-1])))k2--;r.nome=ws.slice(0,k2).join(' ');break;}
