@@ -237,8 +237,15 @@ body.sec-hub .top .sub, body.sec-hub .top .prog, body.sec-hub .top [data-doc]{di
 .agdcol{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}.agdcol.hoje{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .agdhead{display:flex;gap:8px;align-items:baseline;width:100%;border:0;background:none;padding:8px 10px;font:inherit;color:inherit;cursor:pointer;text-align:left}.agdhead span{text-transform:uppercase;font-size:12px;color:var(--mut);font-weight:700}.agdhead b{font-size:18px}.agdhead small{margin-left:auto;color:var(--mut)}
 .agdcol.hoje .agdhead b{color:var(--acc)}
-.agdbody{padding:0 8px 8px;display:flex;flex-direction:column;gap:4px}.agdbody .agev{padding:5px 8px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agh{font-weight:700;color:var(--mut);font-size:12px}
-@media (max-width:899px){.agdcol.vazio .agdbody{display:none}.agdcol.vazio .agdhead{padding:5px 10px;opacity:.7}}
+.agdbody{padding:0 8px 8px;display:flex;flex-direction:column;gap:6px}.agdbody .agev{padding:6px 8px;font-size:13px;white-space:normal;line-height:1.3}
+.agl1{display:flex;align-items:center;gap:5px;margin-bottom:2px}.agn{display:block;font-weight:700;word-break:break-word}.agp{display:block;font-size:11.5px;color:var(--mut);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cfg{border-left:4px solid;padding:6px 0 6px 10px;margin:8px 0}.cfg>summary{cursor:pointer;list-style:none;font-size:14px}.cfg>summary::-webkit-details-marker{display:none}.cfn{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--line);font-size:12px;text-align:center}
+.cfrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.cfd{font-weight:700;font-size:12.5px;min-width:44px;color:var(--mut)}.cft{flex:1;min-width:0;display:flex;flex-direction:column}.cft b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cfx{font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cfb{display:flex;gap:4px;flex:none}
+.cftxt{width:100%;font-size:12px;min-height:0;height:34px;padding:6px 8px;margin:0 0 4px;resize:vertical;opacity:.85}
+.igpanel{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--card)}.igpanel>summary{cursor:pointer;font-weight:700;color:var(--acc)}.igl{display:grid;grid-template-columns:110px 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:13px}.igl>span{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.03em}.igq{color:var(--acc)}
+@media (max-width:600px){.igl{grid-template-columns:1fr;gap:2px}.cfb .btn{padding:6px 8px}}
+.agh{font-weight:700;color:var(--mut);font-size:12px}
+@media (max-width:899px){.agdcol.vazio.passado{display:none}.agdcol.vazio .agdbody{display:none}.agdcol.vazio .agdhead{padding:5px 10px;opacity:.7}}
 @media (min-width:900px){.agsemana{grid-template-columns:repeat(7,1fr)}.agdcol.vazio .agdhead small{visibility:hidden}.agdhead{flex-direction:column;align-items:center;gap:0}.agdhead small{margin:2px 0 0;font-size:11px}.agdbody{min-height:160px}.agdbody .agev{white-space:normal}}
 </style>
 </head>
@@ -1623,13 +1630,14 @@ document.addEventListener('click', function (e) {
 function isoLocal(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
 function nomeNorm(s) { return norm0(s).replace(/[^A-Z ]/g, ' ').replace(/\b(DE|DA|DO|DOS|DAS|E)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
 function parseEvento(e) {
-  var t = (e.summary || '').replace(/\s+/g, ' ').trim(), partes = t.split(/\s*(?:[,;|\/]|\s[-–—]\s)\s*/).filter(Boolean);
-  var o = { id: e.id, titulo: t, link: e.htmlLink || '', desc: e.description || '' };
+  var t0 = (e.summary || '').replace(/\s+/g, ' ').trim(), mObs = t0.match(/^\s*[\(\[]([^\)\]]*)[\)\]]\s*/), obs = mObs ? mObs[1] : '';
+  var t = mObs ? t0.slice(mObs[0].length) : t0, partes = t.split(/\s*(?:[,;|\/]|\s[-–—]\s)\s*/).filter(Boolean);
+  var o = { id: e.id, titulo: t0, obs: obs, link: e.htmlLink || '', desc: e.description || '' };
   var ini = (e.start || {}).dateTime || (e.start || {}).date || '';
   o.data = ini.length === 10 ? ini : ini ? isoLocal(new Date(ini)) : '';
   o.hora = (e.start || {}).dateTime ? new Date(e.start.dateTime).toTimeString().slice(0, 5) : '';
   var tudo = t + ' ' + (e.description || '').replace(/<[^>]+>/g, ' ');
-  var mP = t.match(/\b(?:P|PR|PRONT\w*|RG|REG(?:ISTRO)?|HC)\s*[:.\-º°]?\s*(\d{4,9})\b/i);
+  var mP = t.match(/\b(?:P|R|PR|PRONT\w*|RG|REG(?:ISTRO)?|HC)\s*[:.\-º°]?\s*(\d{4,9})\b/i);
   o.P = mP ? mP[1] : ''; o.Pchute = '';
   if (!o.P) { var nums = tudo.match(/\b\d{5,8}\b/g) || []; o.Pchute = nums.filter(function (n) { return !/^(19|20)\d{2}$/.test(n); })[0] || ''; }
   o.nums = (tudo.match(/\b\d{4,9}\b/g) || []);
@@ -1709,8 +1717,16 @@ function textoParaAgenda(p, proc) {
   return [p.nome, idade, 'P: ' + (p.registro || '___'), proc || '___', 'Ass Dr. ' + (a || '___')].join(', ');
 }
 // conferência internograma × agenda (só pacientes que estão no internograma)
+function procMencionado(p, ev) {
+  var NAO = /^(ESQUERD|DIREIT|BILATERAL|PROXIMAL|DISTAL|DECIDIR|INTRA|PERCUTANEA|LADO|PACIENTE|CIRURGIA|PROCEDIMENTO|EQUIPE|MESA|MADEIRA|COXIM|MANHA|TARDE)/;
+  var tk = nomeNorm(ev.proc).split(' ').filter(function (w) { return w.length >= 5 && !NAO.test(w); });
+  if (!tk.length) return false;
+  var ig = nomeNorm([(p.dxL || []).join(' '), (p.condutasLinhas || []).join(' '), (p.orientaLinhas || []).join(' '), (p.agenda || []).map(function (a) { return a.txt; }).join(' '), ((S.pend || {})[p.id] || []).map(function (x) { return x.t; }).join(' ')].join(' '));
+  var achou = tk.filter(function (w) { return ig.indexOf(w.slice(0, 6)) > -1; }).length;
+  return achou >= Math.min(2, tk.length);
+}
 function conferenciaAgenda() {
-  var out = { faltaAgenda: [], faltaIG: [], dataDif: [], ok: [], foraPadrao: [], semImg: [] };
+  var out = { faltaAgenda: [], faltaIG: [], semData: [], hojeSaiu: [], dataDif: [], ok: [], foraPadrao: [], semImg: [] };
   if (!S.ag || !S.ag.ev) return out;
   var de = S.ag.de, ate = S.ag.ate, hoje = hojeISO();
   eventosAgenda().forEach(function (ev) {
@@ -1720,6 +1736,8 @@ function conferenciaAgenda() {
     var ig = cxIG(p);
     if (ig.some(function (c) { return c.data === ev.data; })) out.ok.push({ p: p, ev: ev });
     else if (ig.length) out.dataDif.push({ p: p, ev: ev, ig: ig });
+    else if (ev.data <= hoje) out.hojeSaiu.push({ p: p, ev: ev });
+    else if (procMencionado(p, ev)) out.semData.push({ p: p, ev: ev });
     else out.faltaIG.push({ p: p, ev: ev });
   });
   S.pacientes.forEach(function (p) {
@@ -1776,28 +1794,27 @@ function vAgenda() {
   if (S.agErro) h += '<div class="flagbox">Erro ao ler a agenda: ' + esc(String(S.agErro).slice(0, 140)) + '</div>';
   if (!ag) { carregarAgenda(true); return h + '<div class="card hint">Carregando eventos…</div>'; }
   var c = conferenciaAgenda(), hoje = hojeISO();
-  var nAlert = c.faltaAgenda.length + c.faltaIG.length + c.dataDif.length + eventosAgenda().filter(function (ev) { var m = matchEvento(ev); return ev.data >= hoje && m && m.como === 'provável'; }).length;
+  var nAlert = c.faltaAgenda.length + c.faltaIG.length + c.semData.length + c.dataDif.length + eventosAgenda().filter(function (ev) { var m = matchEvento(ev); return ev.data >= hoje && m && m.como === 'provável'; }).length;
   // ---- resumo no topo + visualizador tipo Google Agenda ----
   h += '<button class="flagbox" data-agirconf style="display:block;width:100%;text-align:left;cursor:pointer;' + (nAlert ? '' : 'background:rgba(46,125,50,.10);border-color:var(--ok);color:inherit') + '">' + (nAlert ? '⚠ <b>Internados: ' + nAlert + ' problema(s)</b> entre internograma e agenda — ver conferência ↓' : '✓ <b>Internados: internograma e agenda conferem</b> (' + c.ok.length + ' cirurgias)') + '</button>';
   h += agendaVisual(c);
-  // ---- conferência: só INTERNADOS chamam atenção ----
-  h += '<div id="agconf" style="height:6px"></div><div class="card" style="border-color:' + (nAlert ? 'var(--bad,#c0392b)' : 'var(--ok)') + '"><div class="lb">' + (nAlert ? '⚠ Internados: ' + nAlert + ' problema(s) entre internograma e agenda' : '✓ Internados: internograma e agenda conferem') + '</div><div class="hint">' + c.ok.length + ' cirurgia(s) de internados conferem nos dois lugares.</div>';
-  c.faltaAgenda.forEach(function (x, i) {
-    h += '<div class="q" style="margin-top:10px;border-color:var(--bad,#c0392b)"><div class="lb">🔴 Falta no AGENDA — ' + esc(x.p.nome) + ' (' + brCurto(x.cx.data) + ')</div><div class="hint">Internograma: ' + esc(x.cx.txt) + '</div>' +
-      '<div class="hint" style="margin-top:6px;font-weight:700">Texto para colocar no Agenda (' + brCurto(x.cx.data) + '):</div><textarea class="mono" id="agTxt' + i + '" style="width:100%;min-height:64px">' + esc(x.texto) + '</textarea>' +
-      '<div class="row" style="margin-top:6px;gap:6px"><button class="btn sm" data-agcopiar="agTxt' + i + '">Copiar texto</button><button class="btn ghost sm" data-open="' + esc(x.p.id) + '">abrir paciente</button></div>' +
-      (/___/.test(x.texto) ? '<div class="hint" style="color:var(--warn)">⚠ Complete os campos com ___ antes de colar.</div>' : '') + '</div>';
-  });
-  c.faltaIG.forEach(function (x) {
-    h += '<div class="q" style="margin-top:10px;border-color:var(--bad,#c0392b)"><div class="lb">🔴 Falta no INTERNOGRAMA — ' + esc(x.p.nome) + '</div><div class="hint">Agenda ' + brCurto(x.ev.data) + (x.ev.hora ? ' ' + x.ev.hora : '') + ': ' + esc(x.ev.titulo) + '</div><div class="hint">O internograma deste paciente não tem cirurgia com data. Atualizar o internograma.</div><div class="row" style="margin-top:6px"><button class="btn ghost sm" data-open="' + esc(x.p.id) + '">abrir paciente</button></div></div>';
-  });
-  c.dataDif.forEach(function (x) {
-    h += '<div class="q" style="margin-top:10px;border-color:var(--warn)"><div class="lb">🟠 Datas diferentes — ' + esc(x.p.nome) + '</div><div class="hint">Agenda: ' + brCurto(x.ev.data) + ' · Internograma: ' + x.ig.map(function (g) { return brCurto(g.data) + ' (' + esc(g.proc.slice(0, 50)) + ')'; }).join(', ') + '</div><div class="row" style="margin-top:6px"><button class="btn ghost sm" data-open="' + esc(x.p.id) + '">abrir paciente</button></div></div>';
-  });
+  // ---- conferência compacta: 1 linha por paciente; só INTERNADOS (= estão no internograma) ----
   var provaveis = eventosAgenda().filter(function (ev) { var m = matchEvento(ev); return ev.data >= hoje && m && m.como === 'provável'; });
-  if (provaveis.length) h += '<div class="q" style="margin-top:10px;border-color:var(--warn)"><div class="lb">🟠 ' + provaveis.length + ' evento(s) parecem ser de internado — confirme</div>' + provaveis.map(function (ev) { var m = matchEvento(ev); return '<div class="hint" style="margin:8px 0 2px">' + brCurto(ev.data) + ' · “' + esc(ev.titulo) + '” → <b>' + esc(m.p.nome) + '</b>?</div><div class="row" style="gap:6px"><button class="btn sm" data-aglinkok="' + esc(ev.id) + '|' + esc(m.p.id) + '">Sim, é</button><button class="btn ghost sm" data-aglinkok="' + esc(ev.id) + '|amb">Não é</button></div>'; }).join('') + '</div>';
   var semImgInt = c.semImg.filter(function (ev) { return pacientePorEvento(ev); });
-  if (semImgInt.length) h += '<div class="q" style="margin-top:10px"><div class="lb">📎 ' + semImgInt.length + ' cirurgia(s) de internado sem imagem anexada</div>' + semImgInt.map(function (ev) { return '<div class="hint" style="margin:4px 0">' + brCurto(ev.data) + ' · ' + esc(pacientePorEvento(ev).nome) + ' — ' + esc(ev.proc) + '</div>'; }).join('') + '</div>';
+  var abrir = function (p) { return '<button class="btn ghost sm" data-open="' + esc(p.id) + '">abrir</button>'; };
+  var linha = function (data, nome, desc, botoes) { return '<div class="cfrow"><span class="cfd">' + data + '</span><div class="cft"><b>' + nome + '</b><span class="cfx">' + desc + '</span></div><div class="cfb">' + (botoes || '') + '</div></div>'; };
+  var grupo = function (cor, titulo, n, corpo, aberto) { return n ? '<details class="cfg" style="border-left-color:' + cor + '"' + (aberto ? ' open' : '') + '><summary><b>' + titulo + '</b> <span class="cfn">' + n + '</span></summary>' + corpo + '</details>' : ''; };
+  h += '<div id="agconf" style="height:6px"></div><div class="card" style="border-color:' + (nAlert ? 'var(--bad,#c0392b)' : 'var(--ok)') + '"><div class="lb">' + (nAlert ? '⚠ Internados: ' + nAlert + ' ponto(s) para conferir' : '✓ Internados: internograma e agenda conferem') + '</div><div class="hint" style="margin-bottom:6px">Internado = está no internograma. ' + c.ok.length + ' cirurgia(s) conferem nos dois lugares. Quem não está no internograma é ambulatorial e não gera alerta.</div>';
+  h += grupo('var(--bad,#c0392b)', '🔴 Falta no AGENDA', c.faltaAgenda.length, c.faltaAgenda.map(function (x, i) {
+    return linha(brCurto(x.cx.data), esc(x.p.nome), esc(x.cx.proc), '<button class="btn sm" data-agcopiar="agTxt' + i + '" title="Copiar texto no padrão do Agenda">Copiar</button>' + abrir(x.p)) +
+      '<textarea class="mono cftxt" id="agTxt' + i + '" readonly>' + esc(x.texto) + '</textarea>';
+  }).join(''), true);
+  h += grupo('var(--bad,#c0392b)', '🔴 No Agenda, mas a cirurgia não consta no internograma', c.faltaIG.length, '<div class="hint" style="margin:2px 0 4px">O paciente está no internograma ✓ — falta escrever a cirurgia/data nele.</div>' + c.faltaIG.map(function (x) { return linha(brCurto(x.ev.data) + (x.ev.hora ? ' ' + x.ev.hora : ''), esc(x.p.nome), esc(x.ev.proc || x.ev.titulo), abrir(x.p)); }).join(''), true);
+  h += grupo('var(--warn)', '🟡 Consta no internograma, mas sem data', c.semData.length, c.semData.map(function (x) { return linha(brCurto(x.ev.data), esc(x.p.nome), 'Agenda: ' + esc(x.ev.proc) + ' — colocar a data no internograma', abrir(x.p)); }).join(''), true);
+  h += grupo('var(--warn)', '🟠 Datas diferentes', c.dataDif.length, c.dataDif.map(function (x) { return linha(brCurto(x.ev.data), esc(x.p.nome), 'Internograma: ' + x.ig.map(function (g) { return brCurto(g.data); }).join(', ') + ' · ' + esc(x.ev.proc), abrir(x.p)); }).join(''), true);
+  h += grupo('var(--warn)', '🟠 Confirmar: é deste paciente?', provaveis.length, provaveis.map(function (ev) { var m = matchEvento(ev); return linha(brCurto(ev.data), esc(m.p.nome) + '?', '“' + esc(ev.titulo) + '”', '<button class="btn sm" data-aglinkok="' + esc(ev.id) + '|' + esc(m.p.id) + '">Sim</button><button class="btn ghost sm" data-aglinkok="' + esc(ev.id) + '|amb">Não</button>'); }).join(''), true);
+  h += grupo('#2b6cb0', 'ℹ️ Operam hoje — cirurgia já saiu do internograma (comum no dia)', c.hojeSaiu.length, c.hojeSaiu.map(function (x) { return linha(x.ev.hora || 'hoje', esc(x.p.nome), esc(x.ev.proc), abrir(x.p)); }).join(''), false);
+  h += grupo('#8a8f93', '📎 Internados sem imagem anexada', semImgInt.length, semImgInt.map(function (ev) { var p = pacientePorEvento(ev); return linha(brCurto(ev.data), esc(p.nome), esc(ev.proc), abrir(p)); }).join(''), false);
   h += '</div>';
   // ---- ambulatoriais: discreto, recolhido ----
   var semLiga = eventosAgenda().filter(function (ev) { return ev.data >= hoje && !matchEvento(ev); });
@@ -1819,11 +1836,36 @@ function blocoEv(ev, compacto) {
   var x = evInfo(ev), p = x.p;
   var st = p ? (x.conf === 'ok' ? '<span class="agst ok" title="confere com o internograma">✓</span>' : '<span class="agst bad" title="' + (x.conf === 'data' ? 'data diferente do internograma' : 'não está no internograma') + '">!</span>') : '';
   var img = ev.imgs ? '<span class="agimg" title="' + ev.imgs + ' imagem(ns) anexada(s)">📎</span>' : (p ? '<span class="agimg falta" title="sem imagem anexada">📎✕</span>' : '');
-  if (compacto) return '<button class="agev ' + (p ? 'int' : 'amb') + '" data-agdia="' + ev.data + '" title="' + esc(ev.titulo) + '"><span class="agh">' + (ev.hora || '') + '</span> ' + st + '<span class="agn">' + esc((ev.nome || ev.titulo).split(' ').slice(0, 2).join(' ')) + '</span>' + img + '</button>';
+  if (compacto) return '<button class="agev ' + (p ? 'int' : 'amb') + '" data-agdia="' + ev.data + '" title="' + esc(ev.titulo) + '"><span class="agl1"><span class="agh">' + (ev.hora || 'dia todo') + '</span>' + st + img + '</span><span class="agn">' + esc(ev.nome || ev.titulo) + '</span><span class="agp">' + esc(ev.proc || '') + '</span>' + (p && p.leito ? '<span class="agp">🏥 ' + esc(p.leito) + '</span>' : '') + '</button>';
   return '<div class="agev big ' + (p ? 'int' : 'amb') + '"><div class="agev-t"><b>' + esc(ev.nome || ev.titulo) + '</b>' + (ev.idade ? ' · ' + esc(ev.idade) : '') + (ev.P ? ' · P: ' + esc(ev.P) : '') + ' ' + st + img + '</div>' +
     '<div>' + esc(ev.proc || '') + '</div>' + (ev.ass ? '<div class="hint">Ass Dr. ' + esc(ev.ass) + '</div>' : '') +
     (p ? '<div class="hint" style="margin-top:2px">🏥 internado' + (p.leito ? ' · leito ' + esc(p.leito) : '') + ' · ' + (x.conf === 'ok' ? 'confere com o internograma' : x.conf === 'data' ? '<b style="color:var(--bad,#c0392b)">data diferente do internograma</b>' : '<b style="color:var(--bad,#c0392b)">não está no internograma</b>') + (ev.imgs ? '' : ' · <b style="color:var(--warn)">sem imagem</b>') + '</div>' : '<div class="hint" style="margin-top:2px">ambulatorial</div>') +
+    (p ? painelIG(p, ev) : '') +
     '<div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap">' + ev.anexos.map(function (a) { return '<a class="btn ghost sm" href="' + esc(a.url) + '" target="_blank" rel="noopener" style="text-decoration:none">📎 ' + esc(a.titulo.slice(0, 24)) + '</a>'; }).join('') + (p ? '<button class="btn ghost sm" data-open="' + esc(p.id) + '">abrir paciente</button>' : '') + (ev.link ? '<a class="btn ghost sm" href="' + esc(ev.link) + '" target="_blank" rel="noopener" style="text-decoration:none">Google Agenda ↗</a>' : '') + '</div></div>';
+}
+function haQuanto(txt) {
+  var m = String(txt || '').match(/(\d{1,2}\/\d{1,2}\/\d{2,4})/); if (!m) return '';
+  var d = parseData(m[1], new Date(hojeISO() + 'T12:00:00')); if (!d) return ''; d.setHours(12, 0, 0, 0);
+  var n = diasEntre(d, new Date(hojeISO() + 'T12:00:00'));
+  return n < 0 ? '' : n === 0 ? 'hoje' : n === 1 ? 'há 1 dia' : n < 60 ? 'há ' + n + ' dias' : 'há ' + Math.round(n / 30) + ' meses';
+}
+function painelIG(p, ev) {
+  try {
+    var ap = p.apL || {}, evs = (typeof evoSecoes === 'function' ? evoSecoes(p) : null) || {};
+    var lin = function (rot, val) { return val ? '<div class="igl"><span>' + rot + '</span><div>' + val + '</div></div>' : ''; };
+    var lista = function (L) { return (L || []).filter(Boolean).map(esc).join('<br>'); };
+    var cx = cxIG(p), po = ((S.v || {})[p.id] || {}).preop || {}, ac = typeof anticoagEmUso === 'function' ? anticoagEmUso(p) : [], hb = typeof ultimoLab === 'function' ? ultimoLab(p, 'Hb') : null;
+    var just = (p.dxL || []).map(function (d) { var q = haQuanto(d); return esc(d) + (q ? ' <b class="igq">(' + q + ')</b>' : ''); }).join('<br>');
+    var h = '<details class="igpanel"><summary>📋 Dados do internograma — ' + esc(p.nome.split(' ')[0]) + (p.leito ? ' · leito ' + esc(p.leito) : '') + (p.dih != null && p.dih !== '' ? ' · DIH ' + esc(p.dih) : '') + '</summary>';
+    h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc) + '<br><b>Internograma:</b> ' + (cx.length ? cx.map(function (c) { return brCurto(c.data) + ' — ' + esc(c.proc); }).join('<br>') : '<i>sem cirurgia com data</i>'));
+    h += lin('JUSTIFICATIVA / HD', just || esc(p.dx || ''));
+    h += lin('AP / CMB', lista(ap.cmb) || esc(evs.cmb || ''));
+    h += lin('MUC', lista(ap.muc) || esc(evs.muc || ''));
+    h += lin('ALERGIAS', lista(ap.alergia) || esc(evs.alergia || ''));
+    if ((p.exames || []).length) h += lin('LABS', (p.exames || []).slice(-3).map(function (x) { return typeof marcarExameLinha === 'function' ? marcarExameLinha(x, true) : esc(x); }).join('<br>') + (hb && hb.v <= 10 ? '<br><b style="color:var(--bad,#c0392b)">⚠ Hb ' + esc(hb.txt) + ' — cirurgia exige Hb &gt; 10</b>' : ''));
+    h += lin('PRÉ-OP', (po.jejum ? '✓' : '☐') + ' jejum · ' + (po.hep ? '✓' : '☐') + ' heparina' + (ac.length ? ' (em uso: ' + esc(ac.join(', ')) + ')' : '') + ' · ' + (po.hb ? '✓' : '☐') + ' Hb/reserva · ' + (po.aval ? '✓' : '☐') + ' avaliações');
+    return h + '</details>';
+  } catch (e) { console.error(e); return ''; }
 }
 function agendaVisual(c) {
   var hoje = hojeISO(); AG_DIA = AG_DIA || hoje;
@@ -1850,7 +1892,7 @@ function agendaVisual(c) {
     for (var i = 0; i < 7; i++) {
       var dia = addDias(ini, i), dd = new Date(dia + 'T12:00:00'), L = evs.filter(function (ev) { return ev.data === dia; });
       var nInt = L.filter(function (ev) { return pacientePorEvento(ev); }).length;
-      h += '<div class="agdcol' + (dia === hoje ? ' hoje' : '') + (L.length ? '' : ' vazio') + '"><button class="agdhead" data-agdia="' + dia + '"><span>' + DSEM[dd.getDay()] + '</span><b>' + dd.getDate() + '</b>' + (L.length ? '<small>' + L.length + ' cx' + (nInt ? ' · ' + nInt + ' int.' : '') + '</small>' : '<small>sem cirurgias</small>') + '</button>' +
+      h += '<div class="agdcol' + (dia === hoje ? ' hoje' : '') + (dia < hoje ? ' passado' : '') + (L.length ? '' : ' vazio') + '"><button class="agdhead" data-agdia="' + dia + '"><span>' + DSEM[dd.getDay()] + '</span><b>' + dd.getDate() + '</b>' + (L.length ? '<small>' + L.length + ' cx' + (nInt ? ' · ' + nInt + ' int.' : '') + '</small>' : '<small>sem cirurgias</small>') + '</button>' +
         '<div class="agdbody">' + (L.length ? L.map(function (ev) { return blocoEv(ev, true); }).join('') : '<div class="hint" style="text-align:center;padding:6px 0">—</div>') + '</div></div>';
     }
     h += '</div><div class="hint" style="margin-top:6px">Toque num dia ou numa cirurgia para ver o dia completo. Verde = internado (✓ confere · ! problema) · cinza = ambulatorial · 📎 imagem anexada.</div>';
