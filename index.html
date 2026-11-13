@@ -239,6 +239,7 @@ body.sec-hub .top .sub, body.sec-hub .top .prog, body.sec-hub .top [data-doc]{di
 .agdcol.hoje .agdhead b{color:var(--acc)}
 .agdbody{padding:0 8px 8px;display:flex;flex-direction:column;gap:6px}.agdbody .agev{padding:6px 8px;font-size:13px;white-space:normal;line-height:1.3}
 .agl1{display:flex;align-items:center;gap:5px;margin-bottom:2px}.agn{display:block;font-weight:700;word-break:break-word}.agp{display:block;font-size:11.5px;color:var(--mut);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.agoutro{font-size:12px;color:var(--mut);background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:4px 8px;margin:0 0 6px}
 .cfg{border-left:4px solid;padding:6px 0 6px 10px;margin:8px 0}.cfg>summary{cursor:pointer;list-style:none;font-size:14px}.cfg>summary::-webkit-details-marker{display:none}.cfn{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--line);font-size:12px;text-align:center}
 .cfrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.cfd{font-weight:700;font-size:12.5px;min-width:44px;color:var(--mut)}.cft{flex:1;min-width:0;display:flex;flex-direction:column}.cft b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cfx{font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cfb{display:flex;gap:4px;flex:none}
 .cftxt{width:100%;font-size:12px;min-height:0;height:34px;padding:6px 8px;margin:0 0 4px;resize:vertical;opacity:.85}
@@ -1416,7 +1417,10 @@ var LABREF = [
   { k: 'INR', re: 'INR|RNI', min: null, max: 1.2 },
   { k: 'Fibri', re: 'FIBRI|FIB|FIBRINOGENIO', min: 200, max: 400 },
   { k: 'TGO', re: 'TGO|AST', min: null, max: 40 },
-  { k: 'TGP', re: 'TGP|ALT', min: null, max: 41 }
+  { k: 'TGP', re: 'TGP|ALT', min: null, max: 41 },
+  { k: 'TSH', re: 'TSH', min: 0.4, max: 4.5 },
+  { k: 'T4L', re: 'T4L', min: 0.7, max: 1.8 },
+  { k: 'Ca', re: 'CAI|CA ION', min: 1.1, max: 1.35 }
 ];
 var LABRE = new RegExp('(\\*?)\\b(' + LABREF.map(function (r) { return r.re; }).join('|') + ')\\b\\s*:?\\s*(\\*?)\\s*(\\d{1,3}(?:\\.\\d{3})+|\\d+(?:[.,]\\d+)?)\\s*(MIL\\b)?(%)?(\\*?)', 'gi');
 function labRef(nome) { var u = nome.toUpperCase(); for (var i = 0; i < LABREF.length; i++) if (new RegExp('^(' + LABREF[i].re + ')$').test(u)) return LABREF[i]; return null; }
@@ -1711,8 +1715,22 @@ function parseEvento(e) {
   if (!o.nome) o.falta.push('nome'); if (!o.idade) o.falta.push('idade'); if (!o.P) o.falta.push(o.Pchute ? '“P:” antes do número' : 'P:'); if (!o.proc) o.falta.push('procedimento'); if (!o.ass) o.falta.push('Ass Dr.');
   return o;
 }
-var AG_VER = 3;
-function eventosAgenda() { if (S.ag && S.ag.v !== AG_VER) { S.ag = null; MATCH_CACHE = {}; } return ((S.ag || {}).ev || []); }
+var AG_VER = 4;
+function todosEventos() { if (S.ag && S.ag.v !== AG_VER) { S.ag = null; MATCH_CACHE = {}; } return ((S.ag || {}).ev || []); }
+var RE_NAO_PAC = /^\s*(sala\s*\d*|sala\b|centro cir[uú]rgico\b|cc\s*\d|feriado|ponto facultativo|f[eé]rias|folga|licen[cç]a|congresso|simp[oó]sio|jornada|curso|reuni[aã]o|aula|plant[aã]o|escala|evento|anivers[aá]rio|confraterniza|bloqueio|bloquead|sem cirurgia|n[aã]o agendar|indispon|proclama[cç][aã]o|independ[eê]ncia|tiradentes|finados|natal|v[eé]spera|ano novo|reveillon|carnaval|cinzas|p[aá]scoa|sexta[- ]feira santa|corpus|consci[eê]ncia negra|nossa senhora|aparecida|dia do trabalh|dia d[ao]s?\s)/i;
+var RE_NAO_PAC2 = /\bf[eé]rias\b|\bferiado\b|\bfolga\b|\bcongresso\b|\bproclama[cç][aã]o da rep[uú]blica\b|\bplant[aã]o\b/i;
+function ehPaciente(ev) {
+  var L = (S.agLink || {})[ev.id];
+  if (L === 'np') return false; if (L) return true;
+  var t = ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '');
+  if (ev.P || ev.Pchute || ev.idade) return true;
+  if (RE_NAO_PAC.test(t) || RE_NAO_PAC2.test(t)) return false;
+  if (matchEvento(ev)) return true;
+  var nomeOk = (ev.nome || '').split(' ').filter(function (w) { return w.length >= 2; }).length >= 2;
+  return nomeOk && RE_CX.test(norm0(t));
+}
+function eventosAgenda() { return todosEventos().filter(ehPaciente); }
+function outrosEventos() { return todosEventos().filter(function (ev) { return !ehPaciente(ev); }); }
 function agCals() { return S.agCals && S.agCals.length ? S.agCals : S.agCal ? [S.agCal] : []; }
 function lev1(a, b) {   // diferença de no máximo 1 letra (erro de digitação)
   if (a === b) return true; if (Math.abs(a.length - b.length) > 1 || a.length < 5) return false;
@@ -1727,7 +1745,7 @@ function matchEvento(ev) {
 }
 function matchEvento0(ev) {
   var L = (S.agLink || {})[ev.id];
-  if (L === 'amb') return null;
+  if (L === 'amb' || L === 'pac' || L === 'np') return null;
   if (L) { var pm = S.pacientes.find(function (x) { return x.id === L; }); if (pm) return { p: pm, como: 'manual' }; }
   var porReg = function (n) { return n && S.pacientes.find(function (x) { return x.registro === n || (x.regs || []).indexOf(n) > -1; }); };
   var p = porReg(ev.P); if (p) return { p: p, como: 'P' };
@@ -1870,10 +1888,12 @@ function vAgenda() {
   h += '</div>';
   // ---- ambulatoriais: discreto, recolhido ----
   var semLiga = eventosAgenda().filter(function (ev) { return ev.data >= hoje && !matchEvento(ev); });
-  var opcoesPac = function (ev) { return '<select data-aglink="' + esc(ev.id) + '" style="width:100%;margin-top:4px"><option value="">é internado? ligar a um paciente do internograma…</option>' + S.pacientes.slice().sort(function (a, b) { return a.nome < b.nome ? -1 : 1; }).map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.nome) + (x.registro ? ' · ' + esc(x.registro) : '') + '</option>'; }).join('') + '</select>'; };
+  var naoPac = outrosEventos().filter(function (ev) { return ev.data >= hoje; });
+  var opcoesPac = function (ev) { return '<select data-aglink="' + esc(ev.id) + '" style="width:100%;margin-top:4px"><option value="">é internado? ligar a um paciente do internograma…</option><option value="np">📌 não é paciente (sala, feriado, férias…)</option>' + S.pacientes.slice().sort(function (a, b) { return a.nome < b.nome ? -1 : 1; }).map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.nome) + (x.registro ? ' · ' + esc(x.registro) : '') + '</option>'; }).join('') + '</select>'; };
   h += '<details class="card" style="opacity:.92"><summary class="hint" style="cursor:pointer;font-weight:600">Ambulatoriais e outros eventos (' + semLiga.length + ') · diagnóstico</summary>' +
     '<div class="hint" style="margin:8px 0">Eventos que não são de pacientes do internograma. Só aparecem aqui — sem alertas. Se algum for de internado (escrito fora do padrão), ligue abaixo.</div>' +
     semLiga.map(function (ev) { return '<div style="margin:8px 0;border-bottom:1px solid var(--line);padding-bottom:6px"><div class="hint">' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' · ' + esc(ev.titulo || '(sem título)') + '</div>' + opcoesPac(ev) + '</div>'; }).join('') +
+    (naoPac.length ? '<div class="hint" style="margin-top:10px;font-weight:700">📌 Não são pacientes (' + naoPac.length + ') — ignorados na conferência e no mapa</div>' + naoPac.map(function (ev) { return '<div class="row" style="margin:6px 0;gap:6px;align-items:center"><span class="hint" style="flex:1">' + brCurto(ev.data) + ' · ' + esc(ev.titulo) + '</span><button class="btn ghost sm" data-aglinkok="' + esc(ev.id) + '|pac">é paciente</button></div>'; }).join('') : '') +
     '<div class="hint" style="margin-top:10px;font-weight:700">Como o app leu cada evento</div>' + eventosAgenda().filter(function (ev) { return ev.data >= hoje; }).map(function (ev) { var m = matchEvento(ev); return '<div class="hint" style="margin:6px 0">' + brCurto(ev.data) + ' · “' + esc(ev.titulo) + '” → ' + (m ? '🏥 ' + esc(m.p.nome) + ' (por ' + m.como + ')' : 'ambulatorial') + ' · P: ' + esc(ev.P || ev.Pchute || '—') + ' · proc.: ' + esc(ev.proc || '—') + '</div>'; }).join('') + '</details>';
   return h + '<div style="height:80px"></div>';
 }
@@ -1914,7 +1934,11 @@ function painelIG(p, ev) {
     h += lin('AP / CMB', lista(ap.cmb) || esc(evs.cmb || ''));
     h += lin('MUC', lista(ap.muc) || esc(evs.muc || ''));
     h += lin('ALERGIAS', lista(ap.alergia) || esc(evs.alergia || ''));
-    if ((p.exames || []).length) h += lin('LABS', (p.exames || []).slice(-3).map(function (x) { return typeof marcarExameLinha === 'function' ? marcarExameLinha(x, true) : esc(x); }).join('<br>') + (hb && hb.v <= 10 ? '<br><b style="color:var(--bad,#c0392b)">⚠ Hb ' + esc(hb.txt) + ' — cirurgia exige Hb &gt; 10</b>' : ''));
+    var lc = typeof labsCompletos === 'function' ? labsCompletos(p) : null, cxP = typeof propostaCx === 'function' ? propostaCx(p) || true : true;
+    var mk = function (k, x) { var t = k + ' ' + x.v; var fora = x.alt || (typeof marcarExameLinha === 'function' && /labf/.test(marcarExameLinha(k + ' ' + String(x.v).replace(/k$/, '000'), cxP))); return fora ? '<span class="labf">' + esc(t) + (x.alt ? '*' : '') + '</span>' : esc(t); };
+    if (lc && Object.keys(lc.todos).length) h += lin('LABS', '<b>Padrão' + (lc.data ? ' (' + esc(lc.data) + ')' : '') + ':</b> ' + LAB_PADRAO.filter(function (k) { return lc.todos[k]; }).map(function (k) { var x = lc.todos[k]; return mk(k, x) + (x.data && x.data !== lc.data ? ' <small>(' + esc(x.data) + ')</small>' : ''); }).join(' / ') +
+      (lc.extras ? '<br><b>Outros:</b> ' + Object.keys(lc.todos).filter(function (k) { return LAB_PADRAO.indexOf(k) < 0; }).map(function (k) { var x = lc.todos[k]; return mk(k, x) + (x.data ? ' <small>(' + esc(x.data) + ')</small>' : ''); }).join(' / ') : '') +
+      '<details style="margin-top:4px"><summary class="hint" style="cursor:pointer">todas as linhas de exames (' + p.exames.length + ')</summary>' + p.exames.map(function (x) { return typeof marcarExameLinha === 'function' ? marcarExameLinha(x, true) : esc(x); }).join('<br>') + '</details>' + (hb && hb.v <= 10 ? '<br><b style="color:var(--bad,#c0392b)">⚠ Hb ' + esc(hb.txt) + ' — cirurgia exige Hb &gt; 10</b>' : ''));
     h += lin('PRÉ-OP', (po.jejum ? '✓' : '☐') + ' jejum · ' + (po.hep ? '✓' : '☐') + ' heparina' + (ac.length ? ' (em uso: ' + esc(ac.join(', ')) + ')' : '') + ' · ' + (po.hb ? '✓' : '☐') + ' Hb/reserva · ' + (po.aval ? '✓' : '☐') + ' avaliações');
     return h + '</details>';
   } catch (e) { console.error(e); return ''; }
@@ -1931,10 +1955,12 @@ function agendaVisual(c) {
     '<button class="btn" data-agmapa="' + (AG_VISTA === 'dia' ? AG_DIA : addDias(hoje, 1)) + '" style="width:100%;margin:0 0 10px">🗺 Mapa cirúrgico — ' + (AG_VISTA === 'dia' ? brCurto(AG_DIA) : 'amanhã (' + brCurto(addDias(hoje, 1)) + ')') + '</button>';
   h += '<div class="chips" style="margin:2px 0 10px">' + [['todos', 'Todos'], ['int', 'Internados'], ['amb', 'Ambulatoriais']].map(function (f) { return '<button class="chip' + (AG_FILTRO === f[0] ? ' on' : '') + '" data-agfiltro="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>';
   var evs = eventosAgenda().filter(function (ev) { return ev.data >= ini && ev.data <= fim && filtra(ev); });
+  var outros = outrosEventos().filter(function (ev) { return ev.data >= ini && ev.data <= fim; });
+  var chipOutro = function (ev) { return '<div class="agoutro" title="Não é paciente — não entra na conferência nem no mapa">📌 ' + esc(ev.titulo) + (ev.hora ? ' · ' + ev.hora : '') + '</div>'; };
   if ((ini < S.ag.de || fim > S.ag.ate)) h += '<div class="hint" style="margin-bottom:8px">⚠ Período fora do que foi carregado (' + brCurto(S.ag.de) + ' a ' + brCurto(S.ag.ate) + ').</div>';
   if (AG_VISTA === 'dia') {
     var todoDia = evs.filter(function (ev) { return !ev.hora; }), comHora = evs.filter(function (ev) { return ev.hora; });
-    h += '<div class="card agdiacard">';
+    h += '<div class="card agdiacard">' + outros.filter(function (ev) { return ev.data === AG_DIA; }).map(chipOutro).join('');
     if (!evs.length) h += '<div class="hint" style="padding:18px 4px;text-align:center">Nenhuma cirurgia neste dia.</div>';
     if (todoDia.length) h += '<div class="aglinha"><div class="aghora">dia todo</div><div class="agcol">' + todoDia.map(function (ev) { return blocoEv(ev, false); }).join('') + '</div></div>';
     var horaAnt = '';
@@ -1946,7 +1972,7 @@ function agendaVisual(c) {
       var dia = addDias(ini, i), dd = new Date(dia + 'T12:00:00'), L = evs.filter(function (ev) { return ev.data === dia; });
       var nInt = L.filter(function (ev) { return pacientePorEvento(ev); }).length;
       h += '<div class="agdcol' + (dia === hoje ? ' hoje' : '') + (dia < hoje ? ' passado' : '') + (L.length ? '' : ' vazio') + '"><button class="agdhead" data-agdia="' + dia + '"><span>' + DSEM[dd.getDay()] + '</span><b>' + dd.getDate() + '</b>' + (L.length ? '<small>' + L.length + ' cx' + (nInt ? ' · ' + nInt + ' int.' : '') + '</small>' : '<small>sem cirurgias</small>') + '</button>' +
-        '<div class="agdbody">' + (L.length ? L.map(function (ev) { return blocoEv(ev, true); }).join('') : '<div class="hint" style="text-align:center;padding:6px 0">—</div>') + '</div></div>';
+        '<div class="agdbody">' + outros.filter(function (ev) { return ev.data === dia; }).map(chipOutro).join('') + (L.length ? L.map(function (ev) { return blocoEv(ev, true); }).join('') : '<div class="hint" style="text-align:center;padding:6px 0">—</div>') + '</div></div>';
     }
     h += '</div><div class="hint" style="margin-top:6px">Toque num dia ou numa cirurgia para ver o dia completo. Verde = internado (✓ confere · ! problema) · cinza = ambulatorial · 📎 imagem anexada.</div>';
   }
@@ -1995,22 +2021,44 @@ function operadoEm(p, iso) {   // só conta como operado quando o INTERNOGRAMA m
   return '';
 }
 function horaMapa(ev) { return ev.hora ? ev.hora + (ev.horaFim ? '–' + ev.horaFim : '') : ''; }
-function labsMapa(p) {
-  var L = (p.exames || []).slice().reverse(), labs = {}, data = '';
-  var MAP = { Hb: 'Hb', Ht: 'Ht', Leuco: 'Leuco', Plaq: 'Plaq', INR: 'INR', Cr: 'Cr', Ur: 'Ur', Na: 'Na', K: 'K', Glic: 'Glic', Fibri: 'Fib' };
-  L.forEach(function (l) {
-    var achou = false;
-    l.replace(LABRE, function (m, a1, nome, a2, num, mil) {
-      var r = labRef(nome); if (!r || !MAP[r.k] || labs[MAP[r.k]]) return m;
-      var v = labValor(r, num, !!mil); if (v == null) return m;
-      labs[MAP[r.k]] = r.k === 'Plaq' ? Math.round(v / 1000) + 'k' : String(num).replace('.', ','); achou = true; return m;
+/* ---- exames do internograma: TODOS os analitos, o mais recente de cada (padrão + diferenciais, datas diferentes) ---- */
+var LAB_ALIAS = [
+  ['Hb', /^(HB|HGB|HEMOGLOBINA)$/], ['Ht', /^(HT|HTC|HEMATOCRITO)$/], ['Leuco', /^(LEUCO|LEUCOS|LEUC|LEUCOCITOS|GB)$/], ['Plaq', /^(PLAQ|PLAQUETAS|PLT)$/],
+  ['TP', /^(TP|TAP)$/], ['ATV', /^(ATV|AP|ATIVIDADE)$/], ['INR', /^(INR|RNI)$/], ['TTPA', /^(TTPA|KPTT|TTPA R|R)$/], ['Fib', /^(FIB|FIBRI|FIBRINOGENIO)$/],
+  ['Cr', /^(CR|CREAT|CREATININA)$/], ['Ur', /^(UR|U|UREIA)$/], ['Na', /^(NA|SODIO)$/], ['K', /^(K|POTASSIO)$/], ['Glic', /^(GLIC|GLICEMIA|GLI|GJ)$/],
+  ['TSH', /^TSH$/], ['T4L', /^(T4L|T4 LIVRE|T4LIVRE)$/], ['T4', /^T4$/], ['T3', /^T3$/], ['PCR', /^PCR$/], ['VHS', /^VHS$/], ['Mg', /^(MG|MAGNESIO)$/], ['Ca', /^(CA|CAI|CALCIO|CA ION|CAION)$/],
+  ['P', /^(P|FOSFORO)$/], ['Alb', /^(ALB|ALBUMINA)$/], ['TGO', /^(TGO|AST)$/], ['TGP', /^(TGP|ALT)$/], ['BT', /^BT$/], ['BD', /^BD$/], ['FA', /^FA$/], ['GGT', /^(GGT|GAMA GT)$/],
+  ['CK', /^(CK|CPK)$/], ['Lactato', /^(LACTATO|LAC)$/], ['Ferritina', /^FERRITINA$/], ['VitD', /^(VIT D|VITD|VITAMINA D)$/], ['HbA1c', /^(HBA1C|HB GLICADA|A1C)$/], ['Trop', /^(TROP|TROPONINA)$/], ['BNP', /^(BNP|NT PROBNP)$/], ['DDimero', /^(D DIMERO|DIMERO D|DDIMERO)$/], ['PTH', /^PTH$/], ['Procalc', /^(PROCALCITONINA|PCT)$/]
+];
+var LAB_PADRAO = ['Hb', 'Ht', 'Leuco', 'Plaq', 'TP', 'INR', 'TTPA', 'Fib', 'Cr', 'Ur', 'Na', 'K', 'Glic'];
+function labNome(n) { var u = norm0(n).replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); for (var i = 0; i < LAB_ALIAS.length; i++) if (LAB_ALIAS[i][1].test(u)) return LAB_ALIAS[i][0]; return /^[A-Z][A-Z0-9 ]{1,9}$/.test(u) && !/SOLIC|PEDIR|COLHER|AGUARD|EM$|E$/.test(u) ? u : ''; }
+function labsCompletos(p) {
+  var out = {}, ordem = 0, hoje = new Date(hojeISO() + 'T12:00:00');
+  (p.exames || []).forEach(function (linha) {
+    if (/solicit|pedir|colher|aguard|programar|repetir/i.test(linha) && !/\d+[.,]\d/.test(linha)) return;
+    var mD = linha.match(/^\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*[:\-–]?\s*/), data = mD ? mD[1] : '', resto = mD ? linha.slice(mD[0].length) : linha;
+    var dt = data ? parseData(data, hoje) : null; ordem++;
+    resto.split(/\s\/\s|\/(?=\s*\*?\s*[A-Za-zÀ-ÿ])/).forEach(function (seg) {
+      var m = seg.match(/^\s*(\*?)\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,14}?)(?:\s*:\s*|\s+)(\*?)\s*(\d{1,3}(?:\.\d{3})+|\d+(?:[.,]\d+)?)\s*(mil\b|%)?\s*(\*?)/i);
+      if (!m) return;
+      var k = labNome(m[2]); if (!k || k === 'ATV') return;
+      var alt = !!(m[1] || m[3] || m[6]), num = m[4], v = num;
+      if (k === 'Plaq') { var pv = /^\d{1,3}(\.\d{3})+$/.test(num) ? parseFloat(num.replace(/\./g, '')) : parseFloat(num.replace(',', '.')); if (m[5] && /mil/i.test(m[5])) pv *= 1000; else if (pv < 2000) pv *= 1000; v = Math.round(pv / 1000) + 'k'; }
+      else v = num.replace('.', ',');
+      var chave = (dt ? dt.getTime() : 0) * 1000 + ordem, ant = out[k];
+      if (!ant || chave >= ant.chave) out[k] = { k: k, v: v, alt: alt, data: data ? data.replace(/^(\d{1,2}\/\d{1,2})\/\d{2,4}$/, '$1') : '', chave: chave };
     });
-    var mt = l.match(/\bTP\s*:?\s*(\d+(?:[.,]\d+)?)\s*(?:s|seg)?\b/i); if (mt && !labs.TP) { labs.TP = mt[1].replace('.', ','); achou = true; }
-    var ma = l.match(/\b(?:TTPA|TTPa|KPTT)\s*:?\s*(\d+(?:[.,]\d+)?)/i); if (ma && !labs.TTPA) { labs.TTPA = ma[1].replace('.', ','); achou = true; }
-    if (achou && !data) { var d = l.match(/^\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/); if (d) data = d[1]; }
   });
-  return { labs: labs, data: data };
+  var padrao = LAB_PADRAO.map(function (k) { return out[k]; }).filter(Boolean);
+  var cont = {}; padrao.forEach(function (x) { if (x.data) cont[x.data] = (cont[x.data] || 0) + 1; });
+  var preData = (out.Hb && out.Hb.data) || Object.keys(cont).sort(function (a, b) { return cont[b] - cont[a]; })[0] || '';
+  var labs = {}; padrao.forEach(function (x) { labs[x.k] = x.v + (x.alt ? '*' : '') + (x.data && x.data !== preData ? ' (' + x.data + ')' : ''); });
+  var extrasL = Object.keys(out).filter(function (k) { return LAB_PADRAO.indexOf(k) < 0; }).map(function (k) { return out[k]; }).sort(function (a, b) { return a.chave - b.chave; });
+  var porData = {}; extrasL.forEach(function (x) { (porData[x.data || '?'] = porData[x.data || '?'] || []).push(x.k + ' ' + x.v + (x.alt ? '*' : '')); });
+  var extras = Object.keys(porData).map(function (d) { return porData[d].join(' / ') + (d !== '?' ? ' (' + d + ')' : ''); }).join(' · ');
+  return { labs: labs, data: preData, extras: extras, todos: out };
 }
+function labsMapa(p) { return labsCompletos(p); }
 function trechoIG(p, re) {
   var T = [].concat(p.condutasLinhas || [], p.orientaLinhas || [], (p.agenda || []).map(function (a) { return a.txt; }), ((S.pend || {})[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; }));
   var out = []; T.forEach(function (l) { var m = String(l).match(re); if (m && out.indexOf(m[0].trim()) < 0) out.push(m[0].trim()); });
@@ -2026,7 +2074,7 @@ function celulaMapa(ev) {
     id: id, hora: horaMapa(ev),
     cab: [p.nome, idade ? idade + 'a' : '', 'P: ' + (p.registro || ev.P || ''), ev.proc || '', 'Ass. Dr. ' + (ev.ass || assDe(p) || '')].filter(function (x) { return x && x !== 'P: ' && x !== 'Ass. Dr. '; }).join(', '),
     origem: ((p.lugar || p.local || '') + ' ' + (p.leito || '')).replace(/\s+/g, ' ').trim().toUpperCase() || 'INTERNADO', fonte: 'internograma',
-    preData: lb.data, labs: lb.labs,
+    preData: lb.data, labs: lb.labs, extras: lb.extras,
     cmb: limpa((ap.cmb || []).join(', ') || evs.cmb), muc: limpa((ap.muc || []).join(', ') || evs.muc), alergia: limpa((ap.alergia || []).join(', ') || evs.alergia),
     cardio: trechoIG(p, /AV(?:ALIA[ÇC][AÃ]O)?\.?\s*CARDIO[^;\n]{0,60}/i), apa: trechoIG(p, /(?:\bAPA\b|AV(?:ALIA[ÇC][AÃ]O)?\.?\s*ANEST)[^;\n]{0,60}/i),
     rch: trechoIG(p, /\bRCH\b[^;\n-]{0,30}/i), uti: trechoIG(p, /\b(?:SOLIC(?:ITAR|ITADA)?|RESERVA|VAGA)\s+(?:DE\s+)?UTI\b[^;\n]{0,30}|\bUTI\b\s*(?:SOLIC\w*|OK|✓)/i),

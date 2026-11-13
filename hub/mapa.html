@@ -214,7 +214,7 @@ button{cursor:pointer}
 .pp .ed.alt::after{color:#000}
 .pp .cnt{color:#000}
 .pp .pend .auto{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-@media print{
+.labf{color:#c62828;font-weight:700;text-decoration:underline;text-decoration-thickness:2px}.labcx{background:#ffe3e3}\n@media print{.labf{color:#000!important;text-decoration:underline}.labcx{background:none!important}}\n@media print{
   body{background:#fff}
   .barra,.aviso,.modal,.toast,.pacs,.linha,.status,.alts,#medidor{display:none !important}
   .rolagem{overflow:visible;padding:0}
@@ -259,6 +259,7 @@ button{cursor:pointer}
   <span class="leg"><i class="a"></i> pendência automática (toque para dispensar)</span>
   <span class="leg"><i class="d"></i> leitura com dúvida: confira e toque no ?</span>
   <span class="leg"><i class="m"></i> alterado depois de fechar (*)</span>
+  <span class="leg"><u class="labf">12,2</u> exame fora da referência (ou * no internograma)</span>
 </div>
 
 <div class="status" id="status"></div>
@@ -945,11 +946,21 @@ function sugestoes(x){
 }
 
 // ---------- desenho ----------
+var REFM={Hb:[12,17.5],Ht:[36,52],Leuco:[4000,11000],Plaq:[150,450],TP:[null,14],INR:[null,1.2],TTPA:[null,40],Fib:[200,400],Cr:[0.5,1.2],Ur:[10,50],Na:[135,145],K:[3.5,5],Glic:[70,99],
+  TSH:[0.4,4.5],T4L:[0.7,1.8],PCR:[null,10],Mg:[1.6,2.6],TGO:[null,40],TGP:[null,41],VHS:[null,20],Lactato:[null,2],CK:[null,200]};
+function numLab(k,v){ var t=String(v||"").replace(/\(.*?\)/g,"").replace(/\*/g,"").trim(); var n=parseFloat(t.replace(/\.(?=\d{3}\b)/g,"").replace(",",".")); if(isNaN(n)) return null; if(k==="Plaq"&&n>=2000) n=n/1000; if(k==="Leuco"&&n<100) n=n*1000; return n; }
+function foraLab(k,v){ if(/\*/.test(String(v||""))) return true; var r=REFM[k], n=numLab(k,v); if(!r||n==null) return false; return (r[0]!=null&&n<r[0])||(r[1]!=null&&n>r[1]); }
+function marcaVal(f,v){
+  v=v||""; if(!v) return "";
+  if(f.indexOf("labs.")===0){ var k=f.slice(5), cx=(k==="Hb"&&numLab(k,v)!=null&&numLab(k,v)<=10); return foraLab(k,v)||cx?'<u class="labf'+(cx?' labcx':'')+'">'+esc(v)+'</u>':esc(v); }
+  if(f==="extras") return String(v).split(/(\s+\/\s+|\s*·\s*)/).map(function(seg){ var m=seg.match(/^\s*([A-Za-z][A-Za-z0-9]{0,9})\s+(\*?[\d.,]+\*?)/); if(m&&foraLab(m[1],m[2])) return '<u class="labf">'+esc(seg)+'</u>'; return esc(seg); }).join("");
+  return esc(v);
+}
 function ed(x,f,extra){
   var v=f.indexOf("labs.")===0?x.labs[f.slice(5)]:x[f];
   var dv=x.duv&&x.duv[f], al=x.alt&&(f in x.alt);
   var cls="ed"+(x.locked[f]?" trava":"")+(extra?" "+extra:"")+(dv?" duv":"")+(al?" alt":"");
-  return '<span class="'+cls+'" contenteditable="true" spellcheck="false" data-id="'+x.id+'" data-f="'+f+'"'+(al?' title="Antes de fechar: '+esc(x.alt[f]||"vazio")+'"':'')+'>'+esc(v||"")+'</span>'+
+  return '<span class="'+cls+'" contenteditable="true" spellcheck="false" data-id="'+x.id+'" data-f="'+f+'"'+(al?' title="Antes de fechar: '+esc(x.alt[f]||"vazio")+'"':'')+'>'+marcaVal(f,v)+'</span>'+
     (dv?'<button class="q" data-id="'+x.id+'" data-duvok="'+f+'" title="Leitura com dúvida. Confira e toque para confirmar.">?</button>':'');
 }
 function labLinha(x,ks){
