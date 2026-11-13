@@ -277,7 +277,7 @@ button{cursor:pointer}
       <div>
         <label for="capFoto" style="font-size:13px;font-weight:600">Foto ou print da folha</label><br>
         <input type="file" id="capFoto" accept="image/*">
-        <p style="margin-top:6px">Neste protótipo a foto aparece aqui para você conferir e digitar ao lado. A leitura automática (OCR) entra na versão do app.</p>
+        <p style="margin-top:6px" id="capOcrMsg">A foto é lida aqui no aparelho e o texto aparece ao lado para você conferir antes de preencher.</p>
         <div id="capImg"></div>
       </div>
     </div>
@@ -291,7 +291,7 @@ button{cursor:pointer}
 <div class="modal" id="modalLote" role="dialog" aria-modal="true" aria-labelledby="loteTit">
   <div class="caixa">
     <h2 id="loteTit">Fotos dos ambulatoriais</h2>
-    <p id="loteMsg">Cada foto é lida, o paciente é localizado no mapa do dia e a célula dele é preenchida. Campos editados à mão não são alterados.</p>
+    <p id="loteMsg">Cada foto é lida aqui no aparelho (funciona sem internet), o paciente é localizado pelo registro ou nome e a célula dele é preenchida. Foto sem cabeçalho entra como continuação do paciente anterior. Valores duvidosos ficam com <b>?</b>. Campos editados à mão não são alterados.</p>
     <div id="loteLista"></div>
     <div class="rod"><button class="btn" id="loteMais">Enviar mais fotos</button><button class="btn pri" id="loteFechar">Concluir</button></div>
   </div>
@@ -1245,6 +1245,13 @@ document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){fecharCap
 document.getElementById("capFoto").addEventListener("change",function(){
   var f=this.files&&this.files[0]; if(!f) return;
   var r=new FileReader(); r.onload=function(){document.getElementById("capImg").innerHTML='<img alt="Folha enviada" src="'+r.result+'">';}; r.readAsDataURL(f);
+  var u=URL.createObjectURL(f), msg=document.getElementById("capOcrMsg");
+  msg.textContent="Lendo a foto…";
+  ocrImagem(u,function(m){ if(m.status==="recognizing text") msg.textContent="Lendo a foto… "+Math.round((m.progress||0)*100)+"%"; }).then(function(o){
+    var t=SOTOCR.posTexto(o.text,o.hdr).text, ta=document.getElementById("capTxt");
+    ta.value=(ta.value?ta.value+"\n":"")+t;
+    msg.textContent="Pronto. Confira o texto (valores com ? são duvidosos) e toque em Ler texto e preencher.";
+  }).catch(function(e){ msg.textContent="Não consegui ler a foto"+(e&&e.message?" ("+e.message+")":"")+". Digite os dados ao lado."; });
 });
 var RX={
   Hb:/\b(?:hb|hemoglobina)(?!a1c)(?!\s*glic)\s*[:=]?\s*([\d.,]+)/i, Ht:/\b(?:ht|hto|hemat[óo]crito)\s*[:=]?\s*([\d.,]+)/i,
@@ -1319,8 +1326,14 @@ document.getElementById("capLer").addEventListener("click",function(){
 });
 
 // ---------- fotos em lote ----------
-var amostra=null, lote=[];
-if(window.claude&&window.claude.use){ window.claude.use("sample").then(function(s){amostra=s;}).catch(function(){}); }
+var amostra=true, lote=[], ultimoX=null;
+function ocrPronto(){ if(window.SOTOCR) return Promise.resolve(); return new Promise(function(ok,er){ var s=document.createElement("script"); s.src="ocr/sot-ocr.js"; s.onload=ok; s.onerror=function(){er(new Error("leitor indisponível"));}; document.head.appendChild(s); }); }
+function abrirImg(u){ return new Promise(function(ok,er){ var im=new Image(); im.onload=function(){ok(im);}; im.onerror=function(){er(new Error("imagem inválida"));}; im.src=u; }); }
+function ocrImagem(u,cb){
+  return ocrPronto().then(function(){ SOTOCR.logger=function(m){ if(cb) cb(m); }; return abrirImg(u); })
+    .then(function(im){ return SOTOCR.ler(SOTOCR.prep(im,0,2000)); });
+}
+
 var PROMPT='Você lê uma foto ou print de ficha/exames de UM paciente de ortopedia (print do sistema ou folha digitada). Extraia apenas o que estiver legível, sem inventar. Responda SOMENTE um JSON com estas chaves (use "" quando não houver): '+
  '{"nome":"","prontuario":"","data_exames":"DD/MM/AAAA","duvidas":["nomes das chaves cuja leitura ficou incerta, ex.: Hb, muc"],"labs":{"Hb":"","Ht":"","Leuco":"","Plaq":"","TP":"","INR":"","TTPA":"","Fib":"","Cr":"","Ur":"","Na":"","K":"","Glic":""},'+
  '"outros_exames":"ex.: TSH 2,1 / T4L 1,0","cmb":"comorbidades","muc":"medicações de uso contínuo","alergia":"","peso":"","dx":"diagnóstico com lado D/E e data da fratura (DD/MM/AAAA) se houver","mec":"mecanismo do trauma","cirPrev":"cirurgias prévias","fxPrev":"fraturas prévias ou associadas","obs":"outras observações relevantes","cardio":"avaliação cardiológica: data e risco","apa":"avaliação pré-anestésica: data e resultado"}. '+
@@ -1370,7 +1383,7 @@ function desenharLote(){
   document.getElementById("loteLista").innerHTML=lote.map(function(it,i){
     var s='<div class="item"><img alt="" src="'+it.url+'"><div><div>'+esc(it.nome)+'</div>';
     if(it.st==="espera") s+='<div class="st es">Na fila</div>';
-    else if(it.st==="lendo") s+='<div class="st es">Lendo a foto…</div>';
+    else if(it.st==="lendo") s+='<div class="st es">Lendo a foto neste aparelho…'+(it.pct?' '+it.pct+'%':'')+'</div>';
     else if(it.st==="ok") s+='<div class="st ok">'+esc(it.msg)+'</div>';
     else if(it.st==="erro") s+='<div class="st er">'+esc(it.msg)+'</div>';
     else if(it.st==="semcel") s+='<div class="st er">'+esc(it.msg)+'</div><div class="lin2"><label for="lsel'+i+'">Aplicar em</label><select id="lsel'+i+'">'+ops+'</select><button class="btn" data-lote="'+i+'">Aplicar</button></div>';
@@ -1381,17 +1394,19 @@ function processarLote(){
   var it=null; for(var i=0;i<lote.length;i++) if(lote[i].st==="espera"){it=lote[i];break;}
   if(!it) return;
   it.st="lendo"; desenharLote();
-  amostra(PROMPT,{images:[it.blob],cache:false}).then(function(res){
-    var t=String(res&&res.text||""), a=t.indexOf("{"), b=t.lastIndexOf("}"), r=null;
-    try{r=JSON.parse(t.slice(a,b+1));}catch(e){}
+  var ult=-1;
+  ocrImagem(it.url,function(m){ if(m.status==="recognizing text"){ var p=Math.round((m.progress||0)*10)*10; if(p!==ult){ult=p; it.pct=p; desenharLote();} } }).then(function(o){
+    var r=SOTOCR.ficha(o.text,o.hdr); it.txt=o.text;
+    if(!r.nome&&!r.prontuario&&!Object.keys(r.labs).length&&!r.cmb&&!r.muc) r=null;
     if(!r){it.st="erro";it.msg="Não consegui ler esta foto. Use Captar dados na célula.";return;}
     it.r=r;
     var x=casar(r), quem=(r.nome||"sem nome")+(r.prontuario?" (P: "+r.prontuario+")":"");
-    if(x){ var n=aplicar(x,r); it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)."; salvar(); desenhar(); }
+    if(!x&&!r.nome&&!r.prontuario&&ultimoX){ x=ultimoX; quem="Continuação"; }
+    if(x){ ultimoX=x; var n=aplicar(x,r), nd=(r.duvidas||[]).length; it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)"+(nd?", "+nd+" com ? para conferir":"")+"."; salvar(); desenhar(); }
     else { it.st="semcel"; it.msg="Li "+quem+", mas não achei esse paciente no mapa do dia."; }
   }).catch(function(e){
     it.st="erro";
-    it.msg=(e&&e.code==="not_granted")?"Leitura não autorizada nesta página.":(e&&e.code==="rate_limited")?"Limite de leituras atingido. Tente de novo em alguns minutos.":"Falha ao ler esta foto.";
+    it.msg="Falha ao ler esta foto"+(e&&e.message?" ("+e.message+")":"")+". Use Captar dados na célula.";
     if(e&&(e.code==="not_granted"||e.code==="rate_limited")) lote.forEach(function(o){ if(o.st==="espera"){o.st="erro";o.msg=it.msg;} });
   }).then(function(){ desenharLote(); processarLote(); });
 }

@@ -694,6 +694,7 @@ function renderThumbs(){
   $('#bOCR').disabled=!IMGS.length;
 }
 function prepCanvas(x,enh){
+  if(window.SOTOCR)return SOTOCR.prep(x.img,x.rot,2000,false);
   const im=x.img,r=x.rot,sw=im.naturalWidth,sh=im.naturalHeight;
   const long=Math.max(sw,sh);let sc=long<1200?1600/long:long>3000?3000/long:1;
   const w=Math.round(sw*sc),h=Math.round(sh*sc);
@@ -723,6 +724,7 @@ async function getWorker(){
   if(!window.Tesseract){try{await loadScript(base+'tesseract.min.js')}catch(e){local=false;await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js')}}
   const opt={logger:prog,cacheMethod:'none'};
   if(local)Object.assign(opt,{workerPath:base+'worker-wrap.js',corePath:base+'core/',langPath:base+'lang',workerBlobURL:false,gzip:true});
+  if(!window.SOTOCR){try{await loadScript(base+'sot-ocr.js')}catch(e){}}
   WORKER=await Tesseract.createWorker('por',1,opt);
   await WORKER.setParameters({preserve_interword_spaces:'0'});
   return WORKER;
@@ -743,6 +745,7 @@ function autoFix(text){
   text=text.replace(/\b[\dOoIl|]{1,2}\s?[\/.]\s?[\dOoIl|]{1,2}\s?[\/.]\s?[\dOoIl|]{2,4}\b/g,m=>{if(!/\d/.test(m))return m;const r=m.replace(/[Oo]/g,'0').replace(/[Il|]/g,'1').replace(/\s/g,'').replace(/\./g,'/');if(r!==m)fixed[r]=m;return r});
   // dicionário (conservador)
   text=text.replace(/[A-Za-zÀ-ÿ]{6,}/g,w=>{if(inDict(w))return w;const s=suggest(w,true);if(s.length&&s[0].d===1&&(s.length===1||s[1].d>1)){fixed[s[0].w]=w;return s[0].w}return w});
+  if(window.SOTOCR){text=SOTOCR.limparTexto(text);const L=SOTOCR.corrigirLabs(text);text=L.text;Object.assign(fixed,L.fixed)}
   return{text,fixed};
 }
 async function runOCR(){
@@ -756,12 +759,13 @@ async function runOCR(){
       progPage=IMGS.length>1?` página ${i+1}/${IMGS.length}`:'';
       const c=prepCanvas(IMGS[i],enh);OCR.pages.push(c);
       const {data}=await w.recognize(c);
-      const lines=(data.lines||[]);
+      const lines=(data.lines||[]);const i0=out.length;
       lines.forEach(L=>{
         if(noisy(L)){OCR.dropped.push(L.text.trim());return}
         L.words.forEach(W=>{OCR.words.push({t:W.text,n:deacc(W.text).toUpperCase().replace(/[^A-Z0-9]/g,''),conf:W.confidence,b:W.bbox,lb:L.bbox,pg:i});if(W.confidence<65&&/[A-Za-zÀ-ÿ0-9]{2,}/.test(W.text))OCR.low.add(W.text.replace(/^[^A-Za-zÀ-ÿ0-9]+|[^A-Za-zÀ-ÿ0-9]+$/g,''))});
         out.push(L.text.replace(/\s+$/,''));
       });
+      if(window.SOTOCR){try{progPage=' (cabeçalho)';await w.setParameters({tessedit_pageseg_mode:'6'});const hd=await w.recognize(SOTOCR.cabecalho(c));await w.setParameters({tessedit_pageseg_mode:'3'});const pg=out.splice(i0).join('\n');SOTOCR.juntar(pg,SOTOCR.limparTexto(hd.data.text)).split('\n').forEach(l=>out.push(l))}catch(e){console.warn(e)}}
       out.push('');
     }
     const r=autoFix(out.join('\n').replace(/\n{3,}/g,'\n\n').trim());
