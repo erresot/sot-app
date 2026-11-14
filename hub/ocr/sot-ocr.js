@@ -380,7 +380,7 @@ S.ficha=function(text,hdr){
   var T=S.limparTexto(hdr?S.juntar(text,S.limparTexto(hdr)):String(text));
   var lines=T.split('\n').map(function(l){return l.replace(/\s+$/,'');});
   var U=lines.map(function(l){return deacc(l).toUpperCase();});
-  var r={nome:'',prontuario:'',idade:'',data_exames:'',duvidas:[],labs:{},outros_exames:'',cmb:'',muc:'',alergia:'',peso:'',dx:'',mec:'',cirPrev:'',fxPrev:'',obs:'',cardio:'',apa:''};
+  var r={origem:'',nome:'',prontuario:'',idade:'',data_exames:'',duvidas:[],labs:{},outros_exames:'',cmb:'',muc:'',alergia:'',peso:'',dx:'',mec:'',cirPrev:'',fxPrev:'',obs:'',cardio:'',apa:''};
   var m,i,all=U.join('\n');
   // identificação
   for(i=0;i<U.length;i++){
@@ -444,6 +444,9 @@ S.ficha=function(text,hdr){
   });
   r.obs=obs.join(' / ');
   if(!r.alergia)r.alergia='NEGA';
+  // cidade de origem (ORIGEM: / CROSS DE / SANTA CASA DE / UPA DE)
+  if(m=all.match(/^\W*(?:ORIGEM|PROCEDENCIA|CIDADE)\s*:\s*([A-Z][A-Z ]{2,40}?)\s*$/m))r.origem=m[1].trim();
+  else if(m=all.match(/\b(?:CROSS|SANTA CASA|UPA|PRONTO SOCORRO|HOSPITAL MUNICIPAL|PA)\s+D[EOA]\s+([A-Z]+(?: [A-Z]+){0,3}?)(?=\s*[,.;\n]|\s+(?:ACOMPANH|PACIENTE|POR|HA|COM|EM|E|REFERE|DEVIDO)\b)/))r.origem=m[1].trim();
   // exames
   var ex=S.exames(T,ano);
   r.labs=ex.labs;r.outros_exames=ex.outrosTxt;r.data_exames=ex.data;
