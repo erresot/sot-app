@@ -1,5 +1,5 @@
 /* Mantém o app abrindo mesmo sem internet. Ao publicar uma versão nova, troque o número abaixo. */
-var V = 'sot-v24';
+var V = 'sot-v25';
 var ARQ = ['./', 'index.html', 'evo.html', 'sync.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'hub/anamnese.html', 'hub/avaliacao.html', 'hub/condutas.html', 'hub/desccir.html', 'hub/evoamb.html', 'hub/exame.html', 'hub/exames.html', 'hub/mapa.html', 'hub/novopac.html', 'hub/posop.html', 'hub/relatorio.html', 'hub/retornos.html',  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return Promise.all(ARQ.map(function (u) { return c.add(new Request(u, { cache: 'reload' })).catch(function () {}); })); }).then(function () { return self.skipWaiting(); })); });
