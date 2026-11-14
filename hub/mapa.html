@@ -1260,8 +1260,11 @@ document.getElementById("capFoto").addEventListener("change",function(){
   var u=URL.createObjectURL(f), msg=document.getElementById("capOcrMsg");
   msg.textContent="Lendo a foto…";
   ocrImagem(u,function(m){ if(m.status==="recognizing text") msg.textContent="Lendo a foto… "+Math.round((m.progress||0)*100)+"%"; }).then(function(o){
-    var t=SOTOCR.posTexto(o.text,o.hdr).text, ta=document.getElementById("capTxt");
-    ta.value=(ta.value?ta.value+"\n":"")+t;
+    var t=SOTOCR.posTexto(o.text,o.hdr).text, f=SOTOCR.ficha(o.text,o.hdr), ta=document.getElementById("capTxt"), res=[];
+    if(f.data_exames) res.push("DATA DOS PRÉ-OPS: "+f.data_exames);
+    if(f.dx) res.push("DX: "+f.dx); if(f.mec) res.push("MECANISMO: "+f.mec); if(f.cirPrev) res.push("CIR PRÉVIAS: "+f.cirPrev);
+    if(f.cmb) res.push("CMB: "+f.cmb); if(f.muc) res.push("MUC: "+f.muc); if(f.alergia) res.push("ALERGIA: "+f.alergia); if(f.peso) res.push("PESO: "+f.peso);
+    ta.value=(ta.value?ta.value+"\n":"")+(res.length?"== RESUMO LIDO ==\n"+res.join("\n")+"\n== TEXTO DA FOTO ==\n":"")+t;
     msg.textContent="Pronto. Confira o texto (valores com ? são duvidosos) e toque em Ler texto e preencher.";
   }).catch(function(e){ msg.textContent="Não consegui ler a foto"+(e&&e.message?" ("+e.message+")":"")+". Digite os dados ao lado."; });
 });
@@ -1274,7 +1277,7 @@ var RX={
   Na:/\b(?:na|s[óo]dio)\s*[:=]?\s*([\d.,]+)/i, K:/\b(?:k|pot[áa]ssio)\s*[:=]?\s*([\d.,]+)/i,
   Glic:/\bglic\w*\s*[:=]?\s*([\d.,]+)/i
 };
-var RXT={cmb:/^\s*(?:cmb|comorbidades?|ap)\s*[:=]\s*(.+)$/im, muc:/^\s*(?:muc|medica[çc][õo]es[^:]*)\s*[:=]\s*(.+)$/im,
+var RXT={cirPrev:/^\s*cir(?:urgias)?\.?\s*pr[eé]vias?\s*[:=]\s*(.+)$/im, cmb:/^\s*(?:cmb|comorbidades?|ap)\s*[:=]\s*(.+)$/im, muc:/^\s*(?:muc|medica[çc][õo]es[^:]*)\s*[:=]\s*(.+)$/im,
   alergia:/^\s*alergias?\s*[:=]\s*(.+)$/im, peso:/^\s*peso\s*[:=]\s*(.+)$/im,
   mec:/^\s*mecanismo\s*[:=]\s*(.+)$/im, dx:/^\s*(?:dx|diagn[óo]stico|hd)\s*[:=]\s*(.+)$/im};
 // Exames de outra data não se misturam: ao chegar um conjunto com data nova, os antigos (não travados) saem

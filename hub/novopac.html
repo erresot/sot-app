@@ -88,6 +88,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
 .pop .w{font:600 15px ui-monospace,Menlo,monospace}
 .drp{font:12px ui-monospace,monospace;display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
 </style>
+<script src="ocr/sot-ocr.js"></script>
 </head>
 <body>
 <header>
@@ -404,20 +405,26 @@ function parse(raw){
   const preCD=cdI>0?cdI:U.length;
   const lines=txt.slice(0,preCD).split('\n');let off=0;const seen=new Set();
   // bloco "## INTERNAÇÃO ##" (evolução): linhas de PO e diagnósticos
-  const bI=lines.findIndex(L=>{const w=deacc(L).toUpperCase().match(/[A-Z]{3,}/g)||[];return w.length===1&&/^INTERNAC/.test(w[0])});
+  const bI=(()=>{const f=L=>{const t=deacc(L).toUpperCase().trim();if(!/INTERNACAO/.test(t)||t.length>40)return false;const q=t.replace(/INTERNACAO/,' ').replace(/\bH?AMB(ULATORIO)?\.?/,' ').replace(/[^A-Z ]/g,' ').trim();return !q||q.split(/\s+/).every(w=>w.length<=2)};let k=lines.findIndex(f);if(k>0){const d=lines.findIndex(L=>/^\W*DESCRICAO DA EVOLUCAO/.test(deacc(L).toUpperCase()));if(d>=0&&d<k&&k-d<=3)k=d}if(k<0)k=lines.findIndex(L=>/^\W*(DESCRICAO DA EVOLUCAO|QUEIXA E DURACAO|HISTORIA CLINICA)/.test(deacc(L).toUpperCase()));return k})();
   if(bI>=0){
     for(let i=bI+1;i<lines.length;i++){
       const L=lines[i].replace(/^[^A-Za-zÀ-ÿ0-9]+/,'').trim(),LU=deacc(L).toUpperCase();
       if(!L){if(r.dx.length)continue;else continue}
-      if(/^(AP|CMB|HPP|MUC|ALERGIA|HABITOS|EVOLUCAO|HDA|HMA|QP|EF|EXAME)\b/.test(LU)||/^-{2,}/.test(lines[i].trim()))break;
+      if(/^R?(AP|CMB|HPP|MUC|ALERGIAS?|HABITOS|EVOLUCAO|HDA|HMA|HPMA|QP|EF|EXAME|ANTECEDENTES|COMORBIDADES|VICIOS|AVALIO|PACIENTE|ENCAMINHAD[OA]|REFERE|RELATA|NEGA (CMB|MUC|ALERG|COMORB))\b/.test(LU)||/^-{2,}/.test(lines[i].trim()))break;
+      if(/^(PS ORTOPEDIA|FICHA INCLUIDA|ANAMNESE EM|EVOLUCAO EM|S?INTERCONSULTA)/.test(LU)||(L.match(/[A-Za-zÀ-ÿ0-9]/g)||[]).length<4)continue;
+      if(/\b(QUEDA|QPA|ACIDENTE|ATROPELAMENTO|AGRESS[AO]|COLIS[AO]|ENTORSE|PAF|FAB)\b/.test(LU)&&!/FRATURA|\bFX\b|LUXA|\bPOT?\b|\bPOI\b/.test(LU)){if(!r.mec)r.mec=fmtCase(L.replace(/^QPA\b/i,'Queda da própria altura').toLowerCase(),'title');continue;}
+      if(/INTERNACAO/.test(LU)&&LU.length<40&&!/FRATURA|\bPOT?\b/.test(LU))continue;
+      const ST=/^(\d+\s*[º°]?\s*(D|DIAS?|PO|DPO|POT|POI)\b|POT?\b|POI\b|FRATURA|FX\b|LUXA|TCG|TGC|TUMOR|LES[AÃ]O|INFEC|DISPLASIA|PSEUDO|OSTEO|ARTRO|PR[OÓ]TESE|REVIS|RUPTURA|SEQUELA|DEFORM|S[IÍ]NDROME|NEOPLASIA|METAST|BI[OÓ]PSIA|LCA\b|H[EÉ]RNIA|ESPONDIL|ESTENOSE|EPIFIS|CISTO|AMPUTA|NECROSE|SOLTURA)/i;
+      if(r.dx.length&&!ST.test(LU)&&!r.dx[r.dx.length-1]._fim){const lst=r.dx[r.dx.length-1],dm2=L.match(/\(\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*\)?/);if(dm2&&!lst.data)lst.data=fromBR(dm2[1],yRef);const add=L.replace(dm2?dm2[0]:'','').replace(/^[^A-Za-zÀ-ÿ0-9]+/,'').trim();if(add)lst.txt+=' '+fmtCase(fixAcc(add.toLowerCase()),'title');if(dm2)lst._fim=1;continue;}
       let mm,tipo='dx',dt='',t=L;
       const dm=t.match(/\(\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*\)/);if(dm){dt=fromBR(dm[1],yRef);t=t.replace(dm[0],' ')}
       if(mm=t.match(/^(\d+)\s*(?:PO|POT|DPO)\b\.?\s*(?:DE\s+)?(.+)$/i)){tipo='po';t=mm[2];if(!dt&&r.dih)dt=addDays(r.dih,-(+mm[1]))}
-      else if(mm=t.match(/^(\d+)\s*D\b\.?\s*(.+)$/i)){t=mm[2];if(!dt&&r.dih)dt=addDays(r.dih,-(+mm[1]))}
+      else if(/^POT?\b/i.test(t)){tipo='po';t=t.replace(/^POT?\s*(?:DE\s+)?/i,'')}
+      else if(mm=t.match(/^(\d+)\s*D\b\.?\s*(?:DE\s+)?(.+)$/i)){t=mm[2];if(!dt&&r.dih)dt=addDays(r.dih,-(+mm[1]))}
       else if(/^POI\b/i.test(t)){tipo='po';t=t.replace(/^POI\s*(?:DE\s+)?/i,'');if(!dt)dt=r.dih||''}
       t=t.replace(/\s{2,}/g,' ').trim();if(t.length<4)continue;
       const key=deacc(t).toUpperCase();if(seen.has(key))continue;seen.add(key);
-      r.dx.push({txt:fmtCase(fixAcc(t.toLowerCase()),'title'),data:dt,tipo});
+      r.dx.push({txt:fmtCase(fixAcc(t.toLowerCase()),'title'),data:dt,tipo,_fim:!!dm});
     }
   }
   for(const L of lines){
@@ -426,7 +433,7 @@ function parse(raw){
     const isHD=/^\s*(HD|HIPOTESE|DIAGNOSTICO)/.test(LU);
     if(k>=0||isHD){
       let s=isHD&&k<0?L.replace(/^\s*[^:]*:\s*/,''):L.slice(k);
-      s.split(/\s*\+\s*|,\s*(?=(?:fratura|fx|luxa))|\s+e\s+(?=(?:fratura|fx|luxa))/i).forEach(p=>{p=p.replace(/[.;:\s]+$/,'').trim();const key=deacc(p).toUpperCase();if(p.length>5&&!seen.has(key)){seen.add(key);r.dx.push({txt:fmtCase(fixAcc(p.toLowerCase()),'title'),data:''})}});
+      s.split(/\s*\+\s*|,\s*(?=(?:fratura|fx|luxa))|\s+e\s+(?=(?:fratura|fx|luxa))/i).forEach(p=>{p=p.replace(/[.;:\s]+$/,'').trim();const key=deacc(p).toUpperCase();if(p.length>5&&!seen.has(key)&&!r.dx.some(d=>deacc(d.txt).toUpperCase().includes(key.replace(/^(FRATURA|FX)\s+DE\s+/,'')))){seen.add(key);r.dx.push({txt:fmtCase(fixAcc(p.toLowerCase()),'title'),data:''})}});
     }
   }
 
@@ -489,6 +496,13 @@ function parse(raw){
     const d0=r.dx.find(d=>d.tipo!=='po')||r.dx[0];
     if(elet&&d0){r.mec=d0.txt;r.eletiva=true;r.warn.push('Internação eletiva: usei o diagnóstico como causa na 1ª coluna (como no internograma). Ajuste se preferir.')}
   }
+  if(window.SOTOCR){try{const f=SOTOCR.ficha(raw,'');
+    if(!r.nome&&f.nome)r.nome=f.nome; if(!r.reg&&f.prontuario)r.reg=f.prontuario; if(r.idadeTxt==null&&f.idade)r.idadeTxt=+f.idade;
+    if(!r.ap||(/^NEGA\s+(COMORB|CMB)/i.test(r.ap)&&/\/|NEGA\s+(MUC|ALERG)/i.test(r.ap)))r.ap=f.cmb||r.ap;
+    if(r.ap&&/,?\s*NEGA\s+ALERGIAS?\s*$/i.test(r.ap)){r.ap=r.ap.replace(/,?\s*NEGA\s+ALERGIAS?\s*$/i,'').trim();if(!r.alergia)r.alergia='NEGA'}
+    if(!r.muc&&f.muc)r.muc=f.muc; if(!r.alergia&&f.alergia)r.alergia=f.alergia;
+    if(!r.dx.length&&f.dx)f.dx.split(' / ').forEach(t=>r.dx.push({txt:fmtCase(fixAcc(t.toLowerCase()),'title'),data:'',tipo:/^(\d+\s*(PO|DPO|POT|POI)\b|POT?\b|POI\b)/i.test(t)?'po':'dx'}));
+  }catch(e){console.warn(e)}}
   // achados
   const F=(k,l)=>{if(r[k]&&(!Array.isArray(r[k])||r[k].length))r.found.push(l)};
   F('reg','registro');F('nome','nome');F('nasc','nascimento');F('idadeTxt','idade');F('dih','DIH');F('origem','origem');F('mec','mecanismo');F('dtTrauma','data do trauma');F('ap','AP');F('muc','MUC');F('alergia','alergia');F('dx','diagnóstico(s)');F('ass','assistente');F('cx','cirurgia');F('dtCx','data cx');F('exames','exames');
