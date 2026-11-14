@@ -948,6 +948,9 @@ let d=null;try{d=JSON.parse(localStorage.getItem('ig-draft')||'null')}catch(e){}
 setState(d&&d.nome?Object.assign(d,{refDate:todayISO()}):blank());
 renderList();
 setTimeout(loadBig,400);
+function npPrefill(s){try{setState(Object.assign(blank(),s));go('saida');toast('Dados do mapa/agenda carregados — confira e salve')}catch(e){console.warn(e)}}
+try{const pf=localStorage.getItem('np-prefill');if(pf){localStorage.removeItem('np-prefill');npPrefill(JSON.parse(pf))}}catch(e){}
+addEventListener('message',e=>{if(e.data&&e.data.type==='np-prefill'){try{localStorage.removeItem('np-prefill')}catch(x){}npPrefill(e.data.state)}});
 </script>
 </body>
 </html>

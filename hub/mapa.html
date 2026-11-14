@@ -1391,6 +1391,7 @@ function aplicar(x,r){
     if(f.indexOf("labs.")===0||ROT[f]) x.duv[f]=true;
   });
   ["cmb","muc","alergia","peso","dx","mec","cirPrev","fxPrev","cardio","apa","obs"].forEach(function(f){ap(f,r[f]);});
+  if(r.origem&&!x.cidade){ x.cidade=r.origem; n++; }
   return n;
 }
 function desenharLote(){
