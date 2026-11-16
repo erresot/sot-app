@@ -296,6 +296,7 @@ details.legd[open]>summary{width:100%}
 @media print{.forabox{display:none!important}}
 </style>
 <link rel="stylesheet" href="sot-tema.css">
+<script src="../pessoa.js"></script>
 <script src="../campos.js"></script>
 </head>
 <body>
@@ -960,7 +961,7 @@ function carregar(){
 // Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
 // duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
 var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
-var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev","semAgenda"];
 var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
 function agoraM(){ return Date.now()+(SKEW||0); }
 function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
@@ -1036,17 +1037,12 @@ function mesclarCel(a,b){
 /* ---------- atualização pela Agenda: quem saiu, quem entrou, troca de paciente no mesmo horário ---------- */
 function semAcento(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase(); }
 // identidade do paciente pelo cabeçalho: registro (P: 123456) ou as 2 primeiras palavras do nome
-function identCab(cab){
-  var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(\d{6,7})\b/);
-  if(m) return "P"+m[1];
-  var nome=u.split(/[,;(]/)[0].replace(/[^A-Z ]/g," ").trim().split(/\s+/).filter(function(w){return w.length>2&&!/^(DOS|DAS|DES)$/.test(w);});
-  return nome.length?"N"+nome.slice(0,2).join(" "):"";
-}
+// identidade e comparação de paciente: regra única em pessoa.js (registro > idade > nome completo; na dúvida, não junta)
+function identCab(cab){ return SOTPESSOA.ident(cab); }
 function mesmoPaciente(a,b){
   if(!a||!b) return true;
-  if(a.charAt(0)==="P"&&b.charAt(0)==="P") return a===b;
-  if(a.charAt(0)==="N"&&b.charAt(0)==="N") return a===b;
-  return true;   // um tem registro e o outro só nome: não dá para afirmar que trocou
+  var r=SOTPESSOA.comparar(SOTPESSOA.deIdent(a),SOTPESSOA.deIdent(b));
+  return r==="mesmo"||r==="incerto";
 }
 function baseId(id){ return String(id).split("~")[0]; }
 function temDados(x){
@@ -1071,9 +1067,8 @@ function restaurarFora(d,id,fixo){
 var GUARDA_DIAS=14, CAMPOS_R=["preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","dx","mec","cirPrev","fxPrev","laudos","obs"];
 function regCab(cab){ var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(?:REG(?:ISTRO)?|PRONT\w*|RGHC)\s*[:.]?\s*(\d{5,8})\b/)||u.match(/,\s*(\d{5,8})\s*(?:,|$)/)||u.match(/\b(\d{6,7})\b/); return m?m[1]:""; }
 function nomeCab(cab){ return semAcento(String(cab||"").split(/[,;(]/)[0]).replace(/[^A-Z ]/g," ").trim().split(/\s+/).filter(function(w){return w.length>2&&!/^(DOS|DAS|DES)$/.test(w);}).slice(0,2).join(" "); }
-function mesmaPessoa(a,b){   // a, b = cabeçalhos
-  var ra=regCab(a), rb=regCab(b); if(ra&&rb) return ra===rb;
-  var na=nomeCab(a), nb=nomeCab(b); return !!na&&na.indexOf(" ")>0&&na===nb;
+function mesmaPessoa(a,b){   // a, b = cabeçalhos: só junta quando é certeza
+  return SOTPESSOA.comparar(SOTPESSOA.deCab(a),SOTPESSOA.deCab(b))==="mesmo";
 }
 function vazio(v){ return !v||v==="NEGA"||v==="—"||/^_+$/.test(v); }
 // expira o que está guardado fora do mapa há mais de 14 dias
@@ -1301,7 +1296,8 @@ function celHTML(x){
   var nTrav=Object.keys(x.locked).length;
   var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
   var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
-  h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x);
+  h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x)+
+     (x.semAgenda?'<div class="reuso" style="background:#fff3e0;border-color:#e0a03a">⚠ <b>Falta na Agenda:</b> internado com esta cirurgia marcada no internograma para o dia, mas sem evento na Agenda. Coloque na Agenda (o horário vem de lá).</div>':'');
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
   h+='<div class="col meio">';
@@ -1736,18 +1732,12 @@ function reduzir(file){
   });
 }
 function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
+// foto → célula: só preenche quando o paciente é certo (registro igual, ou nome completo + idade compatível) e único no mapa
 function casar(r){
-  var a=dados[dia].cels, pr=String(r.prontuario||"").replace(/\D/g,""), nm=norm(r.nome).replace(/[^a-z ]/g," ").trim();
-  var ini=nm.split(/\s+/).filter(function(w){return w.length>2||nm.split(/\s+/).length<3;}).map(function(w){return w[0];}).join("");
-  var ach=null;
-  a.forEach(function(x){
-    if(ach) return;
-    var cab=norm(x.cab), dig=pront(x);
-    if(pr && dig && pr===dig) ach=x;
-    else if(nm.length>5 && cab.indexOf(nm)===0) ach=x;
-    else if(ini.length>=2 && cab.split(",")[0].replace(/[^a-z]/g,"")===ini) ach=x;
-  });
-  return ach;
+  var foto={nome:r.nome||"",reg:String(r.prontuario||"").replace(/\D/g,""),idade:r.idade||""};
+  if(!foto.reg&&SOTPESSOA.tokens(foto.nome).length<2) return null;
+  var ok=dados[dia].cels.filter(function(x){ return SOTPESSOA.comparar(foto,SOTPESSOA.deCab(x.cab))==="mesmo"; });
+  return ok.length===1?ok[0]:null;
 }
 function aplicar(x,r,soVazios){
   var n=0, k;
@@ -1979,8 +1969,9 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       loc.cels=loc.cels.filter(function(z){
         var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
         if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
-        if(!/^ev_/.test(z.id)||!completo||z.fixo) return true;
-        var b=baseId(z.id), na=Object.prototype.hasOwnProperty.call(ids,b);
+        if(!/^(ev|ig)_/.test(z.id)||!completo||z.fixo) return true;
+        var b=baseId(z.id), na=Object.prototype.hasOwnProperty.call(ids,b)||(z.ev&&Object.prototype.hasOwnProperty.call(ids,z.ev));
+        if(z.ev&&!Object.prototype.hasOwnProperty.call(ids,b)&&Object.prototype.hasOwnProperty.call(ids,z.ev)) b=z.ev;
         if(!z.ident) z.ident=identCab(z.cab);
         var trocou=na&&!mesmoPaciente(z.ident,ids[b]);
         if(na&&!trocou) return true;
@@ -1990,32 +1981,46 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
         return false;
       });
       var REM=loc.removidos||[], apagado=loc.lixo&&loc.lixo.cels&&!loc.lixo.rec&&m.aviso!==true;
-      var remAg=REMAG[iso]=[];
+      var remAg=REMAG[iso]=[], forcado=m.aviso===true;   // botão "Atualizar da Agenda": traz todos que estão na Agenda, inclusive os tirados à mão
       (apagado?[]:(m.cels||[])).forEach(function(inc){
         var idt=identCab(inc.cab), x=null;
         loc.cels.forEach(function(z){ if((baseId(z.id)===inc.id||z.ev===inc.id)&&mesmoPaciente(z.ident||identCab(z.cab),idt)) x=z; });
         if(!x){
           // célula criada à mão antes de o paciente entrar na Agenda: liga ao evento (mesmo registro ou mesmo nome)
-          loc.cels.forEach(function(z){ if(!x&&!/^ev_/.test(z.id)&&!z.ev&&mesmaPessoa(z.cab,inc.cab)) x=z; });
-          if(x){ x.ev=inc.id; ligados++; }
+          // célula feita à mão, ou que veio só do internograma, ligada ao evento quando ele aparece (mesmo registro ou nome)
+          var evInc=/^ev_/.test(inc.id);
+          loc.cels.forEach(function(z){
+            if(x||/^ev_/.test(z.id)) return;
+            var livre=!z.ev||(evInc&&/^ig_/.test(z.ev)), ig=/^ig_/.test(z.id);
+            if(!livre||(ig&&!evInc)) return;
+            if(mesmaPessoa(z.cab,inc.cab)||(ig&&idt&&mesmoPaciente(z.ident||identCab(z.cab),idt))) x=z;
+          });
+          if(x){ x.ev=inc.id; if(evInc) delete x.semAgenda; ligados++; }
         }
         if(!x){
           // voltou para a Agenda: recupera o que já tinha sido preenchido
-          var g=null; Object.keys(loc.fora||{}).forEach(function(id){ var q=loc.fora[id]; if(q.motivo!=="removido"&&baseId(id)===inc.id&&mesmoPaciente(q.cel.ident||identCab(q.cel.cab),idt)) g=id; });
-          if(g){ x=restaurarFora(loc,g); voltaram++; }
+          var g=null; Object.keys(loc.fora||{}).forEach(function(id){ var q=loc.fora[id]; if((q.motivo!=="removido"||forcado)&&baseId(id)===inc.id&&mesmoPaciente(q.cel.ident||identCab(q.cel.cab),idt)) g=id; });
+          if(g){ var foiRem=loc.fora[g].motivo==="removido"; x=restaurarFora(loc,g); voltaram++;
+            if(foiRem&&x){ x.id=baseId(x.id)+"~"+agoraM().toString(36); if(loc.removIdent) delete loc.removIdent[inc.id]; } }
         }
-        if(!x&&REM.some(function(id){ return baseId(id)===inc.id; })){
+        if(!x&&!forcado&&REM.some(function(id){ return baseId(id)===inc.id; })){
           // tirado do mapa à mão: só volta sozinho se agora o evento é de OUTRO paciente; senão fica na lista para voltar com um toque
           var ri=(loc.removIdent||{})[inc.id];
-          if(!ri||mesmoPaciente(ri,idt)){ remAg.push(inc); return; }
+          if(m.aviso!==true&&(!ri||mesmoPaciente(ri,idt))){ remAg.push(inc); return; }
+          if(loc.removIdent) delete loc.removIdent[inc.id];
+          var gr=null; Object.keys(loc.fora||{}).forEach(function(id){ var q=loc.fora[id]; if(q.motivo==="removido"&&baseId(id)===inc.id&&mesmoPaciente(q.cel.ident||identCab(q.cel.cab),idt)) gr=id; });
+          if(gr){ x=restaurarFora(loc,gr); x.id=inc.id+"~"+agoraM().toString(36); voltaram++; }
         }
         if(!x){
           var nid=inc.id; if(loc.cels.some(function(z){return z.id===nid;})||(loc.sumidos||{})[nid]||(loc.fora||{})[nid]||REM.indexOf(nid)>=0) nid=inc.id+"~"+agoraM().toString(36);
+          if(loc.removIdent&&REM.some(function(id){ return baseId(id)===inc.id; })) delete loc.removIdent[inc.id];
           x=c(inc); x.id=nid; x.ident=idt; TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; x.tc=agoraM(); loc.cels.push(x); novos++; return;
         }
         x.ident=x.ident||idt;
+        if(/^ev_/.test(inc.id)) delete x.semAgenda;
         Object.keys(inc).forEach(function(f){
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
+          if(f==="semAgenda"){ if(inc.semAgenda) x.semAgenda=inc.semAgenda; return; }
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
           var v=inc[f]; if(v==null||v==="") return;
           if((f==="hora"||f==="cab")&&/_{2}|Nome, idade/.test(x[f]||"")) delete x.locked[f];   // horário/cabeçalho ainda em branco: vem da Agenda

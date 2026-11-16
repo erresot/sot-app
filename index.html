@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v37</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v40</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -703,6 +703,73 @@ function verificar(p, hj) {
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof self !== 'undefined' ? self : this);
 </script>
+<script>/* SOT — identidade do paciente: UMA regra para o app todo (Agenda × internograma, foto × célula do mapa,
+   troca de paciente no mesmo horário, reaproveitar dados). Na dúvida, NÃO junta: é melhor um paciente
+   aparecer duas vezes do que os dados de um irem para o outro.
+   - registro dos dois lados: vale o registro (diferente = outra pessoa)
+   - idade dos dois lados com diferença > 1 ano: outra pessoa
+   - nome: o 1º nome tem de ser igual (BENEDITA × BENEDITO, MARIA × MARIO = pessoas diferentes; só aceita
+     erro de 1 letra em nome com 5+ letras que não seja troca de A/O no fim) e TODOS os nomes do nome mais
+     curto têm de estar no outro (mínimo 2 nomes de cada lado). */
+(function (G) {
+  'use strict';
+  var A = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); };
+  var PART = /^(DE|DA|DO|DOS|DAS|E|DI|DU|DEL|VAN|VON|JR|JUNIOR|FILHO|NETO|SOBRINHO)$/;
+  function tokens(nome) {
+    return A(nome).replace(/[^A-Z ]/g, ' ').split(/\s+/).filter(function (w) { return w.length >= 2 && !PART.test(w); });
+  }
+  function genero(a, b) { return a.length === b.length && a.slice(0, -1) === b.slice(0, -1) && /[AO]/.test(a.slice(-1)) && /[AO]/.test(b.slice(-1)) && a !== b; }
+  function lev1(a, b) {
+    if (a === b) return true; if (Math.abs(a.length - b.length) > 1 || Math.min(a.length, b.length) < 5) return false;
+    var i = 0, j = 0, d = 0;
+    while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+    return d + (a.length - i) + (b.length - j) <= 1;
+  }
+  function igualPalavra(a, b) { return a === b || (lev1(a, b) && !genero(a, b)); }
+  // 'mesmo' | 'diferente' | 'incerto'
+  function mesmoNome(na, nb) {
+    var a = tokens(na), b = tokens(nb);
+    if (a.length < 2 || b.length < 2) {
+      if (!a.length || !b.length) return 'incerto';
+      return igualPalavra(a[0], b[0]) ? 'incerto' : 'diferente';
+    }
+    if (!igualPalavra(a[0], b[0])) return 'diferente';
+    var curto = a.length <= b.length ? a : b, longo = curto === a ? b : a;
+    var ok = curto.every(function (w) { return longo.some(function (z) { return igualPalavra(w, z); }); });
+    return ok ? 'mesmo' : 'diferente';
+  }
+  function soDig(x) { return String(x || '').replace(/\D/g, ''); }
+  function idadeDe(x) { var m = String(x || '').match(/\d{1,3}/); return m ? +m[0] : null; }
+  /* a, b = {nome, reg (ou regs: []), idade}. Resposta: 'mesmo' | 'diferente' | 'conflito' (nome e idade iguais, registro diferente) | 'incerto' */
+  function comparar(a, b) {
+    var ra = [].concat(a.regs || [], a.reg || []).map(soDig).filter(function (n) { return n.length >= 4; });
+    var rb = [].concat(b.regs || [], b.reg || []).map(soDig).filter(function (n) { return n.length >= 4; });
+    var ia = idadeDe(a.idade), ib = idadeDe(b.idade);
+    var idadeDif = ia != null && ib != null && Math.abs(ia - ib) > 1;
+    var nm = mesmoNome(a.nome, b.nome);
+    if (ra.length && rb.length) {
+      if (ra.some(function (n) { return rb.indexOf(n) > -1; })) return nm === 'diferente' ? 'diferente' : 'mesmo';   // mesmo registro com nome de outra pessoa: não junta
+      return nm === 'mesmo' && ia != null && ia === ib ? 'conflito' : 'diferente';
+    }
+    if (idadeDif) return 'diferente';
+    return nm;
+  }
+  /* cabeçalho do mapa → {nome, reg, idade} ("NOME, 70a, P: 123456, cirurgia, Ass…") */
+  function deCab(cab) {
+    var u = A(cab);
+    var m = u.match(/\bP\s*[:.]?\s*(\d{4,9})\b/) || u.match(/\b(?:REG(?:ISTRO)?|PRONT\w*|RGHC|HC)\s*[:.]?\s*(\d{4,9})\b/) || u.match(/\b\d{1,3}\s*(?:A|ANOS?)\b\.?\s*[,;\-]?\s*(\d{4,8})\b/) || u.match(/,\s*(\d{5,8})\s*(?:[,.]|$)/) || u.match(/\b(\d{6,7})\b/);
+    var mi = u.match(/\b(\d{1,3})\s*(?:A|ANOS?)\b/);
+    var nome = String(cab || '').split(/[,;(]|\s\d/)[0];
+    return { nome: nome, reg: m ? m[1] : '', idade: mi ? mi[1] : '' };
+  }
+  /* identidade guardada na célula: "P123456|NMARIA APARECIDA LOPES|I73" (aceita os formatos antigos "P123456" e "NMARIA APARECIDA") */
+  function ident(cab) { var o = deCab(cab); return [o.reg ? 'P' + o.reg : '', tokens(o.nome).length ? 'N' + tokens(o.nome).join(' ') : '', o.idade ? 'I' + o.idade : ''].filter(Boolean).join('|'); }
+  function deIdent(s) { var o = { nome: '', reg: '', idade: '' }; String(s || '').split('|').forEach(function (p) { if (p[0] === 'P') o.reg = p.slice(1); else if (p[0] === 'N') o.nome = p.slice(1); else if (p[0] === 'I') o.idade = p.slice(1); }); return o; }
+  var API = { tokens: tokens, mesmoNome: mesmoNome, comparar: comparar, deCab: deCab, ident: ident, deIdent: deIdent, lev1: lev1, genero: genero };
+  G.SOTPESSOA = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof self !== 'undefined' ? self : this);
+</script>
 <script>
 // =====================================================================
 // v4 — leitura do Doc linha a linha, paciente pelo registro, histórico,
@@ -1023,7 +1090,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '37';
+var VERSAO = '40';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -1969,6 +2036,7 @@ function parseEvento(e) {
   var mP = t.match(/\b(?:P|R|PR|PRONT\w*|RG|REG(?:ISTRO)?|HC)\s*[:.\-º°]?\s*(\d{4,9})\b/i);
   o.P = mP ? mP[1] : ''; o.Pchute = '';
   if (!o.P) { var nums = tudo.match(/\b\d{5,8}\b/g) || []; o.Pchute = nums.filter(function (n) { return !/^(19|20)\d{2}$/.test(n); })[0] || ''; }
+  if (!o.P && !o.Pchute) { var mPi = t.match(/\b\d{1,3}\s*(?:anos?|a)\b\.?\s*[,;\-–]?\s*(\d{4,8})\b/i); if (mPi) o.Pchute = mPi[1]; }   // "51 ANOS, 7124"
   o.nums = (tudo.match(/\b\d{4,9}\b/g) || []);
   var mI = t.match(/\b(\d{1,3})\s*(anos?|a\b|a\.|meses|m\b|mes)/i); o.idade = mI ? mI[1] + (/^m/i.test(mI[2]) ? ' meses' : ' anos') : '';
   var mA = t.match(/\bAss(?:ist(?:ente)?)?\.?\s*[:.\-]?\s*(?:Dr[a]?\.?\s*)?([A-Za-zÀ-ÿ][^,;|]*)$/i) || t.match(/\b(?:Dr[a]?|DR[A]?)\.?\s+([A-Za-zÀ-ÿ][^,;|]*)$/);
@@ -1982,12 +2050,24 @@ function parseEvento(e) {
   }
   var p0 = (partes[0] || '').replace(/\b\d.*$/, '').replace(/\bP\s*:?\s*$/i, '').trim();
   o.nome = p0 && p0.split(' ').length >= 2 ? p0 : (partes[0] && !/\d/.test(partes[0]) ? partes[0] : '');
+  // nome = o trecho logo antes da idade ou do registro (os recados que vêm antes — "vídeo/ checar aviso -" — não são nome)
+  var ancora = [mI ? mI.index : -1, mP ? mP.index : -1].filter(function (i) { return i > 0; }).sort(function (a, b) { return a - b; })[0];
+  var prefixo = '';
+  if (ancora) {
+    var antes = t.slice(0, ancora), seps = /[,;|\/:()]|\s[-–—]\s|^\s*[-–—]\s*/g, ult = 0, ms;
+    while ((ms = seps.exec(antes))) { if (ms.index + ms[0].length < antes.length) ult = ms.index + ms[0].length; if (ms[0] === '') seps.lastIndex++; }
+    var cand = antes.slice(ult).replace(/[,;:\-–—\s]+$/, '').replace(/^(sra?\.?|sr\.?|pcte|paciente)\s+/i, '').trim();
+    if (cand && !/\d/.test(cand) && cand.split(/\s+/).filter(function (w) { return /\p{L}{2}/u.test(w); }).length >= 2) {
+      o.nome = cand; prefixo = antes.slice(0, ult).replace(/^[\s\-–—]+|[\s\-–—,;:\/]+$/g, '').trim();
+      if (prefixo) o.obs = [o.obs, prefixo].filter(Boolean).join(' · ');
+    }
+  }
   o.nome = o.nome.replace(/^(sra?\.?|sr\.?|pcte|paciente)\s+/i, '');
   var corte = o.nome.search(/\s(fx|fratura|osteo\w*|artro\w*|[uú]mero|f[eê]mur|tíbia|tibia|r[aá]dio|coluna|joelho|quadril|ombro|tornozelo|m[aã]o|p[eé]\b|limpeza|retirada|rafi|ptq|ptj|atq|atj|desbrid\w*|amput\w*|biópsia|biopsia|exérese|exerese|reconstru\w*|lca|menisc\w*|epifisi\w*)\b/i);
   if (corte > 0) o.nome = o.nome.slice(0, corte).trim();
   o.texto = tudo;
   var resto = t;
-  [o.nome, mI && mI[0], mP && mP[0], o.Pchute, mA && mA[0]].forEach(function (x) { if (x) resto = resto.replace(x, ' | '); });
+  [prefixo, o.nome, mI && mI[0], mP && mP[0], o.Pchute, mA && mA[0]].forEach(function (x) { if (x) resto = resto.replace(x, ' | '); });
   o.proc = resto.replace(/\b(sra?|sr\.?|paciente|pcte|pac)\b\.?/gi, ' ').replace(/\b(P|PR|PRONT\w*|RG|REG\w*|HC)\s*[:.\-º°]?\s*(?=\||$)/gi, ' ')
     .split(/\s*(?:[,;|\/]|\s[-–—]\s|^[-–—]|[-–—]$)\s*/).map(function (x) { return x.replace(/^[-–—:.\s]+|[-–—:\s]+$/g, '').trim(); }).filter(function (x) { return x; }).join(', ');
   var anexos = e.attachments || [];
@@ -1998,7 +2078,7 @@ function parseEvento(e) {
   if (!o.nome) o.falta.push('nome'); if (!o.idade) o.falta.push('idade'); if (!o.P) o.falta.push(o.Pchute ? '“P:” antes do número' : 'P:'); if (!o.proc) o.falta.push('procedimento'); if (!o.ass) o.falta.push('Ass Dr.');
   return o;
 }
-var AG_VER = 4;
+var AG_VER = 5;
 function todosEventos() { if (S.ag && S.ag.v !== AG_VER) { S.ag = null; MATCH_CACHE = {}; } return ((S.ag || {}).ev || []); }
 var RE_NAO_PAC = /^\s*(sala\s*\d*|sala\b|centro cir[uú]rgico\b|cc\s*\d|feriado|ponto facultativo|f[eé]rias|folga|licen[cç]a|congresso|simp[oó]sio|jornada|curso|reuni[aã]o|aula|plant[aã]o|escala|evento|anivers[aá]rio|confraterniza|bloqueio|bloquead|sem cirurgia|n[aã]o agendar|indispon|proclama[cç][aã]o|independ[eê]ncia|tiradentes|finados|natal|v[eé]spera|ano novo|reveillon|carnaval|cinzas|p[aá]scoa|sexta[- ]feira santa|corpus|consci[eê]ncia negra|nossa senhora|aparecida|dia do trabalh|dia d[ao]s?\s)/i;
 var RE_NAO_PAC2 = /\bf[eé]rias\b|\bferiado\b|\bfolga\b|\bcongresso\b|\bproclama[cç][aã]o da rep[uú]blica\b|\bplant[aã]o\b/i;
@@ -2030,36 +2110,26 @@ function matchEvento0(ev) {
   var L = (S.agLink || {})[ev.id];
   if (L === 'amb' || L === 'pac' || L === 'np') return null;
   if (L) { var pm = S.pacientes.find(function (x) { return x.id === L; }); if (pm) return { p: pm, como: 'manual' }; }
-  var porReg = function (n) { return n && S.pacientes.find(function (x) { return x.registro === n || (x.regs || []).indexOf(n) > -1; }); };
+  var fonteNome = ev.nome && nomeNorm(ev.nome).split(' ').length >= 2 ? ev.nome : (ev.texto || ev.titulo || '').replace(/\bAss(?:ist(?:ente)?)?\.?\b.*$/i, '');
+  // registro igual, mas nome claramente de outra pessoa (1º nome diferente): NÃO liga — registro digitado errado é mais provável que troca de nome
+  var nomeBate = function (x) { return SOTPESSOA.mesmoNome(fonteNome, x.nome) !== 'diferente'; };
+  var porReg = function (n) { return n && S.pacientes.find(function (x) { return (x.registro === n || (x.regs || []).indexOf(n) > -1) && nomeBate(x); }); };
   var p = porReg(ev.P); if (p) return { p: p, como: 'P' };
   var nums = ev.nums || [];
   for (var i = 0; i < nums.length; i++) { p = porReg(nums[i]); if (p) return { p: p, como: 'número' }; }
-  var tk = nomeNorm(ev.texto || ev.titulo).split(' ').filter(function (w) { return w.length >= 3; });
+  var tk = nomeNorm(fonteNome).split(' ').filter(function (w) { return w.length >= 3; });
   // registro do evento (P: …, ou número solto de 5 a 8 dígitos): se o internado tem outro registro, não é a mesma pessoa
-  var regEv = [ev.P, ev.Pchute].concat(nums).map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(function (n) { return n.length >= 5 && n.length <= 8; });
-  var melhor = null, segundo = 0;
+  var regEv = [ev.P].map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(function (n) { return n.length >= 4 && n.length <= 9; })
+    .concat([ev.Pchute].concat(nums).map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(function (n) { return n.length >= 5 && n.length <= 8; }));
+  // pelo nome: regra única (pessoa.js). Só aceita "mesmo" (nome completo, 1º nome igual, idade e registro compatíveis)
+  // ou "conflito" (nome e idade iguais, registro diferente — aceita e avisa). Mais de um candidato = não liga.
+  var quem = { nome: fonteNome, regs: regEv, idade: ev.idade || '' }, cands = [];
   S.pacientes.forEach(function (x) {
-    var nm = nomeNorm(x.nome).split(' ').filter(function (w) { return w.length >= 3; }); if (!nm.length) return;
-    var regX = [x.registro].concat(x.regs || []).map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(Boolean);
-    var conflito = regEv.length && regX.length && !regEv.some(function (n) { return regX.indexOf(n) > -1; });
-    var acha = function (w) { return tk.some(function (t) { return t === w || lev1(t, w); }); };
-    // primeiro nome: BENEDITA × BENEDITO, MARIA × MARIO são pessoas diferentes (ARTHUR × ARTUR é grafia)
-    var genero = function (a, b) { return a.length === b.length && a.slice(0, -1) === b.slice(0, -1) && /[AO]/.test(a.slice(-1)) && /[AO]/.test(b.slice(-1)); };
-    var primeiro = tk.some(function (t) { return t === nm[0] || (lev1(t, nm[0]) && !genero(t, nm[0])); });
-    var sc = nm.slice(1).filter(acha).length + (primeiro ? 1 : 0);
-    if (conflito) {   // registro diferente: só aceita se nome e idade baterem (e avisa)
-      var idE = String(ev.idade || '').replace(/\D/g, ''), idX = String(x.idade || '').replace(/\D/g, '');
-      if (!(primeiro && sc >= 2 && idE && idE === idX)) return;
-    }
-    var data = cxIG(x).some(function (c) { return c.data === ev.data; });
-    var pts = sc * 2 + (primeiro ? 1 : 0) + (data ? 2 : 0);
-    var Pdiferente = !!(ev.P || ev.Pchute);   // evento tem prontuário que não é de nenhum internado → só aceita nome bem parecido
-    var aceita = (sc >= 2 && primeiro) || sc >= 3 || (!Pdiferente && sc >= 1 && data && primeiro);
-    if (!aceita) return;
-    if (!melhor || pts > melhor.pts) { segundo = melhor ? melhor.pts : 0; melhor = { p: x, pts: pts, como: conflito ? 'nome e idade — REGISTRO DIFERENTE, conferir' : sc >= 2 ? 'nome' : 'provável', sc: sc }; }
-    else if (pts > segundo) segundo = pts;
+    var r = SOTPESSOA.comparar(quem, { nome: x.nome, regs: [x.registro].concat(x.regs || []), idade: x.idade });
+    if (r === 'mesmo' || r === 'conflito') cands.push({ p: x, r: r, data: cxIG(x).some(function (c) { return c.data === ev.data; }) });
   });
-  if (melhor && melhor.pts > segundo) return { p: melhor.p, como: melhor.como };
+  if (cands.length > 1) { var cd = cands.filter(function (c) { return c.data; }); if (cd.length === 1) cands = cd; }
+  if (cands.length === 1) return { p: cands[0].p, como: cands[0].r === 'conflito' ? 'nome e idade — REGISTRO DIFERENTE, conferir' : 'nome' };
   return null;
 }
 function pacientePorEvento(ev) { var m = matchEvento(ev); return m ? m.p : null; }
@@ -2363,8 +2433,8 @@ function trechoIG(p, re) {
   var out = []; T.forEach(function (l) { var m = String(l).match(re); if (m && out.indexOf(m[0].trim()) < 0) out.push(m[0].trim()); });
   return out.join('; ');
 }
-function celulaMapa(ev) {
-  var p = pacientePorEvento(ev), id = 'ev_' + ev.id;
+function celulaMapa(ev, pFixo) {
+  var p = pFixo || pacientePorEvento(ev), id = ev.idCel || ('ev_' + ev.id);
   if (!p) return { id: id, hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '').replace(/,?\s*(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(-feira)?,\s*\d{1,2}\s+de\s+[a-zç]+\.?(\s+de\s+\d{4})?\s*[·•-]?\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/gi, '').trim(), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
   var limpa = function (x) { return String(x || '').replace(/^\s*(muc\s*e\s*alergias?|alergias?|muc|cmb|ap|comorbidades)\s*[:\-]?\s*/i, '').replace(/[\s,;.]+$/, '').trim(); };
   var ap = p.apL || {}, evs = (typeof evoSecoes === 'function' ? evoSecoes(p) : null) || {}, lb = labsMapa(p), dx = (p.dxL || []).join(' / ') || p.dx || '';
@@ -2402,7 +2472,16 @@ function mapaFrame() { var fr = document.querySelector('#hubFrames iframe[data-i
 function mapaPost(msg) { var fr = mapaFrame(); if (!fr) return false; msg.src = 'sot'; try { fr.contentWindow.postMessage(msg, '*'); return true; } catch (e) { ERR.log('mapa-post', e); return false; } }
 function enviarMapa(iso, aviso) {
   if (!mapaFrame()) return;
-  var cels = eventosAgenda().filter(function (ev) { return ev.data === iso; }).map(celulaMapa);
+  var evs = eventosAgenda().filter(function (ev) { return ev.data === iso; });
+  var cels = evs.map(function (ev) { return celulaMapa(ev); });
+  // internado com cirurgia marcada no internograma para este dia, mas sem evento na Agenda: entra também (com aviso)
+  var naAgenda = {}; evs.forEach(function (ev) { var p = pacientePorEvento(ev); if (p) naAgenda[p.id] = 1; });
+  (S.pacientes || []).forEach(function (p) {
+    if (naAgenda[p.id] || p.alta) return;
+    var c = (typeof cxIG === 'function' ? cxIG(p) : []).filter(function (x) { return x.data === iso; })[0]; if (!c) return;
+    var o = celulaMapa({ id: 'ig' + p.id, idCel: 'ig_' + p.id, data: iso, hora: '', proc: c.proc, titulo: p.nome }, p);
+    o.semAgenda = '1'; o.hora = '__:__'; cels.push(o);
+  });
   // a Agenda deste dia foi lida inteira? Só então o mapa pode tirar quem saiu
   var completo = !!(S.ag && S.ag.ev && !S.agErro && iso >= (S.ag.de || '') && iso <= (S.ag.ate || '') && Date.now() - (S.ag.at || 0) < 6 * 3600000);
   var mandar = function (salvo) { setTimeout(function () { vizinhosMapa(iso, aviso === true); }, 1500); mapaPost({ type: 'mapa-dados', dia: iso, completo: completo, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
@@ -2559,10 +2638,10 @@ function juntarCel(a, b) {
 }
 /* célula do mapa deste evento: mesmo horário da Agenda E mesmo paciente (o horário pode ter passado para outro paciente) */
 function celDoEvento(L, ev) {
-  var id = 'ev_' + ev.id, reg = String(ev.P || ev.Pchute || ''), nome = norm0((ev.nome || '').split(' ').slice(0, 2).join(' '));
-  var C = L.filter(function (x) { return String(x.id).split('~')[0] === id; });
-  var ok = C.filter(function (x) { var u = norm0(x.cab || ''); return reg ? u.indexOf(reg) >= 0 || (!/\d{5,}/.test(u) && nome && u.indexOf(nome) >= 0) : (!nome || u.indexOf(nome) >= 0); });
-  return (ok.length ? ok : (C.length === 1 && !reg && !nome ? C : []))[0] || null;
+  var id = 'ev_' + ev.id, quem = { nome: ev.nome || '', reg: ev.P || ev.Pchute || '', idade: ev.idade || '' };
+  var C = L.filter(function (x) { return String(x.id).split('~')[0] === id || x.ev === id; });
+  var ok = C.filter(function (x) { var r = SOTPESSOA.comparar(quem, SOTPESSOA.deCab(x.cab || '')); return r === 'mesmo' || (r === 'incerto' && C.length === 1); });
+  return ok[0] || null;
 }
 function mapaCel(ev) {
   var L = (mapaLocal()[ev.data] || {}).cels || [], D = (MAPA_DRV[ev.data] || {}).cels || [];
