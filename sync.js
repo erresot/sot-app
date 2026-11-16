@@ -467,11 +467,23 @@ var SYNC = (function () {
     });
   }
   function mapaBaixar(iso) { return mapaArquivo(iso).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
+  // mapas dos dias vizinhos (±n dias) que existem no Drive: [{iso, id, mod}] — só procura, não cria pastas
+  function mapaVizinhos(iso, n) {
+    var t0 = new Date(iso + 'T12:00:00').getTime(), meses = {}, ini = new Date(t0 - n * 864e5).toISOString().slice(0, 10), fim = new Date(t0 + n * 864e5).toISOString().slice(0, 10);
+    [ini, iso, fim].forEach(function (d) { meses[d.slice(0, 7)] = 1; });
+    return Promise.all(Object.keys(meses).map(function (mes) {
+      return req(API + '/files?q=' + q("name contains 'mapa-" + mes + "-' and mimeType='application/json' and trashed=false") + '&fields=files(id,name,modifiedTime)&pageSize=100').then(function (r) { return r.json(); }).then(function (j) { return j.files || []; });
+    })).then(function (ls) {
+      var out = [], vistos = {};
+      [].concat.apply([], ls).forEach(function (f) { var m = /^mapa-(\d{4}-\d{2}-\d{2})\.json$/.exec(f.name || ''); if (!m || m[1] === iso || m[1] < ini || m[1] > fim || vistos[m[1]]) return; vistos[m[1]] = 1; out.push({ iso: m[1], id: f.id, mod: f.modifiedTime }); });
+      return out;
+    });
+  }
   function mapaSalvar(iso, obj) {
     var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
     return mapaArquivo(iso).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('mapa-' + iso + '.json', o.pai, b, 'application/json'); });
   }
-  return { mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 

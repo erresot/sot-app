@@ -302,6 +302,8 @@ table.igrow td,table.igrow th{min-width:110px}
 .top.compacto h1{font-size:16px}
 .top.compacto .hrow .hb{width:38px;height:38px}
 .top input[type=date].naohoje{background:#c92a2a;color:#fff;font-weight:700;box-shadow:0 0 0 2px #fff}
+ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--acc)}
+.dxi{margin:0 0 5px}.dxi .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--acc)}
 </style>
 </head>
 <body>
@@ -356,7 +358,7 @@ table.igrow td,table.igrow th{min-width:110px}
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v32</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v34</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -666,6 +668,7 @@ function extrairDoc(cels, section) {
     if (modo === 'dx' && RX_AP_INI.test(s)) modo = 'ap';
     if (modo === 'dx') {
       if (/^\(?\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*\)?$/.test(s) && o.dxL.length) { o.dxL[o.dxL.length - 1] += ' ' + s; return; }   // data sozinha na linha: junta à anterior
+      if (o.dxL.length && (/[+\/,]\s*$/.test(o.dxL[o.dxL.length - 1]) || /^\s*\+/.test(s))) { o.dxL[o.dxL.length - 1] = o.dxL[o.dxL.length - 1].replace(/\s+$/, '') + ' ' + s.replace(/^\s+/, ''); return; }   // linha que termina/começa com "+" continua o mesmo item
       o.dxL.push(s); return;
     }
     var x = s.replace(/^[#\-\s]+/, '');
@@ -929,7 +932,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '32';
+var VERSAO = '34';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -1426,7 +1429,20 @@ function campo(c, v) {
 
 function iconeSync() { var s = SYNC.status(), n = SYNC.contarPend().total; return ({ ok: '☁︎', sync: '⟳', off: '📴', login: '🔑', erro: '⚠', local: '📱' }[s.estado] || '⟳') + (n ? '<small>' + n + '</small>' : ''); }
 setInterval(function () { document.querySelectorAll('.syncmini').forEach(function (b) { b.innerHTML = iconeSync(); }); }, 2000);
-function linhasHtml(L, cls) { return L && L.length ? '<ul class="lin' + (cls ? ' ' + cls : '') + '">' + L.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; }
+/* "A + B + C" → uma linha por procedimento (o "+" fica no começo da linha); não quebra dentro de parênteses */
+function partesMais(x) {
+  var out = [], cur = '', dep = 0, t = String(x || '');
+  for (var i = 0; i < t.length; i++) {
+    var c = t[i];
+    if (c === '(') dep++; else if (c === ')') dep = Math.max(0, dep - 1);
+    if (c === '+' && dep === 0 && /\s/.test(t[i - 1] || ' ') ) { if (cur.trim()) out.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out.length ? out : [t];
+}
+function maisHtml(x) { return partesMais(x).map(function (s, i) { return (i ? '<span class="mais">+</span> ' : '') + esc(s); }).join('<br>'); }
+function linhasHtml(L, cls) { return L && L.length ? '<ul class="lin' + (cls ? ' ' + cls : '') + '">' + L.map(function (x) { return '<li>' + (cls === 'dx' ? maisHtml(x) : esc(x)) + '</li>'; }).join('') + '</ul>' : ''; }
 function fichaIG(p) {
   var al = alergiaInfo(p), h = '<div class="card igc">';
   h += '<div class="igr"><b>Local</b><span>' + esc([p.local, p.leito ? 'leito ' + p.leito : (p.leitoDuvida ? 'leito ?' : ''), p.flag].filter(Boolean).join(' · ') || '—') + '</span></div>';
@@ -1434,7 +1450,7 @@ function fichaIG(p) {
   h += '<div class="igr"><b>Internação</b><span>' + esc(p.dihData || '—') + (p.dih != null ? ' · DIH ' + p.dih : '') + (p.dihStated != null && p.dihStated !== p.dih ? ' <i class="warnt">(internograma: ' + p.dihStated + ')</i>' : '') + '</span></div>';
   h += '<div class="igr"><b>Paciente</b><span>' + esc([p.idade && p.idade + (/meses/.test(p.idade) ? '' : ' anos'), p.origem, p.registro && 'Reg ' + p.registro].filter(Boolean).join(' · ')) + '</span></div>';
   if (al.txt) h += '<div class="igr"><b>Alergias</b><span class="' + (al.tem ? 'alergia' : '') + '">' + esc(al.txt) + '</span></div>';
-  h += '<div class="igs">Diagnósticos / procedimentos</div>' + (linhasHtml(p.dxL || (p.dx ? [p.dx] : [])) || '<div class="hint">—</div>');
+  h += '<div class="igs">Diagnósticos / procedimentos</div>' + (linhasHtml(p.dxL || (p.dx ? [p.dx] : []), 'dx') || '<div class="hint">—</div>');
   if (p.apL) {
     if (p.apL.cmb.length) h += '<div class="igr"><b>AP / CMB</b><span>' + esc(siglas(p.apL.cmb.join(', '))) + '</span></div>';
     if (p.apL.muc.length) h += '<div class="igr"><b>MUC</b><span>' + esc(p.apL.muc.join(', ')) + '</span></div>';
@@ -2002,18 +2018,22 @@ function agendaDaCx0(p) {   // para o 🔪 "vai operar" usar também o Agenda
   });
   return best;
 }
-var agCarregando = false;
+var agCarregando = false, agPromessa = null;
 function carregarAgenda(forcar) {
   var cs = agCals(), chave = cs.join('|');
-  if (!cs.length || !SYNC.temAgenda() || agCarregando || !navigator.onLine) return Promise.resolve();
-  if (!forcar && S.ag && S.ag.cal === chave && Date.now() - S.ag.at < 4 * 60000) return Promise.resolve();
+  if (agCarregando && agPromessa) return agPromessa;
+  if (!cs.length || !SYNC.temAgenda() || !navigator.onLine) return Promise.resolve(false);
+  if (!forcar && S.ag && S.ag.cal === chave && Date.now() - S.ag.at < 4 * 60000) return Promise.resolve(true);
   agCarregando = true; MATCH_CACHE = {};
   var h = new Date(hojeISO() + 'T00:00:00'), min = new Date(h), max = new Date(h); min.setDate(min.getDate() - 14); max.setDate(max.getDate() + 45);
-  return Promise.all(cs.map(function (c) { return SYNC.calEventos(c, min, max).catch(function () { return []; }); })).then(function (LL) {
+  return (agPromessa = Promise.all(cs.map(function (c) { return SYNC.calEventos(c, min, max).catch(function (e) { ERR.log('agenda-eventos', e); return null; }); })).then(function (LL) {
+    // se alguma agenda falhou, mantém a lista anterior (não some ninguém por erro de internet)
+    if (LL.some(function (x) { return x === null; })) { agCarregando = false; S.agErro = 'falha ao ler a agenda'; render(); return false; }
+    S.agErro = null;
     var vistos = {}, L = [].concat.apply([], LL).filter(function (e) { var k = e.id || ((e.summary || '') + JSON.stringify(e.start)); if (vistos[k]) return false; vistos[k] = 1; return true; });
     S.ag = { v: AG_VER, cal: chave, at: Date.now(), de: isoLocal(min), ate: isoLocal(max), ev: L.filter(function (e) { return e.status !== 'cancelled'; }).map(parseEvento).sort(function (a, b) { return (a.data + (a.hora || '00:00')) < (b.data + (b.hora || '00:00')) ? -1 : 1; }) };
-    saveLocal(); agCarregando = false; render(); if (typeof atual !== 'undefined' && atual) redesenhar();
-  }).catch(function (e) { agCarregando = false; S.agErro = (e && (e.msg || e.status)) || 'erro'; render(); });
+    saveLocal(); agCarregando = false; render(); if (typeof atual !== 'undefined' && atual) redesenhar(); return true;
+  }).catch(function (e) { agCarregando = false; S.agErro = (e && (e.msg || e.status)) || 'erro'; render(); return false; }));
 }
 window.aoGanharAgenda = function () { if (S.sec === 'enf' && S.tab === 'agenda' || S.hubAgenda) render(); carregarAgenda(true); };
 setInterval(function () { if (document.visibilityState === 'visible') carregarAgenda(false); }, 5 * 60000);
@@ -2100,7 +2120,7 @@ function painelIG(p, ev) {
     var lin = function (rot, val) { return val ? '<div class="igl"><span>' + rot + '</span><div>' + val + '</div></div>' : ''; };
     var lista = function (L) { return (L || []).filter(Boolean).map(esc).join('<br>'); };
     var cx = cxIG(p), po = ((S.v || {})[p.id] || {}).preop || {}, ac = typeof anticoagEmUso === 'function' ? anticoagEmUso(p) : [], hb = typeof ultimoLab === 'function' ? ultimoLab(p, 'Hb') : null;
-    var just = (p.dxL || []).map(function (d) { var q = haQuanto(d); return esc(d) + (q ? ' <b class="igq">(' + q + ')</b>' : ''); }).join('<br>');
+    var just = (p.dxL || []).map(function (d) { var q = haQuanto(d); return '<div class="dxi">' + maisHtml(d) + (q ? ' <b class="igq">(' + q + ')</b>' : '') + '</div>'; }).join('');
     var h = '<details class="igpanel"><summary>📋 Dados do internograma — ' + esc(p.nome.split(' ')[0]) + (p.leito ? ' · leito ' + esc(p.leito) : '') + (p.dih != null && p.dih !== '' ? ' · DIH ' + esc(p.dih) : '') + '</summary>';
     h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc) + '<br><b>Internograma:</b> ' + (cx.length ? cx.map(function (c) { return brCurto(c.data) + ' — ' + esc(c.proc); }).join('<br>') : '<i>sem cirurgia com data</i>'));
     h += lin('DIAGNÓSTICO (HD)', just || esc(p.dx || ''));
@@ -2278,7 +2298,9 @@ function mapaPost(msg) { var fr = mapaFrame(); if (!fr) return false; msg.src = 
 function enviarMapa(iso, aviso) {
   if (!mapaFrame()) return;
   var cels = eventosAgenda().filter(function (ev) { return ev.data === iso; }).map(celulaMapa);
-  var mandar = function (salvo) { mapaPost({ type: 'mapa-dados', dia: iso, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
+  // a Agenda deste dia foi lida inteira? Só então o mapa pode tirar quem saiu
+  var completo = !!(S.ag && S.ag.ev && !S.agErro && iso >= (S.ag.de || '') && iso <= (S.ag.ate || '') && Date.now() - (S.ag.at || 0) < 6 * 3600000);
+  var mandar = function (salvo) { setTimeout(function () { vizinhosMapa(iso, aviso === true); }, 1500); mapaPost({ type: 'mapa-dados', dia: iso, completo: completo, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
   if (SYNC.temToken() && navigator.onLine) SYNC.mapaBaixar(iso).then(mandar, function (e) { ERR.log('mapa-baixar', e); mandar(null); }); else mandar(null);
 }
 /* sincronização do mapa entre aparelhos: baixa o que está no Drive → o mapa mescla campo a campo → só então envia */
@@ -2301,6 +2323,19 @@ setInterval(function () {
   var fr = mapaFrame(); if (!fr || !fr.classList.contains('on') || !$('#hubView').classList.contains('on') || document.hidden) return;
   if (Date.now() - MAPA_SINC.ult > 19000) sincMapa(window.__mapaIso);
 }, 5000);
+/* mapas dos 14 dias antes e depois: trazem os dados de cirurgias canceladas/remarcadas para serem reaproveitados */
+var MAPA_VIZ = { mod: {}, em: {} };
+function vizinhosMapa(iso, forcar) {
+  if (!SYNC.temToken() || !navigator.onLine || !SYNC.mapaVizinhos) return;
+  if (!forcar && Date.now() - (MAPA_VIZ.em[iso] || 0) < 20 * 60000) return;
+  MAPA_VIZ.em[iso] = Date.now();
+  SYNC.mapaVizinhos(iso, 14).then(function (L) {
+    var novos = L.filter(function (f) { return MAPA_VIZ.mod[f.id] !== f.mod; });
+    return novos.reduce(function (pr, f) {
+      return pr.then(function () { return SYNC.baixarJSON(f.id).then(function (rem) { MAPA_VIZ.mod[f.id] = f.mod; if (rem && rem.cels) mapaPost({ type: 'mapa-remoto', dia: f.iso, remoto: rem, antigo: true }); }); });
+    }, Promise.resolve());
+  }).catch(function (e) { ERR.log('mapa-vizinhos', e); });
+}
 function abrirMapa(iso, foco) {
   MAPA_FOCO = foco || null;
   var box = $('#hubFrames'), fr = box.querySelector('iframe[data-id="mapa"]');
@@ -2314,7 +2349,14 @@ function abrirMapa(iso, foco) {
 window.addEventListener('message', function (e) {
   var m = e.data || {}; if (m.src !== 'mapa') return;
   if (m.type === 'mapa-pronto') enviarMapa(window.__mapaIso || m.dia, false);
-  else if (m.type === 'mapa-pedir') { window.__mapaIso = m.dia || window.__mapaIso; enviarMapa(m.dia, true); }
+  else if (m.type === 'mapa-pedir') {
+    // "Atualizar da Agenda/internograma": busca os dois de novo (não usa a cópia guardada) e só então manda para o mapa
+    window.__mapaIso = m.dia || window.__mapaIso;
+    mapaPost({ type: 'mapa-estado', dia: m.dia, estado: 'buscando' });
+    var ig = (S.igCache && Date.now() - S.igCache.em < 60000) ? Promise.resolve() : carregarDoc(true);
+    Promise.all([carregarAgenda(true).catch(function (e) { ERR.log('mapa-agenda', e); }), Promise.resolve(ig).catch(function (e) { ERR.log('mapa-ig', e); })])
+      .then(function () { enviarMapa(m.dia, true); });
+  }
   else if (m.type === 'mapa-salvar') agendarSincMapa(m.dia);
   else if (m.type === 'mapa-enviar') {          // resposta do mapa depois de mesclar com o que veio do Drive
     clearTimeout(MAPA_SINC.guarda);
@@ -2401,9 +2443,16 @@ function juntarCel(a, b) {
   });
   return r;
 }
+/* célula do mapa deste evento: mesmo horário da Agenda E mesmo paciente (o horário pode ter passado para outro paciente) */
+function celDoEvento(L, ev) {
+  var id = 'ev_' + ev.id, reg = String(ev.P || ev.Pchute || ''), nome = norm0((ev.nome || '').split(' ').slice(0, 2).join(' '));
+  var C = L.filter(function (x) { return String(x.id).split('~')[0] === id; });
+  var ok = C.filter(function (x) { var u = norm0(x.cab || ''); return reg ? u.indexOf(reg) >= 0 || (!/\d{5,}/.test(u) && nome && u.indexOf(nome) >= 0) : (!nome || u.indexOf(nome) >= 0); });
+  return (ok.length ? ok : (C.length === 1 && !reg && !nome ? C : []))[0] || null;
+}
 function mapaCel(ev) {
-  var id = 'ev_' + ev.id, L = (mapaLocal()[ev.data] || {}).cels || [], D = (MAPA_DRV[ev.data] || {}).cels || [];
-  return juntarCel(L.find(function (x) { return x.id === id; }), D.find(function (x) { return x.id === id; }));
+  var L = (mapaLocal()[ev.data] || {}).cels || [], D = (MAPA_DRV[ev.data] || {}).cels || [];
+  return juntarCel(celDoEvento(L, ev), celDoEvento(D, ev));
 }
 function temDadosMapa(x) { return !!(x && (x.dx || x.cmb || x.muc || x.alergia || x.mec || x.cirPrev || (x.labs && Object.keys(x.labs).some(function (k) { return x.labs[k]; })))); }
 /* busca o mapa do dia no Drive (outro aparelho pode ter preenchido); de novo a cada 2 min no máximo */
@@ -2508,7 +2557,7 @@ function editarNoNP(evid) {
   if (fr && fr.contentWindow) setTimeout(function () { try { fr.contentWindow.postMessage({ type: 'np-prefill', state: st }, '*'); } catch (e) {} }, 400);
 }
 function fotosMapaBotoes(ev) {
-  var L = (fotosMapaDia(ev.data)['ev_' + ev.id] || []);
+  var cel = mapaCel(ev), L = (fotosMapaDia(ev.data)[cel ? cel.id : 'ev_' + ev.id] || []);
   return L.map(function (f, i) { return '<button class="btn ghost sm" data-foto="' + esc(f.lid) + '">📎 Foto ' + (i + 1) + (f.hora ? ' · ' + f.hora : '') + '</button>'; }).join(' ');
 }
 function painelAmb(ev) {
@@ -2524,7 +2573,7 @@ function painelAmb(ev) {
     var tem = !!(x.dx || x.cmb || x.muc || lab);
     var h = '<details class="igpanel amb" data-igamb="' + esc(ev.id) + '"' + (AMB_ABERTO[ev.id] ? ' open' : '') + '><summary>📋 Dados do mapa · linha para o internograma — ' + esc((ev.nome || ev.titulo || '').split(' ')[0]) + (tem ? '' : ' <span class="hint">(mapa ainda sem dados)</span>') + '</summary>';
     h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc || x.cir || ''));
-    h += lin('DIAGNÓSTICO (HD)', linhas(x.dx));
+    h += lin('DIAGNÓSTICO (HD)', String(x.dx || '').split(/\s+\/\s+|\n+/).filter(Boolean).map(function (d) { return '<div class="dxi">' + maisHtml(d.replace(/^\s*•\s*/, '')) + '</div>'; }).join(''));
     h += lin('MECANISMO', esc(x.mec || ''));
     h += lin('CIR. PRÉVIAS', linhas(x.cirPrev));
     h += lin('AP / CMB', esc(x.cmb || ''));
@@ -2829,16 +2878,16 @@ function abrirFoto(lid) {
   FOTO.url(f).then(function (u) { if (!u) { toast('Foto ainda não disponível neste aparelho'); return; } $('#viewerImg').src = u; $('#viewerCap').textContent = (FT_NOME[f.tipo] || 'Foto') + ' · ' + br(f.data) + ' ' + (f.hora ? f.hora.slice(0, 2) + ':' + f.hora.slice(2) : '') + ' · ' + (f.legenda || '') + (f.by ? ' · ' + f.by : '') + ' — toque para fechar'; $('#viewer').classList.add('on'); });
 }
 // ===================== internograma direto do Google Doc =====================
-function carregarDoc() {
-  if (!navigator.onLine) { toast('Sem internet — usando o último internograma salvo no aparelho'); return; }
-  if (!SYNC.temToken()) { toast('Conecte ao Google primeiro'); S.tab = 'config'; render(); SYNC.conectar(); return; }
-  toast('Lendo o internograma do Google Doc…');
-  SYNC.exportarDoc().then(function (html) {
+function carregarDoc(quieto) {
+  if (!navigator.onLine) { if (!quieto) toast('Sem internet — usando o último internograma salvo no aparelho'); return Promise.resolve(false); }
+  if (!SYNC.temToken()) { if (quieto) return Promise.resolve(false); toast('Conecte ao Google primeiro'); S.tab = 'config'; render(); SYNC.conectar(); return Promise.resolve(false); }
+  if (!quieto) toast('Lendo o internograma do Google Doc…');
+  return SYNC.exportarDoc().then(function (html) {
     var r = parseTabelaHTML(html);
     if (!r.pacientes.length) { toast('Não reconheci pacientes no documento'); return; }
     aplicarImport(r, 'Google Doc · ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
-    S.igCache = { em: Date.now() }; S.parserV = 4; saveLocal();
-  }).catch(function (e) { toast('Não consegui ler o Doc: ' + ((e && (e.msg || e.message)) || e).toString().slice(0, 80)); });
+    S.igCache = { em: Date.now() }; S.parserV = 4; saveLocal(); return true;
+  }).catch(function (e) { toast('Não consegui ler o Doc: ' + ((e && (e.msg || e.message)) || e).toString().slice(0, 80)); return false; });
 }
 // ===================== backup em arquivo =====================
 function baixarBackup() {

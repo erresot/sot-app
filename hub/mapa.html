@@ -275,6 +275,15 @@ details.legd[open]>summary{width:100%}
   .acoes button{min-height:38px}
   .xo{font-size:15px;padding:2px 6px;opacity:.55}
 }
+.forabox{margin:14px auto;max-width:1100px;border:2px dashed #b08900;background:#fff8e1;border-radius:10px;padding:10px 12px;font:13px/1.4 var(--sans,system-ui)}
+.forabox p{margin:3px 0 8px;color:#6b5a1e}
+.reuso{background:#e8f4ff;border-bottom:1px solid #9cc3e6;padding:4px 8px;font:12px/1.4 var(--sans,system-ui);color:#123}
+.reuso .chip{margin-left:6px}
+@media print{.reuso{display:none!important}}
+.foraitem{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid #ecdca6}
+.foraitem span{flex:1 1 260px}.foraitem i{color:#8a6d00}
+.foraitem button{font:600 13px var(--sans,system-ui);padding:7px 12px;border-radius:8px;border:1px solid #b08900;background:#fff;cursor:pointer;min-height:38px}
+@media print{.forabox{display:none!important}}
 </style>
 <link rel="stylesheet" href="sot-tema.css">
 </head>
@@ -926,12 +935,13 @@ function carregar(){
   if(!dados){ dados=window.__SOT?{}:exemplo(); for(var k in dados) dados[k].cels.forEach(function(x){ CAMPOS_TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],k); }); }); }
   podarAntigos();
   for(var d in dados){ normDia(dados[d]); fotografar(d); }
+  expirarFora();
 }
 // ---------- carimbo de hora por campo e mescla entre aparelhos ----------
 // Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
 // duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
 var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
-var META_M=["ocultos","quebra","sozinho","ign","duv","alt"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao"];
 var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
 function agoraM(){ return Date.now()+(SKEW||0); }
 function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
@@ -1003,6 +1013,104 @@ function mesclarCel(a,b){
   return r;
 }
 // junta o mapa do dia deste aparelho com o que veio do Drive. mud = chegou novidade aqui; mais = aqui tem algo que o Drive não tem
+
+/* ---------- atualização pela Agenda: quem saiu, quem entrou, troca de paciente no mesmo horário ---------- */
+function semAcento(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase(); }
+// identidade do paciente pelo cabeçalho: registro (P: 123456) ou as 2 primeiras palavras do nome
+function identCab(cab){
+  var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(\d{6,7})\b/);
+  if(m) return "P"+m[1];
+  var nome=u.split(/[,;(]/)[0].replace(/[^A-Z ]/g," ").trim().split(/\s+/).filter(function(w){return w.length>2&&!/^(DOS|DAS|DES)$/.test(w);});
+  return nome.length?"N"+nome.slice(0,2).join(" "):"";
+}
+function mesmoPaciente(a,b){
+  if(!a||!b) return true;
+  if(a.charAt(0)==="P"&&b.charAt(0)==="P") return a===b;
+  if(a.charAt(0)==="N"&&b.charAt(0)==="N") return a===b;
+  return true;   // um tem registro e o outro só nome: não dá para afirmar que trocou
+}
+function baseId(id){ return String(id).split("~")[0]; }
+function temDados(x){
+  if(Object.keys(x.locked||{}).length) return true;
+  if(LABS.some(function(k){return x.labs&&x.labs[k];})) return true;
+  return ["preData","extras","cmb","muc","peso","cardio","apa","rch","uti","pend","dx","mec","cirPrev","fxPrev","laudos","obs"].some(function(f){ return x[f]&&x[f]!=="NEGA"; });
+}
+// guarda a célula de quem saiu da Agenda (fora do mapa e da impressão; pode voltar)
+function guardarFora(d,x,motivo){
+  d.fora=d.fora||{}; d.sumidos=d.sumidos||{}; var ag=agoraM();
+  d.fora[x.id]={cel:JSON.parse(JSON.stringify(x)),em:ag,motivo:motivo};
+  d.sumidos[x.id]=ag;
+}
+function restaurarFora(d,id,fixo){
+  var g=(d.fora||{})[id]; if(!g) return null;
+  var x=normCel(JSON.parse(JSON.stringify(g.cel))); x.tc=agoraM(); if(fixo) x.fixo=1;
+  delete d.fora[id]; d.foraDel=d.foraDel||{}; d.foraDel[id]=agoraM();
+  if(d.cels.every(function(z){return z.id!==x.id;})) d.cels.push(x);
+  return x;
+}
+/* ---------- cirurgia cancelada / suspensa / remarcada: os dados ficam guardados 14 dias e são reaproveitados ---------- */
+var GUARDA_DIAS=14, CAMPOS_R=["preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","dx","mec","cirPrev","fxPrev","laudos","obs"];
+function regCab(cab){ var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(\d{6,7})\b/); return m?m[1]:""; }
+function nomeCab(cab){ return semAcento(String(cab||"").split(/[,;(]/)[0]).replace(/[^A-Z ]/g," ").trim().split(/\s+/).filter(function(w){return w.length>2&&!/^(DOS|DAS|DES)$/.test(w);}).slice(0,2).join(" "); }
+function mesmaPessoa(a,b){   // a, b = cabeçalhos
+  var ra=regCab(a), rb=regCab(b); if(ra&&rb) return ra===rb;
+  var na=nomeCab(a), nb=nomeCab(b); return !!na&&na.indexOf(" ")>0&&na===nb;
+}
+function vazio(v){ return !v||v==="NEGA"||v==="—"||/^_+$/.test(v); }
+// expira o que está guardado fora do mapa há mais de 14 dias
+function expirarFora(){
+  var lim=agoraM()-GUARDA_DIAS*864e5;
+  Object.keys(dados||{}).forEach(function(k){ var d=dados[k], F=d&&d.fora; if(!F) return;
+    Object.keys(F).forEach(function(id){ if((F[id].em||0)<lim){ delete F[id]; d.foraDel=d.foraDel||{}; d.foraDel[id]=agoraM(); } });
+    if(!Object.keys(F).length) delete d.fora; });
+}
+// procura, nos outros dias (14 dias para trás e para frente), o mesmo paciente com dados preenchidos
+function acharReuso(iso,x){
+  var t0=new Date(iso+"T12:00:00").getTime(), lim=agoraM()-GUARDA_DIAS*864e5, best=null;
+  Object.keys(dados||{}).forEach(function(k){
+    if(k===iso||!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+    if(Math.abs(new Date(k+"T12:00:00").getTime()-t0)>GUARDA_DIAS*864e5) return;
+    var d=dados[k], cands=[];
+    Object.keys(d.fora||{}).forEach(function(id){ var g=d.fora[id]; if((g.em||0)>=lim) cands.push({cel:g.cel,em:g.em,dia:k,fora:id,motivo:g.motivo}); });
+    (d.cels||[]).forEach(function(z){ cands.push({cel:z,em:Math.max(z.tc||0,maxT(z)),dia:k}); });
+    cands.forEach(function(q){ if(q.cel===x||!mesmaPessoa(x.cab,q.cel.cab)||!temDados(q.cel)) return; if(!best||q.em>best.em) best=q; });
+  });
+  return best;
+}
+function maxT(z){ var m=0; Object.keys(z.t||{}).forEach(function(k){ if(z.t[k]>m) m=z.t[k]; }); return m; }
+// copia para x o que estava preenchido (o que veio da Agenda/internograma agora tem prioridade, salvo o que foi editado à mão antes)
+function aplicarReuso(iso,x,q){
+  var g=q.cel, usados=[];
+  CAMPOS_R.forEach(function(f){ var v=g[f]; if(vazio(v)||x.locked[f]) return;
+    if(!vazio(x[f])&&!(g.locked||{})[f]) return;
+    if(x[f]===v) return; x[f]=v; if((g.locked||{})[f]) x.locked[f]=true; usados.push(f); });
+  Object.keys(g.labs||{}).forEach(function(k){ var v=g.labs[k]; if(vazio(v)||x.locked["labs."+k]) return;
+    if(x.labs[k]&&!(g.locked||{})["labs."+k]) return; if(x.labs[k]===v) return;
+    x.labs[k]=v; if((g.locked||{})["labs."+k]) x.locked["labs."+k]=true; usados.push("labs."+k); });
+  if(!usados.length) return 0;
+  x.reuso={dia:q.dia,campos:usados.join(","),motivo:q.fora?(q.motivo||"saiu"):"outro"};
+  if(q.fora&&dados[q.dia]&&dados[q.dia].fora&&dados[q.dia].fora[q.fora]) dados[q.dia].fora[q.fora].reusado=iso;
+  return usados.length;
+}
+// aplica em todas as células do dia que ainda estão vazias (e em que ninguém recusou)
+function aplicarReusos(iso){
+  var d=dados[iso]; if(!d) return 0; var n=0;
+  d.cels.forEach(function(x){ if(x.reuso||x.reusoNao||temDados(x)) return; var q=acharReuso(iso,x); if(q&&aplicarReuso(iso,x,q)) n++; });
+  return n;
+}
+function desfazerReuso(x){
+  String((x.reuso||{}).campos||"").split(",").filter(Boolean).forEach(function(f){
+    if(f.indexOf("labs.")===0){ delete x.labs[f.slice(5)]; } else x[f]="";
+    delete x.locked[f]; });
+  delete x.reuso; x.reusoNao=1;
+}
+function dataCurta(iso){ return iso.slice(8,10)+"/"+iso.slice(5,7); }
+function reusoHTML(x){
+  if(x.reuso) return '<div class="reuso">♻ Dados reaproveitados do mapa de <b>'+dataCurta(x.reuso.dia)+'</b>'+(x.reuso.motivo==="outro"?'':' (cirurgia cancelada / remarcada)')+'. Conferir se precisam ser atualizados: pré-ops e exames, RCH, UTI, APA, av. cardio, pendências. '+
+    '<button class="chip" data-id="'+x.id+'" data-ac="reusook">Conferido</button><button class="chip" data-id="'+x.id+'" data-ac="reusodesf">Desfazer</button></div>';
+  if(!temDados(x)){ var q=acharReuso(dia,x); if(q) return '<div class="reuso">♻ Há dados deste paciente no mapa de <b>'+dataCurta(q.dia)+'</b>. <button class="chip" data-id="'+x.id+'" data-ac="reusousar">Reaproveitar</button></div>'; }
+  return "";
+}
 function mesclarDia(iso,rem){
   var r={mud:false,mais:false}, loc=dados[iso];
   if(!rem||!rem.cels){ r.mais=!!(loc&&(loc.cels.length||(loc.removidos||[]).length)); return r; }
@@ -1017,6 +1125,13 @@ function mesclarDia(iso,rem){
   Object.keys(SR).forEach(function(id){ if(!(SL[id]>=SR[id])){ SL[id]=SR[id]; } });
   if(Object.keys(SL).some(function(id){return !(SR[id]>=SL[id]);})) r.mais=true;
   if(Object.keys(SL).length) loc.sumidos=SL;
+  var FL=loc.fora||{}, FR=rem.fora||{}, DL=loc.foraDel||{}, DR=rem.foraDel||{};
+  Object.keys(DR).forEach(function(id){ if(!(DL[id]>=DR[id])){ DL[id]=DR[id]; r.mud=true; } });
+  if(Object.keys(DL).some(function(id){return !(DR[id]>=DL[id]);})) r.mais=true;
+  Object.keys(FR).forEach(function(id){ if((DL[id]||0)>=FR[id].em) return; if(!FL[id]||FL[id].em<FR[id].em){ FL[id]=FR[id]; r.mud=true; } });
+  Object.keys(FL).forEach(function(id){ if((DL[id]||0)>=FL[id].em){ delete FL[id]; r.mud=true; } else if(!FR[id]||FR[id].em<FL[id].em) r.mais=true; });
+  if(Object.keys(FL).length) loc.fora=FL; else delete loc.fora;
+  if(Object.keys(DL).length) loc.foraDel=DL;
   var vivo=function(x){ return RL.indexOf(x.id)<0 && !((SL[x.id]||0)>=(x.tc||1)); };
   var mapa={}, antes=loc.cels.length; loc.cels.forEach(function(x){ mapa[x.id]=x; });
   var idsR={};
@@ -1162,7 +1277,7 @@ function celHTML(x){
   var nTrav=Object.keys(x.locked).length;
   var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
   var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
-  h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>';
+  h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x);
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
   h+='<div class="col meio">';
@@ -1289,10 +1404,28 @@ function desenhar(){
     h+='<div class="folha'+(info.cheia[p]?' cheia':'')+'" style="--n:'+Math.max(1,cs.length)+'">'+topoHTML(d,p,tot)+'<div class="celulas">'+
        (cs.length?cs.map(celHTML).join(""):'<p style="margin:10px">Nenhuma cirurgia neste dia. Use “+ Cirurgia”.</p>')+'</div></div>';
   });
-  document.getElementById("folhas").innerHTML=h;
+  document.getElementById("folhas").innerHTML=h+foraHTML(d);
   desenharStatus(info);
 }
-function achar(id){var a=dados[dia].cels;for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];return null;}
+/* quem saiu da Agenda depois de começar o mapa: fica guardado aqui (não imprime), pode voltar ou ser apagado */
+function foraHTML(d){
+  var F=d.fora||{}, ks=Object.keys(F).sort(function(a,b){return F[b].em-F[a].em;}); if(!ks.length) return "";
+  return '<div class="forabox"><b>Fora do mapa: saíram da Agenda, canceladas, suspensas ou removidas ('+ks.length+')</b><p>Ficam guardados por '+GUARDA_DIAS+' dias com o que já foi preenchido. Se a cirurgia for remarcada, os dados são reaproveitados no novo dia. Não aparecem no mapa nem na impressão.</p>'+
+    ks.map(function(id){ var g=F[id], x=g.cel; return '<div class="foraitem"><span><small>'+esc(x.hora||"")+'</small> '+esc(String(x.cab||"").split(",").slice(0,3).join(","))+
+      ' <i>'+(g.reusado?"(remarcada: dados usados no mapa de "+dataCurta(g.reusado)+")":g.motivo==="trocado"?"(o horário passou a ser de outro paciente)":g.motivo==="removido"?"(removida do mapa)":"(não está mais na Agenda)")+' · apaga sozinho em '+Math.max(1,Math.ceil(((g.em||0)+GUARDA_DIAS*864e5-agoraM())/864e5))+' dia(s)</i></span>'+
+      '<button data-fvolta="'+esc(id)+'">Voltar ao mapa</button><button data-fapaga="'+esc(id)+'">Apagar</button></div>'; }).join("")+'</div>';
+}
+document.addEventListener("click",function(ev){
+  var b=ev.target.closest&&ev.target.closest("[data-fvolta],[data-fapaga]"); if(!b) return;
+  var d=dados[dia]; if(!d) return;
+  if(b.dataset.fvolta){ var x=restaurarFora(d,b.dataset.fvolta,true); if(x){ x.locked=x.locked||{}; if(!d.to) d.cels.sort(function(a,b){return String(a.hora).localeCompare(String(b.hora));}); toast("Voltou ao mapa: "+String(x.cab).split(",")[0]); } }
+  else if(b.dataset.fapaga){
+    if(b.dataset.conf!=="1"){ b.dataset.conf="1"; b.textContent="Toque de novo para apagar"; return; }
+    if(d.fora) delete d.fora[b.dataset.fapaga]; d.foraDel=d.foraDel||{}; d.foraDel[b.dataset.fapaga]=agoraM(); toast("Apagado.");
+  }
+  salvar(); desenhar();
+});
+function achar(id){var a=dados[dia].cels,i;for(i=0;i<a.length;i++) if(a[i].id===id) return a[i];for(i=0;i<a.length;i++) if(baseId(a[i].id)===id) return a[i];return null;}
 function gravar(x,f,v,manual){
   if(LINHAS.indexOf(f)>=0) v=String(v).split(/\n+/).map(function(s){return s.replace(/^\s*•\s*/,"").trim();}).filter(Boolean).join(" / ");
   v=String(v).replace(/\s+/g," ").trim();
@@ -1358,8 +1491,11 @@ folhas.addEventListener("click",function(ev){
   else if(b.dataset.ac==="sobe"&&i>0){ a.splice(i-1,0,a.splice(i,1)[0]); }
   else if(b.dataset.ac==="desce"&&i<a.length-1){ a.splice(i+1,0,a.splice(i,1)[0]); }
   else if(b.dataset.ac==="destrava"){ x.locked={}; x.ign={}; }
+  else if(b.dataset.ac==="reusook"){ delete x.reuso; toast("Ok, dados conferidos."); }
+  else if(b.dataset.ac==="reusodesf"){ desfazerReuso(x); toast("Desfeito: os dados reaproveitados foram retirados."); }
+  else if(b.dataset.ac==="reusousar"){ var q=acharReuso(dia,x); delete x.reusoNao; if(q&&aplicarReuso(dia,x,q)) toast("Dados do mapa de "+dataCurta(q.dia)+" reaproveitados. Confira exames e pré-ops."); else toast("Nada para reaproveitar."); }
   else if(b.dataset.ac==="rem"){
-    if(b.dataset.conf){ a.splice(i,1); var rr=dados[dia].removidos=dados[dia].removidos||[]; if(rr.indexOf(x.id)<0) rr.push(x.id); if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
+    if(b.dataset.conf){ a.splice(i,1); if(temDados(x)) guardarFora(dados[dia],x,"removido"); var rr=dados[dia].removidos=dados[dia].removidos||[]; if(rr.indexOf(x.id)<0) rr.push(x.id); if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
   }
   salvar(); desenhar();
 });
@@ -1680,18 +1816,37 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       if(!loc){ loc=dados[iso]={titulo:m.titulo||tituloDia(iso),cels:[],status:{fechado:false},log:[]}; fotografar(iso); }
       dia=iso; var novos=0, mud=0, mant=0, tirados=0;
       var NAOPAC=/^\s*(proclama|feriado|ponto facultativo|f[eé]rias|folga|sala\s*\d|sala\b|congresso|plant[aã]o|reuni[aã]o|tiradentes|natal|finados|independ[eê]ncia|carnaval|ano novo|corpus christi|sexta.feira santa|consci[eê]ncia negra|nossa senhora|aniversário)/i;
-      var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=1; });
+      var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=identCab(z.cab); });
+      var completo=m.completo!==false&&(m.completo===true||(m.cels||[]).length>0);   // Agenda do dia lida inteira
+      var foram=0, trocados=0, voltaram=0;
       loc.cels=loc.cels.filter(function(z){
         var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
         if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
-        if(/^ev_/.test(z.id)&&(m.cels||[]).length&&!ids[z.id]&&!Object.keys(z.locked||{}).length&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; loc.sumidos=loc.sumidos||{}; loc.sumidos[z.id]=agoraM(); return false; }
-        return true;
+        if(!/^ev_/.test(z.id)||!completo||z.fixo) return true;
+        var b=baseId(z.id), na=Object.prototype.hasOwnProperty.call(ids,b);
+        if(!z.ident) z.ident=identCab(z.cab);
+        var trocou=na&&!mesmoPaciente(z.ident,ids[b]);
+        if(na&&!trocou) return true;
+        // saiu da Agenda (ou o horário passou a ser de outro paciente)
+        if(temDados(z)){ guardarFora(loc,z,trocou?"trocado":"saiu"); if(trocou) trocados++; else foram++; }
+        else { loc.sumidos=loc.sumidos||{}; loc.sumidos[z.id]=agoraM(); tirados++; }
+        return false;
       });
       var REM=loc.removidos||[];
       (m.cels||[]).forEach(function(inc){
         if(REM.indexOf(inc.id)>=0) return;
-        var x=null; loc.cels.forEach(function(z){ if(z.id===inc.id) x=z; });
-        if(!x){ x=c(inc); TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; x.tc=agoraM(); loc.cels.push(x); novos++; return; }
+        var idt=identCab(inc.cab), x=null;
+        loc.cels.forEach(function(z){ if(baseId(z.id)===inc.id&&mesmoPaciente(z.ident||identCab(z.cab),idt)) x=z; });
+        if(!x){
+          // voltou para a Agenda: recupera o que já tinha sido preenchido
+          var g=null; Object.keys(loc.fora||{}).forEach(function(id){ var q=loc.fora[id]; if(baseId(id)===inc.id&&mesmoPaciente(q.cel.ident||identCab(q.cel.cab),idt)) g=id; });
+          if(g){ x=restaurarFora(loc,g); voltaram++; }
+        }
+        if(!x){
+          var nid=inc.id; if(loc.cels.some(function(z){return z.id===nid;})||(loc.sumidos||{})[nid]||(loc.fora||{})[nid]) nid=inc.id+"~"+agoraM().toString(36);
+          x=c(inc); x.id=nid; x.ident=idt; TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; x.tc=agoraM(); loc.cels.push(x); novos++; return;
+        }
+        x.ident=x.ident||idt;
         Object.keys(inc).forEach(function(f){
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
@@ -1700,10 +1855,11 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
           if(gravar(x,f,v,false)) mud++;
         });
       });
+      expirarFora(); var reus=aplicarReusos(iso);
       if(!loc.to) loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
       pacSel=m.foco||pacSel; if(m.foco) trocarVista("pac");
       montarDias(); salvar(); desenhar();
-      if(m.aviso!==false) toast((novos?novos+" cirurgia(s) nova(s) da Agenda. ":"")+mud+" campo(s) atualizado(s)"+(mant?", "+mant+" editado(s) à mão mantido(s)":"")+".");
+      if(m.aviso!==false) toast([novos?(novos===1?"1 cirurgia nova":novos+" cirurgias novas")+" da Agenda":"", (foram+tirados)?((foram+tirados)===1?"1 saiu da Agenda":(foram+tirados)+" saíram da Agenda"):"", trocados?(trocados===1?"1 horário passou para outro paciente":trocados+" horários passaram para outros pacientes"):"", voltaram?(voltaram===1?"1 voltou para a Agenda":voltaram+" voltaram para a Agenda"):"", reus?(reus===1?"1 remarcada com dados reaproveitados":reus+" remarcadas com dados reaproveitados"):"", mud===1?"1 campo atualizado":mud+" campos atualizados", mant?(mant===1?"1 editado à mão mantido":mant+" editados à mão mantidos"):""].filter(Boolean).join(" · ")+"."+(completo?"":" (Agenda incompleta: ninguém foi tirado)"));
     }
   });
   // o app baixou o mapa do Drive: mescla aqui e devolve o resultado para ele enviar (se houver algo novo deste aparelho)
@@ -1715,12 +1871,13 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
     if(m.type==="mapa-remoto"){
       var iso=m.dia, q;
       try{ q=mesclarDia(iso,m.remoto); }catch(err){ parent.postMessage({src:"mapa",type:"mapa-enviar",dia:iso,precisa:false,erro:String(err)},"*"); return; }
+      if(m.antigo){ if(q.mud){ var nr=dia&&dados[dia]?aplicarReusos(dia):0; if(nr){ salvar(); redesenharSeguro(); toast((nr===1?"1 cirurgia remarcada":nr+" cirurgias remarcadas")+": dados reaproveitados de outro dia."); } else gravarLocal(); } return; }
       if(q.mud){ gravarLocal(); if(iso===dia){ montarDias(); redesenharSeguro(); toast("Mapa atualizado com o que outra pessoa preencheu."); } }
       var d=dados[iso]; if(d&&q.mais) d.salvoEm=agoraM();
       parent.postMessage({src:"mapa",type:"mapa-enviar",dia:iso,precisa:!!(d&&q.mais),dados:d&&q.mais?d:null},"*");
     }
     else if(m.type==="mapa-estado"&&m.dia===dia){
-      document.getElementById("estado").textContent=m.estado==="ok"?("Salvo no Drive às "+horaAgora()):m.estado==="off"?"Sem internet ou sem login — salvo só neste aparelho (envia quando voltar)":"⚠ Não consegui enviar ao Drive — salvo neste aparelho, tento de novo";
+      document.getElementById("estado").textContent=m.estado==="buscando"?"Buscando a Agenda e o internograma…":m.estado==="ok"?("Salvo no Drive às "+horaAgora()):m.estado==="off"?"Sem internet ou sem login — salvo só neste aparelho (envia quando voltar)":"⚠ Não consegui enviar ao Drive — salvo neste aparelho, tento de novo";
     }
     else if(m.type==="mapa-fotos"){ FOTOS[m.dia]=m.fotos||{}; if(m.dia===dia) redesenharSeguro(); }
   });

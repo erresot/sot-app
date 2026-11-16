@@ -404,16 +404,21 @@ S.ficha=function(text,hdr){
   if(r.prontuario&&!/^\d{6,7}$/.test(r.prontuario))r.duvidas.push('prontuario');
   var ano=(m=all.match(/ATENDIMENTO\s+EM\s+\d{2}\/\d{2}\/(\d{4})/))?m[1]:String(new Date().getFullYear());
   // campos de linha "CHAVE: valor" (valor pode estar na linha seguinte)
-  function campo(re){
+  var RE_REMEDIO=/\d\s*(MG|MCG|UI|G|ML)\b|\b\d{1,2}\s*\/\s*\d{1,2}\s*H\b|\b(COMP|CP|CPS|GTS|NOITE|MANHA|JEJUM|ALMOCO|SN|INSULINA|NPH)\b/;
+  function campo(re,remedios){
     for(var j=0;j<U.length;j++){var mm=U[j].match(re);if(!mm)continue;
       var v=lines[j].slice(lines[j].length-(U[j].length-mm[0].length)).trim();
-      var mais=[];for(var k=j+1;k<U.length&&k<j+4;k++){var t=U[k].trim();if(!t&&!v&&!mais.length)continue;if(!t||CHAVES.test(t)||/^[#$]/.test(t)||S.ehLinhaLab(lines[k]))break;if(/^NEGA\s+(ALERG|MUC|CMB|COMORB|ETIL|TABAG|HABIT|CIRURG)/.test(t)&&(v||mais.length))break;if(v&&!/^(NEGA|-)/.test(t))break;mais.push(lines[k].trim());}
+      var lim=remedios?j+8:j+4,listaMed=remedios&&(!v||RE_REMEDIO.test(U[j]));
+      var mais=[];for(var k=j+1;k<U.length&&k<lim;k++){var t=U[k].trim();if(!t&&!v&&!mais.length)continue;if(!t||CHAVES.test(t)||/^[#$]/.test(t))break;
+        if(listaMed){if(mais.length&&!RE_REMEDIO.test(t)&&!/^[A-Z ]{2,25}$/.test(t)&&!/^[\/,]/.test(t)&&!/[\/,]\s*$/.test(U[k-1].trim()))break;mais.push(lines[k].trim());continue;}
+        if(S.ehLinhaLab(lines[k]))break;if(/^NEGA\s+(ALERG|MUC|CMB|COMORB|ETIL|TABAG|HABIT|CIRURG)/.test(t)&&(v||mais.length))break;if(v&&!/^(NEGA|-)/.test(t))break;mais.push(lines[k].trim());}
+      if(listaMed)return (v+' '+mais.join(' ')).replace(/^[:\s]+/,'').replace(/\s+\/\s*|\s*\/\s+/g,' / ').replace(/\b[S$](MG)\b/g,'5$1').replace(/\bO(\d)/g,'0$1').replace(/\s{2,}/g,' ').trim();
       return (v+(mais.length?(v?' / ':'')+mais.join(' / '):'')).replace(/^[:\s]+/,'').trim();}
     return '';
   }
   r.cmb=campo(/^[^A-Z0-9]{0,3}R?(?:AP|CMB|HPP|COMORBIDADES?|ANTECEDENTES(?: PESSOAIS)?)\s*[:.]\s*/);
   var cmb2=campo(/^\s*CMB\s*:\s*/);if(cmb2&&r.cmb.indexOf(cmb2)<0&&!/^AP/.test(r.cmb))r.cmb+=(r.cmb?' / ':'')+cmb2;
-  r.muc=campo(/^[^A-Z0-9]{0,3}(?:MUC|MEDICACOES(?: EM USO)?|MEDICAMENTOS)\s*[:.]\s*/);
+  r.muc=campo(/^[^A-Z0-9]{0,3}(?:MUC|MEDICACOES(?: EM USO)?(?: CONTINU[AO]S?)?|MEDICAMENTOS(?: EM USO)?)(?:\s*[:.;]\s*|\s*$|\s+(?=[A-Z0-9]))/,true);
   r.alergia=campo(/^[^A-Z0-9]{0,3}ALERGIAS?\s*[:.]?\s*(?=\S|$)/);
   // linhas "NEGA CMB / NEGA MUC / NEGA ALERGIAS" soltas
   U.forEach(function(u,j){var t=u.trim();
