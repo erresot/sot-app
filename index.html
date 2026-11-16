@@ -294,6 +294,14 @@ html.escuro .leito .lmark.ic{background:#9775fa;color:#14112a}
 .iglin{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
 table.igrow td,table.igrow th{min-width:110px}
 .igpanel .row .btn{flex:1 1 160px}
+/* v31 — rolagem: a barra Leitos/Pendências fica logo abaixo do cabeçalho; cabeçalho encolhe ao rolar */
+.subtabs{top:var(--topH,0px)}
+
+.top.compacto{padding-top:calc(env(safe-area-inset-top) + 6px);padding-bottom:6px}
+.top.compacto .sub,.top.compacto .prog,.top.compacto #sync,.top.compacto .novaversao{display:none!important}
+.top.compacto h1{font-size:16px}
+.top.compacto .hrow .hb{width:38px;height:38px}
+.top input[type=date].naohoje{background:#c92a2a;color:#fff;font-weight:700;box-shadow:0 0 0 2px #fff}
 </style>
 </head>
 <body>
@@ -348,7 +356,7 @@ table.igrow td,table.igrow th{min-width:110px}
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v30</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v32</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -921,7 +929,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '30';
+var VERSAO = '32';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -968,6 +976,22 @@ function ligarV(o) {
   return o;
 }
 var S = ligarV(load() || novoEstado());
+/* o app sempre abre no dia de hoje (antes ficava preso na última data escolhida e as contagens de PO/DIH erravam) */
+var DIA_REAL = hojeISO();
+if (S.hoje !== DIA_REAL) S.hoje = DIA_REAL;
+/* virou o dia com o app aberto: quem estava em "hoje" passa para o novo dia sozinho */
+function conferirVirada() {
+  var r = hojeISO(); if (r === DIA_REAL) return;
+  var era = DIA_REAL; DIA_REAL = r;
+  if (S.hoje === era) {
+    S.hoje = r; if (typeof recalc === 'function') recalc(); saveLocal();
+    if (typeof render === 'function') render();
+    if (typeof toast === 'function') toast('Novo dia: data atualizada para ' + r.split('-').reverse().join('/'));
+  }
+}
+setInterval(conferirVirada, 60000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) conferirVirada(); });
+window.addEventListener('focus', conferirVirada);
 S.evo = S.evo || {}; S.conf = S.conf || {};
 function hojeISO() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
 function hojeDate() { return isoDate(S.hoje); }
@@ -1127,6 +1151,7 @@ function alertasVisita(v) {
 }
 function render() {
   $('#hoje').value = S.hoje; var hb0 = document.querySelector('[data-irhoje]'); if (hb0) hb0.classList.toggle('fora', S.hoje !== hojeISO());
+  $('#hoje').classList.toggle('naohoje', S.hoje !== hojeISO()); $('#hoje').title = S.hoje !== hojeISO() ? 'Atenção: esta data NÃO é hoje — contagens de PO/DIH e evoluções usam esta data' : '';
   var a = ativos(), feitos = a.filter(visitado).length, evs = a.filter(evoluido).length;
   $('#resumo').textContent = a.length ? feitos + '/' + a.length + ' visitados · ' + evs + '/' + a.length + ' evoluídos' + (S.dataIG ? ' · IG ' + S.dataIG : '') : 'sem internograma';
   $('#progbar').style.width = a.length ? (100 * feitos / a.length) + '%' : 0;
@@ -1279,10 +1304,26 @@ function vConfig() {
 
 // ===================== ficha do paciente =====================
 var atual = null;
-function travar() { var on = $('#sheet').classList.contains('open') || $('#evoSheet').classList.contains('open') || ($('#hubView') && $('#hubView').classList.contains('on')); document.documentElement.classList.toggle('travado', on); document.body.classList.toggle('travado', on); }
+/* trava a rolagem da lista enquanto a ficha/evolução/OrthoHub está aberta — e devolve a lista no mesmo lugar ao fechar */
+var ROLAGEM = { y: null, pac: null };
+function travar() {
+  var on = $('#sheet').classList.contains('open') || $('#evoSheet').classList.contains('open') || ($('#hubView') && $('#hubView').classList.contains('on'));
+  var estava = document.documentElement.classList.contains('travado');
+  if (on && !estava) ROLAGEM.y = window.scrollY;
+  document.documentElement.classList.toggle('travado', on); document.body.classList.toggle('travado', on);
+  if (!on && estava && ROLAGEM.y != null) {
+    var y = ROLAGEM.y; ROLAGEM.y = null;
+    var volta = function () {
+      window.scrollTo(0, y);
+      var c = ROLAGEM.pac && document.querySelector('#main [data-open="' + (window.CSS && CSS.escape ? CSS.escape(ROLAGEM.pac) : ROLAGEM.pac) + '"]');
+      if (c) { var r = c.getBoundingClientRect(), topo = ($('.top') || {}).offsetHeight || 0; if (r.top < topo + 50 || r.bottom > innerHeight - 90) c.scrollIntoView({ block: 'center' }); }
+    };
+    volta(); requestAnimationFrame(function () { requestAnimationFrame(volta); });
+  }
+}
 function abrir(id) {
   atual = S.pacientes.find(function (p) { return p.id === id; }) || (S.ultimos || {})[id]; if (!atual) { toast('Paciente não encontrado'); return; }
-  S.v[id] = S.v[id] || {}; visSnap(S.hoje, id);
+  S.v[id] = S.v[id] || {}; visSnap(S.hoje, id); ROLAGEM.pac = id;
   desenharFicha(); $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0; document.body.classList.add('travado'); travar();
 }
 function fechar() { $('#sheet').classList.remove('open'); atual = null; travar(); render(); }
@@ -2559,8 +2600,8 @@ function abrirEvo(id) {
     var abertas = (S.pend[id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; });
     var rs = (S.rasc || {})[id], hj0 = evoHoje(id), usaR = rs && rs.data === S.hoje && (!hj0 || (rs.at || 0) > (hj0.at || 0));
     fr.contentWindow.postMessage({ type: 'evo-tema', escuro: document.documentElement.classList.contains('escuro') }, '*');
-    if (usaR) { fr.contentWindow.postMessage({ type: 'evo-load', rascunho: rs.at, text: rs.txt, date: br(S.hoje), ndays: 0, baseDate: '', visited: !!visitado(p), marks: null, obs: (S.v[id] || {}).obs || '', pac: (p.leito ? p.leito + ' · ' : '') + p.nome, ig: null }, '*'); return; }
-    fr.contentWindow.postMessage({ type: 'evo-load', text: b ? b.txt : '', date: br(S.hoje), ndays: nd, baseDate: b ? brCurto(b.data) : '', visited: !!visitado(p),
+    if (usaR) { fr.contentWindow.postMessage({ type: 'evo-load', rascunho: rs.at, text: rs.txt, date: br(S.hoje), naoHoje: S.hoje !== hojeISO(), ndays: 0, baseDate: '', visited: !!visitado(p), marks: null, obs: (S.v[id] || {}).obs || '', pac: (p.leito ? p.leito + ' · ' : '') + p.nome, ig: null }, '*'); return; }
+    fr.contentWindow.postMessage({ type: 'evo-load', text: b ? b.txt : '', date: br(S.hoje), naoHoje: S.hoje !== hojeISO(), ndays: nd, baseDate: b ? brCurto(b.data) : '', visited: !!visitado(p),
       marks: S.v[id] || null, obs: (S.v[id] || {}).obs || '', pac: (p.leito ? p.leito + ' · ' : '') + p.nome,
       dihConv: S.dihConv ? 1 : 0, ig: { dx: p.dx, ap: p.ap, dihData: p.dihData, dih: p.dih, dihStated: p.dihStated, po: p.po && !p.po.futuro ? p.po : null, poStated: p.po ? p.po.stated : null, agenda: p.agenda || [], pend: abertas, tipo: p.tipo || tipoDe(p) } }, '*');
   };
@@ -2851,6 +2892,28 @@ document.addEventListener('click', function (ev) {
   var ck = tx.parentElement.querySelector('input[type=checkbox]');
   if (ck) ck.click();
 });
+
+// altura real do cabeçalho → a barra de abas gruda logo embaixo dele (não fica escondida atrás)
+(function () {
+  var top = document.querySelector('.top'); if (!top) return;
+  function mede() { document.documentElement.style.setProperty('--topH', top.offsetHeight + 'px'); }
+  mede();
+  if (window.ResizeObserver) new ResizeObserver(mede).observe(top); else window.addEventListener('resize', mede);
+  // ao rolar a lista para baixo, o cabeçalho encolhe (só título e botões); volta inteiro perto do topo
+  var compacto = false, pend = false;
+  function ver() {
+    pend = false;
+    if (document.documentElement.classList.contains('travado')) return;
+    var y = window.scrollY, h0 = top.offsetHeight;
+    if (!compacto && y > 160) { compacto = true; top.classList.add('compacto'); }
+    else if (compacto && y < 8) { compacto = false; top.classList.remove('compacto'); }
+    else return;
+    // compensa a mudança de altura para a lista não "pular"
+    var dh = top.offsetHeight - h0; mede();
+    if (dh && compacto) window.scrollBy(0, dh);
+  }
+  window.addEventListener('scroll', function () { if (!pend) { pend = true; requestAnimationFrame(ver); } }, { passive: true });
+})();
 
 // ===================== init =====================
 aplicarTema();

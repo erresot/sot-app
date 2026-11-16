@@ -122,6 +122,7 @@
   .f.ins{background:var(--chg-bg);border-color:var(--chg)}
   html.escuro{--bg:#11161d;--card:#19202a;--ink:#e6ebf1;--muted:#97a3b3;--line:#2b3542;--accent:#4c8dff;--accent-ink:#0b1220;--pend:#f0b54a;--pend-bg:#3a2e14;--keep:#5fd08f;--keep-bg:#163225;--chg:#79a8ff;--chg-bg:#18284a;--auto:#b39cff;--auto-bg:#2a2148;--warn:#ff8a7a;--warn-bg:#3a1a17;color-scheme:dark}
   html.claro{--bg:#f6f7f9;--card:#fff;--ink:#1b2430;--muted:#5d6b7c;--line:#dde3ea;--accent:#1f6feb;--accent-ink:#fff;--pend:#b7791f;--pend-bg:#fdf3dd;--keep:#2f855a;--keep-bg:#e3f4ea;--chg:#1f5fbf;--chg-bg:#e2ecfb;--auto:#6b46c1;--auto-bg:#ede7fb;--warn:#b42318;--warn-bg:#fdecea;color-scheme:light}
+input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight:700;border-color:#c92a2a!important}
 </style>
 <link rel="stylesheet" href="hub/sot-tema.css">
 </head>
@@ -158,7 +159,7 @@
       <label class="inl">Acentuação
         <select id="accent"><option value="mirror">Manter como no texto</option><option value="correct">Corrigir</option></select>
       </label>
-      <label class="inl">Data <input type="text" class="date" id="evalDate2" inputmode="numeric"></label>
+      <label class="inl">Data <input type="text" class="date" id="evalDate2" inputmode="numeric"></label><div id="avisoData" class="hidden" style="flex-basis:100%;color:#fff;background:#c92a2a;border-radius:8px;padding:6px 10px;font-weight:700;margin-top:6px"></div>
     </div>
     <div class="warnbar hidden" id="draftBar" style="margin:0 0 12px">Rascunho desta aba restaurado. <button class="small" id="btnDiscard">Descartar e começar de novo</button></div>
     <div id="visitBox" class="vbox hidden"></div>
@@ -521,6 +522,12 @@ function applyCase(model, w){
   return w;
 }
 /* datas (sempre em UTC para evitar erro de fuso/horário de verão) */
+/* data da evolução diferente de hoje fica vermelha (as contagens de PO/D/DIH usam esta data) */
+function marcaData(){
+  const nao = fmtBR(EVAL)!==fmtBR(todayUTC());
+  ["evalDate","evalDate2"].forEach(id=>{ const e=document.getElementById(id); if(e){ e.classList.toggle("naohoje",nao); e.title=nao?"Atenção: esta data NÃO é hoje — as contagens usam esta data":""; } });
+  const a=document.getElementById("avisoData"); if(a){ a.classList.toggle("hidden",!nao); a.textContent=nao?`⚠ Data desta evolução: ${fmtBR(EVAL)} — NÃO é hoje (${fmtBR(todayUTC())}). As contagens de PO / D / DIH usam esta data.`:""; }
+}
 function parseBR(s){
   const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/); if(!m) return null;
   let y;
@@ -1126,7 +1133,7 @@ let FUTURE=[];
 const snap = () => ({segs:segs.map(s=>({...s})),SEX,ACCENT,EVAL:EVAL.getTime(),SPELLFIXED});
 function restoreSnap(st){
   segs=st.segs; SEX=st.SEX; ACCENT=st.ACCENT; EVAL=new Date(st.EVAL); SPELLFIXED=st.SPELLFIXED;
-  $("sex").value=SEX; $("accent").value=ACCENT; $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+  $("sex").value=SEX; $("accent").value=ACCENT; $("evalDate").value=$("evalDate2").value=fmtBR(EVAL); marcaData();
   closePop(); render();
 }
 function pushHistory(){ HIST.push(snap()); if(HIST.length>150) HIST.shift(); FUTURE=[]; }
@@ -1178,7 +1185,7 @@ function restoreDraft(){
     d.segs.forEach(s=>{ if(s.ref) fix(s.ref); });
     SRC=d.src; prepText(SRC); segs=d.segs; EVAL=parseBR(d.eval)||todayUTC(); NDAYS=d.ndays; SEX=d.sex; SEXWHY=d.sexWhy; ACCENT=d.accent; SPELLFIXED=d.spell||0; HIST=[];
     $("input").value=SRC; $("days").value=NDAYS; $("sex").value=SEX; $("sexWhy").textContent=SEXWHY; $("accent").value=ACCENT;
-    $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+    $("evalDate").value=$("evalDate2").value=fmtBR(EVAL); marcaData();
     $("step2").classList.remove("hidden"); $("step1").classList.add("hidden"); $("draftBar").classList.remove("hidden");
     render(); return true;
   }catch(e){ return false; }
@@ -1300,7 +1307,7 @@ document.addEventListener("keydown",ev=>{ if(ev.key==="Escape") closePop(); });
    ===================================================================== */
 function readEval(id){
   const d=parseBR($(id).value); if(d) EVAL=d; else $(id).value=fmtBR(EVAL);
-  $("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+  $("evalDate").value=$("evalDate2").value=fmtBR(EVAL); marcaData();
 }
 function recomputeAll(){
   segs.forEach(s=>{ if(s.type==="counter") computeCounter(s); if(s.type==="rx"&&s.state==="off") s.date=fmtBR(EVAL); });
@@ -1335,7 +1342,8 @@ $("accent").onchange=()=>{
   recomputeAll();
 };
 $("evalDate2").onchange=()=>{ pushHistory(); readEval("evalDate2"); recomputeAll(); };
-$("evalDate").value=$("evalDate2").value=fmtBR(EVAL);
+$("evalDate").value=$("evalDate2").value=fmtBR(EVAL); marcaData();
+$("evalDate").addEventListener("input",()=>{ const d=parseBR($("evalDate").value); if(d){ const v=EVAL; EVAL=d; marcaData(); EVAL=v; } });
 
 async function doCopy(){
   const t=outputText();
@@ -1970,7 +1978,7 @@ if(EMBED){
       VISIT={dihConv:d.dihConv, marks:d.marks||null, obs:d.obs||"", pac:d.pac||"", ig:d.ig||null, visited:!!d.visited}; VISIT_RES=[];
       $("input").value=d.text||""; $("evalDate").value=d.date; $("days").value=d.ndays||1;
       $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); $("draftBar").classList.add("hidden");
-      $("embedHint").innerHTML = (d.visited?"":"⚠ Paciente ainda não marcado como visitado hoje. ") + (d.text
+      $("embedHint").innerHTML = (d.naoHoje?`<b style="color:#c92a2a">⚠ Data desta evolução: ${d.date} — NÃO é hoje (o app está em outro dia; toque em HOJE no app se for engano).</b><br>`:"") + (d.visited?"":"⚠ Paciente ainda não marcado como visitado hoje. ") + (d.text
         ? `Abaixo está a evolução salva de ${d.baseDate}. <b>Cole por cima a evolução de ontem do sistema do hospital</b> (se for a mesma, só toque em “Analisar texto”). As marcações da visita entram em seguida.`
         : "Cole a evolução de ontem do sistema do hospital e toque em “Analisar texto”. As marcações da visita entram em seguida.");
       $("input").focus(); $("input").select();
