@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v34</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v35</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -611,6 +611,97 @@ function verificar(p, hj) {
   if (!p.apL && (p.ap.match(/\bap\s*:/gi) || []).length > 1) a.push('Antecedentes aparecem duas vezes — possível mistura com a ficha seguinte');
   return a;
 }
+</script>
+<script>/* SOT — leitura de CMB / MUC / ALERGIA em textos escritos por pessoas (evoluções, fichas, laudos).
+   Aceita: "MUC: x" · "MUC x" · "MUC:" com o valor na(s) linha(s) de baixo · "#MUC:", "##MUC", "- MUC -", "• MUC", "**MUC**:",
+   "AP: …, NEGA ALERGIAS" · "NEGA ALERGIAS" solto · "**ALÉRGICO A VANCOMICINA**" · "SEM COMORBIDADES OU ALERGIAS CONHECIDAS".
+   Uso: SOTCAMPOS.ap(texto) → {cmb, muc, alergia}   (strings; '' quando não achou) */
+(function (G) {
+  'use strict';
+  var A = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); };
+  // rótulos (sobre o texto sem acento, em maiúsculas)
+  var ROT = [
+    ['cmbx', /^(?:CMB|COMORBIDADES?|COMORB\.?|HPP|DOENCAS? (?:PREVIAS|DE BASE))\b/],
+    ['ap', /^(?:R?AP|ANTECEDENTES(?: PESSOAIS)?(?: PATOLOGICOS)?(?: PESSOAIS)?|A\.P\.?)(?![A-Z])/],
+    ['muc', /^(?:MUC|MEDICA(?:COES|CAO|MENTOS?)(?: (?:EM )?USO)?(?: (?:DE )?USO)?(?: CONTINUO| CONTINUA| CONTINUOS| CONTINUAS| DOMICILIAR(?:ES)?)?|MEDS?(?: EM USO)?)(?![A-Z])/],
+    ['alergia', /^(?:ALERGI(?:AS?|CA|CO)S?|ALERGIC[OA]S?|AL\.)(?![A-Z])/]
+  ];
+  // começo de outra seção: encerra a leitura das linhas de baixo
+  var OUTRA = /^(?:HMA|HDA|HPMA|QP|EF|EXAME|EVO|EVOLUCAO|CD|CONDUTA|HV|HF|HABITOS|VICIOS|CIRURGIAS?|INTERNA|ORIGEM|RX|RADIOGRAF|LAB|EXAMES|PROGRAMA|PLANO|HD|HIPOTESE|DIAGNOSTICO|ASS\b|CX\b|SOCIAL|TABAG|ETIL|PESO|ALTURA|JEJUM|AVALIO|PACIENTE\s+(?:VEM|DA|REFERE|ENCAMINH|PROVENIENTE)|TESTEMUNH|RELIGI)/;
+  function semDecor(l) { return l.replace(/^[\s#*\-–—•·>|]+/, '').replace(/^\d{1,2}[).]\s+/, ''); }
+  function limpa(v) {
+    return String(v || '').replace(/\*\*/g, '').replace(/^[\s:=\-–—.]+/, '').replace(/[\s:;,.]+$/, '').replace(/\s{2,}/g, ' ').trim();
+  }
+  function rotulo(l) {   // → {campo, resto} ou null
+    var s = semDecor(l), u = A(s);
+    for (var i = 0; i < ROT.length; i++) {
+      var m = u.match(ROT[i][1]); if (!m) continue;
+      var resto = s.slice(m[0].length);
+      // separador: ":" "-" "=" "–" ou só espaço; "MUC NEGA", "MUC: x", "MUC - x"
+      if (resto && !/^\s*(?:\*\*)?\s*(?:[:=\-–—]|$|\s)/.test(resto)) continue;
+      resto = resto.replace(/^\s*(?:\*\*)?\s*[:=\-–—]*\s*(?:\*\*)?\s*/, '');
+      if (ROT[i][0] === 'alergia') resto = resto.replace(/^(?:A|À|AO|AOS|AS)\s+/i, '');
+      return { campo: ROT[i][0], resto: resto };
+    }
+    return null;
+  }
+  function separador(l) { return /^\s*(?:[-–—_=.*]{1,}|#+)\s*$/.test(l); }
+  function ap(texto) {
+    var L = String(texto || '').replace(/\r/g, '').split('\n'), o = { cmbx: '', ap: '', muc: '', alergia: '' };
+    var neg = { cmb: false, muc: false, alergia: false };
+    for (var i = 0; i < L.length; i++) {
+      var l = L[i], u = A(semDecor(l)).trim();
+      if (!u) continue;
+      // frases soltas
+      if (/^(?:NEGA|SEM|NAO POSSUI|NAO TEM|DESCONHECE)\s+(?:COMORBIDADES?|CMB|DOENCAS)\s+(?:E|OU|,)\s+ALERGIAS?/.test(u)) { neg.cmb = true; neg.alergia = true; continue; }
+      if (/^(?:NEGA|SEM|NAO POSSUI|NAO REFERE|NKDA)\s+(?:ALERGIAS?|ALERGIC)/.test(u) && u.length < 60) { neg.alergia = true; continue; }
+      if (/^(?:NEGA|SEM)\s+(?:MUC|MEDICA(?:COES|CAO|MENTOS?)(?: (?:DE|EM) USO)?(?: CONTINUO)?)\b/.test(u) && u.length < 60) { neg.muc = true; continue; }
+      if (/^(?:NEGA|SEM)\s+(?:COMORBIDADES?|CMB)\b/.test(u) && u.length < 50) { neg.cmb = true; continue; }
+      var r = rotulo(l);
+      if (!r) {
+        var mA = A(l).match(/\bALERGIC[OA]S?\s+(?:A|AO|À|AS)\s+([^.*;\n]{3,60})/);   // "**ALÉRGICO A VANCOMICINA**" no meio do texto
+        if (mA && !o.alergia) o.alergia = limpa(l.slice(A(l).indexOf(mA[1]), A(l).indexOf(mA[1]) + mA[1].length));
+        continue;
+      }
+      var v = limpa(r.resto), mais = [];
+      if (!v || /^(?:#|$)/.test(v)) {   // valor nas linhas de baixo
+        for (var k = i + 1; k < L.length && k < i + 9; k++) {
+          var t = L[k], tu = A(semDecor(t)).trim();
+          if (!tu) { if (mais.length) break; else continue; }
+          if (separador(t) || /^\s*#/.test(t) || rotulo(t) || OUTRA.test(tu)) break;
+          if (r.campo !== 'ap' && /^(?:NEGA|SEM)\s+(?:ALERG|MUC|MEDICA|CMB|COMORB)/.test(tu) && mais.length) break;
+          if ((r.campo === 'ap' || r.campo === 'cmbx') && /^(?:NEGA\s+(?:TABAG|ETIL|VICIO|DROG|USO DE)|EX[- ]?TABAG|TABAGISTA|ETILISTA|EXPOSICAO)/.test(tu)) continue;
+          var item = limpa(semDecor(t)), bala = /^\s*[-–—•·*]/.test(t);
+          // linha quebrada no meio da frase (sem marcador e a anterior não terminou): junta com espaço
+          if (mais.length && !bala && !/[.;:,/]\s*$/.test(L[k - 1]) && L[k - 1].trim().length > 45) mais[mais.length - 1] += ' ' + item;
+          else if (mais.length && !bala && /[,/]\s*$/.test(L[k - 1])) mais[mais.length - 1] += ' ' + item;
+          else mais.push(item);
+          if (r.campo === 'alergia' && mais.length >= 2) break;
+        }
+        v = mais.join(' / ').replace(/([,/])\s*\/\s*/g, '$1 ');
+      }
+      if (!v) continue;
+      // "HAS, DM2, NEGA ALERGIAS" · "NEGA COMORBIDADES / NEGA ALERGIAS / NEGA MUC"
+      var partes = v.split(/\s*(?:[,;/]|\s-\s|\.\s)\s*(?=(?:NEGA|SEM)\b)/i), fica = [];
+      partes.forEach(function (p) {
+        var pu = A(p).trim();
+        if (/^(?:NEGA|SEM)\s+ALERG/.test(pu) && r.campo !== 'alergia') neg.alergia = true;
+        else if (/^(?:NEGA|SEM)\s+(?:MUC|MEDICA)/.test(pu) && r.campo !== 'muc') neg.muc = true;
+        else if (/^(?:NEGA|SEM)\s+(?:CMB|COMORB)/.test(pu) && r.campo !== 'cmbx' && r.campo !== 'ap') neg.cmb = true;
+        else fica.push(p.trim());
+      });
+      v = limpa(fica.join(', '));
+      if (/^(?:NEGA|NEGO|NEGATIVO|NENHUMA?|NAO|SEM|NKDA)\b\.?(?:\s+(?:ALERGIAS?|ALERGICOS?|COMORBIDADES|MEDICAMENTOS[AO]S?|USO DE MEDICA\w*))*\s*$/i.test(A(v))) v = 'NEGA';
+      if (v && !o[r.campo]) o[r.campo] = v;
+    }
+    var cmb = o.cmbx || o.ap || (neg.cmb ? 'NEGA' : '');
+    if (/^(?:POT?\b|\d+\s*PO\b)/.test(A(cmb)) && o.cmbx) cmb = o.cmbx;
+    return { cmb: cmb, muc: o.muc || (neg.muc ? 'NEGA' : ''), alergia: o.alergia || (neg.alergia ? 'NEGA' : '') };
+  }
+  var API = { ap: ap, rotulo: rotulo };
+  G.SOTCAMPOS = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof self !== 'undefined' ? self : this);
 </script>
 <script>
 // =====================================================================
@@ -932,7 +1023,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '34';
+var VERSAO = '35';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -1743,9 +1834,12 @@ function evoSecoes(p) {
   var e = evoHoje(p.id) || evoBase(p.id); if (!e || !e.txt) return null;
   var t = e.txt, o = { data: e.data };
   var pega = function (re) { var m = t.match(re); return m ? m[1].replace(/\s+/g, ' ').trim() : ''; };
-  o.cmb = pega(/^\s*(?:CMB|COMORBIDADES|AP)\s*[:\-]?\s*(.+)$/im);
-  o.muc = pega(/^\s*MUC\s*[:\-]?\s*(.+)$/im);
-  o.alergia = pega(/^\s*ALERGIA[S]?\s*[:\-]?\s*(.+)$/im);
+  if (window.SOTCAMPOS) { var cp = SOTCAMPOS.ap(t); o.cmb = cp.cmb; o.muc = cp.muc; o.alergia = cp.alergia; }
+  else {
+    o.cmb = pega(/^\s*(?:CMB|COMORBIDADES|AP)\s*[:\-]?\s*(.+)$/im);
+    o.muc = pega(/^\s*MUC\s*[:\-]?\s*(.+)$/im);
+    o.alergia = pega(/^\s*ALERGIA[S]?\s*[:\-]?\s*(.+)$/im);
+  }
   var bloco = t.split(/\n\s*-{3,}\s*\n/)[0] || '';
   o.hd = bloco.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l && !/^(#|HMA|CMB|MUC|ALERG)/i.test(l) && l !== '.'; }).join(' / ');
   return o;

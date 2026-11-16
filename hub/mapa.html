@@ -85,6 +85,9 @@ button{cursor:pointer}
 .labs{font-family:var(--mono);font-size:11.5px;line-height:1.45}
 .labs .data{font-family:var(--sans);font-weight:700}
 .lab{white-space:nowrap}
+.lab.lx{white-space:normal}
+.cel .ed,.cel .lin,.cel .labs,.cel .cab .txt{overflow-wrap:anywhere;min-width:0}
+.cel .col,.cel .duas>div{min-width:0}
 .lab + .lab::before{content:"/ ";color:var(--tinta-2)}
 .lab em{font-style:normal;color:var(--tinta-2)}
 .duas{display:grid;grid-template-columns:1.25fr 1fr;gap:0 10px;margin-top:3px;border-top:1px solid #9aa7b2;padding-top:3px}
@@ -286,6 +289,7 @@ details.legd[open]>summary{width:100%}
 @media print{.forabox{display:none!important}}
 </style>
 <link rel="stylesheet" href="sot-tema.css">
+<script src="../campos.js"></script>
 </head>
 <body>
 <script>window.__SOT = (window.parent !== window);</script>
@@ -1282,7 +1286,7 @@ function celHTML(x){
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
   h+='<div class="col meio">';
   h+='<div class="labs"><span class="data">PRÉ-OPS ('+ed(x,"preData","opc")+'):</span> '+labLinha(x,LABS1)+'<br>'+labLinha(x,LABS2)+'<br>'+labLinha(x,LABS3);
-  h+='<br><span class="lab"><em>+</em>'+xo(x,"extras")+' '+ed(x,"extras","opc")+'</span><span class="chips"><button class="chip" data-id="'+x.id+'" data-ac="exame">+ exame</button></span>';
+  h+='<br><span class="lab lx"><em>+</em>'+xo(x,"extras")+' '+ed(x,"extras","opc")+'</span><span class="chips"><button class="chip" data-id="'+x.id+'" data-ac="exame">+ exame</button></span>';
   if(sg.length) h+='<div class="sug">Sugeridos pela CMB/MUC: '+sg.map(function(e){return '<button class="chip" data-id="'+x.id+'" data-add="'+esc(e)+'">+ '+esc(e)+'</button>';}).join(" ")+'</div>';
   h+='</div>';
   h+='<div class="duas"><div>';

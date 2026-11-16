@@ -434,6 +434,8 @@ S.ficha=function(text,hdr){
       else fica.push(pt.trim());});
     r.cmb=fica.join(' / ');}
   if(/^NEGA\s+CMB/.test(deacc(r.cmb).toUpperCase()))r.cmb='NEGA';
+  var CP=G.SOTCAMPOS||(typeof require==='function'?(function(){try{return require('../../campos.js');}catch(e){return null;}})():null);
+  if(CP){var cp=CP.ap(lines.join('\n'));['cmb','muc','alergia'].forEach(function(f){if(!r[f]&&cp[f])r[f]=cp[f];});}
   if(m=all.match(/PESO\s*:?\s*(\d{1,3}(?:[.,]\d{1,3})?)\s*(KG|KILOS?|QUILOS?|K\b)/))r.peso=m[1].replace('.',',')+' kg';
   // bloco de diagnóstico → Dx / Cir. prévias / Mecanismo
   var bl=S.blocoDx(lines,U);

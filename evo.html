@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><script>window.__EMBED=true</script>
+<head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script><script>window.__EMBED=true</script><script src="campos.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Evolução Diária — Atualizador</title>
@@ -529,7 +529,7 @@ function marcaData(){
   const a=document.getElementById("avisoData"); if(a){ a.classList.toggle("hidden",!nao); a.textContent=nao?`⚠ Data desta evolução: ${fmtBR(EVAL)} — NÃO é hoje (${fmtBR(todayUTC())}). As contagens de PO / D / DIH usam esta data.`:""; }
 }
 function parseBR(s){
-  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/); if(!m) return null;
+  const m = String(s).trim().match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2}|\d{4}))?$/); if(!m) return null;
   let y;
   if(m[3]){ y=+m[3]; if(m[3].length===2) y+=2000; }
   else {   // data sem ano (ex.: 12/11): ano vigente; se cair mais de 7 dias depois da evolução, é do ano anterior
@@ -638,11 +638,11 @@ function protectedBlocks(text){
 /* =====================================================================
    DATAS DO TEXTO E CONTAGENS
    ===================================================================== */
-const DATE_RE = /(?<![\d\/])(\d{1,2}\/\d{1,2}(?:\/(?:\d{4}|\d{2}))?)(?![\d\/])/g;
+const DATE_RE = /(?<![\d\/.,-])(\d{1,2}\/\d{1,2}(?:\/(?:\d{4}|\d{2}))?|\d{1,2}[-.]\d{1,2}[-.](?:20\d{2}|2\d))(?![\d\/]|[.,-]\d)/g;
 /* data sem ano só vale se parecer data: não "1/3 distal", "EVA 7/10", "PA 12/8", "4/5", "1/2 cp" */
 function pareceData(line, m){
-  const s=m[1]; if(/\/\d+\/\d+$/.test(s)) return true;
-  const [d,mo]=s.split("/");
+  const s=m[1]; if(/[\/.-]\d+[\/.-]\d+$/.test(s)) return true;
+  const [d,mo]=s.split(/[\/.-]/);
   if(d.length===1&&mo.length===1) return false;
   if(+mo<1||+mo>12||+d<1||+d>31) return false;
   const antes=upS(line.slice(Math.max(0,m.index-16),m.index)), depois=line.slice(m.index+m[0].length,m.index+m[0].length+8);
@@ -775,15 +775,22 @@ function numCtx(text,s,cfg,m){
   const t=(grp.length>32?grp.slice(0,32)+"…":grp)+(side?" "+side:"");
   return t.trim();
 }
+/* "ALTA NO 2º PO", "COBRAR RX 1º PO", "RX DO 3º PO", "RETORNO NO 10º PO": é um plano, não a contagem de hoje — não muda */
+function planejado(text,s){
+  const ls=text.lastIndexOf("\n",s-1)+1, antes=upS(text.slice(ls,s));
+  return /\b(ALTA|COBRAR|RX|RADIOGRAFIA|RAIO[- ]?X|CONTROLE|RETORNO|REAVALIA\w*|RETIRAR|RETIRADA|CURATIVO|TROCA|LIBERA\w*|PROGRAMAR|PREVIS\w*|AGENDAR)\b[^\n]{0,22}$/.test(antes);
+}
 function collectCounters(text){
   const list=[];
   for(const c of COUNTERS) for(const m of text.matchAll(c.re)){
     const s=m.indices[1][0], e=c.unit?m.indices[2][1]:m.indices[1][1];
+    if((c.kind==="po"||c.cat==="surg") && planejado(text,s)) continue;
     list.push({s,e,seg:{type:"counter",label:c.label,kind:c.unit?unitKind(m[2]):c.kind,cat:c.unit?unitCat(text.slice(e,e+40)):c.cat,
       orig:text.slice(s,e),num:parseInt(m[1]),unitWord:c.unit?m[2]:null,missing:!!c.missing,after:!!c.after,prefixD:!!c.prefixD,manual:false,ctx:lineCtx(text,s,e)}});
   }
   for(const P of POI_RES) for(const m of text.matchAll(P.re)){
     const s=m.index, e=s+m[0].length;
+    if(planejado(text,s)) continue;
     list.push({s,e,seg:{type:"counter",label:"Dia de pós-operatório",kind:"poi",cat:"surg",orig:m[0],num:0,opWord:P.op(m),long:P.long,manual:false,ctx:lineCtx(text,s,e)}});
   }
   // cada contagem usa só as datas do seu “trecho” da linha (até a próxima contagem)
@@ -986,6 +993,8 @@ function renderAlerts(){
   const C=segs.filter(s=>s.type==="counter");
   const nod=C.filter(s=>s.flag==="nodate"&&s.state==="pend").map(s=>`${s.label}${s.ctx?" — "+s.ctx:""}: “${s.orig.trim()}”`);
   if(nod.length) A.push(`Contagem sem data de referência (${nod.join(", ")}): confira. Coloque a data (dd/mm/aaaa) na mesma linha para o cálculo automático.`);
+  const caiu=C.filter(s=>s.state==="auto"&&!s.manual&&/^\d+$/.test(String(s.orig).trim())&&/^\d+/.test(String(s.value))&&parseInt(s.value)<parseInt(s.orig));
+  for(const s of caiu) A.push(`${s.label}${s.ctx?" — "+s.ctx:""}: o texto dizia “${s.orig.trim()}”, mas pela data ${s.ref.str} hoje é “${s.value}” — o número anterior estava errado ou a data está errada. Conferir.`);
   const fut=C.filter(s=>s.flag==="future").map(s=>s.ref.str);
   if(fut.length) A.push(`Data de referência posterior à data desta evolução (${fut.join(", ")}).`);
   for(const s of C.filter(s=>s.flag==="ended")) A.push(`${s.label}${s.ctx?" — "+s.ctx:""}: “${s.value}” com data final em ${s.ref.endRef.str} já ultrapassada — conferir se foi prorrogado ou suspenso.`);
@@ -1016,7 +1025,7 @@ const UPPER_KW=/UMERO|\bRADIO\b|\bULNA|CLAVICULA|ESCAPULA|OMBRO|COTOVELO|PUNHO|\
 const LOWER_KW=/FEMUR|FEMORAL|TIBIA|FIBULA|PATELA|JOELHO|TORNOZELO|\bPE\b|CALCANEO|QUADRIL|ACETABULO|MALEOL|METATARS|TALUS|PILAO|PLATO|COXA|\bPERNA\b|MEMBRO INFERIOR|\bMI[DE]\b|TROCANT/;
 function sidesOf(u){
   u=u.replace(/DECUBITO LATERAL (DIREITO|ESQUERDO)|\bDL[DE]\b/g,"");
-  const s=new Set(); if(/\bDIREIT[OA]S?\b|\bM[SI]D\b/.test(u)) s.add("D"); if(/\bESQUERD[OA]S?\b|\bM[SI]E\b/.test(u)) s.add("E"); return s;
+  const s=new Set(); if(/\bDIREIT[OA]S?\b|\bM[SI]D\b|\bDIR\b|(?:^|\s)D\s*$/.test(u)) s.add("D"); if(/\bESQUERD[OA]S?\b|\bM[SI]E\b|\bESQ\b|(?:^|\s)E\s*$/.test(u)) s.add("E"); return s;
 }
 function regionsOf(u){ const s=new Set(); if(UPPER_KW.test(u)) s.add("superior"); if(LOWER_KW.test(u)) s.add("inferior"); return s; }
 function lateralityCheck(free){
@@ -1026,14 +1035,27 @@ function lateralityCheck(free){
   const EXAM_HEAD=/^\s*(MEMBRO\s+(SUPERIOR|INFERIOR)|M[SI][DE]\b|(OMBRO|COTOVELO|PUNHO|MAO|QUADRIL|JOELHO|TORNOZELO|PE|COXA|PERNA|ANTEBRACO|BRACO)\s+(DIREIT|ESQUERD))/;
   // pares (membro, lado) de cada fratura/lesão e de cada procedimento — um por linha
   const evt=[], proc=[];
-  for(const u of all){
-    if(skip(u) || EXAM_HEAD.test(u)) continue;
-    const isP=SURG_KW.test(u), isE=EVT_KW.test(u); if(!isP && !isE) continue;
-    const sd=[...sidesOf(u)], rg=[...regionsOf(u)];
-    if(sd.length!==1) continue;                       // linha sem lado ou com os dois lados: não dá para afirmar
-    const p={side:sd[0], reg:rg.length===1?rg[0]:null, txt:u.trim().slice(0,60)};
-    (isP?proc:evt).push(p);
+  const mencao={superior:false,inferior:false};
+  for(const u0 of all){
+    if(EXAM_HEAD.test(u0)) continue;
+    const isP=SURG_KW.test(u0), isE=EVT_KW.test(u0); if(!isP && !isE) continue;
+    if(/BILATERA/.test(u0) && !/PREVI|ANTIG|ANTECED|CONTRALATERA/.test(u0)){   // bilateral: vale para os dois lados
+      for(const r of regionsOf(u0)){ mencao[r]=true; for(const sd of ["D","E"]) (isP?proc:evt).push({side:sd,reg:r,txt:u0.trim().slice(0,60)}); }
+      continue;
+    }
+    if(skip(u0)) continue;
+    for(const r of regionsOf(u0)) mencao[r]=true;
+    // "FRATURA DE RÁDIO À DIREITA + FRATURA DE ACETÁBULO À ESQUERDA": cada pedaço com o seu lado
+    for(const u of u0.split(/\s\+\s|;|,\s(?=[A-Z])/)){
+      const sd=[...sidesOf(u)], rg=[...regionsOf(u)];
+      if(sd.length!==1) continue;                       // trecho sem lado ou com os dois lados: não dá para afirmar
+      const p={side:sd[0], reg:rg.length===1?rg[0]:null, txt:u.trim().slice(0,60)};
+      if(!p.reg && rg.length===0 && u!==u0) continue;
+      (isP?proc:evt).push(p);
+    }
   }
+  const COLUNA=/COLUNA|LOMBA|LOMBO|VERTEBR|ARTRODESE|DESCOMPRESS|MEDULA|CAUDA EQUINA|RAQUI|CERVICAL|TORACIC|\b[CTL]\d{1,2}\b|\bS1\b/;
+  const ehColuna=all.some(u=>!skip(u)&&(SURG_KW.test(u)||EVT_KW.test(u)||/LOMBALGIA|CERVICALGIA|DORSALGIA|PERDA DE FORCA/.test(u))&&COLUNA.test(u));
   // pares do exame físico
   const ex=[];
   for(const line of free.split("\n").map(upS)){
@@ -1062,11 +1084,11 @@ function lateralityCheck(free){
     const key=e.reg+e.side; if(seen.has(key)) continue; seen.add(key);
     if(e.reg){
       const same=refs.filter(p=>p.reg===e.reg);
-      if(same.length && !same.some(p=>p.side===e.side))
+      if(same.length && !same.some(p=>p.side===e.side) && !ehColuna)
         out.push(`Exame físico do membro ${e.reg} ${SIDE[e.side]}, mas a fratura/procedimento do membro ${e.reg} é do lado ${SIDE[same[0].side]} — conferir lateralidade.`);
-      else if(!same.length && regsRef.size && refs.every(p=>p.reg))
+      else if(!same.length && regsRef.size && refs.every(p=>p.reg) && !mencao[e.reg] && !ehColuna)
         out.push(`Exame físico do membro ${e.reg} ${SIDE[e.side]}, mas não há fratura/procedimento registrado em membro ${e.reg} — conferir.`);
-    } else if(refs.length && !refs.some(p=>p.side===e.side)){
+    } else if(refs.length && !refs.some(p=>p.side===e.side) && !ehColuna){
       out.push(`O exame físico descreve o lado ${SIDE[e.side]}, mas as fraturas/procedimentos são do lado ${SIDE[refs[0].side]} — conferir lateralidade.`);
     }
   }
@@ -1313,8 +1335,13 @@ function recomputeAll(){
   segs.forEach(s=>{ if(s.type==="counter") computeCounter(s); if(s.type==="rx"&&s.state==="off") s.date=fmtBR(EVAL); });
   render();
 }
+/* tira do texto colado as linhas da própria tela do app (ex.: "1. Evolução anterior", "⚠ Paciente ainda não marcado…") */
+function limparColagem(t){
+  return t.split("\n").filter(l=>!/^\s*(1\.\s*Evolu[çc][ãa]o anterior|⚠\s*Paciente ainda n[ãa]o marcado|Cole a evolu[çc][ãa]o de ontem|Data desta evolu[çc][ãa]o|Dias desde a evolu[çc][ãa]o|Analisar texto\s*$|Meus termos e se[çc][õo]es|Termos que o app j[áa] reconhece)/i.test(l)).join("\n").replace(/^\s*\n+/,"");
+}
 function go(){
-  const t=$("input").value; if(!t.trim()) return;
+  let t=$("input").value; if(!t.trim()) return;
+  const t2=limparColagem(t); if(t2!==t){ t=t2; $("input").value=t; }
   manualOff();
   readEval("evalDate"); NDAYS=Math.max(0,parseInt($("days").value)||0);
   analyze(t);
@@ -1830,7 +1857,8 @@ function igCross(ig){
   const W=[], I=[], SP=[]; if(!ig) return {warn:W,info:I,spell:SP};
   const head=SRC.split(/\n[ \t]*[-–—]{3,}/)[0];
   // alergias
-  const evA=allergyOf((SRC.match(/^.*ALERGI.*$/im)||[""])[0]), igA=allergyOf(ig.ap||"");
+  const CP=window.SOTCAMPOS?SOTCAMPOS.ap(SRC):null;
+  const evA=CP?(CP.alergia?allergyOf("ALERGIA: "+CP.alergia):null):allergyOf((SRC.match(/^.*ALERGI.*$/im)||[""])[0]), igA=allergyOf(ig.ap||"");
   if(evA && igA){
     const fmt=a=>a.nega?"nega":a.desc?"não sabe":a.list.join(", ");
     const diff = (evA.nega&&igA.list)||(igA.nega&&evA.list)||(evA.list&&igA.list&&!evA.list.some(x=>igA.list.some(y=>lev(x,y)<=2)));
@@ -1858,7 +1886,7 @@ function igCross(ig){
   if(ig.poStated!=null && ig.po && ig.poStated!==ig.po.n) I.push(`Internograma escrito como “${ig.poStated} PO”, mas pela data seria ${ig.po.label} — internograma desatualizado.`);
   if(ig.dihStated!=null && ig.dih!=null && ig.dihStated!==ig.dih) I.push(`DIH: internograma diz ${ig.dihStated}; pela data de internação (${ig.dihData}) hoje é DIH ${ig.dih} (${VISIT&&VISIT.dihConv?"dia da internação = DIH 1":"dia da internação = DIH 0"}).`);
   // medicações
-  const eM=medsOf(SRC,/(?:^|\n)\s*#?\s*(?:MUC|MEDICA[CÇ](?:[OÕ]ES|AO)(?: EM USO)?)\s*:?\s*([^\n]*)/), iM=medsOf(ig.ap,/MUC\s*:?\s*(.*?)(?=\s+(?:NEGA ALERG|ALERGI|ASS\b|EQ\.)|$)/);
+  const eM=CP&&CP.muc?medsOf("MUC: "+CP.muc,/MUC:\s*(.*)/):medsOf(SRC,/(?:^|\n)\s*#?\s*(?:MUC|MEDICA[CÇ](?:[OÕ]ES|AO)(?: EM USO)?)\s*:?\s*([^\n]*)/), iM=medsOf(ig.ap,/MUC\s*:?\s*(.*?)(?=\s+(?:NEGA ALERG|ALERGI|ASS\b|EQ\.)|$)/);
   if(eM.length && iM.length){
     const onlyE=[], onlyI=new Set(iM);
     for(const w of eM){ if(iM.includes(w)){ onlyI.delete(w); continue; } const near=iM.find(y=>lev(w,y)<=2); if(near){ onlyI.delete(near); SP.push({from:w,to:near,why:"grafia do internograma — conferir"}); W.push(`Medicação com grafia diferente — evolução: ${w} × internograma: ${near}.`); } else onlyE.push(w); }
