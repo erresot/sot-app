@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v36</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v37</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -1023,7 +1023,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '36';
+var VERSAO = '37';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2035,17 +2035,28 @@ function matchEvento0(ev) {
   var nums = ev.nums || [];
   for (var i = 0; i < nums.length; i++) { p = porReg(nums[i]); if (p) return { p: p, como: 'número' }; }
   var tk = nomeNorm(ev.texto || ev.titulo).split(' ').filter(function (w) { return w.length >= 3; });
+  // registro do evento (P: …, ou número solto de 5 a 8 dígitos): se o internado tem outro registro, não é a mesma pessoa
+  var regEv = [ev.P, ev.Pchute].concat(nums).map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(function (n) { return n.length >= 5 && n.length <= 8; });
   var melhor = null, segundo = 0;
   S.pacientes.forEach(function (x) {
     var nm = nomeNorm(x.nome).split(' ').filter(function (w) { return w.length >= 3; }); if (!nm.length) return;
+    var regX = [x.registro].concat(x.regs || []).map(function (n) { return String(n || '').replace(/\D/g, ''); }).filter(Boolean);
+    var conflito = regEv.length && regX.length && !regEv.some(function (n) { return regX.indexOf(n) > -1; });
     var acha = function (w) { return tk.some(function (t) { return t === w || lev1(t, w); }); };
-    var sc = nm.filter(acha).length, primeiro = acha(nm[0]);
+    // primeiro nome: BENEDITA × BENEDITO, MARIA × MARIO são pessoas diferentes (ARTHUR × ARTUR é grafia)
+    var genero = function (a, b) { return a.length === b.length && a.slice(0, -1) === b.slice(0, -1) && /[AO]/.test(a.slice(-1)) && /[AO]/.test(b.slice(-1)); };
+    var primeiro = tk.some(function (t) { return t === nm[0] || (lev1(t, nm[0]) && !genero(t, nm[0])); });
+    var sc = nm.slice(1).filter(acha).length + (primeiro ? 1 : 0);
+    if (conflito) {   // registro diferente: só aceita se nome e idade baterem (e avisa)
+      var idE = String(ev.idade || '').replace(/\D/g, ''), idX = String(x.idade || '').replace(/\D/g, '');
+      if (!(primeiro && sc >= 2 && idE && idE === idX)) return;
+    }
     var data = cxIG(x).some(function (c) { return c.data === ev.data; });
     var pts = sc * 2 + (primeiro ? 1 : 0) + (data ? 2 : 0);
     var Pdiferente = !!(ev.P || ev.Pchute);   // evento tem prontuário que não é de nenhum internado → só aceita nome bem parecido
     var aceita = (sc >= 2 && primeiro) || sc >= 3 || (!Pdiferente && sc >= 1 && data && primeiro);
     if (!aceita) return;
-    if (!melhor || pts > melhor.pts) { segundo = melhor ? melhor.pts : 0; melhor = { p: x, pts: pts, como: sc >= 2 ? 'nome' : 'provável', sc: sc }; }
+    if (!melhor || pts > melhor.pts) { segundo = melhor ? melhor.pts : 0; melhor = { p: x, pts: pts, como: conflito ? 'nome e idade — REGISTRO DIFERENTE, conferir' : sc >= 2 ? 'nome' : 'provável', sc: sc }; }
     else if (pts > segundo) segundo = pts;
   });
   if (melhor && melhor.pts > segundo) return { p: melhor.p, como: melhor.como };
