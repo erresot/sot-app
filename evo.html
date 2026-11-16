@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Evolução Diária — Atualizador</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root{
     --bg:#f6f7f9; --card:#fff; --ink:#1b2430; --muted:#5d6b7c; --line:#dde3ea;
@@ -124,6 +123,7 @@
   html.escuro{--bg:#11161d;--card:#19202a;--ink:#e6ebf1;--muted:#97a3b3;--line:#2b3542;--accent:#4c8dff;--accent-ink:#0b1220;--pend:#f0b54a;--pend-bg:#3a2e14;--keep:#5fd08f;--keep-bg:#163225;--chg:#79a8ff;--chg-bg:#18284a;--auto:#b39cff;--auto-bg:#2a2148;--warn:#ff8a7a;--warn-bg:#3a1a17;color-scheme:dark}
   html.claro{--bg:#f6f7f9;--card:#fff;--ink:#1b2430;--muted:#5d6b7c;--line:#dde3ea;--accent:#1f6feb;--accent-ink:#fff;--pend:#b7791f;--pend-bg:#fdf3dd;--keep:#2f855a;--keep-bg:#e3f4ea;--chg:#1f5fbf;--chg-bg:#e2ecfb;--auto:#6b46c1;--auto-bg:#ede7fb;--warn:#b42318;--warn-bg:#fdecea;color-scheme:light}
 </style>
+<link rel="stylesheet" href="hub/sot-tema.css">
 </head>
 <body>
 <div class="wrap">
@@ -522,8 +522,13 @@ function applyCase(model, w){
 }
 /* datas (sempre em UTC para evitar erro de fuso/horário de verão) */
 function parseBR(s){
-  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/); if(!m) return null;
-  let y=+m[3]; if(m[3].length===2) y+=2000;
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/); if(!m) return null;
+  let y;
+  if(m[3]){ y=+m[3]; if(m[3].length===2) y+=2000; }
+  else {   // data sem ano (ex.: 12/11): ano vigente; se cair mais de 7 dias depois da evolução, é do ano anterior
+    const ref=(typeof EVAL!=="undefined"&&EVAL)?EVAL:todayUTC(); y=ref.getUTCFullYear();
+    const t=new Date(Date.UTC(y,+m[2]-1,+m[1])); if(t-ref>7*864e5) y--;
+  }
   const d=new Date(Date.UTC(y,+m[2]-1,+m[1]));
   return d.getUTCMonth()===+m[2]-1 && d.getUTCDate()===+m[1] ? d : null;
 }
@@ -626,7 +631,19 @@ function protectedBlocks(text){
 /* =====================================================================
    DATAS DO TEXTO E CONTAGENS
    ===================================================================== */
-const DATE_RE = /(?<![\d\/])(\d{1,2}\/\d{1,2}\/(?:\d{4}|\d{2}))(?![\d\/])/g;
+const DATE_RE = /(?<![\d\/])(\d{1,2}\/\d{1,2}(?:\/(?:\d{4}|\d{2}))?)(?![\d\/])/g;
+/* data sem ano só vale se parecer data: não "1/3 distal", "EVA 7/10", "PA 12/8", "4/5", "1/2 cp" */
+function pareceData(line, m){
+  const s=m[1]; if(/\/\d+\/\d+$/.test(s)) return true;
+  const [d,mo]=s.split("/");
+  if(d.length===1&&mo.length===1) return false;
+  if(+mo<1||+mo>12||+d<1||+d>31) return false;
+  const antes=upS(line.slice(Math.max(0,m.index-16),m.index)), depois=line.slice(m.index+m[0].length,m.index+m[0].length+8);
+  if(/\b(EVA|DOR|GRAU|FORCA|PA|NOTA|ESCALA|MRC|GLASGOW|ECG|SAT|FC|FR|TERCO|HB|HT)\b[^0-9]*$/.test(antes)) return false;
+  if(/^\s*(mg|ml|cp|comp|mm|cm|%|x\b|h\b|mmhg|dist|med|prox)/i.test(depois)) return false;
+  if(/^\s*(D|DIST|M[EÉ]D|PROX)/.test(depois) && +mo<=4 && d.length===1) return false;
+  return true;
+}
 const ABX_RE_U = new RegExp("\\b(?:"+upS(ABX)+")");
 const CATS = ["surg","event","atb","intern"];
 let DATES=[], GLOBAL={}, BADDATES=[], INPATIENT=false;
@@ -638,7 +655,7 @@ function classifyWindow(w){
     cats:{
       surg:/CIRURG|PROCEDIMENTO|OPERAD|OPERATORI|\bPOI?\b|\bDPO\b|OSTEOSS|ARTROPLAS|ARTRODES|FIXAC|ARTROSCOP|AMPUTA|DESBRID|TENORRAF|ENXERT/.test(u),
       atb:ABX_RE_U.test(u),
-      event:/FRATURA|TRAUMA|QUEDA|ACIDENTE|LESAO|LUXACAO|ENTORSE|\bQPA\b|TORCAO/.test(u),
+      event:/FRATURA|TRAUMA|QUEDA|ACIDENTE|LESAO|LUXACAO|ENTORSE|\bQPA\b|TORCAO|ATROPEL|COLIS|CAPOT|\b(MOTO|CARRO|CAMINHAO|ONIBUS|BICICLETA|CAVALO|ANTEPARO)\s+X\b|\bX\s+(MOTO|CARRO|CAMINHAO|ONIBUS|BICICLETA|CAVALO|ANTEPARO|POSTE|MURO)\b/.test(u),
       intern:/INTERNA|ADMISS|\bDIH\b/.test(u),
     }};
 }
@@ -647,6 +664,7 @@ function scanDates(text){
   for(const line of text.split("\n")){
     let prev=0;
     for(const m of line.matchAll(DATE_RE)){
+      if(!pareceData(line,m)) continue;
       const d=parseBR(m[1]);
       if(!d) BADDATES.push(m[1]);
       else DATES.push({pos:off+m.index,stop:off+m.index+m[0].length,str:m[1],date:d,line:line.trim(),...classifyWindow(line.slice(prev,m.index))});

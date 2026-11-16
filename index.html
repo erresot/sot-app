@@ -22,14 +22,13 @@ html.trancado #lock{display:flex;position:fixed;inset:0;z-index:2147483647;align
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SOT — Visita + Evolução</title>
+<title>SOT APP</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f6b5c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{--bg2:#fafbfa;--tag:#eef1f0;--ic:#5b3fc4;--ic2:#ece8fb;--warnb:#f2c48d;--warnt:#7a3e00;
   --bg:#f3f5f4; --card:#fff; --ink:#15211d; --mut:#5d6b66; --line:#dde3e0;
@@ -259,6 +258,42 @@ body.sec-hub .top .sub, body.sec-hub .top .prog, body.sec-hub .top [data-doc]{di
 table.igrow{border-collapse:collapse;font-size:11.5px;min-width:640px;background:#fff}
 table.igrow th{background:#eef3f1;font-weight:700;font-size:10.5px;color:#46534e}
 table.igrow td,table.igrow th{border:1px solid #9aa7a2;padding:4px 5px;vertical-align:top;text-align:center}
+
+/* ---- v29: versão na tela e aviso de atualização ---- */
+.verchip{margin-left:auto;font:600 11px/1 inherit;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:transparent;color:inherit;opacity:.85;cursor:pointer}
+.novaversao{display:block;width:100%;margin-top:8px;padding:10px 12px;border-radius:10px;border:0;background:#ffd166;color:#3a2a00;font:700 14px/1.2 inherit;cursor:pointer}
+.novaversao[hidden]{display:none}
+/* ---- v29: leitura e toque no celular (mínimo 12 px de letra e ~40 px de toque) ---- */
+.leito small{font-size:12px}
+.tag{font-size:12px;padding:2px 6px}
+.igs{font-size:12px}
+.chip{min-height:40px;padding:9px 14px;display:inline-flex;align-items:center}
+.who[data-open]{display:block;padding:9px 0;min-height:40px;font-size:13.5px;cursor:pointer}
+.pend .who[data-open]{padding:8px 0 4px}
+#sync.sync{min-height:38px}
+input[type=checkbox].agck{width:26px!important;height:26px!important;margin:6px 8px 6px 0;flex:none}
+.agsave,.btn.sm{min-height:38px}
+/* v29 — alvos de toque e letras mínimas no celular */
+.pend{min-height:44px;align-items:center}
+.pend input[type=checkbox]{width:28px;height:28px;flex:none;margin:0 6px 0 0}
+.pend .x{min-width:40px;min-height:40px;font-size:18px}
+#sheet details>summary{min-height:40px;display:flex;align-items:center}
+.subtabs button{font-size:12px}
+.agck{width:26px!important;height:26px!important}
+label.op input[type=checkbox]{width:24px;height:24px}
+/* v30 — ALTA e IC bem visíveis, embaixo do número do leito */
+.leito .lmark{display:block;margin:5px 4px 0;padding:3px 0;border-radius:7px;font-size:12px;font-weight:800;letter-spacing:.5px;line-height:1.1;text-align:center}
+.leito .lmark+.lmark{margin-top:3px}
+.leito .lmark.alta{background:#e8590c;color:#fff}
+.leito .lmark.ic{background:#6741d9;color:#fff}
+html.escuro .leito .lmark.alta{background:#f08c3a;color:#1b1b1b}
+html.escuro .leito .lmark.ic{background:#9775fa;color:#14112a}
+/* v30 — a linha do internograma rola dentro do quadro (não estoura a tela) */
+.igl>div,.igl>span{min-width:0}
+.igpanel{max-width:100%;overflow:hidden}
+.iglin{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+table.igrow td,table.igrow th{min-width:110px}
+.igpanel .row .btn{flex:1 1 160px}
 </style>
 </head>
 <body>
@@ -313,7 +348,8 @@ table.igrow td,table.igrow th{border:1px solid #9aa7a2;padding:4px 5px;vertical-
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v30</button></div>
+  <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -646,7 +682,7 @@ function extrairDoc(cels, section) {
 }
 // alergia do internograma: texto e se há alguma (para destacar em vermelho)
 function alergiaInfo(p) {
-  var L = (p.apL && p.apL.alergia) || [], t = L.join('; ');
+  var L = (p.apL && p.apL.alergia) || [], t = L.join('; ').replace(/^\s*alergias?\s*:\s*/i, '');
   if (!t) return { txt: '', tem: null };
   if (/n[ãa]o\s+sab|desconhec|sem informa/i.test(t)) return { txt: t, tem: false, desconhecida: true };
   var nega = /nega/i.test(t) && !/al[ée]rgic[oa]\s+a|alergia[s]?\s*:\s*(?!nega)[a-zà-ú]{3,}/i.test(t);
@@ -767,6 +803,7 @@ function aplicarTema() {
   document.querySelectorAll('[data-temaciclo]').forEach(function (b) { b.textContent = esc ? '☀️' : '🌙'; });
   var mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = esc ? '#0c2a24' : '#0f6b5c';
   try { var fr = document.getElementById('evoFrame'); if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: 'evo-tema', escuro: esc }, '*'); } catch (e) {}
+  if (typeof temaHubTodos === 'function') temaHubTodos(esc);
   return esc;
 }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema); } catch (e) {}
@@ -839,7 +876,10 @@ function chavePend(t) { return String(t || '').toUpperCase().normalize('NFD').re
 function pendParecida(a, b) { return a === b || (a.length >= 8 && b.length >= 8 && (a.indexOf(b) === 0 || b.indexOf(a) === 0 || (a.length > 14 && b.length > 14 && (a.indexOf(b) > -1 || b.indexOf(a) > -1)))); }
 function mesclarPendAuto(p, ja, del) {
   S.pendDel = S.pendDel || {}; del = S.pendDel[p.id] = del || [];
-  var apagar = function (t) { if (del.indexOf(t) < 0) del.push(t); };
+  var agora = (typeof relogio === 'function') ? relogio() : Date.now();
+  // lápide com hora: só apaga o que já existia; texto igual criado depois continua (ver sync.js)
+  var apagar = function (t) { var i = -1; del.forEach(function (d, j) { if ((d.t || d) === t) i = j; }); var l = { t: t, at: agora }; if (i < 0) del.push(l); else if (typeof del[i] !== 'string' && (del[i].at || 0) < agora) del[i] = l; };
+  var foiApagada = function (t) { return del.some(function (d) { return (d.t || d) === t; }); };
   var sug = (p.sugPend || []).map(function (t) { return { t: t, k: chavePend(t) }; });
   // 1) automáticas que o internograma não traz mais (texto mudou ou saiu) → saem (e saem dos outros aparelhos)
   ja = ja.filter(function (x) {
@@ -861,7 +901,7 @@ function mesclarPendAuto(p, ja, del) {
   });
   // 3) novas do internograma
   sug.forEach(function (q) {
-    if (del.indexOf(q.t) > -1) return;
+    if (foiApagada(q.t)) return;
     if (fica.some(function (x) { return pendParecida(chavePend(x.t), q.k); })) return;
     fica.push({ t: q.t, ok: false, auto: true, at: 0 });
   });
@@ -880,7 +920,43 @@ function moverDados(de, para) {
 }
 
 </script>
-<script>
+<script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
+var VERSAO = '30';
+var ERR = (function () {
+  var K = 'sot-erros', L = [];
+  try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
+  function log(onde, e, avisar) {
+    var msg = (e && (e.msg || e.message)) || String(e || '');
+    if (/ResizeObserver loop|Script error\.?$/.test(msg)) return;
+    L.push({ em: Date.now(), v: VERSAO, onde: String(onde || ''), msg: msg.slice(0, 300) });
+    L = L.slice(-40);
+    try { localStorage.setItem(K, JSON.stringify(L)); } catch (x) {}
+    try { console.warn('[SOT]', onde, e); } catch (x) {}
+    if (avisar && typeof toast === 'function') toast('⚠ ' + avisar);
+  }
+  return { log: log, lista: function () { return L.slice().reverse(); }, limpar: function () { L = []; try { localStorage.removeItem(K); } catch (e) {} } };
+})();
+window.addEventListener('error', function (e) { ERR.log('tela', e.error || e.message); });
+window.addEventListener('unhandledrejection', function (e) { var r = e.reason; if (r && r.auth) return; ERR.log('tarefa', r); });
+var NOVA_VERSAO = false;
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  var tinhaSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!tinhaSW) { tinhaSW = true; return; }          // primeira instalação: nada a avisar
+    NOVA_VERSAO = true; var b = document.getElementById('novaVersao'); if (b) b.hidden = false;
+  });
+}
+function blocoDiagnostico() {
+  var L = ERR.lista();
+  return '<div class="card"><div class="sec">Versão e diagnóstico</div>' +
+    '<div class="hint" style="margin:0 0 8px">SOT APP <b>v' + VERSAO + '</b>' + (NOVA_VERSAO ? ' · <b>atualização pronta</b> — <button class="btn sm" data-recarregar>Recarregar</button>' : '') + '</div>' +
+    (L.length ? '<details><summary>' + L.length + ' erro(s) registrado(s) neste aparelho</summary><div class="mono" style="font-size:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;margin-top:6px">' +
+      L.map(function (x) { var d = new Date(x.em); return esc(('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ' v' + x.v + ' [' + x.onde + '] ' + x.msg); }).join('\n') +
+      '</div><div class="row" style="gap:6px;margin-top:6px"><button class="btn ghost sm" data-errcopy>Copiar</button><button class="btn ghost sm" data-errlimpar>Limpar</button></div></details>'
+      : '<div class="hint" style="margin:0">Nenhum erro registrado neste aparelho.</div>') + '</div>';
+}
+
+
 // ===================== estado =====================
 var KEY = 'sot-app-v1';
 function novoEstado(tab) { return { hoje: hojeISO(), fonte: null, dataIG: null, cab: null, soltas: [], leitosPDF: [], pacientes: [], vis: {}, pend: {}, pendDel: {}, evo: {}, fotos: {}, idents: {}, conf: {}, sync: {}, eu: '', filtro: 'Todos', mostrarAltas: true, tab: tab || 'leitos' }; }
@@ -971,8 +1047,13 @@ function grausOntem(id) {
 
 // ===================== import do PDF =====================
 $('#file').addEventListener('change', function (e) { var f = e.target.files[0]; if (!f) return; importarPDF(f); e.target.value = ''; });
+var PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+function carregarPDFJS() {   // só carrega o leitor de PDF quando alguém importa um PDF
+  if (window.pdfjsLib) return Promise.resolve();
+  return new Promise(function (ok, er) { var s = document.createElement('script'); s.src = PDFJS_URL; s.onload = ok; s.onerror = function () { er(new Error('leitor de PDF não carregou')); }; document.head.appendChild(s); });
+}
 function importarPDF(f) {
-  if (!window.pdfjsLib) { toast('Leitor de PDF não carregou — verifique a internet'); return; }
+  if (!window.pdfjsLib) { toast('Carregando leitor de PDF…'); carregarPDFJS().then(function () { importarPDF(f); }, function (e) { ERR.log('pdf', e, 'Leitor de PDF não carregou — verifique a internet'); }); return; }
   toast('Lendo internograma…');
   try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) {}
   f.arrayBuffer().then(function (buf) { return pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise; }).then(function (doc) {
@@ -1073,8 +1154,6 @@ function tagsPac(p) {
   var t = tagSegurar(p);
   var al0 = alergiaInfo(p); if (al0.tem) t += '<span class="tag red">⚠ ALERGIA</span>';
   if (p.mudou) t += '<span class="tag ic">↪ ' + esc(p.mudou) + '</span>';
-  if (p.alta) t += '<span class="tag hj">ALTA</span>';
-  if (p.ic) t += '<span class="tag ic">IC</span>';
   if (p.hm) t += '<span class="tag ic">Hm</span>';
   if (p.ps) t += '<span class="tag ic">PS · sem internação</span>';
   if (p.po) t += '<span class="tag po">' + esc(p.po.label) + '</span>';
@@ -1112,7 +1191,8 @@ function vLeitos() {
 function cardPac(p) {
   var np = (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).length;
   return '<div class="card pt' + (visitado(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '">' +
-    '<div class="leito">' + (visitado(p) ? '<span class="chk">✓</span>' : '') + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small></div>' +
+    '<div class="leito">' + (visitado(p) ? '<span class="chk">✓</span>' : '') + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small>' +
+      (p.alta ? '<span class="lmark alta" title="Alta prevista no internograma">ALTA</span>' : '') + (p.ic ? '<span class="lmark ic" title="Interconsulta (paciente de outra equipe)">IC</span>' : '') + '</div>' +
     '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + '</div>' +
     '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div></div></div>';
 }
@@ -1193,6 +1273,7 @@ function vConfig() {
   h += '<div class="row" style="margin-top:8px"><button class="btn ghost" data-zerar style="color:var(--bad)">Apagar tudo deste aparelho</button></div>';
   h += '<h2>Backup</h2><div class="card"><div class="hint" style="margin:0 0 8px">Tudo é salvo no aparelho a cada toque e enviado ao Drive quando houver internet. Uma cópia completa por dia vai para a pasta “backups” no Drive.</div><div class="row"><button class="btn sec" data-bkp>Baixar backup (arquivo)</button><label class="btn sec" style="text-align:center;cursor:pointer">Restaurar backup<input type="file" id="bkpIn" accept="application/json" hidden></label></div></div>';
   h += '<div class="lock">🔒 Dados de pacientes só neste aparelho e no Google Drive da conta da equipe.</div>';
+  h += blocoDiagnostico();
   return h;
 }
 
@@ -1311,13 +1392,13 @@ function fichaIG(p) {
   if (p.mecanismo) h += '<div class="igr"><b>Mecanismo</b><span>' + esc(p.mecanismo) + (p.dataTrauma ? ' (' + esc(p.dataTrauma) + ')' : '') + '</span></div>';
   h += '<div class="igr"><b>Internação</b><span>' + esc(p.dihData || '—') + (p.dih != null ? ' · DIH ' + p.dih : '') + (p.dihStated != null && p.dihStated !== p.dih ? ' <i class="warnt">(internograma: ' + p.dihStated + ')</i>' : '') + '</span></div>';
   h += '<div class="igr"><b>Paciente</b><span>' + esc([p.idade && p.idade + (/meses/.test(p.idade) ? '' : ' anos'), p.origem, p.registro && 'Reg ' + p.registro].filter(Boolean).join(' · ')) + '</span></div>';
-  if (al.txt) h += '<div class="igr"><b>Alergia</b><span class="' + (al.tem ? 'alergia' : '') + '">' + esc(al.txt) + '</span></div>';
+  if (al.txt) h += '<div class="igr"><b>Alergias</b><span class="' + (al.tem ? 'alergia' : '') + '">' + esc(al.txt) + '</span></div>';
   h += '<div class="igs">Diagnósticos / procedimentos</div>' + (linhasHtml(p.dxL || (p.dx ? [p.dx] : [])) || '<div class="hint">—</div>');
   if (p.apL) {
-    if (p.apL.cmb.length) h += '<div class="igr"><b>Comorb.</b><span>' + esc(p.apL.cmb.join(', ')) + '</span></div>';
+    if (p.apL.cmb.length) h += '<div class="igr"><b>AP / CMB</b><span>' + esc(siglas(p.apL.cmb.join(', '))) + '</span></div>';
     if (p.apL.muc.length) h += '<div class="igr"><b>MUC</b><span>' + esc(p.apL.muc.join(', ')) + '</span></div>';
     if (p.apL.outros.length) h += '<div class="igr"><b>Outros</b><span>' + esc(p.apL.outros.join(', ')) + '</span></div>';
-  } else if (p.ap) h += '<div class="igr"><b>AP</b><span>' + esc(p.ap) + '</span></div>';
+  } else if (p.ap) h += '<div class="igr"><b>AP / CMB</b><span>' + esc(siglas(p.ap)) + '</span></div>';
   if ((p.classifL || []).length || p.classif) h += '<div class="igr"><b>Classif.</b><span>' + esc((p.classifL && p.classifL.length ? p.classifL : [p.classif]).join(' · ')) + '</span></div>';
   if (p.ass) h += '<div class="igr"><b>Assinatura</b><span>' + esc(p.ass.replace(/^ass\.?\s*/i, '')) + '</span></div>';
   (p.agenda || []).forEach(function (a) { h += '<div class="hint" style="color:var(--warn);font-weight:600;margin-top:4px">📅 ' + (a.dias === 0 ? 'HOJE' : a.dias === 1 ? 'AMANHÃ' : 'em ' + a.dias + ' d') + ': ' + esc(a.txt) + '</div>'; });
@@ -1353,7 +1434,7 @@ var HUB = [
 ];
 function hubItem(id) { var r = null; HUB.forEach(function (g) { g.itens.forEach(function (x) { if (x.id === id) r = x; }); }); return r; }
 function vHub() {
-  var h = '<div class="hubhead"><h2 style="margin:0">🦴 OrthoHub</h2><div class="hint">Os outros programas da equipe, do jeito que foram feitos. O que você preenche em cada um continua lá enquanto o app estiver aberto.</div></div>';
+  var h = '<div class="hubhead"><h2 style="margin:0">🦴 OrthoHub</h2><div class="hint">Os outros programas da equipe, do jeito que foram feitos. O que você preenche em cada um continua lá enquanto o app estiver aberto (até 4 programas abertos ao mesmo tempo; o mais antigo fecha).</div></div>';
   HUB.forEach(function (g) {
     var extra = /AMBULAT/.test(g.g) ? '<button class="card hubcard" data-hubagenda><span class="hubi">📅</span><span class="hubt"><b>Agenda</b><span class="hint">Google Agenda cirúrgico da equipe (o mesmo da Enfermaria).</span></span><span class="hubgo">›</span></button>' : '';
     h += '<h2>' + g.g + '</h2><div class="hubgrid">' + extra + g.itens.map(function (x) {
@@ -1362,11 +1443,38 @@ function vHub() {
   });
   return h + '<div class="hint" style="margin:14px 2px 90px">Textos gerados são modelos: conferir antes de colar no prontuário. Esses programas não usam o Drive — o que é digitado fica só neste aparelho.</div>';
 }
+/* tema dos programas do OrthoHub acompanha o do app (claro/escuro) */
+var HUB_TEMA_PROPRIO = { anamnese: 1, condutas: 1, desccir: 1, exame: 1, posop: 1, retornos: 1 };   // têm modo escuro próprio (data-theme)
+var HUB_SEGUE_SISTEMA = { avaliacao: 1 };                                                            // escurecem sozinhos pelo sistema
+function temaHub(fr, esc) {
+  try {
+    var id = fr.getAttribute('data-id'), d = fr.contentDocument; if (!d || !d.documentElement) return;
+    var el = d.documentElement, sis = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+    if (id === 'evoamb') { fr.contentWindow.postMessage({ type: 'evo-tema', escuro: esc }, '*'); return; }
+    if (HUB_TEMA_PROPRIO[id]) { el.setAttribute('data-theme', esc ? 'dark' : 'light'); return; }
+    el.classList.toggle('sot-inverte', HUB_SEGUE_SISTEMA[id] ? esc !== sis : esc);
+  } catch (e) { ERR.log('tema-hub', e); }
+}
+function temaHubTodos(esc) { document.querySelectorAll('#hubFrames iframe[data-id]').forEach(function (f) { temaHub(f, esc); }); }
+function temaAtualEscuro() { return document.documentElement.classList.contains('escuro'); }
+/* memória: no máximo 4 programas abertos ao mesmo tempo; o usado há mais tempo é fechado (o mapa e o aberto agora ficam) */
+var HUB_MAX = 4;
+function hubLimitar(manter) {
+  var L = Array.prototype.slice.call(document.querySelectorAll('#hubFrames iframe[data-id]')).filter(function (f) { return f.getAttribute('data-id') !== 'mapa' && f !== manter; });
+  L.sort(function (a, b) { return (+a.dataset.uso || 0) - (+b.dataset.uso || 0); });
+  while (L.length > HUB_MAX - 1) { var f = L.shift(); f.remove(); }
+}
+function novoFrameHub(id, src) {
+  var fr = document.createElement('iframe'); fr.setAttribute('data-id', id); fr.src = src;
+  fr.addEventListener('load', function () { temaHub(fr, temaAtualEscuro()); });
+  return fr;
+}
 function abrirHub(id) {
   var x = hubItem(id); if (!x) return;
   var box = $('#hubFrames'), fr = box.querySelector('iframe[data-id="' + id + '"]');
   box.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('on'); });
-  if (!fr) { fr = document.createElement('iframe'); fr.setAttribute('data-id', id); fr.src = 'hub/' + id + '.html'; box.appendChild(fr); }
+  if (!fr) { fr = novoFrameHub(id, 'hub/' + id + '.html'); box.appendChild(fr); }
+  fr.dataset.uso = Date.now(); hubLimitar(fr);
   fr.classList.add('on');
   $('#hubTit').textContent = x.n; var bx1 = document.querySelector('[data-hubclose]'); if (bx1) bx1.textContent = '‹ OrthoHub'; $('#hubNova').href = 'hub/' + id + '.html';
   $('#hubView').classList.add('on'); travar();
@@ -1450,7 +1558,13 @@ function propostaCx(p) {
   var plano = /AVISO|PROGRAM|PROPOST|AGUARD|AGENDAD|MAPA|AMANHA|\bCC\b|SOLIC|PRE[- ]?OP|RESERVA/;
   return (p.agenda || []).some(function (a) { return cx.test(a.txt.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '')); }) || tx.split('\n').some(function (l) { return cx.test(l) && plano.test(l); });
 }
+// siglas médicas sempre em maiúsculas (o internograma vem em "Title Case": Dm, Dlp, Tp, Inr…)
+var RE_SIGLA = /\b(has|dm[12]?|dlp|dpoc|irc|drc|icc|iam|avc[ih]?|tvp|tep|hiv|hpb|tce|trm|dac|daop|itu|drge|tdah|hcv|hbv|aas|inr|ttpa|pcr|vhs|tgo|tgp|tsh|t4l|cpk|uti|rch|poi|dih|mie|mid|msd|mse|mmii|mmss|atq|atj|ptq|ptj|rafi|dhs|pfn|iot|cpap|bipap|nph|ecg|usg|lca|lcp|tfg|imc|sus)\b/gi;
+var RE_SIGLA_LAB = /(^|[\s\/(;,])(tp|inr|rni|tap|ttpa|ttpar|pcr|vhs|tgo|tgp|tsh|t4l|cpk|ck|ggt|dhl|vcm|hcm|rdw|bt|bd|bi|fa)(\s*:?\s*[<>]?\s*\d)/gi;
+function siglas(s) { return String(s == null ? '' : s).replace(RE_SIGLA, function (m) { return m.toUpperCase(); }); }
+function siglasLab(s) { return siglas(s).replace(RE_SIGLA_LAB, function (m, a, n, b) { return a + n.toUpperCase() + b; }).replace(/\bhba1c\b/gi, 'HbA1c'); }
 function marcarExameLinha(l, cx) {
+  l = siglasLab(l);
   var out = '', pos = 0;
   l.replace(LABRE, function (m, a1, nome, a2, num, mil, pct, a3, off) {
     var r = labRef(nome); if (!r) return m;
@@ -1707,7 +1821,14 @@ function parseEvento(e) {
   o.nums = (tudo.match(/\b\d{4,9}\b/g) || []);
   var mI = t.match(/\b(\d{1,3})\s*(anos?|a\b|a\.|meses|m\b|mes)/i); o.idade = mI ? mI[1] + (/^m/i.test(mI[2]) ? ' meses' : ' anos') : '';
   var mA = t.match(/\bAss(?:ist(?:ente)?)?\.?\s*[:.\-]?\s*(?:Dr[a]?\.?\s*)?([A-Za-zÀ-ÿ][^,;|]*)$/i) || t.match(/\b(?:Dr[a]?|DR[A]?)\.?\s+([A-Za-zÀ-ÿ][^,;|]*)$/);
-  o.ass = mA ? mA[1].trim() : '';
+  o.ass = mA ? mA[1].trim() : ''; o.nota = '';
+  // "Ass Dr Ederson / R. Luiz / Cx grande, começar cedo": nomes ficam na assinatura, o resto vira recado
+  if (o.ass) {
+    var NOTA = /\b(CX|CIRURGIA|COME[CÇ]AR|CEDO|GRANDE|PRIMEIR[OA]|[ÚU]LTIM[OA]|JEJUM|RESERVA|UTI|RCH|SANGUE|LADO|MATERIAL|OPME|PEDIR|AVISAR|LIGAR|CONFIRMAR|SALA|HOR[AÁ]RIO|ANESTESIA|BLOQUEIO|RX|ARCO|SCOPIA|INTERNAR|AMBULATORIAL)\b/i;
+    var pAss = o.ass.split(/\s*[\/+]\s*|\s+-\s+/), nomes = [], notas = [];
+    pAss.forEach(function (x) { x = x.trim(); if (!x) return; if (NOTA.test(norm0(x)) || x.split(/\s+/).length > 4) notas.push(x); else nomes.push(x.replace(/^\s*dr[a]?\.?\s+/i, '')); });
+    if (nomes.length) { o.ass = nomes.join(' / '); o.nota = notas.join(' / '); }
+  }
   var p0 = (partes[0] || '').replace(/\b\d.*$/, '').replace(/\bP\s*:?\s*$/i, '').trim();
   o.nome = p0 && p0.split(' ').length >= 2 ? p0 : (partes[0] && !/\d/.test(partes[0]) ? partes[0] : '');
   o.nome = o.nome.replace(/^(sra?\.?|sr\.?|pcte|paciente)\s+/i, '');
@@ -1858,16 +1979,16 @@ setInterval(function () { if (document.visibilityState === 'visible') carregarAg
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') carregarAgenda(false); });
 setTimeout(function () { carregarAgenda(false); }, 2500);
 
-var AG_FILTRO = 'todos', AG_CALS = null;
+var AG_FILTRO = 'todos', AG_CALS = null, AG_CALS_EM = 0;
 function vAgenda() {
   var h = '<div class="hubhead"><h2 style="margin:0">📅 Agenda cirúrgica</h2></div>';
   if (!SYNC.temToken()) return h + '<div class="card"><div class="hint">Conecte ao Google (☁︎ no topo) para ver a Agenda.</div><div class="row" style="margin-top:8px"><button class="btn" data-sync>Conectar ao Google</button></div></div>';
   if (!SYNC.temAgenda()) return h + '<div class="card"><div class="lb">Falta uma permissão</div><div class="hint" style="margin:6px 0 10px">O app precisa de permissão para <b>ver</b> (só ver) as agendas da conta equipersot. O Google vai abrir uma janela — marque a opção da Agenda e confirme.</div><button class="btn" data-agperm>Permitir acesso à Agenda</button></div>';
   if (!agCals().length || S.agTrocar) {
-    if (!AG_CALS) { SYNC.calListar().then(function (L) { AG_CALS = L; render(); }).catch(function (e) { AG_CALS = []; S.agErro = e.msg || 'erro'; render(); }); return h + '<div class="card hint">Carregando as agendas da conta…</div>'; }
+    if (!AG_CALS || (!AG_CALS.length && Date.now() - (AG_CALS_EM || 0) > 15000)) { AG_CALS_EM = Date.now(); AG_CALS = AG_CALS || null; SYNC.calListar().then(function (L) { AG_CALS = L || []; AG_CALS_EM = Date.now(); render(); }).catch(function (e) { AG_CALS = []; AG_CALS_EM = Date.now(); S.agErro = (e && e.msg) || 'erro'; ERR.log('agenda-listar', e); render(); }); if (!AG_CALS) return h + '<div class="card hint">Carregando as agendas da conta…</div>'; }
     var L = AG_CALS.slice().sort(function (a, b) { var sa = /cir|cc|centro|sot|ortop|agenda/i.test(a.summaryOverride || a.summary) ? 0 : 1, sb = /cir|cc|centro|sot|ortop|agenda/i.test(b.summaryOverride || b.summary) ? 0 : 1; return sa - sb; });
     return h + '<div class="card"><div class="lb">Qual é a agenda cirúrgica?</div><div class="hint" style="margin:4px 0 10px">Escolha uma vez (fica salvo neste aparelho).</div>' +
-      (L.length ? '<div class="hint" style="margin-bottom:6px">Marque <b>todas</b> as agendas onde vocês colocam cirurgias (na dúvida, marque todas).</div>' + L.map(function (c) { var on = agCals().length ? agCals().indexOf(c.id) > -1 : true; return '<label class="op" style="display:flex;gap:10px;align-items:center;width:100%;margin:6px 0"><input type="checkbox" class="agck" value="' + esc(c.id) + '" data-nome="' + esc(c.summaryOverride || c.summary) + '"' + (on ? ' checked' : '') + ' style="width:20px;height:20px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + esc(c.backgroundColor || '#888') + '"></span>' + esc(c.summaryOverride || c.summary) + (c.primary ? ' <span class="hint">(agenda principal da conta)</span>' : '') + '</label>'; }).join('') + '<button class="btn" data-agusar style="width:100%;margin-top:8px">Usar as agendas marcadas</button>' : '<div class="hint">Nenhuma agenda encontrada nesta conta. Confira se a agenda foi compartilhada com a equipersot.</div>') + '</div>';
+      (L.length ? '<div class="hint" style="margin-bottom:6px">Marque <b>todas</b> as agendas onde vocês colocam cirurgias (na dúvida, marque todas).</div>' + L.map(function (c) { var on = agCals().length ? agCals().indexOf(c.id) > -1 : true; return '<label class="op" style="display:flex;gap:10px;align-items:center;width:100%;margin:6px 0"><input type="checkbox" class="agck" value="' + esc(c.id) + '" data-nome="' + esc(c.summaryOverride || c.summary) + '"' + (on ? ' checked' : '') + ' style="width:20px;height:20px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + esc(c.backgroundColor || '#888') + '"></span>' + esc(c.summaryOverride || c.summary) + (c.primary ? ' <span class="hint">(agenda principal da conta)</span>' : '') + '</label>'; }).join('') + '<button class="btn" data-agusar style="width:100%;margin-top:8px">Usar as agendas marcadas</button>' : '<div class="hint">' + (S.agErro ? 'Não consegui buscar as agendas agora (sem internet ou sem resposta do Google).' : 'Nenhuma agenda encontrada nesta conta. Confira se a agenda foi compartilhada com a equipersot.') + '</div><button class="btn ghost" data-agrecarregar style="width:100%;margin-top:8px">⟳ Tentar de novo</button>') + '</div>';
   }
   var ag = S.ag && S.ag.cal === agCals().join('|') ? S.ag : null;
   h += '<div class="row" style="margin:0 0 8px;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint" style="flex:1">' + esc(S.agCalNome || '') + (ag ? ' · atualizado ' + new Date(ag.at).toTimeString().slice(0, 5) : '') + (agCarregando ? ' · carregando…' : '') + '</span><button class="btn ghost sm" data-agrecarregar>⟳ Atualizar</button><button class="btn ghost sm" data-agtrocar>trocar agenda</button></div>';
@@ -1941,8 +2062,8 @@ function painelIG(p, ev) {
     var just = (p.dxL || []).map(function (d) { var q = haQuanto(d); return esc(d) + (q ? ' <b class="igq">(' + q + ')</b>' : ''); }).join('<br>');
     var h = '<details class="igpanel"><summary>📋 Dados do internograma — ' + esc(p.nome.split(' ')[0]) + (p.leito ? ' · leito ' + esc(p.leito) : '') + (p.dih != null && p.dih !== '' ? ' · DIH ' + esc(p.dih) : '') + '</summary>';
     h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc) + '<br><b>Internograma:</b> ' + (cx.length ? cx.map(function (c) { return brCurto(c.data) + ' — ' + esc(c.proc); }).join('<br>') : '<i>sem cirurgia com data</i>'));
-    h += lin('JUSTIFICATIVA / HD', just || esc(p.dx || ''));
-    h += lin('AP / CMB', lista(ap.cmb) || esc(evs.cmb || ''));
+    h += lin('DIAGNÓSTICO (HD)', just || esc(p.dx || ''));
+    h += lin('AP / CMB', siglas(lista(ap.cmb)) || esc(siglas(evs.cmb || '')));
     h += lin('MUC', lista(ap.muc) || esc(evs.muc || ''));
     h += lin('ALERGIAS', lista(ap.alergia) || esc(evs.alergia || ''));
     var lc = typeof labsCompletos === 'function' ? labsCompletos(p) : null, cxP = typeof propostaCx === 'function' ? propostaCx(p) || true : true;
@@ -1950,6 +2071,7 @@ function painelIG(p, ev) {
     if (lc && Object.keys(lc.todos).length) h += lin('LABS', '<b>Padrão' + (lc.data ? ' (' + esc(lc.data) + ')' : '') + ':</b> ' + LAB_PADRAO.filter(function (k) { return lc.todos[k]; }).map(function (k) { var x = lc.todos[k]; return mk(k, x) + (x.data && x.data !== lc.data ? ' <small>(' + esc(x.data) + ')</small>' : ''); }).join(' / ') +
       (lc.extras ? '<br><b>Outros:</b> ' + Object.keys(lc.todos).filter(function (k) { return LAB_PADRAO.indexOf(k) < 0; }).map(function (k) { var x = lc.todos[k]; return mk(k, x) + (x.data ? ' <small>(' + esc(x.data) + ')</small>' : ''); }).join(' / ') : '') +
       '<details style="margin-top:4px"><summary class="hint" style="cursor:pointer">todas as linhas de exames (' + p.exames.length + ')</summary>' + p.exames.map(function (x) { return typeof marcarExameLinha === 'function' ? marcarExameLinha(x, true) : esc(x); }).join('<br>') + '</details>' + (hb && hb.v <= 10 ? '<br><b style="color:var(--bad,#c0392b)">⚠ Hb ' + esc(hb.txt) + ' — cirurgia exige Hb &gt; 10</b>' : ''));
+    h += lin('FOTOS (mapa)', fotosMapaBotoes(ev));
     h += lin('PRÉ-OP', (po.jejum ? '✓' : '☐') + ' jejum · ' + (po.hep ? '✓' : '☐') + ' heparina' + (ac.length ? ' (em uso: ' + esc(ac.join(', ')) + ')' : '') + ' · ' + (po.hb ? '✓' : '☐') + ' Hb/reserva · ' + (po.aval ? '✓' : '☐') + ' avaliações');
     return h + '</details>';
   } catch (e) { console.error(e); return ''; }
@@ -2077,7 +2199,7 @@ function trechoIG(p, re) {
 }
 function celulaMapa(ev) {
   var p = pacientePorEvento(ev), id = 'ev_' + ev.id;
-  if (!p) return { id: id, hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, ''), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
+  if (!p) return { id: id, hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '').replace(/,?\s*(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(-feira)?,\s*\d{1,2}\s+de\s+[a-zç]+\.?(\s+de\s+\d{4})?\s*[·•-]?\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/gi, '').trim(), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
   var limpa = function (x) { return String(x || '').replace(/^\s*(muc\s*e\s*alergias?|alergias?|muc|cmb|ap|comorbidades)\s*[:\-]?\s*/i, '').replace(/[\s,;.]+$/, '').trim(); };
   var ap = p.apL || {}, evs = (typeof evoSecoes === 'function' ? evoSecoes(p) : null) || {}, lb = labsMapa(p), dx = (p.dxL || []).join(' / ') || p.dx || '';
   var idade = String(p.idade || '').trim();
@@ -2086,7 +2208,7 @@ function celulaMapa(ev) {
     cab: [p.nome, idade ? idade + 'a' : '', 'P: ' + (p.registro || ev.P || ''), ev.proc || '', 'Ass. Dr. ' + (ev.ass || assDe(p) || '')].filter(function (x) { return x && x !== 'P: ' && x !== 'Ass. Dr. '; }).join(', '),
     origem: ((p.lugar || p.local || '') + ' ' + (p.leito || '')).replace(/\s+/g, ' ').trim().toUpperCase() || 'INTERNADO', fonte: 'internograma',
     preData: lb.data, labs: lb.labs, extras: lb.extras,
-    cmb: limpa((ap.cmb || []).join(', ') || evs.cmb), muc: limpa((ap.muc || []).join(', ') || evs.muc), alergia: limpa((ap.alergia || []).join(', ') || evs.alergia) || 'NEGA', laudos: (typeof laudosMapa === 'function' ? laudosMapa(p) : ''),
+    cmb: limpa((ap.cmb || []).join(', ') || evs.cmb), muc: limpa((ap.muc || []).join(', ') || evs.muc), alergia: String(limpa((ap.alergia || []).join(', ') || evs.alergia) || 'NEGA').replace(/^\s*nega(\s+(alergias?|al[ée]rgic[oa]s?))?(\s+(a\s+)?medicamentos[oa]?s?)?\s*\.?\s*$/i, 'NEGA'), laudos: (typeof laudosMapa === 'function' ? laudosMapa(p) : ''),
     cardio: trechoIG(p, /AV(?:ALIA[ÇC][AÃ]O)?\.?\s*CARDIO[^;\n]{0,60}/i), apa: trechoIG(p, /(?:\bAPA\b|AV(?:ALIA[ÇC][AÃ]O)?\.?\s*ANEST)[^;\n]{0,60}/i),
     rch: trechoIG(p, /\bRCH\b[^;\n-]{0,30}/i), uti: trechoIG(p, /\b(?:SOLIC(?:ITAR|ITADA)?|RESERVA|VAGA)\s+(?:DE\s+)?UTI\b[^;\n]{0,30}|\bUTI\b\s*(?:SOLIC\w*|OK|✓)/i),
     pend: ((S.pend || {})[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; }).filter(function (t) { return /AVISO|RCH|UTI|AV\.?\s*CARDIO|APA|JEJUM|HEPARIN|ENOXA|RESERVA|PR[EÉ][- ]?OP|EXAME|HB\b/i.test(t); }).slice(0, 4).join('; '),
@@ -2099,32 +2221,81 @@ function celulaMapa(ev) {
 }
 function tituloMapa(iso) { var d = new Date(iso + 'T12:00:00'); return ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'][d.getDay()] + ' ' + d.getDate() + ' ' + MES[d.getMonth()] + '. ' + d.getFullYear(); }
 var MAPA_FOCO = null;
-function enviarMapa(iso, aviso) {
-  var fr = document.querySelector('#hubFrames iframe[data-id="mapa"]'); if (!fr || !fr.contentWindow) return;
-  var cels = eventosAgenda().filter(function (ev) { return ev.data === iso; }).map(celulaMapa);
-  var mandar = function (salvo) { try { fr.contentWindow.postMessage({ src: 'sot', type: 'mapa-dados', dia: iso, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso }, '*'); } catch (e) {} MAPA_FOCO = null; };
-  if (SYNC.temToken() && navigator.onLine) SYNC.mapaBaixar(iso).then(mandar, function () { mandar(null); }); else mandar(null);
+/* fotos usadas para preencher o mapa: ficam em S.fotos['mapa_<dia>_<célula>'] (aparelho + Drive › MAPA CIRURGICO › mês › fotos <dia>) */
+function pidMapa(iso, celId) { return 'mapa_' + iso + '_' + celId; }
+function fotosMapaDia(iso) {
+  var o = {}, pre = 'mapa_' + iso + '_';
+  Object.keys(S.fotos || {}).forEach(function (k) {
+    if (k.indexOf(pre) !== 0) return;
+    var L = S.fotos[k].filter(function (f) { return !f.del; }).map(function (f) { return { lid: f.lid, hora: f.hora ? f.hora.slice(0, 2) + ':' + f.hora.slice(2) : '', by: f.by || '' }; });
+    if (L.length) o[k.slice(pre.length)] = L;
+  });
+  return o;
 }
+function mapaFrame() { var fr = document.querySelector('#hubFrames iframe[data-id="mapa"]'); return fr && fr.contentWindow ? fr : null; }
+function mapaPost(msg) { var fr = mapaFrame(); if (!fr) return false; msg.src = 'sot'; try { fr.contentWindow.postMessage(msg, '*'); return true; } catch (e) { ERR.log('mapa-post', e); return false; } }
+function enviarMapa(iso, aviso) {
+  if (!mapaFrame()) return;
+  var cels = eventosAgenda().filter(function (ev) { return ev.data === iso; }).map(celulaMapa);
+  var mandar = function (salvo) { mapaPost({ type: 'mapa-dados', dia: iso, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
+  if (SYNC.temToken() && navigator.onLine) SYNC.mapaBaixar(iso).then(mandar, function (e) { ERR.log('mapa-baixar', e); mandar(null); }); else mandar(null);
+}
+/* sincronização do mapa entre aparelhos: baixa o que está no Drive → o mapa mescla campo a campo → só então envia */
+var MAPA_SINC = { rodando: false, denovo: null, timer: null, ult: 0 };
+function sincMapa(iso) {
+  if (!iso || !mapaFrame()) return;
+  if (!SYNC.temToken() || !navigator.onLine) { mapaPost({ type: 'mapa-estado', dia: iso, estado: 'off' }); return; }
+  if (MAPA_SINC.rodando) { MAPA_SINC.denovo = iso; return; }
+  MAPA_SINC.rodando = true; MAPA_SINC.ult = Date.now();
+  var fim = function () { MAPA_SINC.rodando = false; if (MAPA_SINC.denovo) { var d = MAPA_SINC.denovo; MAPA_SINC.denovo = null; sincMapa(d); } };
+  MAPA_SINC.fim = fim;
+  MAPA_SINC.guarda = setTimeout(function () { if (MAPA_SINC.rodando) { ERR.log('mapa-sinc', 'sem resposta do mapa'); fim(); } }, 30000);
+  SYNC.mapaBaixar(iso).then(function (rem) {
+    if (!mapaPost({ type: 'mapa-remoto', dia: iso, remoto: rem || null })) { clearTimeout(MAPA_SINC.guarda); fim(); }
+  }, function (e) { clearTimeout(MAPA_SINC.guarda); ERR.log('mapa-baixar', e); mapaPost({ type: 'mapa-estado', dia: iso, estado: 'erro' }); fim(); });
+}
+function agendarSincMapa(iso, ms) { clearTimeout(MAPA_SINC.timer); MAPA_SINC.timer = setTimeout(function () { sincMapa(iso); }, ms == null ? 2500 : ms); }
+// enquanto o mapa está aberto, confere o Drive a cada 20 s (mostra o que outra pessoa preencheu)
+setInterval(function () {
+  var fr = mapaFrame(); if (!fr || !fr.classList.contains('on') || !$('#hubView').classList.contains('on') || document.hidden) return;
+  if (Date.now() - MAPA_SINC.ult > 19000) sincMapa(window.__mapaIso);
+}, 5000);
 function abrirMapa(iso, foco) {
   MAPA_FOCO = foco || null;
   var box = $('#hubFrames'), fr = box.querySelector('iframe[data-id="mapa"]');
   box.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('on'); });
-  if (!fr) { fr = document.createElement('iframe'); fr.setAttribute('data-id', 'mapa'); fr.src = 'hub/mapa.html'; box.appendChild(fr); window.__mapaIso = iso; }
+  if (!fr) { fr = novoFrameHub('mapa', 'hub/mapa.html'); box.appendChild(fr); window.__mapaIso = iso; }
   else { window.__mapaIso = iso; enviarMapa(iso); }
   fr.classList.add('on'); $('#hubTit').textContent = 'Mapa cirúrgico — ' + brCurto(iso); var bx0 = document.querySelector('[data-hubclose]'); if (bx0) bx0.textContent = '‹ Agenda'; $('#hubNova').href = 'hub/mapa.html';
   $('#hubView').classList.add('on'); travar();
   if (!S.ag) toast('Agenda ainda não carregada — o mapa abre vazio');
 }
-var tMapaSalvar = null;
 window.addEventListener('message', function (e) {
   var m = e.data || {}; if (m.src !== 'mapa') return;
   if (m.type === 'mapa-pronto') enviarMapa(window.__mapaIso || m.dia, false);
-  else if (m.type === 'mapa-pedir') enviarMapa(m.dia, true);
-  else if (m.type === 'mapa-salvar' && m.dados) {
-    clearTimeout(tMapaSalvar);
-    tMapaSalvar = setTimeout(function () { if (SYNC.temToken() && navigator.onLine) SYNC.mapaSalvar(m.dia, m.dados).catch(function () {}); }, 2500);
+  else if (m.type === 'mapa-pedir') { window.__mapaIso = m.dia || window.__mapaIso; enviarMapa(m.dia, true); }
+  else if (m.type === 'mapa-salvar') agendarSincMapa(m.dia);
+  else if (m.type === 'mapa-enviar') {          // resposta do mapa depois de mesclar com o que veio do Drive
+    clearTimeout(MAPA_SINC.guarda);
+    var fim = MAPA_SINC.fim || function () {};
+    if (!m.precisa || !m.dados) { mapaPost({ type: 'mapa-estado', dia: m.dia, estado: 'ok' }); fim(); return; }
+    SYNC.mapaSalvar(m.dia, m.dados).then(function () { mapaPost({ type: 'mapa-estado', dia: m.dia, estado: 'ok' }); fim(); },
+      function (err) { ERR.log('mapa-salvar', err); mapaPost({ type: 'mapa-estado', dia: m.dia, estado: 'erro' }); fim(); });
+  }
+  else if (m.type === 'mapa-foto' && m.arquivo) {   // foto usada para preencher uma célula: guarda no aparelho e no Drive
+    FOTO.adicionar(pidMapa(m.dia, m.celId), 'mapa', m.arquivo, m.pac || '', 'MAPA_' + m.dia + '_' + (m.pac || 'paciente')).then(function () {
+      mapaPost({ type: 'mapa-fotos', dia: m.dia, fotos: fotosMapaDia(m.dia) });
+    }).catch(function (err) { ERR.log('mapa-foto', err, 'Não consegui guardar a foto do mapa'); });
+  }
+  else if (m.type === 'mapa-foto-abrir' && m.lid) abrirFoto(m.lid);
+  else if (m.type === 'mapa-foto-apagar' && m.lid) {
+    confirmar('Apagar esta foto do mapa?', function () {
+      Object.keys(S.fotos || {}).forEach(function (k) { S.fotos[k].forEach(function (f) { if (f.lid === m.lid) { f.del = true; f.at = relogio(); } }); });
+      save(); mapaPost({ type: 'mapa-fotos', dia: m.dia, fotos: fotosMapaDia(m.dia) });
+    });
   }
 });
+
 // ===================== v24: SEGURAR ALTA · Laudos (OCR) · RX POI =====================
 var RE_SEGURA = /\bSEGUR(?:AR|A|EM|O)\s+(?:A\s+)?ALTA\b|\bN[AÃ]O\s+(?:DAR|DE|D[ÊE]|PODE\s+(?:TER|DAR|RECEBER)|TEM|TER)\s+ALTA\b|\bSEM\s+ALTA\b|\bALTA\s+(?:SUSPENSA|BLOQUEADA|SEGURADA|CANCELADA|PROIBIDA|CONTRAINDICADA|N[AÃ]O\s+AUTORIZADA)\b|\bALTA\s+(?:S[ÓO]|SOMENTE|APENAS|SOMENTE\s+AP[ÓO]S|CONDICIONADA)\s+(?:AP[ÓO]S|COM|QUANDO|SE)\b|\bAGUARD(?:AR|A)\s+(?:\S+\s+){0,3}?(?:PARA|ANTES\s+D[AE])\s+(?:A\s+)?ALTA\b|\bALTA\s+(?:AGUARDA|AGUARDANDO|DEPENDE|PENDENTE)\b|\bSEGURAR\s+(?:O\s+|A\s+)?PACIENTE\b|\bN[AÃ]O\s+LIBERAR\b|\bAGUARDAR\s+LIBERA[ÇC][AÃ]O\s+(?:DO\s+|DA\s+)?(?:ASSISTENTE|CHEFE|DR)/;
 function textoSegurar(p) {
@@ -2135,7 +2306,7 @@ function textoSegurar(p) {
 function tagSegurar(p) { var t = textoSegurar(p); return t ? '<span class="tag segura" title="' + esc(t) + '">✋ SEGURAR ALTA</span>' : ''; }
 
 var FT_TIT = { rx: '🩻 Radiografias (pré)', rxpoi: '🩻 Radiografia POI', pele: '📷 Pele / ferida', laudo: '📄 Laudos (foto)' };
-var FT_NOME = { rx: 'Radiografia', rxpoi: 'Radiografia POI', pele: 'Pele', laudo: 'Laudo' };
+var FT_NOME = { rx: 'Radiografia', rxpoi: 'Radiografia POI', pele: 'Pele', laudo: 'Laudo', mapa: 'Ficha usada no mapa' };
 var LAUDO_LENDO = {};
 function carregarOCR() {
   if (window.SOTOCR) return Promise.resolve(window.SOTOCR);
@@ -2176,18 +2347,32 @@ function laudosMapa(p) {
     .map(function (f) { return [(f.legenda || f.ltit || 'Laudo') + (f.ldata ? ' ' + f.ldata.slice(0, 5) : f.data ? ' ' + brCurto(f.data) : ''), f.concl].filter(Boolean).join(': '); }).join(' / ');
 }
 // ===================== v26: pacientes da Agenda fora do internograma → dados do mapa + linha do internograma =====================
-var MAPA_DRV = {}, MAPA_DRV_PED = {};
+var MAPA_DRV = {}, MAPA_DRV_PED = {}, AMB_ABERTO = {};
 function mapaLocal() { try { return JSON.parse(localStorage.getItem('mapaSOT.app') || '{}') || {}; } catch (e) { return {}; } }
+function vazio(v) { return v == null || v === '' || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length); }
+/* junta a célula deste aparelho com a do Drive: começa pela mais nova e completa o que estiver vazio com a outra */
+function juntarCel(a, b) {
+  if (!a || !b) return a || b || null;
+  var nova = (b.salvoEm || 0) > (a.salvoEm || 0) ? b : a, velha = nova === a ? b : a, r = JSON.parse(JSON.stringify(nova));
+  Object.keys(velha).forEach(function (k) {
+    if (k === 'labs') { r.labs = r.labs || {}; Object.keys(velha.labs || {}).forEach(function (l) { if (vazio(r.labs[l])) r.labs[l] = velha.labs[l]; }); }
+    else if (vazio(r[k])) r[k] = velha[k];
+  });
+  return r;
+}
 function mapaCel(ev) {
   var id = 'ev_' + ev.id, L = (mapaLocal()[ev.data] || {}).cels || [], D = (MAPA_DRV[ev.data] || {}).cels || [];
-  var a = L.find(function (x) { return x.id === id; }), b = D.find(function (x) { return x.id === id; });
-  if (a && b) return (b.salvoEm || 0) > (a.salvoEm || 0) ? b : a;
-  return a || b || null;
+  return juntarCel(L.find(function (x) { return x.id === id; }), D.find(function (x) { return x.id === id; }));
 }
-function mapaDoDrive(iso) {   // busca o mapa do dia no Drive uma vez por sessão (outro aparelho pode ter preenchido)
-  if (MAPA_DRV_PED[iso] || !SYNC.temToken() || !navigator.onLine) return;
-  MAPA_DRV_PED[iso] = 1;
-  SYNC.mapaBaixar(iso).then(function (d) { if (d && d.cels) { MAPA_DRV[iso] = d; if (S.tab === 'agenda') render(); } }).catch(function () {});
+function temDadosMapa(x) { return !!(x && (x.dx || x.cmb || x.muc || x.alergia || x.mec || x.cirPrev || (x.labs && Object.keys(x.labs).some(function (k) { return x.labs[k]; })))); }
+/* busca o mapa do dia no Drive (outro aparelho pode ter preenchido); de novo a cada 2 min no máximo */
+function mapaDoDrive(iso, forcar) {
+  if (!SYNC.temToken() || !navigator.onLine) return Promise.resolve();
+  var u = MAPA_DRV_PED[iso];
+  if (u && (u === 'busca' || Date.now() - u < (forcar ? 5000 : 120000))) return Promise.resolve();
+  MAPA_DRV_PED[iso] = 'busca';
+  return SYNC.mapaBaixar(iso).then(function (d) { MAPA_DRV_PED[iso] = Date.now(); if (d && d.cels) { var mud = JSON.stringify(MAPA_DRV[iso] || null) !== JSON.stringify(d); MAPA_DRV[iso] = d; if (mud && S.tab === 'agenda') render(); } })
+    .catch(function (e) { MAPA_DRV_PED[iso] = Date.now(); ERR.log('mapa-agenda', e); });
 }
 function isoDeBR(s, anoRef) {
   var m = String(s || '').match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return '';
@@ -2231,10 +2416,11 @@ function estadoNP(ev, x) {
   var orientaEx = [], cdEx = [];
   if (x.obs && !/^Cx:/i.test(x.obs)) cdEx.push(x.obs);
   if (x.pend) cdEx.push(x.pend);
+  if (ev.nota) cdEx.push(ev.nota);
   return {
     refDate: ev.data > hojeISO() ? ev.data : hojeISO(), caseMode: 'title', cnt: '0', setor: '', local: '', leito: '', marc: '',
     mec: mec, dtTrauma: dtT, dih: ev.data, nome: nome, nasc: '', idade: idade, reg: reg, origem: x.cidade || '', classif: '',
-    ap: x.cmb || '', muc: x.muc || '', alergia: x.alergia || 'NEGA', outros: outros,
+    ap: x.cmb || '', muc: x.muc || '', alergia: x.alergia || (temDadosMapa(x) ? 'NEGA' : ''), outros: outros,
     ass: ass ? dra + ass : '', orienta: ass ? dra + ass : '', cx: ev.proc || x.cir || '', dtCx: ev.data,
     orientaExtra: orientaEx.join('\n'), cdExtra: cdEx.join('\n'), exames: exames, dx: dx, showDt: false,
     pend: { preops: labs.length ? 'OK' : 'Checar', rch: st(x.rch), uti: st(x.uti), cardio: st(x.cardio), anest: st(x.apa) }
@@ -2259,12 +2445,12 @@ function tabelaIG(r, cab) {
 }
 function preencherLinhaIG(evid) {
   var ev = todosEventos().find(function (e) { return e.id === evid; }), box = document.getElementById('iglin_' + evid); if (!ev || !box) return;
-  box.innerHTML = '<div class="hint">Montando a linha…</div>';
-  linhaIG(ev, mapaCel(ev)).then(function (r) { box.innerHTML = tabelaIG(r, true); }).catch(function (e) { box.innerHTML = '<div class="hint">Não consegui montar a linha: ' + esc(String(e)) + '</div>'; });
+  box.innerHTML = '<div class="hint">Buscando os dados do mapa…</div>';
+  mapaDoDrive(ev.data, true).then(function () { return linhaIG(ev, mapaCel(ev)); }).then(function (r) { box.innerHTML = tabelaIG(r, true); }).catch(function (e) { box.innerHTML = '<div class="hint">Não consegui montar a linha: ' + esc(String(e)) + '</div>'; });
 }
 function copiarLinhaIG(evid) {
   var ev = todosEventos().find(function (e) { return e.id === evid; }); if (!ev) return;
-  linhaIG(ev, mapaCel(ev)).then(function (r) {
+  mapaDoDrive(ev.data).then(function () { return linhaIG(ev, mapaCel(ev)); }).then(function (r) {
     var html = '<table style="border-collapse:collapse"><tr>' + r.cols.map(function (c, ci) { return '<td style="border:1px solid #000;vertical-align:top;text-align:center">' + c.map(function (l, i) { return ci === 3 && i === r.bold ? '<b>' + esc(l.toUpperCase()) + '</b>' : esc(l); }).join('<br>') + '</td>'; }).join('') + '</tr></table>';
     var plain = r.cols.map(function (c) { return c.join(' '); }).join('\t');
     var feito = function () { toast('Linha do internograma copiada — cole na planilha'); };
@@ -2280,6 +2466,10 @@ function editarNoNP(evid) {
   var fr = document.querySelector('#hubFrames iframe[data-id="novopac"]');
   if (fr && fr.contentWindow) setTimeout(function () { try { fr.contentWindow.postMessage({ type: 'np-prefill', state: st }, '*'); } catch (e) {} }, 400);
 }
+function fotosMapaBotoes(ev) {
+  var L = (fotosMapaDia(ev.data)['ev_' + ev.id] || []);
+  return L.map(function (f, i) { return '<button class="btn ghost sm" data-foto="' + esc(f.lid) + '">📎 Foto ' + (i + 1) + (f.hora ? ' · ' + f.hora : '') + '</button>'; }).join(' ');
+}
 function painelAmb(ev) {
   try {
     mapaDoDrive(ev.data);
@@ -2291,9 +2481,9 @@ function painelAmb(ev) {
       var t = k + ' ' + x.labs[k], fora = typeof marcarExameLinha === 'function' && /labf/.test(marcarExameLinha(k + ' ' + String(x.labs[k]).replace(/k$/, '000'), true));
       return fora ? '<span class="labf">' + esc(t) + '</span>' : esc(t); }).join(' / ');
     var tem = !!(x.dx || x.cmb || x.muc || lab);
-    var h = '<details class="igpanel amb" data-igamb="' + esc(ev.id) + '"><summary>📋 Dados do mapa · linha para o internograma — ' + esc((ev.nome || ev.titulo || '').split(' ')[0]) + (tem ? '' : ' <span class="hint">(mapa ainda sem dados)</span>') + '</summary>';
+    var h = '<details class="igpanel amb" data-igamb="' + esc(ev.id) + '"' + (AMB_ABERTO[ev.id] ? ' open' : '') + '><summary>📋 Dados do mapa · linha para o internograma — ' + esc((ev.nome || ev.titulo || '').split(' ')[0]) + (tem ? '' : ' <span class="hint">(mapa ainda sem dados)</span>') + '</summary>';
     h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc || x.cir || ''));
-    h += lin('JUSTIFICATIVA / HD', linhas(x.dx));
+    h += lin('DIAGNÓSTICO (HD)', linhas(x.dx));
     h += lin('MECANISMO', esc(x.mec || ''));
     h += lin('CIR. PRÉVIAS', linhas(x.cirPrev));
     h += lin('AP / CMB', esc(x.cmb || ''));
@@ -2302,6 +2492,7 @@ function painelAmb(ev) {
     h += lin('LABS', lab ? '<b>Pré-ops' + (x.preData ? ' (' + esc(x.preData) + ')' : '') + ':</b> ' + lab + (x.extras && !oc.extras ? '<br><b>Outros:</b> ' + esc(x.extras) : '') : '');
     h += lin('AVALIAÇÕES', [x.cardio ? 'Cardio: ' + esc(x.cardio) : '', x.apa ? 'APA: ' + esc(x.apa) : '', x.rch ? 'RCH: ' + esc(x.rch) : '', x.uti ? 'UTI: ' + esc(x.uti) : ''].filter(Boolean).join(' · '));
     h += lin('ORIGEM', esc(x.cidade || ''));
+    h += lin('FOTOS', fotosMapaBotoes(ev));
     if (!tem) h += '<div class="hint" style="margin:4px 0">Envie a foto da evolução ambulatorial em <b>🗺 no mapa → Fotos dos ambulatoriais</b> (ou Captar dados) para preencher. Abaixo já sai a linha com o que a Agenda tem.</div>';
     h += '<div class="igl"><span>LINHA DO INTERNOGRAMA</span><div><div id="iglin_' + esc(ev.id) + '" class="iglin"><div class="hint">Abra para montar…</div></div>' +
       '<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn sm" data-igcopy="' + esc(ev.id) + '">📋 Copiar linha</button><button class="btn ghost sm" data-igedit="' + esc(ev.id) + '">✏️ Editar no Novo Paciente</button></div>' +
@@ -2309,7 +2500,12 @@ function painelAmb(ev) {
     return h + '</details>';
   } catch (e) { console.error(e); return ''; }
 }
-document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.matches && d.matches('details[data-igamb]') && d.open) preencherLinhaIG(d.getAttribute('data-igamb')); }, true);
+// aba aberta continua aberta quando a tela é redesenhada (ex.: chegam dados do mapa)
+document.addEventListener('toggle', function (e) {
+  var d = e.target; if (!d || !d.matches || !d.matches('details[data-igamb]')) return;
+  var id = d.getAttribute('data-igamb');
+  if (d.open) { AMB_ABERTO[id] = 1; preencherLinhaIG(id); } else delete AMB_ABERTO[id];
+}, true);
 function blocoEvoAnterior(p) {
   var b = evoBase(p.id);
   if (!b) return '<div class="q evoant"><div class="lb">📄 Evolução anterior</div><div class="hint">Nenhuma evolução salva ainda para este paciente. Ela aparece aqui depois que alguém salvar a evolução de um dia.</div></div>';
@@ -2400,6 +2596,9 @@ document.addEventListener('click', function (ev) {
   var t = ev.target.closest('[data-fdel],[data-foto],[data-viewer],button,[data-open],[data-clear],[data-lpprm],label,.flagbox[data-tab]'); if (!t) return;
   var ds = t.dataset;
   if (ds.dihc != null) { S.dihConv = +ds.dihc; recalc(); save(); render(); toast('DIH recalculado'); return; }
+  if ('recarregar' in ds) { try { save(); } catch (x) {} location.reload(); return; }
+  if ('errcopy' in ds) { var et = ERR.lista().map(function (x) { return new Date(x.em).toISOString() + ' v' + x.v + ' [' + x.onde + '] ' + x.msg; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(et) : Promise.reject()).then(function () { toast('Copiado'); }, function () { toast('Não consegui copiar'); }); return; }
+  if ('errlimpar' in ds) { ERR.limpar(); render(); return; }
   if ('temaciclo' in ds) { S.tema = document.documentElement.classList.contains('escuro') ? 'claro' : 'escuro'; saveLocal(); aplicarTema(); if (S.tab === 'config') render(); return; }
   if (ds.tema) { S.tema = ds.tema; saveLocal(); aplicarTema(); render(); return; }
   if (ds.apagarreg) { modalApagar(ds.apagarreg); return; }
@@ -2413,7 +2612,7 @@ document.addEventListener('click', function (ev) {
   if (ds.aglinkok) { var pr = ds.aglinkok.split('|'); S.agLink = S.agLink || {}; S.agLink[pr[0]] = pr[1]; MATCH_CACHE = {}; saveLocal(); render(); return; }
   if (ds.agcal) { S.agCal = ds.agcal; S.agCalNome = ds.agnome || ''; S.agTrocar = false; S.ag = null; S.agErro = ''; saveLocal(); render(); carregarAgenda(true); return; }
   if ('agtrocar' in ds) { S.agTrocar = true; AG_CALS = null; render(); return; }
-  if ('agrecarregar' in ds) { S.agErro = ''; carregarAgenda(true); render(); return; }
+  if ('agrecarregar' in ds) { if (AG_CALS && !AG_CALS.length) AG_CALS = null; S.agErro = ''; carregarAgenda(true); render(); return; }
   if (ds.agfiltro) { AG_FILTRO = ds.agfiltro; render(); return; }
   if ('agirconf' in ds) { var cf = document.getElementById('agconf'); if (cf) cf.scrollIntoView({ behavior: 'smooth' }); return; }
   if (ds.agvista) { AG_VISTA = ds.agvista; render(); return; }
@@ -2455,7 +2654,7 @@ document.addEventListener('click', function (ev) {
   if ('zerar' in ds) { confirmar('Apagar os dados DESTE aparelho? A cópia no Google Drive continua e volta na próxima sincronização.', function () { try { localStorage.removeItem(KEY); } catch (e) {} S = ligarV(novoEstado('config')); try { indexedDB.deleteDatabase('sot-fotos'); } catch (e) {} render(); toast('Apagado deste aparelho (a cópia no Drive continua)'); }); return; }
   if ('copyall' in ds) { copiar(ativos().filter(evoluido).map(function (p) { return '>> ' + (p.leito || p.lugar || '') + ' - ' + U(p.nome) + '\n' + evoHoje(p.id).txt; }).join('\n\n')); return; }
   if ('cancel' in ds) { $('#modal').classList.remove('on'); return; }
-  if (ds.pdel != null && t.classList.contains('x')) { var rm = S.pend[ds.pdel].splice(+ds.pi, 1)[0]; if (rm) (S.pendDel[ds.pdel] = S.pendDel[ds.pdel] || []).push(rm.t); save(); atual ? redesenhar() : render(); return; }
+  if (ds.pdel != null && t.classList.contains('x')) { var rm = S.pend[ds.pdel].splice(+ds.pi, 1)[0]; if (rm) (S.pendDel[ds.pdel] = S.pendDel[ds.pdel] || []).push({ t: rm.t, at: Math.max(relogio(), (rm.at || 0) + 1) }); save(); atual ? redesenhar() : render(); return; }
   if ('padd' in ds) { var inp = $('#newp'); if (inp.value.trim()) { (S.pend[atual.id] = S.pend[atual.id] || []).push({ t: inp.value.trim(), ok: false, at: relogio(), by: S.eu || '' }); save(); redesenhar(); } return; }
   if ('proximo' in ds) { proximo(); return; }
   if (!atual) return;
@@ -2645,6 +2844,14 @@ function demo() {
   aplicarImport({ data: dt(-1), cab: null, pacientes: P }, 'Exemplo (pacientes fictícios)');
 }
 
+// tocar no texto da pendência marca/desmarca (não só a caixinha)
+document.addEventListener('click', function (ev) {
+  var tx = ev.target.closest && ev.target.closest('div.pend > .tx');
+  if (!tx || ev.target.closest('a,button,[data-open],input,select,textarea')) return;
+  var ck = tx.parentElement.querySelector('input[type=checkbox]');
+  if (ck) ck.click();
+});
+
 // ===================== init =====================
 aplicarTema();
 if (S.pacientes.length) recalc();
@@ -2654,9 +2861,15 @@ setTimeout(function () {
   if (navigator.onLine && SYNC.temToken() && (S.parserV !== 4 || !S.igCache || Date.now() - S.igCache.em > 20 * 60000)) carregarDoc();
 }, 1800);
 document.addEventListener('visibilitychange', function () { if (!document.hidden && navigator.onLine && SYNC.temToken() && S.igCache && Date.now() - S.igCache.em > 20 * 60000) carregarDoc(); });
+
+// confere a nuvem a cada 60 s enquanto o app está aberto (recebe o que outro aparelho fez, mesmo sem tocar em nada)
+setInterval(function () {
+  if (document.hidden || !navigator.onLine || !SYNC.temToken() || (typeof trancado === 'function' && trancado())) return;
+  SYNC.agora();
+}, 60000);
 </script>
 <script>
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function (reg) { setTimeout(function () { try { (reg.active || navigator.serviceWorker.controller).postMessage({ t: 'resto' }); } catch (e) {} }, 4000); }).catch(function (e) { ERR.log('sw', e); });
 if ((!S.pacientes.length || (S.fonte && /Google Doc/.test(S.fonte) && !S.pacientes.some(function (p) { return p.apL; }))) && navigator.onLine) setTimeout(function () { if (SYNC.temToken()) carregarDoc(); }, 1500);
 </script>
 </body>

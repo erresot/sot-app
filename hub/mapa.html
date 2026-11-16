@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mapa Cirúrgico SOT</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Layout: barra de comandos no topo; abaixo, folhas A4 paisagem brancas (como o papel do mural), uma célula por cirurgia em 3 colunas. Tema único claro, por escolha: a folha é papel. */
@@ -214,7 +213,9 @@ button{cursor:pointer}
 .pp .ed.alt::after{color:#000}
 .pp .cnt{color:#000}
 .pp .pend .auto{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.labf{color:#c62828;font-weight:700;text-decoration:underline;text-decoration-thickness:2px}.labcx{background:#ffe3e3}\n@media print{.labf{color:#000!important;text-decoration:underline}.labcx{background:none!important}}\n@media print{
+.labf{color:#c62828;font-weight:700;text-decoration:underline;text-decoration-thickness:2px}.labcx{background:#ffe3e3}
+@media print{.labf{color:#000!important;text-decoration:underline}.labcx{background:none!important}}
+@media print{
   body{background:#fff}
   .barra,.aviso,.modal,.toast,.pacs,.linha,.status,.alts,#medidor{display:none !important}
   .rolagem{overflow:visible;padding:0}
@@ -225,7 +226,57 @@ button{cursor:pointer}
 .xo:hover,.xo:focus{opacity:1}.pp .xo{display:none}
 @media print{.xo{display:none!important}}
 .ed[data-f="dx"],.ed[data-f="cirPrev"],.ed[data-f="fxPrev"],.ed[data-f="laudos"]{white-space:pre-line;display:inline-block;vertical-align:top}
+@media print{
+  html,body{background:#fff!important}
+  .barra,.aviso,.status,.alts,.pacs,.linha,.modal,.toast,#medidor,.xo{display:none!important}
+  .rolagem{overflow:visible!important;padding:0!important}
+  /* a impressora pagina sozinha: célula nunca é cortada e nada se sobrepõe */
+  .pp .folha{height:auto!important;width:auto!important;margin:0!important;padding:0!important;box-shadow:none!important;break-after:auto!important;display:block!important}
+  .pp .celulas{display:block!important}
+  .pp .cel{break-inside:avoid;page-break-inside:avoid;margin:0 0 1.6mm 0;overflow:hidden}
+  .pp .folha-topo{display:none!important}
+  .pp .folha:first-child .folha-topo{display:flex!important;justify-content:flex-start;font-size:12pt;margin:0 0 2.5mm 0;border:0}
+  .pp .folha-topo .fstat{display:none!important}
+  .pp .ed.alt::after{content:none!important}
+  .pp .dir,.pp .col{overflow-wrap:anywhere;word-break:break-word}
+}
+.qbmark{font:700 10.5px/1 var(--sans);color:#0b5d4b;background:#e3f2ee;border:1px dashed #0b5d4b;border-radius:4px;padding:3px 6px;margin:0 0 3px;display:inline-block}
+.acoes button.on{background:#0b5d4b;color:#fff;border-color:#0b5d4b}
+.pp .qbmark{display:none}
+@media print{
+  .qbmark{display:none!important}
+  .pp .cel.qb{break-before:page;page-break-before:always}
+  .pp .cel.so{break-after:page;page-break-after:always}
+  .pp .folha:first-child .cel.qb:first-child{break-before:auto;page-break-before:auto}
+  .pp .folha:last-child .cel.so:last-child{break-after:auto;page-break-after:auto}
+}
+/* ---- v29: fotos guardadas, estado do Drive e uso no celular ---- */
+.acoes .fotob{border-color:#0b5d4b;color:#0b5d4b;font-weight:600}
+.pp .fotob{display:none}
+@media print{.fotob{display:none!important}}
+.maisb{display:none}
+details.legd{display:block}
+details.legd>summary{cursor:pointer;font-weight:700;color:var(--tinta);padding:6px 0;list-style:none}
+details.legd>summary::-webkit-details-marker{display:none}
+details.legd>summary::before{content:"▸ "}details.legd[open]>summary::before{content:"▾ "}
+details.legd[open]{display:flex;flex-wrap:wrap;gap:6px 18px}
+details.legd[open]>summary{width:100%}
+@media (max-width:720px){
+  .noapp .barra{position:static;padding:8px 10px;gap:6px 8px}
+  .noapp .barra h1{display:none}
+  .noapp .barra .btn,.noapp .barra select,.noapp .barra input[type=date]{min-height:40px}
+  .noapp .barra .extra{display:none}
+  .noapp .barra.aberta .extra{display:inline-flex}
+  .noapp .barra .maisb{display:inline-flex;align-items:center}
+  .noapp .barra .estado{display:none;width:100%;font-size:12px;text-align:left}
+  .noapp .barra.aberta .estado{display:block}
+  .noapp .barra .grupo{gap:6px}
+  .noapp .barra .btn{padding:6px 10px}
+  .acoes button{min-height:38px}
+  .xo{font-size:15px;padding:2px 6px;opacity:.55}
+}
 </style>
+<link rel="stylesheet" href="sot-tema.css">
 </head>
 <body>
 <script>window.__SOT = (window.parent !== window);</script>
@@ -873,7 +924,133 @@ var CHAVE=window.__SOT?"mapaSOT.app":"mapaSOT.v4", dados, dia=window.__SOT?(func
 function carregar(){
   try{var s=localStorage.getItem(CHAVE); if(s){dados=JSON.parse(s);}}catch(e){}
   if(!dados){ dados=window.__SOT?{}:exemplo(); for(var k in dados) dados[k].cels.forEach(function(x){ CAMPOS_TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],k); }); }); }
-  for(var d in dados){ dados[d].status=dados[d].status||{fechado:false}; dados[d].log=dados[d].log||[]; dados[d].cels.forEach(function(x){x.duv=x.duv||{};x.alt=x.alt||{};x.ign=x.ign||{};x.locked=x.locked||{};}); }
+  podarAntigos();
+  for(var d in dados){ normDia(dados[d]); fotografar(d); }
+}
+// ---------- carimbo de hora por campo e mescla entre aparelhos ----------
+// Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
+// duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
+var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt"];
+var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
+function agoraM(){ return Date.now()+(SKEW||0); }
+function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
+function metaCel(x){ var o={}; META_M.forEach(function(k){ var v=x[k]; if(v&&typeof v==="object"){ var q={}; Object.keys(v).forEach(function(i){ if(v[i]) q[i]=v[i]; }); if(Object.keys(q).length) o[k]=q; } else if(v) o[k]=v; }); return canonM(o); }
+function travas(x){ return Object.keys(x.locked||{}).filter(function(k){return x.locked[k];}).sort().join("|"); }
+function planoCel(x){
+  var o={}; CAMPOS_M.forEach(function(f){ o[f]=x[f]==null?"":String(x[f]); });
+  Object.keys(x.labs||{}).forEach(function(k){ o["labs."+k]=String(x.labs[k]||""); });
+  return {f:o, meta:metaCel(x), lock:travas(x)};
+}
+function normCel(x){ x.duv=x.duv||{}; x.alt=x.alt||{}; x.ign=x.ign||{}; x.locked=x.locked||{}; x.labs=x.labs||{}; x.t=x.t||{}; return x; }
+function normDia(d){ d.status=d.status||{fechado:false}; d.log=d.log||[]; d.cels=d.cels||[]; d.cels.forEach(normCel); return d; }
+function fotografar(iso){
+  var d=dados[iso]; if(!d) return; var c={};
+  d.cels.forEach(function(x){ c[x.id]=planoCel(x); });
+  SNAP[iso]={c:c, ordem:d.cels.map(function(x){return x.id;}).join(","), st:canonM(d.status||{}), rem:(d.removidos||[]).length};
+}
+// marca a hora de tudo o que mudou desde a última "foto" do dia (vale para qualquer caminho: digitação, Agenda, leitura de foto, botões)
+function carimbar(iso){
+  var d=dados[iso]; if(!d) return false; var ant=SNAP[iso], ag=agoraM(), mudou=false;
+  if(!ant){ fotografar(iso); return false; }
+  d.cels.forEach(function(x){
+    normCel(x); var a=ant.c[x.id], p=planoCel(x);
+    if(!a){ if(!x.tc) x.tc=ag; Object.keys(p.f).forEach(function(f){ if(p.f[f]!=="") x.t[f]=ag; }); if(p.meta!=="{}") x.tm=ag; if(p.lock) x.tl=ag; mudou=true; return; }
+    Object.keys(p.f).forEach(function(f){ if((a.f[f]||"")!==p.f[f]){ x.t[f]=ag; mudou=true; } });
+    Object.keys(a.f).forEach(function(f){ if(!(f in p.f)&&a.f[f]!==""){ x.t[f]=ag; mudou=true; } });
+    if(a.meta!==p.meta){ x.tm=ag; mudou=true; }
+    if(a.lock!==p.lock){ x.tl=ag; mudou=true; }
+  });
+  var ordem=d.cels.map(function(x){return x.id;}).join(",");
+  if(ant.ordem!==ordem){ var ia=ant.ordem.split(",").filter(function(i){return ordem.split(",").indexOf(i)>=0;}).join(","), ib=ordem.split(",").filter(function(i){return ant.ordem.split(",").indexOf(i)>=0;}).join(","); if(ia!==ib) d.to=ag; mudou=true; }
+  if(ant.st!==canonM(d.status||{})){ d.ts=ag; mudou=true; }
+  if(ant.rem!==(d.removidos||[]).length) mudou=true;
+  fotografar(iso);
+  return mudou;
+}
+function valorCampo(x,f){ return f.indexOf("labs.")===0?String((x.labs||{})[f.slice(5)]||""):(x[f]==null?"":String(x[f])); }
+function porCampo(x,f,v){ if(f.indexOf("labs.")===0){ if(v) x.labs[f.slice(5)]=v; else delete x.labs[f.slice(5)]; } else x[f]=v; }
+// o valor do outro aparelho (b) vence o daqui (a)?
+function venceRemoto(a,b,f,va,vb){
+  var ta=(a.t||{})[f]||0, tb=(b.t||{})[f]||0, la=!!(a.locked||{})[f], lb=!!(b.locked||{})[f];
+  if(la!==lb){            // um lado editou à mão (travado) e o outro não: vale o editado à mão, salvo se foi destravado depois
+    var tT=la?ta:tb, tS=la?tb:ta, soltoEm=(la?b.tl:a.tl)||0, destravado=soltoEm>tT&&tS>tT;
+    return la?destravado:!destravado;
+  }
+  if(tb!==ta) return tb>ta;
+  return vb>va;           // empate: mesma regra nos dois aparelhos
+}
+function mesclarCel(a,b){
+  var r={mud:false,mais:false}; normCel(a); normCel(b);
+  var fs={}; CAMPOS_M.forEach(function(f){fs[f]=1;}); Object.keys(a.labs).forEach(function(k){fs["labs."+k]=1;}); Object.keys(b.labs).forEach(function(k){fs["labs."+k]=1;});
+  Object.keys(fs).forEach(function(f){
+    var va=valorCampo(a,f), vb=valorCampo(b,f), ta=a.t[f]||0, tb=b.t[f]||0;
+    if(va===vb){
+      if(tb>ta) a.t[f]=tb; else if(ta>tb) r.mais=true;
+      if(!!a.locked[f]!==!!b.locked[f]){ if((b.tl||0)>(a.tl||0)){ if(b.locked[f]) a.locked[f]=true; else delete a.locked[f]; r.mud=true; } else r.mais=true; }
+      return;
+    }
+    if(venceRemoto(a,b,f,va,vb)){ porCampo(a,f,vb); a.t[f]=tb; if(b.locked[f]) a.locked[f]=true; else delete a.locked[f]; r.mud=true; }
+    else r.mais=true;
+  });
+  if((b.tl||0)>(a.tl||0)) a.tl=b.tl;
+  var ma=metaCel(a), mb=metaCel(b);
+  if(ma!==mb){
+    if((b.tm||0)>(a.tm||0)||((b.tm||0)===(a.tm||0)&&mb>ma)){ META_M.forEach(function(k){ if(b[k]===undefined) delete a[k]; else a[k]=JSON.parse(JSON.stringify(b[k])); }); normCel(a); a.tm=b.tm||0; r.mud=true; }
+    else r.mais=true;
+  } else if((b.tm||0)>(a.tm||0)) a.tm=b.tm;
+  if((b.tc||0)>(a.tc||0)) a.tc=b.tc;
+  return r;
+}
+// junta o mapa do dia deste aparelho com o que veio do Drive. mud = chegou novidade aqui; mais = aqui tem algo que o Drive não tem
+function mesclarDia(iso,rem){
+  var r={mud:false,mais:false}, loc=dados[iso];
+  if(!rem||!rem.cels){ r.mais=!!(loc&&(loc.cels.length||(loc.removidos||[]).length)); return r; }
+  rem=normDia(JSON.parse(JSON.stringify(rem)));
+  if(!loc){ dados[iso]=rem; fotografar(iso); r.mud=true; return r; }
+  carimbar(iso);
+  var RL=loc.removidos||[], RR=rem.removidos||[];
+  RR.forEach(function(id){ if(RL.indexOf(id)<0){ RL.push(id); r.mud=true; } });
+  if(RL.some(function(id){return RR.indexOf(id)<0;})) r.mais=true;
+  if(RL.length) loc.removidos=RL;
+  var SL=loc.sumidos||{}, SR=rem.sumidos||{};
+  Object.keys(SR).forEach(function(id){ if(!(SL[id]>=SR[id])){ SL[id]=SR[id]; } });
+  if(Object.keys(SL).some(function(id){return !(SR[id]>=SL[id]);})) r.mais=true;
+  if(Object.keys(SL).length) loc.sumidos=SL;
+  var vivo=function(x){ return RL.indexOf(x.id)<0 && !((SL[x.id]||0)>=(x.tc||1)); };
+  var mapa={}, antes=loc.cels.length; loc.cels.forEach(function(x){ mapa[x.id]=x; });
+  var idsR={};
+  rem.cels.forEach(function(b){
+    idsR[b.id]=1; if(!vivo(b)){ r.mais=true; return; }
+    var a=mapa[b.id];
+    if(!a){ loc.cels.push(b); mapa[b.id]=b; r.mud=true; return; }
+    var q=mesclarCel(a,b); if(q.mud) r.mud=true; if(q.mais) r.mais=true;
+  });
+  loc.cels=loc.cels.filter(vivo); if(loc.cels.length!==antes) r.mud=true;
+  if(loc.cels.some(function(x){return !idsR[x.id];})) r.mais=true;
+  // ordem: vale a de quem mexeu por último; célula nova entra pela hora
+  var ordL=loc.cels.map(function(x){return x.id;}).join(",");
+  if((rem.to||0)>(loc.to||0)){ var pos={}; rem.cels.forEach(function(x,i){pos[x.id]=i;}); loc.cels.sort(function(a,b){ var pa=pos[a.id], pb=pos[b.id]; if(pa==null&&pb==null) return String(a.hora).localeCompare(String(b.hora)); if(pa==null) return 1; if(pb==null) return -1; return pa-pb; }); loc.to=rem.to; }
+  else if((loc.to||0)>(rem.to||0)) r.mais=true;
+  else if(!loc.to) loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
+  if(loc.cels.map(function(x){return x.id;}).join(",")!==ordL) r.mud=true;
+  // fechado/reaberto: vale o mais recente
+  if(canonM(loc.status||{})!==canonM(rem.status||{})){
+    if((rem.ts||0)>(loc.ts||0)||((rem.ts||0)===(loc.ts||0)&&canonM(rem.status)>canonM(loc.status))){ loc.status=rem.status; loc.ts=rem.ts||0; r.mud=true; } else r.mais=true;
+  }
+  // registro de alterações depois de fechado: união
+  var chave=function(l){ return l.em+"|"+l.pac+"|"+l.campo+"|"+(l.para||""); }, kl={}, kr={};
+  loc.log.forEach(function(l){kl[chave(l)]=1;}); rem.log.forEach(function(l){ kr[chave(l)]=1; if(!kl[chave(l)]){ loc.log.push(l); r.mud=true; } });
+  if(loc.log.some(function(l){return !kr[chave(l)];})) r.mais=true;
+  loc.log.sort(function(a,b){return a.em-b.em;});
+  if((rem.salvoEm||0)>(loc.salvoEm||0)) loc.salvoEm=rem.salvoEm;
+  fotografar(iso);
+  return r;
+}
+// tira do aparelho os mapas com mais de 60 dias (continuam no Drive)
+function podarAntigos(){
+  if(!window.__SOT||!dados) return; var lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);
+  Object.keys(dados).forEach(function(k){ if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&k<lim) delete dados[k]; });
 }
 // ---------- datas ----------
 var CAMPOS_TXT=["preData","extras","cmb","muc","cardio","apa","pend","obs","dx","mec","cirPrev","fxPrev","laudos"];
@@ -901,12 +1078,13 @@ function menor(x){var i=idade(x);return i!==null&&i<18;}
 var ROT={cab:"Cabeçalho",hora:"Horário",origem:"Origem",preData:"Data dos pré-ops",extras:"Exames extras",cmb:"CMB",muc:"MUC",alergia:"Alergia",peso:"Peso",cardio:"Av Cardio",apa:"APA",rch:"RCH",uti:"UTI",pend:"Pendências",obs:"OBS",cir:"Cirurgia",dx:"Dx",mec:"Mecanismo",cirPrev:"Cir. prévias",fxPrev:"Fx prévias/assoc.",laudos:"Laudos"};
 function rot(f){return f.indexOf("labs.")===0?f.slice(5):(ROT[f]||f);}
 function quando(t){var d=new Date(t);return p2(d.getDate())+"/"+p2(d.getMonth()+1)+"/"+String(d.getFullYear()).slice(2)+" "+p2(d.getHours())+":"+p2(d.getMinutes());}
+function gravarLocal(){ try{localStorage.setItem(CHAVE,JSON.stringify(dados)); return true;}catch(e){ return false; } }
+function horaAgora(){ return new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }
 function salvar(){
-  var ok=true;
-  try{localStorage.setItem(CHAVE,JSON.stringify(dados));}catch(e){ok=false;}
-  if(window.__SOT&&dados[dia]){ try{ dados[dia].salvoEm=Date.now(); parent.postMessage({src:"mapa",type:"mapa-salvar",dia:dia,dados:dados[dia]},"*"); }catch(e){} }
-  var h=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-  document.getElementById("estado").textContent=ok?(window.__SOT?("Salvo às "+h+" no aparelho · Drive em seguida"):("Salvo neste navegador às "+h+" (no app: Drive da equipe)")):"Sem salvamento neste navegador";
+  if(dados[dia]){ carimbar(dia); if(window.__SOT) dados[dia].salvoEm=agoraM(); }
+  var ok=gravarLocal();
+  if(window.__SOT&&dados[dia]){ try{ parent.postMessage({src:"mapa",type:"mapa-salvar",dia:dia},"*"); }catch(e){} }
+  document.getElementById("estado").textContent=ok?(window.__SOT?("Salvo às "+horaAgora()+" no aparelho · enviando ao Drive…"):("Salvo neste navegador às "+horaAgora())):"⚠ Não consegui salvar neste aparelho (memória cheia?)";
 }
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function num(s){var m=String(s||"").replace(/\./g,"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;}
@@ -983,7 +1161,7 @@ function celHTML(x){
   var alPos=x.alergia && !neg(x.alergia);
   var nTrav=Object.keys(x.locked).length;
   var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
-  var h='<div class="cel">';
+  var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
   h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>';
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
@@ -1019,6 +1197,9 @@ function celHTML(x){
      (nDuv?'<button data-id="'+x.id+'" data-ac="okduv">Confirmar '+nDuv+' dúvida(s)</button>':'')+
      (nTrav?'<button data-id="'+x.id+'" data-ac="destrava">Destravar '+nTrav+' campo(s)</button>':'')+
      (nOc?'<button data-id="'+x.id+'" data-ac="mostrar" title="Volta os itens tirados com ×">Mostrar '+nOc+' item(ns) tirado(s)</button>':'')+
+     ((FOTOS[dia]||{})[x.id]||[]).map(function(f,i){ return '<button class="fotob" data-id="'+x.id+'" data-fotoabrir="'+f.lid+'" title="Abrir a foto usada para preencher'+(f.by?' (enviada por '+esc(f.by)+')':'')+'">📎 Foto '+(i+1)+(f.hora?' · '+f.hora:'')+'</button>'; }).join("")+
+     '<button data-id="'+x.id+'" data-ac="quebra" title="Este paciente começa uma folha nova na impressão"'+(x.quebra?' class="on"':'')+'>'+(x.quebra?'✓ ':'')+'Nova folha antes</button>'+
+     '<button data-id="'+x.id+'" data-ac="sozinho" title="Este paciente fica sozinho em uma folha"'+(x.sozinho?' class="on"':'')+'>'+(x.sozinho?'✓ ':'')+'Sozinho na folha</button>'+
      '<button data-id="'+x.id+'" data-ac="rem">Remover</button></div>';
   h+='</div>';
   return h;
@@ -1064,6 +1245,7 @@ function paginar(cels,max){
   var disp=194*mm-tH-2, gap=1.2*mm, pag=[], uso=0;
   function fecha(){ r.pags.push(pag); r.cheia.push(uso/disp>0.72); pag=[]; uso=0; }
   cels.forEach(function(x,i){
+    if(pag.length&&(x.quebra||x.sozinho)) fecha();
     var hx=hs[i], precisa=uso+(pag.length?gap:0)+hx;
     if(pag.length && (pag.length>=max || precisa>disp)){
       if(pag.length<max) r.movidas.push(x.cab.split(",")[0]);
@@ -1071,8 +1253,9 @@ function paginar(cels,max){
     }
     if(hx>disp) r.grandes.push(x.cab.split(",")[0]);
     pag.push(x); uso=precisa;
+    if(x.sozinho&&i<cels.length-1) fecha();
   });
-  fecha();
+  if(pag.length||!r.pags.length) fecha();
   return r;
 }
 function statusTxt(d){
@@ -1085,7 +1268,7 @@ function desenharStatus(info){
   var h='<span class="pill '+(s.fechado?'fech':'rasc')+'">'+(s.fechado?'Fechado':'Rascunho')+'</span>';
   if(s.fechado) h+='<span>em '+quando(s.em)+' por '+esc(s.por)+(n?' · <b>'+n+' alteração(ões) depois</b>':'')+'</span><button id="btReabrir">Reabrir mapa</button>';
   else h+='<label for="quem">Responsável</label><input id="quem" autocomplete="off" value="'+esc(q)+'" placeholder="seu nome"><button id="btFechar">Fechar mapa</button>';
-  h+='<span class="drive">No app: Drive › MAPA CIRURGICO › '+dia.slice(0,7)+' › Mapa '+dia+' (dados + PDF)</span>';
+  h+='<span class="drive">'+(window.__SOT?'Guardado no Drive da equipe › MAPA CIRURGICO › '+dia.slice(0,7):'No app: Drive › MAPA CIRURGICO › '+dia.slice(0,7)+' › Mapa '+dia)+'</span>';
   if(info && info.pags.length>1) h+='<div class="quebra"><b>Este mapa ocupa '+info.pags.length+' folhas.</b> '+(info.movidas.length?('Para não cortar a célula, passou inteiro para a folha seguinte: '+esc(info.movidas.join(", "))+'.'):'')+'</div>';
   if(info && info.grandes.length) h+='<div class="quebra"><b>Célula maior que uma folha:</b> '+esc(info.grandes.join(", "))+'. Reduza o texto para ela não ser cortada na impressão.</div>';
   document.getElementById("status").innerHTML=h;
@@ -1095,7 +1278,8 @@ function desenharStatus(info){
   document.getElementById("alts").innerHTML=a;
 }
 function topoHTML(d,p,tot){
-  return '<div class="folha-topo"><b>Ortopedia Marília SOT · Mapa cirúrgico</b><span>'+esc(statusTxt(d))+' · '+esc(d.titulo)+(tot>1?" · folha "+(p+1)+"/"+tot:"")+'</span></div>';
+  var br=String(dia||"").split("-").reverse().join("/");
+  return '<div class="folha-topo"><b>MAPA CIRÚRGICO — DIA '+esc(br)+'</b><span class="fstat">'+esc(statusTxt(d))+(tot>1?" · folha "+(p+1)+"/"+tot:"")+'</span></div>';
 }
 function desenhar(){
   if(vista==="pac"){ desenharStatus(null); desenharPaciente(); return; }
@@ -1158,8 +1342,11 @@ folhas.addEventListener("click",function(ev){
   var b=ev.target.closest("button,[data-ign]"); if(!b) return;
   var x=achar(b.dataset.id); if(!x) return;
   var a=dados[dia].cels, i=a.indexOf(x);
+  if(b.dataset.fotoabrir){ try{ parent.postMessage({src:"mapa",type:"mapa-foto-abrir",lid:b.dataset.fotoabrir,dia:dia},"*"); }catch(e){} return; }
   if(b.dataset.oc){ x.ocultos=x.ocultos||{}; x.ocultos[b.dataset.oc]=1; delete x.duv[b.dataset.oc]; }
   else if(b.dataset.ac==="mostrar"){ x.ocultos={}; }
+  else if(b.dataset.ac==="quebra"){ x.quebra=!x.quebra; if(x.quebra) x.sozinho=false; }
+  else if(b.dataset.ac==="sozinho"){ x.sozinho=!x.sozinho; if(x.sozinho) x.quebra=false; }
   else if(b.dataset.duvok){ delete x.duv[b.dataset.duvok]; }
   else if(b.dataset.ac==="okduv"){ x.duv={}; }
   else if(b.dataset.ign){ x.ign=x.ign||{}; x.ign[b.dataset.ign.replace(/[\d,.]+/g,"#")]=true; }
@@ -1172,7 +1359,7 @@ folhas.addEventListener("click",function(ev){
   else if(b.dataset.ac==="desce"&&i<a.length-1){ a.splice(i+1,0,a.splice(i,1)[0]); }
   else if(b.dataset.ac==="destrava"){ x.locked={}; x.ign={}; }
   else if(b.dataset.ac==="rem"){
-    if(b.dataset.conf){ a.splice(i,1); if(/^ev_/.test(x.id)){ var rr=dados[dia].removidos=dados[dia].removidos||[]; if(rr.indexOf(x.id)<0) rr.push(x.id); } if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
+    if(b.dataset.conf){ a.splice(i,1); var rr=dados[dia].removidos=dados[dia].removidos||[]; if(rr.indexOf(x.id)<0) rr.push(x.id); if(dados[dia].status.fechado) dados[dia].log.push({em:Date.now(),pac:x.cab.split(",")[0],campo:"célula removida"}); } else { b.dataset.conf="1"; b.textContent="Confirmar remoção"; return; }
   }
   salvar(); desenhar();
 });
@@ -1210,7 +1397,7 @@ document.getElementById("btImprimir").addEventListener("click",function(){
   modoFolha(true);
   try{window.print();}catch(e){}
   setTimeout(function(){modoFolha(false);},400);
-  toast("Se a janela de impressão não abrir aqui, abra o arquivo .html no navegador e use Ctrl+P (A4 paisagem).");
+  if(!window.__SOT) toast("Se a janela de impressão não abrir aqui, abra o arquivo .html no navegador e use Ctrl+P (A4 paisagem).");
 });
 
 var stEl=document.getElementById("status");
@@ -1244,6 +1431,11 @@ document.getElementById("inDia").addEventListener("change",function(){
 
 // ---------- captura ----------
 var capAlvo=null;
+// guarda no app (aparelho + Drive) a foto usada para preencher a célula
+function guardarFotoCel(x,arquivo){
+  if(!window.__SOT||!x||!arquivo) return;
+  try{ parent.postMessage({src:"mapa",type:"mapa-foto",dia:dia,celId:x.id,pac:String(x.cab||"").split(/[,\-]/)[0].trim().slice(0,40),arquivo:arquivo},"*"); }catch(e){}
+}
 function abrirCap(x){
   capAlvo=x; document.getElementById("capTit").textContent="Captar dados: "+x.cab.split(",")[0];
   document.getElementById("capTxt").value=""; document.getElementById("capRes").textContent="";
@@ -1258,6 +1450,7 @@ document.getElementById("capFoto").addEventListener("change",function(){
   var f=this.files&&this.files[0]; if(!f) return;
   var r=new FileReader(); r.onload=function(){document.getElementById("capImg").innerHTML='<img alt="Folha enviada" src="'+r.result+'">';}; r.readAsDataURL(f);
   var u=URL.createObjectURL(f), msg=document.getElementById("capOcrMsg");
+  guardarFotoCel(capAlvo,f);
   msg.textContent="Lendo a foto…";
   ocrImagem(u,function(m){ if(m.status==="recognizing text") msg.textContent="Lendo a foto… "+Math.round((m.progress||0)*100)+"%"; }).then(function(o){
     var t=SOTOCR.posTexto(o.text,o.hdr).text, f=SOTOCR.ficha(o.text,o.hdr), ta=document.getElementById("capTxt"), res=[];
@@ -1418,7 +1611,7 @@ function processarLote(){
     it.r=r;
     var x=casar(r), quem=(r.nome||"sem nome")+(r.prontuario?" (P: "+r.prontuario+")":"");
     if(!x&&!r.nome&&!r.prontuario&&ultimoX){ x=ultimoX; quem="Continuação"; }
-    if(x){ ultimoX=x; var n=aplicar(x,r), nd=(r.duvidas||[]).length; it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)"+(nd?", "+nd+" com ? para conferir":"")+"."; salvar(); desenhar(); }
+    if(x){ ultimoX=x; if(!it.guardada){ it.guardada=true; guardarFotoCel(x,it.blob); } var n=aplicar(x,r), nd=(r.duvidas||[]).length; it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)"+(nd?", "+nd+" com ? para conferir":"")+"."; salvar(); desenhar(); }
     else { it.st="semcel"; it.msg="Li "+quem+", mas não achei esse paciente no mapa do dia."; }
   }).catch(function(e){
     it.st="erro";
@@ -1450,6 +1643,7 @@ document.getElementById("loteLista").addEventListener("click",function(ev){
   var b=ev.target.closest("button[data-lote]"); if(!b) return;
   var i=parseInt(b.dataset.lote,10), it=lote[i], x=achar(document.getElementById("lsel"+i).value);
   if(!it||!x) return;
+  if(!it.guardada){ it.guardada=true; guardarFotoCel(x,it.blob); }
   var n=aplicar(x,it.r); it.st="ok"; it.msg=(it.r.nome||"Foto")+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s).";
   salvar(); desenhar(); desenharLote();
 });
@@ -1466,6 +1660,9 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
 (function(){
   if(!window.__SOT) return;
   var btR=document.getElementById("btRestaurar"); if(btR) btR.style.display="none";
+  document.body.classList.add("noapp");
+  (function(){ var av0=document.querySelector(".aviso"); if(!av0) return; var dt=document.createElement("details"); dt.className="aviso legd"; var sm=document.createElement("summary"); sm.textContent="Legenda e como editar"; dt.appendChild(sm); while(av0.firstChild) dt.appendChild(av0.firstChild); av0.parentNode.replaceChild(dt,av0); if(window.innerWidth>900) dt.open=true; })();
+  (function(){ var barra=document.querySelector(".barra"); if(!barra) return; var b=document.createElement("button"); b.className="btn maisb"; b.type="button"; b.textContent="⋯ Mais"; b.setAttribute("aria-expanded","false"); b.addEventListener("click",function(){ var on=barra.classList.toggle("aberta"); b.setAttribute("aria-expanded",on?"true":"false"); }); var est=document.getElementById("estado"); barra.insertBefore(b,est); var g=barra.querySelectorAll(".grupo"); if(g[2]) g[2].classList.add("extra"); var ld=barra.querySelector('label[for="inDia"]'), idd=document.getElementById("inDia"); if(ld) ld.classList.add("extra"); if(idd) idd.classList.add("extra"); ["btAtualizar","btNova"].forEach(function(i){ var x=document.getElementById(i); if(x) x.classList.add("extra"); }); var ldia=barra.querySelector('label[for="selDia"]'); if(ldia) ldia.classList.add("extra"); })();
   var av=document.querySelector(".aviso span"); if(av) av.innerHTML="<b>Cirurgias da Agenda do dia; internados com dados do internograma.</b> Toque em qualquer campo para editar (fica travado e não é sobrescrito).";
   function pedir(d){ parent.postMessage({src:"mapa",type:"mapa-pedir",dia:d||dia},"*"); }
   function trocarBotao(id,fn){ var b=document.getElementById(id); if(!b) return; var n=b.cloneNode(true); b.parentNode.replaceChild(n,b); n.addEventListener("click",fn); return n; }
@@ -1477,22 +1674,24 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
     var m=e.data||{}; if(m.src!=="sot") return;
     if(m.type==="mapa-dados"){
       var iso=m.dia, loc=dados[iso], sv=m.salvo;
-      if(sv&&sv.cels&&(!loc||(sv.salvoEm||0)>(loc.salvoEm||0))){ dados[iso]=sv; loc=sv; loc.cels.forEach(function(x){x.duv=x.duv||{};x.alt=x.alt||{};x.ign=x.ign||{};x.locked=x.locked||{};x.labs=x.labs||{};}); loc.status=loc.status||{fechado:false}; loc.log=loc.log||[]; }
-      if(!loc){ loc=dados[iso]={titulo:m.titulo||tituloDia(iso),cels:[],status:{fechado:false},log:[]}; }
+      SKEW=m.skew||0; QUEM=m.quem||QUEM; if(m.fotos) FOTOS[iso]=m.fotos;
+      if(sv&&sv.cels) mesclarDia(iso,sv);          // junta com o que está no Drive (não substitui o que foi feito aqui)
+      loc=dados[iso];
+      if(!loc){ loc=dados[iso]={titulo:m.titulo||tituloDia(iso),cels:[],status:{fechado:false},log:[]}; fotografar(iso); }
       dia=iso; var novos=0, mud=0, mant=0, tirados=0;
       var NAOPAC=/^\s*(proclama|feriado|ponto facultativo|f[eé]rias|folga|sala\s*\d|sala\b|congresso|plant[aã]o|reuni[aã]o|tiradentes|natal|finados|independ[eê]ncia|carnaval|ano novo|corpus christi|sexta.feira santa|consci[eê]ncia negra|nossa senhora|aniversário)/i;
       var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=1; });
       loc.cels=loc.cels.filter(function(z){
         var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
         if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
-        if(/^ev_/.test(z.id)&&(m.cels||[]).length&&!ids[z.id]&&!Object.keys(z.locked||{}).length&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
+        if(/^ev_/.test(z.id)&&(m.cels||[]).length&&!ids[z.id]&&!Object.keys(z.locked||{}).length&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; loc.sumidos=loc.sumidos||{}; loc.sumidos[z.id]=agoraM(); return false; }
         return true;
       });
       var REM=loc.removidos||[];
       (m.cels||[]).forEach(function(inc){
         if(REM.indexOf(inc.id)>=0) return;
         var x=null; loc.cels.forEach(function(z){ if(z.id===inc.id) x=z; });
-        if(!x){ x=c(inc); TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; loc.cels.push(x); novos++; return; }
+        if(!x){ x=c(inc); TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],iso); }); x.duv=inc.duv||{}; x.tc=agoraM(); loc.cels.push(x); novos++; return; }
         Object.keys(inc).forEach(function(f){
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
@@ -1501,11 +1700,29 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
           if(gravar(x,f,v,false)) mud++;
         });
       });
-      loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
+      if(!loc.to) loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
       pacSel=m.foco||pacSel; if(m.foco) trocarVista("pac");
       montarDias(); salvar(); desenhar();
       if(m.aviso!==false) toast((novos?novos+" cirurgia(s) nova(s) da Agenda. ":"")+mud+" campo(s) atualizado(s)"+(mant?", "+mant+" editado(s) à mão mantido(s)":"")+".");
     }
+  });
+  // o app baixou o mapa do Drive: mescla aqui e devolve o resultado para ele enviar (se houver algo novo deste aparelho)
+  var redesenharDepois=false;
+  function redesenharSeguro(){ var ae=document.activeElement; if(ae&&ae.classList&&ae.classList.contains("ed")){ redesenharDepois=true; return; } desenhar(); }
+  document.addEventListener("focusout",function(){ if(redesenharDepois){ redesenharDepois=false; setTimeout(function(){ var ae=document.activeElement; if(!(ae&&ae.classList&&ae.classList.contains("ed"))) desenhar(); else redesenharDepois=true; },60); } });
+  window.addEventListener("message",function(e){
+    var m=e.data||{}; if(m.src!=="sot") return;
+    if(m.type==="mapa-remoto"){
+      var iso=m.dia, q;
+      try{ q=mesclarDia(iso,m.remoto); }catch(err){ parent.postMessage({src:"mapa",type:"mapa-enviar",dia:iso,precisa:false,erro:String(err)},"*"); return; }
+      if(q.mud){ gravarLocal(); if(iso===dia){ montarDias(); redesenharSeguro(); toast("Mapa atualizado com o que outra pessoa preencheu."); } }
+      var d=dados[iso]; if(d&&q.mais) d.salvoEm=agoraM();
+      parent.postMessage({src:"mapa",type:"mapa-enviar",dia:iso,precisa:!!(d&&q.mais),dados:d&&q.mais?d:null},"*");
+    }
+    else if(m.type==="mapa-estado"&&m.dia===dia){
+      document.getElementById("estado").textContent=m.estado==="ok"?("Salvo no Drive às "+horaAgora()):m.estado==="off"?"Sem internet ou sem login — salvo só neste aparelho (envia quando voltar)":"⚠ Não consegui enviar ao Drive — salvo neste aparelho, tento de novo";
+    }
+    else if(m.type==="mapa-fotos"){ FOTOS[m.dia]=m.fotos||{}; if(m.dia===dia) redesenharSeguro(); }
   });
   parent.postMessage({src:"mapa",type:"mapa-pronto",dia:dia},"*");
 })();
