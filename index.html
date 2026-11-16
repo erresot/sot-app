@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v35</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v36</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -1023,7 +1023,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '35';
+var VERSAO = '36';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2465,6 +2465,15 @@ window.addEventListener('message', function (e) {
     }).catch(function (err) { ERR.log('mapa-foto', err, 'Não consegui guardar a foto do mapa'); });
   }
   else if (m.type === 'mapa-foto-abrir' && m.lid) abrirFoto(m.lid);
+  else if (m.type === 'mapa-foto-pedir' && m.lid) {   // o mapa quer a imagem (ver ou reler): manda o arquivo
+    var f = null; Object.keys(S.fotos || {}).some(function (k) { f = (S.fotos[k] || []).find(function (x) { return x.lid === m.lid && !x.del; }); return f; });
+    var falha = function (msg) { mapaPost({ type: 'mapa-foto-arquivo', lid: m.lid, req: m.req, erro: msg }); };
+    if (!f) { falha('Foto não encontrada neste aparelho.'); return; }
+    FOTO.url(f).then(function (u) {
+      if (!u) { falha(navigator.onLine ? 'A foto ainda não chegou do Drive.' : 'Sem internet: a foto ainda não está neste aparelho.'); return; }
+      return fetch(u).then(function (r) { return r.blob(); }).then(function (b) { mapaPost({ type: 'mapa-foto-arquivo', lid: m.lid, req: m.req, arquivo: b }); });
+    }).catch(function (e) { ERR.log('mapa-foto-pedir', e); falha('Não consegui abrir a foto.'); });
+  }
   else if (m.type === 'mapa-foto-apagar' && m.lid) {
     confirmar('Apagar esta foto do mapa?', function () {
       Object.keys(S.fotos || {}).forEach(function (k) { S.fotos[k].forEach(function (f) { if (f.lid === m.lid) { f.del = true; f.at = relogio(); } }); });

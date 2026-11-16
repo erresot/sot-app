@@ -132,6 +132,13 @@ button{cursor:pointer}
 .caixa .btn.pri{background:var(--acento);color:#fff;border-color:var(--acento)}
 .item{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:start;border:1px solid #c3ccd3;border-radius:5px;padding:8px;margin-bottom:6px;font-size:13px}
 .item img{width:64px;height:64px;object-fit:cover;border-radius:3px}
+.guard{margin:6px 0 12px;padding:8px;border:1px solid #c3ccd3;border-radius:6px;background:#f6f8fa}
+.guard .tit{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px;font-size:13px}
+.guard .gf{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid #dde3e8;padding:5px 0;font-size:13px}
+.guard .gf .st{font-size:12px}
+#fotoCorpo img{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:4px}
+.lixobar{margin:8px auto;max-width:1100px;border:2px solid #c62828;background:#fff1f1;border-radius:8px;padding:8px 12px;font:13px/1.4 var(--sans,system-ui);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media print{.lixobar{display:none!important}}
 .item .st{font-weight:600}
 .item .st.ok{color:var(--ok)} .item .st.er{color:var(--alerta)} .item .st.es{color:var(--tinta-2)}
 .item select{border:1px solid #9aa7b2;border-radius:4px;padding:3px 6px;max-width:100%}
@@ -360,8 +367,16 @@ details.legd[open]>summary{width:100%}
   <div class="caixa">
     <h2 id="loteTit">Fotos dos ambulatoriais</h2>
     <p id="loteMsg">Cada foto é lida aqui no aparelho (funciona sem internet), o paciente é localizado pelo registro ou nome e a célula dele é preenchida. Foto sem cabeçalho entra como continuação do paciente anterior. Valores duvidosos ficam com <b>?</b>. Campos editados à mão não são alterados.</p>
+    <div id="loteGuardadas"></div>
     <div id="loteLista"></div>
     <div class="rod"><button class="btn" id="loteMais">Enviar mais fotos</button><button class="btn pri" id="loteFechar">Concluir</button></div>
+  </div>
+</div>
+<div class="modal" id="modalFoto" role="dialog" aria-modal="true" aria-labelledby="fotoTit">
+  <div class="caixa">
+    <h2 id="fotoTit">Foto</h2>
+    <div id="fotoCorpo"><p>Abrindo a foto…</p></div>
+    <div class="rod"><button class="btn" id="fotoReler">Reler esta foto e completar campos</button><button class="btn" id="fotoApagar">Apagar foto</button><button class="btn pri" id="fotoFechar">Fechar</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -939,13 +954,13 @@ function carregar(){
   if(!dados){ dados=window.__SOT?{}:exemplo(); for(var k in dados) dados[k].cels.forEach(function(x){ CAMPOS_TXT.forEach(function(f){ if(x[f]) x[f]=anoDatas(x[f],k); }); }); }
   podarAntigos();
   for(var d in dados){ normDia(dados[d]); fotografar(d); }
-  expirarFora();
+  expirarFora(); expirarLixo();
 }
 // ---------- carimbo de hora por campo e mescla entre aparelhos ----------
 // Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
 // duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
 var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
-var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev"];
 var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
 function agoraM(){ return Date.now()+(SKEW||0); }
 function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
@@ -1054,7 +1069,7 @@ function restaurarFora(d,id,fixo){
 }
 /* ---------- cirurgia cancelada / suspensa / remarcada: os dados ficam guardados 14 dias e são reaproveitados ---------- */
 var GUARDA_DIAS=14, CAMPOS_R=["preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","dx","mec","cirPrev","fxPrev","laudos","obs"];
-function regCab(cab){ var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(\d{6,7})\b/); return m?m[1]:""; }
+function regCab(cab){ var u=semAcento(cab), m=u.match(/\bP\s*[:.]?\s*(\d{5,8})\b/)||u.match(/\b(?:REG(?:ISTRO)?|PRONT\w*|RGHC)\s*[:.]?\s*(\d{5,8})\b/)||u.match(/,\s*(\d{5,8})\s*(?:,|$)/)||u.match(/\b(\d{6,7})\b/); return m?m[1]:""; }
 function nomeCab(cab){ return semAcento(String(cab||"").split(/[,;(]/)[0]).replace(/[^A-Z ]/g," ").trim().split(/\s+/).filter(function(w){return w.length>2&&!/^(DOS|DAS|DES)$/.test(w);}).slice(0,2).join(" "); }
 function mesmaPessoa(a,b){   // a, b = cabeçalhos
   var ra=regCab(a), rb=regCab(b); if(ra&&rb) return ra===rb;
@@ -1163,6 +1178,8 @@ function mesclarDia(iso,rem){
   if(loc.log.some(function(l){return !kr[chave(l)];})) r.mais=true;
   loc.log.sort(function(a,b){return a.em-b.em;});
   if((rem.salvoEm||0)>(loc.salvoEm||0)) loc.salvoEm=rem.salvoEm;
+  var tl=function(l){ return l?Math.max(l.em||0,l.rec||0):0; };
+  if(tl(rem.lixo)>tl(loc.lixo)){ loc.lixo=rem.lixo; r.mud=true; } else if(tl(loc.lixo)>tl(rem.lixo)) r.mais=true;
   fotografar(iso);
   return r;
 }
@@ -1342,7 +1359,7 @@ function copiarLinha(x){
   catch(e){ toast("Toque no texto para selecionar e copie."); }
 }
 function desenharPaciente(){
-  var a=dados[dia].cels; if(!a.length){document.getElementById("folhas").innerHTML='<p style="text-align:center">Nenhuma cirurgia neste dia.</p>';return;}
+  var a=dados[dia].cels; if(!a.length){document.getElementById("folhas").innerHTML=lixoHTML(dados[dia])+'<p style="text-align:center">Nenhuma cirurgia neste dia.</p>';return;}
   var x=achar(pacSel)||a[0]; pacSel=x.id;
   var h='<div class="pacs">'+a.map(function(z){
     return '<button class="pac'+(z.id===x.id?' ativa':'')+'" data-pac="'+z.id+'"><small>'+esc(z.hora)+'</small>'+esc(z.cab.split(",")[0])+'</button>';}).join("")+'</div>';
@@ -1387,10 +1404,11 @@ function desenharStatus(info){
   var h='<span class="pill '+(s.fechado?'fech':'rasc')+'">'+(s.fechado?'Fechado':'Rascunho')+'</span>';
   if(s.fechado) h+='<span>em '+quando(s.em)+' por '+esc(s.por)+(n?' · <b>'+n+' alteração(ões) depois</b>':'')+'</span><button id="btReabrir">Reabrir mapa</button>';
   else h+='<label for="quem">Responsável</label><input id="quem" autocomplete="off" value="'+esc(q)+'" placeholder="seu nome"><button id="btFechar">Fechar mapa</button>';
+  if(d.cels.length) h+='<button id="btApagarMapa" title="Apaga o mapa deste dia (dá para recuperar por 24 horas)">Apagar mapa</button>';
   h+='<span class="drive">'+(window.__SOT?'Guardado no Drive da equipe › MAPA CIRURGICO › '+dia.slice(0,7):'No app: Drive › MAPA CIRURGICO › '+dia.slice(0,7)+' › Mapa '+dia)+'</span>';
   if(info && info.pags.length>1) h+='<div class="quebra"><b>Este mapa ocupa '+info.pags.length+' folhas.</b> '+(info.movidas.length?('Para não cortar a célula, passou inteiro para a folha seguinte: '+esc(info.movidas.join(", "))+'.'):'')+'</div>';
   if(info && info.grandes.length) h+='<div class="quebra"><b>Célula maior que uma folha:</b> '+esc(info.grandes.join(", "))+'. Reduza o texto para ela não ser cortada na impressão.</div>';
-  document.getElementById("status").innerHTML=h;
+  document.getElementById("status").innerHTML=lixoHTML(dados[dia])+h;
   var a="";
   if(n){ a='<h3>Alterações depois do fechamento</h3><ul>'+d.log.map(function(l){
       return '<li>'+quando(l.em)+' · <b>'+esc(l.pac)+'</b> · '+esc(l.campo)+(l.de!==undefined?': “'+esc(l.de||"vazio")+'” → “'+esc(l.para||"vazio")+'”':'')+'</li>';}).join("")+'</ul>'; }
@@ -1479,7 +1497,7 @@ folhas.addEventListener("click",function(ev){
   var b=ev.target.closest("button,[data-ign]"); if(!b) return;
   var x=achar(b.dataset.id); if(!x) return;
   var a=dados[dia].cels, i=a.indexOf(x);
-  if(b.dataset.fotoabrir){ try{ parent.postMessage({src:"mapa",type:"mapa-foto-abrir",lid:b.dataset.fotoabrir,dia:dia},"*"); }catch(e){} return; }
+  if(b.dataset.fotoabrir){ verFoto(b.dataset.fotoabrir); return; }
   if(b.dataset.oc){ x.ocultos=x.ocultos||{}; x.ocultos[b.dataset.oc]=1; delete x.duv[b.dataset.oc]; }
   else if(b.dataset.ac==="mostrar"){ x.ocultos={}; }
   else if(b.dataset.ac==="quebra"){ x.quebra=!x.quebra; if(x.quebra) x.sozinho=false; }
@@ -1713,10 +1731,11 @@ function casar(r){
   });
   return ach;
 }
-function aplicar(x,r){
+function aplicar(x,r,soVazios){
   var n=0, k;
-  function ap(f,v){ v=String(v==null?"":v).trim(); if(!v||x.locked[f]) return; if(gravar(x,f,v,false)) n++; }
-  if(Object.keys(r.labs||{}).some(function(k){return r.labs[k];})) trocaData(x,r.data_exames);
+  function atual(f){ return f.indexOf("labs.")===0?(x.labs[f.slice(5)]||""):(x[f]||""); }
+  function ap(f,v){ v=String(v==null?"":v).trim(); if(!v||x.locked[f]) return; if(soVazios&&String(atual(f)).trim()&&!/^_+$|^—$/.test(atual(f))) return; if(gravar(x,f,v,false)) n++; }
+  if(!soVazios&&Object.keys(r.labs||{}).some(function(k){return r.labs[k];})) trocaData(x,r.data_exames);
   for(k in (r.labs||{})) if(LABS.indexOf(k)>=0) ap("labs."+k,r.labs[k]);
   ap("preData",r.data_exames); ap("extras",r.outros_exames);
   (Array.isArray(r.duvidas)?r.duvidas:[]).forEach(function(k){
@@ -1737,7 +1756,8 @@ function desenharLote(){
     else if(it.st==="erro") s+='<div class="st er">'+esc(it.msg)+'</div>';
     else if(it.st==="semcel") s+='<div class="st er">'+esc(it.msg)+'</div><div class="lin2"><label for="lsel'+i+'">Aplicar em</label><select id="lsel'+i+'">'+ops+'</select><button class="btn" data-lote="'+i+'">Aplicar</button></div>';
     return s+'</div></div>';
-  }).join("")||'<p>Nenhuma foto enviada ainda.</p>';
+  }).join("")||(fotosGuardadas().length?'':'<p>Nenhuma foto enviada ainda.</p>');
+  desenharGuardadas();
 }
 function processarLote(){
   var it=null; for(var i=0;i<lote.length;i++) if(lote[i].st==="espera"){it=lote[i];break;}
@@ -1765,7 +1785,7 @@ document.getElementById("btFotos").addEventListener("click",function(){
     document.getElementById("loteMsg").textContent="A leitura automática das fotos só funciona na página publicada no Claude (não no arquivo aberto direto no navegador). Se você está na página publicada, aguarde alguns segundos e abra de novo.";
     return;
   }
-  if(!lote.length) document.getElementById("inFotos").click();
+  if(!lote.length&&!fotosGuardadas().length) document.getElementById("inFotos").click();
 });
 document.getElementById("loteMais").addEventListener("click",function(){ if(amostra) document.getElementById("inFotos").click(); });
 document.getElementById("loteFechar").addEventListener("click",function(){document.getElementById("modalLote").classList.remove("aberto");});
@@ -1787,6 +1807,121 @@ document.getElementById("loteLista").addEventListener("click",function(ev){
   var n=aplicar(x,it.r); it.st="ok"; it.msg=(it.r.nome||"Foto")+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s).";
   salvar(); desenhar(); desenharLote();
 });
+
+// ---------- fotos já guardadas: ver, reler e completar campos ----------
+var PEDIDOS={}, nPed=0, RELER={}, filaReler=[], relendo=false, fotoAtual=null;
+function pedirFoto(lid){
+  return new Promise(function(ok,er){
+    if(!window.__SOT){ er(new Error("A foto fica guardada no app.")); return; }
+    var r="f"+(++nPed); PEDIDOS[r]={ok:ok,er:er};
+    setTimeout(function(){ if(PEDIDOS[r]){ delete PEDIDOS[r]; er(new Error("o app não respondeu")); } },30000);
+    try{ parent.postMessage({src:"mapa",type:"mapa-foto-pedir",lid:lid,req:r},"*"); }catch(e){ delete PEDIDOS[r]; er(e); }
+  });
+}
+window.addEventListener("message",function(e){
+  var m=e.data||{}; if(m.src!=="sot"||m.type!=="mapa-foto-arquivo") return;
+  var p=PEDIDOS[m.req]; if(!p) return; delete PEDIDOS[m.req];
+  if(m.arquivo) p.ok(m.arquivo); else p.er(new Error(m.erro||"foto indisponível"));
+});
+function fotosGuardadas(){
+  var F=FOTOS[dia]||{}, out=[];
+  Object.keys(F).forEach(function(cid){ var x=achar(cid); (F[cid]||[]).forEach(function(f,i){ out.push({lid:f.lid,hora:f.hora,by:f.by,cid:cid,x:x,i:i}); }); });
+  return out;
+}
+function nomeCel(x){ return x?String(x.cab||"").split(",")[0]:"(célula removida)"; }
+function desenharGuardadas(){
+  var el=document.getElementById("loteGuardadas"); if(!el) return;
+  var L=fotosGuardadas();
+  el.innerHTML=!L.length?'':'<div class="guard"><div class="tit"><b>Fotos já guardadas neste mapa ('+L.length+')</b><button class="btn" id="relerTodas">Reler todas e completar campos</button></div>'+
+    L.map(function(g){ var r=RELER[g.lid]||{};
+      return '<div class="gf"><span>'+esc(nomeCel(g.x))+' · Foto '+(g.i+1)+(g.hora?' · '+esc(g.hora):'')+(g.by?' · '+esc(g.by):'')+
+        (r.msg?'<br><span class="st '+(r.st==="ok"?"ok":r.st==="erro"?"er":"es")+'">'+esc(r.msg)+'</span>':'')+'</span>'+
+        '<span><button class="btn" data-gver="'+esc(g.lid)+'">Ver</button> <button class="btn" data-greler="'+esc(g.lid)+'"'+(g.x?'':' disabled')+'>Reler</button></span></div>'; }).join("")+'</div>';
+  var st=document.getElementById("fotoSt"); if(st&&fotoAtual) st.textContent=(RELER[fotoAtual.lid]||{}).msg||"";
+}
+function marcaReler(lid,st,msg){ RELER[lid]={st:st,msg:msg}; desenharGuardadas(); }
+function relerFoto(lid){
+  if(filaReler.indexOf(lid)<0) filaReler.push(lid);
+  marcaReler(lid,"es","Na fila para reler…"); proxReler();
+}
+function proxReler(){
+  if(relendo) return; var lid=filaReler.shift(); if(!lid) return; relendo=true;
+  var g=fotosGuardadas().filter(function(z){return z.lid===lid;})[0];
+  var fim=function(st,msg){ marcaReler(lid,st,msg); relendo=false; proxReler(); };
+  if(!g||!g.x){ fim("erro","A célula desta foto não está mais no mapa."); return; }
+  marcaReler(lid,"es","Lendo a foto…"); var ult=-1;
+  pedirFoto(lid).then(function(b){
+    var u=URL.createObjectURL(b);
+    return ocrImagem(u,function(m){ if(m.status==="recognizing text"){ var p=Math.round((m.progress||0)*10)*10; if(p!==ult){ ult=p; marcaReler(lid,"es","Lendo a foto… "+p+"%"); } } })
+      .then(function(o){ URL.revokeObjectURL(u); return o; });
+  }).then(function(o){
+    var r=SOTOCR.ficha(o.text,o.hdr), x=achar(g.cid)||g.x, n=aplicar(x,r,true), nd=(r.duvidas||[]).length;
+    salvar(); desenhar();
+    fim("ok", n?(n+" campo(s) vazio(s) completado(s)"+(nd?", confira os ?":"")+"."):"Nada novo: os campos que a foto tem já estão preenchidos.");
+  }).catch(function(e){ fim("erro","Não consegui reler: "+(e&&e.message||e)); });
+}
+function verFoto(lid){
+  var g=fotosGuardadas().filter(function(z){return z.lid===lid;})[0]||{lid:lid,i:0};
+  fotoAtual=g;
+  document.getElementById("fotoTit").textContent=nomeCel(g.x)+" · Foto "+(g.i+1)+(g.hora?" · "+g.hora:"");
+  var c=document.getElementById("fotoCorpo"); c.innerHTML="<p>Abrindo a foto…</p>";
+  document.getElementById("fotoReler").disabled=!g.x;
+  document.getElementById("modalFoto").classList.add("aberto");
+  pedirFoto(lid).then(function(b){
+    if(!fotoAtual||fotoAtual.lid!==lid) return;
+    var u=URL.createObjectURL(b);
+    c.innerHTML='<img alt="Foto usada para preencher o mapa" src="'+u+'"><p id="fotoSt" class="st"></p>'; desenharGuardadas();
+  },function(e){ c.innerHTML='<p>'+esc(e.message||"Foto indisponível")+'</p>'; });
+}
+document.getElementById("fotoFechar").addEventListener("click",function(){ document.getElementById("modalFoto").classList.remove("aberto"); fotoAtual=null; });
+document.getElementById("fotoReler").addEventListener("click",function(){ if(fotoAtual) relerFoto(fotoAtual.lid); });
+document.getElementById("fotoApagar").addEventListener("click",function(){
+  if(!fotoAtual) return; try{ parent.postMessage({src:"mapa",type:"mapa-foto-apagar",lid:fotoAtual.lid,dia:dia},"*"); }catch(e){}
+  document.getElementById("modalFoto").classList.remove("aberto"); fotoAtual=null;
+});
+document.getElementById("loteGuardadas").addEventListener("click",function(ev){
+  var b=ev.target.closest("button"); if(!b) return;
+  if(b.id==="relerTodas"){ fotosGuardadas().forEach(function(g){ if(g.x) relerFoto(g.lid); }); return; }
+  if(b.dataset.gver) verFoto(b.dataset.gver);
+  else if(b.dataset.greler) relerFoto(b.dataset.greler);
+});
+
+// ---------- apagar o mapa do dia (recuperável por 24 horas) ----------
+var DIA_MS=864e5;
+function apagarMapa(){
+  var d=dados[dia]; if(!d) return; var ag=agoraM();
+  d.lixo={em:ag,cels:JSON.parse(JSON.stringify(d.cels)),fora:JSON.parse(JSON.stringify(d.fora||{}))};
+  d.sumidos=d.sumidos||{}; d.cels.forEach(function(x){ d.sumidos[x.id]=ag; }); d.cels=[];
+  d.foraDel=d.foraDel||{}; Object.keys(d.fora||{}).forEach(function(id){ d.foraDel[id]=ag; }); delete d.fora;
+  pacSel=null; salvar(); desenhar(); toast("Mapa apagado. Dá para recuperar por 24 horas.");
+}
+function recuperarMapa(){
+  var d=dados[dia]; if(!d||!d.lixo||!d.lixo.cels) return; var ag=agoraM(), L=d.lixo, sfx=function(){ return "~"+ag.toString(36)+Math.random().toString(36).slice(2,5); };
+  d.sumidos=d.sumidos||{};
+  L.cels.forEach(function(x0){
+    var y=normCel(JSON.parse(JSON.stringify(x0))), b=baseId(y.id);
+    // células vazias que a Agenda recriou depois de apagar: saem, fica a recuperada
+    d.cels=d.cels.filter(function(z){ var dup=baseId(z.id)===b&&(z.tc||0)>L.em&&!temDados(z); if(dup) d.sumidos[z.id]=ag; return !dup; });
+    y.id=b+sfx(); y.tc=ag; d.cels.push(y);
+  });
+  Object.keys(L.fora||{}).forEach(function(id){ d.fora=d.fora||{}; var g=JSON.parse(JSON.stringify(L.fora[id])); g.em=ag; d.fora[id+sfx()]=g; });
+  if(!d.to) d.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
+  d.lixo={em:L.em,rec:ag}; salvar(); desenhar(); toast("Mapa recuperado.");
+}
+function lixoHTML(d){
+  var L=d&&d.lixo; if(!L||!L.cels||L.rec) return "";
+  var ate=new Date(L.em+DIA_MS), hh=function(t){ var x=new Date(t); return p2(x.getDate())+"/"+p2(x.getMonth()+1)+" "+p2(x.getHours())+":"+p2(x.getMinutes()); };
+  return '<div class="lixobar"><span>🗑 <b>Mapa apagado</b> em '+hh(L.em)+' ('+L.cels.length+' cirurgia(s)). Dá para recuperar até '+hh(ate)+'.</span><button class="btn pri" id="btRecuperar">Recuperar mapa</button></div>';
+}
+function expirarLixo(){
+  Object.keys(dados||{}).forEach(function(k){ var d=dados[k], L=d&&d.lixo; if(L&&L.cels&&!L.rec&&agoraM()-L.em>DIA_MS) d.lixo={em:L.em,rec:L.em+DIA_MS}; });
+}
+document.addEventListener("click",function(ev){
+  var b=ev.target; if(!b||b.id!=="btApagarMapa") return; var d=dados[dia]; if(!d||!d.cels.length){ toast("Este mapa já está vazio."); return; }
+  if(b.dataset.conf!=="1"){ b.dataset.conf="1"; b.textContent="Toque de novo para apagar"; setTimeout(function(){ b.dataset.conf=""; b.textContent="Apagar mapa"; },4000); return; }
+  b.dataset.conf=""; b.textContent="Apagar mapa"; apagarMapa();
+});
+document.addEventListener("click",function(ev){ if(ev.target&&ev.target.id==="btRecuperar") recuperarMapa(); });
 
 // ---------- início ----------
 carregar();
@@ -1822,7 +1957,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       var NAOPAC=/^\s*(proclama|feriado|ponto facultativo|f[eé]rias|folga|sala\s*\d|sala\b|congresso|plant[aã]o|reuni[aã]o|tiradentes|natal|finados|independ[eê]ncia|carnaval|ano novo|corpus christi|sexta.feira santa|consci[eê]ncia negra|nossa senhora|aniversário)/i;
       var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=identCab(z.cab); });
       var completo=m.completo!==false&&(m.completo===true||(m.cels||[]).length>0);   // Agenda do dia lida inteira
-      var foram=0, trocados=0, voltaram=0;
+      var foram=0, trocados=0, voltaram=0, ligados=0;
       loc.cels=loc.cels.filter(function(z){
         var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
         if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
@@ -1836,11 +1971,16 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
         else { loc.sumidos=loc.sumidos||{}; loc.sumidos[z.id]=agoraM(); tirados++; }
         return false;
       });
-      var REM=loc.removidos||[];
-      (m.cels||[]).forEach(function(inc){
+      var REM=loc.removidos||[], apagado=loc.lixo&&loc.lixo.cels&&!loc.lixo.rec&&m.aviso!==true;
+      (apagado?[]:(m.cels||[])).forEach(function(inc){
         if(REM.indexOf(inc.id)>=0) return;
         var idt=identCab(inc.cab), x=null;
-        loc.cels.forEach(function(z){ if(baseId(z.id)===inc.id&&mesmoPaciente(z.ident||identCab(z.cab),idt)) x=z; });
+        loc.cels.forEach(function(z){ if((baseId(z.id)===inc.id||z.ev===inc.id)&&mesmoPaciente(z.ident||identCab(z.cab),idt)) x=z; });
+        if(!x){
+          // célula criada à mão antes de o paciente entrar na Agenda: liga ao evento (mesmo registro ou mesmo nome)
+          loc.cels.forEach(function(z){ if(!x&&!/^ev_/.test(z.id)&&!z.ev&&mesmaPessoa(z.cab,inc.cab)) x=z; });
+          if(x){ x.ev=inc.id; ligados++; }
+        }
         if(!x){
           // voltou para a Agenda: recupera o que já tinha sido preenchido
           var g=null; Object.keys(loc.fora||{}).forEach(function(id){ var q=loc.fora[id]; if(baseId(id)===inc.id&&mesmoPaciente(q.cel.ident||identCab(q.cel.cab),idt)) g=id; });
@@ -1855,6 +1995,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
           var v=inc[f]; if(v==null||v==="") return;
+          if((f==="hora"||f==="cab")&&/_{2}|Nome, idade/.test(x[f]||"")) delete x.locked[f];   // horário/cabeçalho ainda em branco: vem da Agenda
           if(x.locked[f]){ mant++; return; }
           if(gravar(x,f,v,false)) mud++;
         });
@@ -1863,7 +2004,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       if(!loc.to) loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
       pacSel=m.foco||pacSel; if(m.foco) trocarVista("pac");
       montarDias(); salvar(); desenhar();
-      if(m.aviso!==false) toast([novos?(novos===1?"1 cirurgia nova":novos+" cirurgias novas")+" da Agenda":"", (foram+tirados)?((foram+tirados)===1?"1 saiu da Agenda":(foram+tirados)+" saíram da Agenda"):"", trocados?(trocados===1?"1 horário passou para outro paciente":trocados+" horários passaram para outros pacientes"):"", voltaram?(voltaram===1?"1 voltou para a Agenda":voltaram+" voltaram para a Agenda"):"", reus?(reus===1?"1 remarcada com dados reaproveitados":reus+" remarcadas com dados reaproveitados"):"", mud===1?"1 campo atualizado":mud+" campos atualizados", mant?(mant===1?"1 editado à mão mantido":mant+" editados à mão mantidos"):""].filter(Boolean).join(" · ")+"."+(completo?"":" (Agenda incompleta: ninguém foi tirado)"));
+      if(m.aviso!==false) toast([novos?(novos===1?"1 cirurgia nova":novos+" cirurgias novas")+" da Agenda":"", (foram+tirados)?((foram+tirados)===1?"1 saiu da Agenda":(foram+tirados)+" saíram da Agenda"):"", trocados?(trocados===1?"1 horário passou para outro paciente":trocados+" horários passaram para outros pacientes"):"", voltaram?(voltaram===1?"1 voltou para a Agenda":voltaram+" voltaram para a Agenda"):"", reus?(reus===1?"1 remarcada com dados reaproveitados":reus+" remarcadas com dados reaproveitados"):"", ligados?(ligados===1?"1 célula feita à mão ligada à Agenda":ligados+" células feitas à mão ligadas à Agenda"):"", mud===1?"1 campo atualizado":mud+" campos atualizados", mant?(mant===1?"1 editado à mão mantido":mant+" editados à mão mantidos"):""].filter(Boolean).join(" · ")+"."+(completo?"":" (Agenda incompleta: ninguém foi tirado)"));
     }
   });
   // o app baixou o mapa do Drive: mescla aqui e devolve o resultado para ele enviar (se houver algo novo deste aparelho)
@@ -1883,7 +2024,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
     else if(m.type==="mapa-estado"&&m.dia===dia){
       document.getElementById("estado").textContent=m.estado==="buscando"?"Buscando a Agenda e o internograma…":m.estado==="ok"?("Salvo no Drive às "+horaAgora()):m.estado==="off"?"Sem internet ou sem login — salvo só neste aparelho (envia quando voltar)":"⚠ Não consegui enviar ao Drive — salvo neste aparelho, tento de novo";
     }
-    else if(m.type==="mapa-fotos"){ FOTOS[m.dia]=m.fotos||{}; if(m.dia===dia) redesenharSeguro(); }
+    else if(m.type==="mapa-fotos"){ FOTOS[m.dia]=m.fotos||{}; if(m.dia===dia){ redesenharSeguro(); desenharGuardadas(); } }
   });
   parent.postMessage({src:"mapa",type:"mapa-pronto",dia:dia},"*");
 })();

@@ -552,7 +552,7 @@ const addDays = (d,n) => new Date(d.getTime()+n*864e5);
 const LS_KEY="evolucao-termos-v1", LS_PROT="evolucao-protegidas-v2", LS_ACC="evolucao-acentos-v1";
 const lsGet=(k,d)=>{ try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } };
 const lsSet=(k,v)=>{ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } };
-const PROT_DEFAULT = "HMA, HDA, AP, ANTECEDENTES PESSOAIS, HÁBITOS, CIRURGIAS OU INTERNAÇÕES, CD, CMB, COMORBIDADES, MUC, MEDICAÇÕES, ALERGIA, ANTECEDENTES, HD, HIPÓTESE DIAGNÓSTICA, HIPÓTESE, DIAGNÓSTICO, CID, PROCEDIMENTO, CIRURGIA REALIZADA, RADIOGRAFIA, RX, RAIO-X, RAIO X, TC, TOMOGRAFIA, RESSONÂNCIA, EXAMES, LABORATÓRIO, CONDUTA, PLANO";
+const PROT_DEFAULT = "HMA, HDA, AP, ANTECEDENTES PESSOAIS, HÁBITOS, CIRURGIAS OU INTERNAÇÕES, CD, CMB, COMORBIDADES, MUC, MEDICAÇÕES, ALERGIA, ANTECEDENTES, HD, HIPÓTESE DIAGNÓSTICA, HIPÓTESE, DIAGNÓSTICO, CID, PROCEDIMENTO, CIRURGIA REALIZADA, RADIOGRAFIA, RX, RAIO-X, RAIO X, TC, TOMOGRAFIA, RESSONÂNCIA, EXAMES, LABORATÓRIO, CONDUTA, CONDUTAS, PLANO, PROGRAMAÇÃO, PROGRAMACAO, CASO DISCUTIDO";
 const OPEN_HEADINGS = ["EF","EXAME","AVALIO","EVOLU","SUBJETIVO","OBJETIVO","S:","O:","MEMBRO","AO EXAME","IMPRESSAO","IMPRESSÃO"];
 const RX_HEAD = /^(RADIOGRAFIA|RX|RAIO)/;
 // títulos padrão sempre valem; os do usuário são somados a eles
@@ -619,8 +619,8 @@ function protectedBlocks(text){
     if(/^[-–—_=]{3,}$/.test(t)) cur=null;
     else if(t && keys.some(k=>startsKey(t,k))){
       const U=upS(t).replace(/^[#>*\s]+/,"");
-      cur={start:off+lead,end:off+line.trimEnd().length,rx:RX_HEAD.test(U),conduta:/^(CONDUTA|PLANO|CD)\b/.test(U),
-           sticky:/^(HMA|HDA|HISTORIA|CONDUTA|PLANO|CD|AP|ANTECEDENTES)\b/.test(U)};
+      cur={start:off+lead,end:off+line.trimEnd().length,rx:RX_HEAD.test(U),conduta:/^(CONDUTAS?|PLANO|CD|PROGRAMACAO|CASO DISCUTIDO)\b/.test(U),
+           sticky:/^(HMA|HDA|HISTORIA|CONDUTAS?|PLANO|CD|PROGRAMACAO|CASO DISCUTIDO|AP|ANTECEDENTES)\b/.test(U)};
       blocks.push(cur);
       // "HD: fratura de …" com conteúdo na mesma linha protege só aquela linha
       if(/^(HD|HIPOTESE|DIAGNOSTICO|CID)\b[^:\n]{0,25}:\s*\S/.test(U)) cur=null;
