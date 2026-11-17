@@ -196,7 +196,7 @@ var SYNC = (function () {
     idsLocais().forEach(function (pid) {
       if (no[pid] || !S.sync.ids[pid] || sujo(pid) || (S.apagados || {})[pid]) return;
       var u = ultimaAtividade(pid); if (u && u >= limPac) return;
-      if (((S.fotos || {})[pid] || []).some(function (f) { return !f.driveId && !f.del; })) return;   // foto ainda não subiu
+      if (((S.fotos || {})[pid] || []).some(function (f) { return !f.driveId && !f.del && !f.perdida; })) return;   // foto ainda não subiu
       ((S.fotos || {})[pid] || []).forEach(function (f) { apagarFotos.push(f.lid); });
       Object.keys(S.vis || {}).forEach(function (d) { delete S.vis[d][pid]; });
       delete S.evo[pid]; delete S.pend[pid]; if (S.pendDel) delete S.pendDel[pid]; if (S.fotos) delete S.fotos[pid]; if (S.evoAlt) delete S.evoAlt[pid];
@@ -208,7 +208,7 @@ var SYNC = (function () {
   }
   function contarPend() {
     var n = idsLocais().filter(function (pid) { var r = registro(pid); if (r.apagado) return sujo(pid); return (Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; })) && sujo(pid); }).length;
-    var f = 0; Object.keys(S.fotos || {}).forEach(function (k) { S.fotos[k].forEach(function (x) { if (!x.driveId && !x.del) f++; }); });
+    var f = 0; Object.keys(S.fotos || {}).forEach(function (k) { S.fotos[k].forEach(function (x) { if (!x.driveId && !x.del && !x.perdida) f++; }); });
     return { reg: n, fotos: f, total: n + f };
   }
   /* pendência apagada = "lápide" com texto + hora. Some só a pendência com esse texto que já existia antes de apagar;
@@ -402,7 +402,7 @@ var SYNC = (function () {
   }
   function enviarFotos() {
     var lista = [];
-    Object.keys(S.fotos || {}).forEach(function (pid) { S.fotos[pid].forEach(function (f) { if (!f.driveId && !f.del) lista.push([pid, f]); }); });
+    Object.keys(S.fotos || {}).forEach(function (pid) { S.fotos[pid].forEach(function (f) { if (!f.driveId && !f.del && !f.perdida) lista.push([pid, f]); }); });
     if (!lista.length) return Promise.resolve(0);
     var n = 0;
     return sub('fotos').then(function (pf) {
@@ -410,7 +410,9 @@ var SYNC = (function () {
         return pr.then(function () {
           var pid = it[0], f = it[1];
           return FDB.get(f.lid).then(function (blob) {
-            if (!blob) return;
+            if (!blob) {   // o arquivo da foto não está neste aparelho: já está no Drive? senão, marca como perdida (para de travar o envio e o "Sair")
+              return acharFoto(f.lid).then(function (id) { if (id) f.driveId = id; else f.perdida = true; saveLocal(); }, function () {});
+            }
             var mm = /^mapa_(\d{4}-\d{2})-(\d{2})_/.exec(pid);
             var destino = mm ? pasta('MAPA CIRURGICO').then(function (r0) { return pasta(mm[1], r0); }).then(function (r1) { return pasta('fotos ' + mm[1] + '-' + mm[2], r1); }) : pasta(pid, pf);
             return destino.then(function (pp) { return criarArquivo(f.nome, pp, blob, 'image/jpeg', { pid: pid, tipo: f.tipo, lid: f.lid }); })
