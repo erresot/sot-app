@@ -961,7 +961,7 @@ function carregar(){
 // Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
 // duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
 var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
-var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev","semAgenda","pac"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev","semAgenda","pac","ambEm"];
 var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
 function agoraM(){ return Date.now()+(SKEW||0); }
 function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
@@ -1317,6 +1317,7 @@ function celHTML(x){
   var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
   h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x)+
      (function(){ var D=dupsDe(x); return D.length?'<div class="reuso" style="background:#ffe3e3;border-color:#c62828">⚠ <b>Dados de outro paciente?</b> '+D.map(function(d){return esc(rot(d.f))+' igual ao de '+esc(d.quem);}).join("; ")+'. Conferir e corrigir.</div>':''; })()+
+     (x.ambEm?'<div class="reuso" style="background:#e8f6ee;border-color:#2e8b57">🏥 Dados do <b>AMB Internação</b> de '+esc(String(x.ambEm).split("-").reverse().slice(0,2).join("/"))+' (campos vazios preenchidos; o que foi editado à mão não muda).</div>':'')+
      (x.semAgenda?'<div class="reuso" style="background:#fff3e0;border-color:#e0a03a">⚠ <b>Falta na Agenda:</b> internado com esta cirurgia marcada no internograma para o dia, mas sem evento na Agenda. Coloque na Agenda (o horário vem de lá).</div>':'');
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
@@ -2048,6 +2049,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
           if(f==="semAgenda"){ if(inc.semAgenda) x.semAgenda=inc.semAgenda; return; }
           if(f==="pac") return;
+          if(f==="ambEm"){ if(inc.ambEm) x.ambEm=inc.ambEm; return; }
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
           var v=inc[f]; if(v==null||v==="") return;
           if((f==="hora"||f==="cab")&&/_{2}|Nome, idade/.test(x[f]||"")) delete x.locked[f];   // horário/cabeçalho ainda em branco: vem da Agenda

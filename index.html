@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v41</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v42</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -1092,7 +1092,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '41';
+var VERSAO = '42';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -1641,6 +1641,7 @@ var HUB = [
     { id: 'novopac', n: 'Novo Paciente · Internograma SOT', i: '➕', d: 'Inserir paciente novo no internograma: colar a anamnese do PS, foto/print com leitura do texto ou preenchimento manual.' } ] },
   { g: 'AMBULATÓRIO E DOCUMENTOS', itens: [
     { id: 'retornos', n: 'Solicitador de Retornos', i: '📅', d: 'Versão final: dia do ambulatório, assistente, setor e data — texto pronto para o paciente agendar.' },
+    { id: 'ambint', n: 'AMB Internação', i: '🏥', d: 'Evolução do ambulatório de internação (pré-operatório): acha o paciente na Agenda pelo prontuário e manda os dados direto para o mapa.' },
     { id: 'evoamb', n: 'Evolução Ambulatorial', i: '📝', d: 'Atualiza a evolução a partir da anterior, mantendo o padrão do serviço.' },
     { id: 'avaliacao', n: 'Solicitador de Avaliações', i: '🫀', d: 'Pedido de avaliação anestésica / cardiológica no padrão do serviço (internados: botão na ficha já vem preenchido).' },
     { id: 'exames', n: 'Exames Updater', i: '🧪', d: 'Formata os exames laboratoriais em linha, prontos para colar na evolução.' },
@@ -2435,7 +2436,8 @@ function trechoIG(p, re) {
   var out = []; T.forEach(function (l) { var m = String(l).match(re); if (m && out.indexOf(m[0].trim()) < 0) out.push(m[0].trim()); });
   return out.join('; ');
 }
-function celulaMapa(ev, pFixo) {
+function celulaMapa(ev, pFixo) { return typeof ambNoMapa === "function" ? ambNoMapa(celulaMapa0(ev, pFixo), ev, pFixo || pacientePorEvento(ev)) : celulaMapa0(ev, pFixo); }
+function celulaMapa0(ev, pFixo) {
   var p = pFixo || pacientePorEvento(ev), id = ev.idCel || ('ev_' + ev.id);
   if (!p) return { id: id, pac: 'AMB', hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '').replace(/,?\s*(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(-feira)?,\s*\d{1,2}\s+de\s+[a-zç]+\.?(\s+de\s+\d{4})?\s*[·•-]?\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/gi, '').trim(), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
   var limpa = function (x) { return String(x || '').replace(/^\s*(muc\s*e\s*alergias?|alergias?|muc|cmb|ap|comorbidades)\s*[:\-]?\s*/i, '').replace(/[\s,;.]+$/, '').trim(); };
@@ -2486,7 +2488,13 @@ function enviarMapa(iso, aviso) {
   });
   // a Agenda deste dia foi lida inteira? Só então o mapa pode tirar quem saiu
   var completo = !!(S.ag && S.ag.ev && !S.agErro && iso >= (S.ag.de || '') && iso <= (S.ag.ate || '') && Date.now() - (S.ag.at || 0) < 6 * 3600000);
-  var mandar = function (salvo) { setTimeout(function () { vizinhosMapa(iso, aviso === true); }, 1500); mapaPost({ type: 'mapa-dados', dia: iso, completo: completo, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
+  var mandar0 = function (salvo) { setTimeout(function () { vizinhosMapa(iso, aviso === true); }, 1500); mapaPost({ type: 'mapa-dados', dia: iso, completo: completo, titulo: tituloMapa(iso), cels: cels, salvo: salvo || null, foco: MAPA_FOCO, aviso: aviso, fotos: fotosMapaDia(iso), skew: (S.sync && S.sync.skew) || 0, quem: S.eu || '' }); MAPA_FOCO = null; };
+  // fichas do AMB Internação destes prontuários (Drive) antes de montar as células
+  var mandar = function (salvo) {
+    var regs = evs.map(function (ev) { return ev.P || ev.Pchute; });
+    var feito = false, seguir = function () { if (feito) return; feito = true; if (typeof ambNoMapa === 'function') cels = evs.map(function (ev) { return celulaMapa(ev); }).concat(cels.filter(function (c) { return /^ig_/.test(c.id); })); mandar0(salvo); };
+    if (typeof ambCarregar === 'function') { ambCarregar(regs).then(seguir, seguir); setTimeout(seguir, 4000); } else seguir();
+  };
   if (SYNC.temToken() && navigator.onLine) SYNC.mapaBaixar(iso).then(mandar, function (e) { ERR.log('mapa-baixar', e); mandar(null); }); else mandar(null);
 }
 /* sincronização do mapa entre aparelhos: baixa o que está no Drive → o mapa mescla campo a campo → só então envia */
@@ -2829,6 +2837,81 @@ function blocoLimpeza() {
   h += c.map(function (x) { return '<div class="hint" style="margin:0 0 3px">• ' + esc(x.leito || '—') + ' · ' + esc(x.nome) + ' — ' + esc(x.ref) + (x.fotos ? ' · ' + x.fotos + ' foto(s)' : '') + '</div>'; }).join('');
   return h + '<button class="btn sec" data-limpar="1" style="margin-top:8px">Limpar ' + c.length + ' paciente(s)</button></div>';
 }
+
+/* ===================== AMB INTERNAÇÃO (ambulatório pré-operatório) =====================
+   A página hub/ambint.html faz a evolução. A ficha fica no aparelho (localStorage 'sot-ambint', por prontuário)
+   e no Drive (AMB INTERNACAO/amb-<prontuário>.json). O mapa usa a ficha para preencher a célula do mesmo
+   prontuário (só campos vazios e só se o nome também bater). */
+var AMBI_CH = 'sot-ambint';
+function ambTodos() { try { return JSON.parse(localStorage.getItem(AMBI_CH) || '{}') || {}; } catch (e) { return {}; } }
+function ambGravarLocal(rec) {
+  if (!rec || !rec.reg) return;
+  var T = ambTodos(), ant = T[rec.reg];
+  if (ant && (ant.em || 0) > (rec.em || 0)) return;   // vale a mais recente
+  T[rec.reg] = rec;
+  try { localStorage.setItem(AMBI_CH, JSON.stringify(T)); } catch (e) { ERR.log('ambint-local', e); }
+}
+function ambDe(reg) { reg = String(reg || '').replace(/\D/g, ''); return reg ? ambTodos()[reg] || null : null; }
+// traz do Drive as fichas destes prontuários (no máximo 1 vez a cada 5 min por prontuário)
+var AMBI_BUSCA = {};
+function ambCarregar(regs) {
+  if (!SYNC.ambBaixar || !SYNC.temToken() || !navigator.onLine) return Promise.resolve();
+  var agora = Date.now();
+  var L = regs.map(function (r) { return String(r || '').replace(/\D/g, ''); }).filter(function (r) { return r.length >= 4 && agora - (AMBI_BUSCA[r] || 0) > 300000; });
+  if (!L.length) return Promise.resolve();
+  return Promise.all(L.map(function (r) {
+    AMBI_BUSCA[r] = agora;
+    return SYNC.ambBaixar(r).then(function (rec) { if (rec && rec.reg) ambGravarLocal(rec); }, function (e) { ERR.log('ambint-baixar', e); });
+  }));
+}
+// na célula do mapa: completa só o que estiver vazio, e só se prontuário E nome forem do mesmo paciente
+function ambNoMapa(o, ev, p) {
+  var reg = String((p && p.registro) || ev.P || ev.Pchute || '').replace(/\D/g, '');
+  var rec = ambDe(reg); if (!rec) return o;
+  var quem = { nome: (p && p.nome) || ev.nome || '', reg: reg, idade: (p && p.idade) || ev.idade || '' };
+  if (window.SOTPESSOA && SOTPESSOA.comparar(quem, { nome: rec.nome, reg: rec.reg, idade: rec.idade }) !== 'mesmo') return o;
+  if (rec.dataCx && ev.data && Math.abs(new Date(rec.dataCx + 'T12:00:00') - new Date(ev.data + 'T12:00:00')) > 30 * 864e5) return o;
+  var M = rec.mapa || {};
+  ['dx', 'mec', 'cirPrev', 'fxPrev', 'cmb', 'muc', 'alergia', 'preData', 'extras', 'apa', 'cardio', 'rch', 'uti', 'peso'].forEach(function (f) {
+    if (M[f] && (!o[f] || o[f] === 'NEGA' && f !== 'alergia')) o[f] = M[f];
+  });
+  o.labs = o.labs || {}; Object.keys(M.labs || {}).forEach(function (k) { if (!o.labs[k] && M.labs[k]) o.labs[k] = M.labs[k]; });
+  if (M.alergia && (!o.alergia || o.alergia === 'NEGA')) o.alergia = M.alergia;
+  o.ambEm = rec.data || '';
+  return o;
+}
+// eventos para a página (próximos dias), com prontuário e se é internado
+function ambEventos() {
+  var hoje = hojeISO(), ini = isoAdd(hoje, -7), fim = isoAdd(hoje, 75);
+  return eventosAgenda().filter(function (ev) { return ev.data >= ini && ev.data <= fim; }).map(function (ev) {
+    var p = pacientePorEvento(ev);
+    return { id: ev.id, data: ev.data, hora: ev.hora, nome: ev.nome || '', idade: ev.idade || '', reg: String(ev.P || ev.Pchute || '').replace(/\D/g, ''), proc: ev.proc || '', ass: ev.ass || '', titulo: ev.titulo, obs: ev.obs || '',
+      internado: p ? { nome: p.nome, leito: p.leito || '', registro: p.registro || '' } : null };
+  });
+}
+function ambFrame() { var fr = document.querySelector('#hubFrames iframe[data-id="ambint"]'); return fr && fr.contentWindow ? fr : null; }
+function ambPost(msg) { var fr = ambFrame(); if (!fr) return; msg.src = 'sot'; try { fr.contentWindow.postMessage(msg, '*'); } catch (e) { ERR.log('ambint-post', e); } }
+window.addEventListener('message', function (e) {
+  var m = e.data || {}; if (m.src !== 'ambint') return;
+  if (m.type === 'ambint-pronto') {
+    var mandar = function () { ambPost({ type: 'ambint-dados', eventos: ambEventos(), fichas: ambTodos(), eu: S.eu || '', hoje: hojeISO() }); };
+    mandar();
+    var regs = ambEventos().map(function (x) { return x.reg; });
+    ambCarregar(regs).then(mandar);
+  }
+  else if (m.type === 'ambint-agenda') {   // atualizar a Agenda e reenviar
+    Promise.resolve(typeof carregarAgenda === 'function' ? carregarAgenda(true) : null).catch(function () {}).then(function () { ambPost({ type: 'ambint-dados', eventos: ambEventos(), fichas: ambTodos(), eu: S.eu || '', hoje: hojeISO() }); });
+  }
+  else if (m.type === 'ambint-salvar' && m.rec && m.rec.reg) {
+    var rec = m.rec; rec.em = Date.now(); rec.por = S.eu || rec.por || '';
+    ambGravarLocal(rec);
+    var fim = function (ok, msg) { ambPost({ type: 'ambint-salvo', reg: rec.reg, ok: ok, msg: msg }); };
+    // o mapa do dia, se estiver aberto, já recebe
+    if (rec.dataCx && mapaFrame() && window.__mapaIso === rec.dataCx) enviarMapa(rec.dataCx, false);
+    if (SYNC.ambSalvar && SYNC.temToken() && navigator.onLine) SYNC.ambSalvar(rec.reg, rec).then(function () { fim(true, 'Salvo no aparelho e no Drive (AMB INTERNACAO).'); }, function (err) { ERR.log('ambint-salvar', err); fim(false, 'Salvo só neste aparelho (não consegui enviar ao Drive agora).'); });
+    else fim(false, 'Salvo só neste aparelho (sem internet ou sem login do Google).');
+  }
+});
 
 // ===================== tela de evolução (atualizador embutido) =====================
 var evoAtual = null, evoWaitSave = false;

@@ -479,11 +479,23 @@ var SYNC = (function () {
       return out;
     });
   }
+  /* ---------- AMB Internação: uma ficha por prontuário em "AMB INTERNACAO" (Drive da equipe) ---------- */
+  function ambPasta() { return pasta('AMB INTERNACAO'); }
+  function ambArquivo(reg) {
+    return ambPasta().then(function (pid) {
+      return req(API + '/files?q=' + q("name='amb-" + reg + ".json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: (j.files || [])[0] || null }; });
+    });
+  }
+  function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
+  function ambSalvar(reg, obj) {
+    var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+    return ambArquivo(reg).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('amb-' + reg + '.json', o.pai, b, 'application/json'); });
+  }
   function mapaSalvar(iso, obj) {
     var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
     return mapaArquivo(iso).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('mapa-' + iso + '.json', o.pai, b, 'application/json'); });
   }
-  return { mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 

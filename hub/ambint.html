@@ -1,0 +1,460 @@
+<!doctype html><html lang="pt-BR"><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AMB Internação — SOT</title>
+<link rel="stylesheet" href="sot-tema.css">
+<script src="../campos.js"></script><script src="../pessoa.js"></script>
+<style>
+:root{--bg:#f3f6f6;--card:#fff;--fg:#17262a;--muted:#5b6f73;--line:#d5e0e1;--accent:#0f6e74;--soft:#e1f0f0;--ok:#1d7a46;--warn:#b4231a;--warnsoft:#fbe9e7;--amar:#fff6d6;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);padding:12px 12px 90px}
+h1{font-size:19px;margin:4px 0 2px}h2{font-size:15px;margin:0 0 8px;color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
+.sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;max-width:980px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:8px 0 3px;font-weight:600}
+input,select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;color:var(--fg)}
+textarea{min-height:70px;resize:vertical;font-family:var(--mono);font-size:13px;text-transform:none}
+.up{text-transform:uppercase}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.row3{display:grid;grid-template-columns:110px 1fr 120px;gap:8px;align-items:end}
+@media (max-width:560px){.row3{grid-template-columns:1fr 1fr}.row3>*:nth-child(2){grid-column:1/-1;order:3}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--fg)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}.btn.sm{min-height:34px;padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.ev{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;margin:0 0 6px;font:inherit;cursor:pointer}
+.ev b{font-size:14px}.ev small{display:block;color:var(--muted)}.ev.sel{border-color:var(--accent);background:var(--soft)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:4px;background:var(--soft);color:var(--accent)}
+.tag.int{background:#eef1ff;color:#2d3fa0}.tag.ok{background:#e6f4ea;color:var(--ok)}
+.alerta{border:2px solid var(--warn);background:var(--warnsoft);color:#5c1510;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:600}
+.info{border:1px solid #9cc3e6;background:#eef6ff;border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13.5px}
+.okmsg{border:1px solid #9fd3b0;background:#e9f7ee;border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13.5px}
+.seg{display:flex;flex-wrap:wrap;gap:5px}.seg button{min-height:34px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.lin{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;border-top:1px solid #edf2f2;padding:7px 0}
+.lin:first-child{border-top:0}.lin>span{font-size:13px;font-weight:700}
+@media (max-width:560px){.lin{grid-template-columns:1fr}}
+.chk{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid #edf2f2;font-size:14px}
+.chk input{width:22px;height:22px;flex:none;margin-top:1px}
+.chk .r{color:var(--warn);font-weight:700}
+.med{border:1px solid #f0c36d;background:var(--amar);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13.5px}
+pre#saida{white-space:pre-wrap;font:12.5px/1.45 var(--mono);background:#fbfdfd;border:1px solid var(--line);border-radius:10px;padding:10px;max-height:60vh;overflow:auto;margin:0}
+.barra{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:flex-end;z-index:5}
+.mini{font-size:12px;color:var(--muted)}
+details>summary{cursor:pointer;font-weight:700;color:var(--accent);margin:4px 0}
+.hidden{display:none!important}
+</style></head><body>
+<h1>🏥 AMB Internação</h1>
+<p class="sub">Consulta pré-operatória do ambulatório de internação. O paciente é encontrado na Agenda pelo <b>prontuário</b>; ao salvar, os dados vão para a célula dele no mapa cirúrgico.</p>
+
+<div class="card" id="cPac">
+  <h2>1. Paciente (pelo prontuário)</h2>
+  <div class="row3"><div><label for="reg">Prontuário</label><input id="reg" inputmode="numeric" autocomplete="off" placeholder="ex.: 776768"></div>
+    <div><label for="busca">ou nome</label><input id="busca" autocomplete="off" placeholder="parte do nome"></div>
+    <div><button class="btn" id="btAg" title="Recarregar a Agenda">↻ Agenda</button></div></div>
+  <div id="pacSel"></div>
+  <div id="lista" style="margin-top:8px"></div>
+</div>
+
+<div class="card" id="cAnt">
+  <h2>2. Evolução anterior</h2>
+  <p class="mini">Cole a última evolução do sistema do hospital (ou envie a foto/print). O app separa cabeçalho, AP, exame físico, outros blocos e conduta, e confere se é do mesmo paciente.</p>
+  <textarea id="ant" style="min-height:140px" placeholder="Cole aqui a evolução anterior…"></textarea>
+  <div class="chips" style="margin-top:8px"><button class="btn pri" id="btLer">Ler evolução</button><label class="btn" style="margin:0">📷 Foto / print<input type="file" id="fFoto" accept="image/*" hidden></label><span class="mini" id="stFoto"></span></div>
+  <div id="idAviso"></div>
+</div>
+
+<div class="card" id="cForm">
+  <h2>3. Evolução de hoje</h2>
+  <label for="cab">Cabeçalho (diagnóstico / procedimento prévio / mecanismo)</label><textarea id="cab" class="up"></textarea>
+  <div class="row"><div><label for="cmb">AP / CMB</label><input id="cmb" class="up"></div><div><label for="muc">MUC</label><input id="muc" class="up"></div><div><label for="alergia">Alergia</label><input id="alergia" class="up"></div></div>
+  <label for="apOutros">Outros antecedentes (hábitos, origem, cirurgias, peso, vacinas…)</label><textarea id="apOutros" class="up" style="min-height:44px"></textarea>
+  <label for="hma">HMA (mantida da evolução anterior)</label><textarea id="hma" class="up" style="min-height:44px"></textarea>
+
+  <label>Chegada</label><div class="seg" id="sgChegada" data-v="DEAMBULANDO"></div>
+  <div class="row"><div><label>Acompanhamento</label><div class="seg" id="sgAcomp" data-v="DES"></div></div>
+    <div><label for="acompQuem">Acompanhado(a) por (opcional)</label><input id="acompQuem" class="up" placeholder="ex.: PELA FILHA"></div></div>
+  <div class="row"><div><label>Sexo (concordância do texto)</label><div class="seg" id="sgSexo" data-v="M"></div></div>
+    <div><label class="chk" style="border:0"><input type="checkbox" id="menor"> Menor de idade (orientações ao responsável)</label></div></div>
+  <label for="queixa">Queixas / intercorrências (deixe em branco se nega)</label><input id="queixa" class="up" placeholder="ex.: REFERE DOR LEVE EM JOELHO DIREITO">
+  <label for="ef">Exame físico</label><textarea id="ef" class="up"></textarea>
+  <label for="outros">Outros blocos (radiografias, anatomopatológico, avaliações, laudos…)</label><textarea id="outros" class="up"></textarea>
+</div>
+
+<div class="card" id="cCond">
+  <h2>4. Conduta pré-operatória</h2>
+  <div class="row"><div><label for="dr">Dr que orienta</label><input id="dr" class="up" placeholder="ex.: EDERSON KIDA"></div><div><label for="drData">Orientado em</label><input id="drData" placeholder="dd/mm/aaaa"></div></div>
+  <div class="row"><div style="grid-column:span 2"><label for="proc">Procedimento</label><input id="proc" class="up"></div><div><label for="dataCx">Data da cirurgia</label><input id="dataCx" type="date"></div></div>
+  <label for="preops">Pré-operatórios — cole os exames (o app formata)</label><textarea id="preops" style="min-height:52px" placeholder="ex.: HB 13,2 / HT 39 / PLAQ 354000 / CR 0,8 / FIB 358 / TP 11,6 / INR 0,95 / TTPA 23,1"></textarea>
+  <div class="row"><div><label for="preData">Data dos pré-ops</label><input id="preData" placeholder="dd/mm/aa"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="preExt"> Exames externos</label></div><div><label>Situação</label><div class="seg" id="sgPre" data-v="lab"></div></div></div>
+  <div class="info" id="preFmt">—</div>
+  <div id="linhas"></div>
+  <div class="row"><div><label for="apaData">APA — data</label><input id="apaData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="apaRes">APA — o que diz</label><input id="apaRes" class="up" placeholder="ex.: LIBERADO PARA CIRURGIA"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="apaExt"> Externa</label></div></div>
+  <div class="row"><div><label for="carData">Av. cardio — data</label><input id="carData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="carRes">Av. cardio — o que diz</label><input id="carRes" class="up" placeholder="ex.: BAIXO RISCO CARDIOVASCULAR"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="carExt"> Externa</label></div></div>
+  <label for="extras">Outras linhas da conduta (mantidas da anterior — edite à vontade)</label><textarea id="extras" class="up"></textarea>
+  <div class="row"><div><label for="dataInt">Internação (retorno ao PS)</label><input id="dataInt" type="date"></div><div><label for="dataJejum">Jejum a partir das 23h59 do dia</label><input id="dataJejum" type="date"></div><div><label for="ass">Ass Dr</label><input id="ass" class="up" placeholder="ex.: EDERSON KIDA"></div></div>
+</div>
+
+<div class="card" id="cChk">
+  <h2>5. Checklist (não vai para o texto)</h2>
+  <div id="meds"></div>
+  <div id="chk"></div>
+</div>
+
+<div class="card" id="cOut">
+  <h2>6. Evolução pronta</h2>
+  <pre id="saida"></pre>
+  <div id="stSalvar"></div>
+</div>
+
+<div class="barra"><button class="btn" id="btCopiar">Copiar texto</button><button class="btn pri" id="btSalvar">Salvar e enviar ao mapa</button></div>
+
+<script src="ocr/sot-ocr.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var A=function(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var UP=function(s){return String(s||'').toUpperCase();};
+var EVS=[], FICHAS={}, HOJE=new Date().toISOString().slice(0,10), EU='', SEL=null;
+var NOAPP=window.top===window;
+
+/* ---------------- datas ---------------- */
+function br(iso){ if(!iso) return '__/__/____'; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function brCurto(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]; }
+function addDia(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function isoDe(txt,ref){ var m=String(txt||'').match(/(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?/); if(!m) return ''; var y=m[3]?(m[3].length===2?'20'+m[3]:m[3]):(ref||HOJE).slice(0,4); return y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2); }
+
+/* ---------------- segmentos (botões) ---------------- */
+function seg(id,ops,def){ var el=$(id); el.dataset.v=def; el.innerHTML=ops.map(function(o){return '<button type="button" data-v="'+esc(o[0])+'">'+esc(o[1])+'</button>';}).join('');
+  var marca=function(){ [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===el.dataset.v); }); };
+  el.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; el.dataset.v=b.dataset.v; marca(); gerar(); }); el.setV=function(v){ el.dataset.v=v; marca(); }; marca(); }
+seg('sgChegada',[['DEAMBULANDO','deambulando'],['DEAMBULANDO COM AUXÍLIO DE MULETAS','muletas'],['DEAMBULANDO COM AUXÍLIO DE ANDADOR','andador'],['EM CADEIRA DE RODAS','cadeira de rodas'],['EM MACA','maca']],'DEAMBULANDO');
+seg('sgAcomp',[['DES','desacompanhado(a)'],['ACO','acompanhado(a)']],'DES');
+seg('sgSexo',[['M','masculino'],['F','feminino']],'M');
+seg('sgPre',[['lab','com resultados'],['solicitados','solicitados'],['aguardando','aguardando'],['checar','checar']],'lab');
+var LINHAS=[['uti','UTI',[['','—'],['SOLICITAR','solicitar'],['SOLICITADO','solicitado'],['OK','ok'],['NÃO NECESSÁRIA','não precisa']]],
+  ['rch','RCH',[['','—'],['SOLICITAR','solicitar'],['SOLICITADO','solicitado'],['OK','ok'],['NÃO NECESSÁRIA','não precisa']]],
+  ['rxt','RX de tórax',[['','—'],['NA PASTA','na pasta'],['NO SISTEMA','no sistema'],['SOLICITAR','solicitar'],['SOLICITADO','solicitado']]],
+  ['rxa','RX agenda',[['','—'],['CHECAR','checar'],['CHECADO','checado']]],
+  ['aviso','Aviso CC',[['','—'],['CHECAR','checar'],['OK','ok'],['NO OPERA','no opera']]]];
+$('linhas').innerHTML=LINHAS.map(function(l){return '<div class="lin"><span>'+l[1]+'</span><div class="seg" id="sg_'+l[0]+'"></div></div>';}).join('');
+LINHAS.forEach(function(l){ seg('sg_'+l[0],l[2],''); });
+var V=function(id){ return $(id).dataset.v; };
+
+/* ---------------- Agenda / paciente ---------------- */
+function desenharLista(){
+  var r=String($('reg').value||'').replace(/\D/g,''), nm=A($('busca').value).trim();
+  var L=EVS.filter(function(e){ return e.data>=addDia(HOJE,-3); });
+  if(r) L=L.filter(function(e){ return e.reg&&e.reg.indexOf(r)===0 || (e.internado&&String(e.internado.registro||'').indexOf(r)===0); });
+  else if(nm) L=L.filter(function(e){ return A(e.nome+' '+e.titulo).indexOf(nm)>=0; });
+  else L=L.slice(0,40);
+  $('lista').innerHTML=(L.length?'':'<p class="mini">'+(EVS.length?'Nenhum evento da Agenda com esse prontuário/nome nos próximos dias.':(NOAPP?'Abra pelo OrthoHub do SOT APP para buscar na Agenda.':'Carregando a Agenda…'))+'</p>')+
+    L.map(function(e,i){ var f=FICHAS[e.reg]; return '<button class="ev'+(SEL&&SEL.id===e.id?' sel':'')+'" data-ev="'+esc(e.id)+'"><b>'+esc(e.nome||e.titulo)+'</b>'+(e.idade?' · '+esc(e.idade):'')+(e.reg?' · P: '+esc(e.reg):' <span class="tag" style="background:#fbe9e7;color:#b4231a">sem prontuário</span>')+
+      (e.internado?'<span class="tag int">internado '+esc(e.internado.leito||'')+'</span>':'<span class="tag">ambulatorial</span>')+(f?'<span class="tag ok">AMB '+esc(brCurto(f.data))+'</span>':'')+
+      '<small>'+esc(brCurto(e.data))+' '+esc(e.hora||'')+' · '+esc(e.proc||'')+(e.ass?' · Ass '+esc(e.ass):'')+'</small></button>'; }).join('');
+}
+$('reg').addEventListener('input',desenharLista); $('busca').addEventListener('input',desenharLista);
+$('lista').addEventListener('click',function(ev){ var b=ev.target.closest('[data-ev]'); if(!b) return; var e=EVS.find(function(x){return x.id===b.dataset.ev;}); if(e) escolher(e); });
+$('btAg').addEventListener('click',function(){ if(!NOAPP) parent.postMessage({src:'ambint',type:'ambint-agenda'},'*'); $('lista').innerHTML='<p class="mini">Atualizando a Agenda…</p>'; });
+function escolher(e){
+  SEL=e; $('reg').value=e.reg||''; desenharLista();
+  var f=FICHAS[e.reg];
+  $('pacSel').innerHTML='<div class="okmsg"><b>'+esc(e.nome||e.titulo)+'</b>'+(e.idade?' · '+esc(e.idade):'')+' · P: '+esc(e.reg||'—')+'<br>Cirurgia: <b>'+esc(br(e.data))+'</b> '+esc(e.hora||'')+' — '+esc(e.proc||'')+(e.ass?' · Ass '+esc(e.ass):'')+
+    (e.internado?'<br>Internado ('+esc(e.internado.leito||'')+'): os dados do internograma também vão para o mapa.':'')+(e.obs?'<br><i>'+esc(e.obs)+'</i>':'')+'</div>'+
+    (!e.reg?'<div class="alerta">Este evento da Agenda não tem prontuário. Sem prontuário o mapa não liga a ficha ao paciente — coloque “P: número” no evento da Agenda.</div>':'')+
+    (f?'<div class="info">Já existe ficha AMB Internação deste prontuário (de '+esc(br(f.data))+(f.por?' por '+esc(f.por):'')+'). <button class="btn sm" id="btCarregar">Carregar</button></div>':'');
+  if(!$('proc').value) $('proc').value=UP(e.proc||'');
+  $('dataCx').value=e.data||''; datasPadrao(true);
+  if(!$('ass').value&&e.ass) $('ass').value=UP(e.ass);
+  if(e.idade && parseInt(e.idade,10)<18 && /ano/i.test(e.idade)) $('menor').checked=true;
+  conferirIdentidade(); gerar();
+}
+document.addEventListener('click',function(ev){ if(ev.target&&ev.target.id==='btCarregar'&&SEL){ var f=FICHAS[SEL.reg]; if(f&&f.form) carregarForm(f.form); } });
+function datasPadrao(forcar){
+  var cx=$('dataCx').value; if(!cx) return;
+  if(forcar||!$('dataInt').value) $('dataInt').value=cx;
+  if(forcar||!$('dataJejum').value) $('dataJejum').value=addDia($('dataInt').value||cx,-1);
+}
+$('dataCx').addEventListener('change',function(){ datasPadrao(true); gerar(); });
+$('dataInt').addEventListener('change',function(){ $('dataJejum').value=addDia($('dataInt').value,-1); gerar(); });
+
+/* ---------------- leitura da evolução anterior ---------------- */
+var RUIDO=/^\s*(SECRETARIA DE ESTADO|HOSPITAL DAS CL|MEDICINA DE MAR|HCFAMEMA|EVOLU[CÇ][AÃ]O\s*(-|$|\d)|ANAMNESE\s*-|PACIENTE\s+\d|PRONTU[AÁ]RIO\s+\d|ATENDIMENTO EM|ANAMNESE EM|EVOLU[CÇ][AÃ]O EM|DESCRI[CÇ][AÃ]O DA EVOLU|HIST[OÓ]RIA CL[IÍ]NICA|FICHA INCLU|QUEIXA E DURA|EXAME F[IÍ]SICO\s*\/\s*PS|MEDICAMENTO\(S\)|EXAME\(S\) SOLICIT|EXTERNOS|AGENDADO PARA|DADOS DA FINALIZA|ENCAMINHAMENTO|CID\s+[A-Z]\d|FINALIZADO POR|NASCIMENTO|CONVENIO|PRESTADORA|ATENDIMENTO NORMAL|SUS - SISTEMA|ORTOPEDIA E\s*$|TRAUMATOLOGIA\s*$|DESENVOLVIDO PELO|RUA DR\.|FONE:|CNS\s|FILIA[CÇ][AÃ]O|CONJUGE|ENDERE[CÇ]O|TELEFONE|ANTECEDENTE PESSOAL\W+FAMILIAR|\bFAA\s+\d|PS ORTOPEDIA\s*$|CEP\s*:|MARILIA\s*-\s*SP|INTERROGAT[OÓ]RIO SOBRE|IDADE\s+\d+\s*$|POR\s+[A-ZÀ-Ú]+(\s+[A-ZÀ-Ú]+){1,4}\s*$|EXAME F[IÍ]SICO\s*\/\s*PS[IÍ]QUICO|MEDICAMENTO)/i;
+var SEP=/^\s*[-–—_=]{2,}\s*$/;
+var MARCA=/^\W*(H?AMB(ULAT[OÓ]RIO)?\.?\s*(DE\s+)?INTERNA[CÇ][AÃ]O|INTERNA[CÇ][AÃ]O)\W*$/i;
+function blocos(txt){
+  var L=String(txt||'').replace(/\r/g,'').split('\n').map(function(l){return l.replace(/\s+$/,'');}).filter(function(l){ return !RUIDO.test(l); });
+  var out=[], cur=[];
+  L.forEach(function(l){ if(SEP.test(l)){ if(cur.join('').trim()) out.push(cur); cur=[]; } else cur.push(l); });
+  if(cur.join('').trim()) out.push(cur);
+  return out.map(function(b){ while(b.length&&!b[0].trim()) b.shift(); while(b.length&&!b[b.length-1].trim()) b.pop(); return b; });
+}
+var ROT_AP=/^\W*(AP|CMB|COMORBIDADES?|ANTECEDENTES(\s+PESSOAIS)?|MUC|ALERGI\w*|NEGA\s+(CMB|COMORB|MUC|ALERG)|H[AÁ]BITOS|V[IÍ]CIOS|LABORAL|ORIGEM|CIRURGIAS|CX|PESO|VACINA|HF|AF|HV|INTERNA[CÇ][OÕ]ES)\b/i;
+var ROT_HMA=/^\W*(HMA|HDA|HPMA|HIST[OÓ]RIA)/i, ROT_EF=/^\W*(EXAME\s+F[IÍ]SICO|EF\b|AO EXAME|BEG\b|BOM ESTADO|MAU ESTADO|REGULAR ESTADO)/i;
+var ROT_CD=/^\W*(CONDUTAS?|CD\b|PROGRAMA[CÇ][AÃ]O|CASO DISCUTIDO|DISCUTID[OA]|CONDUTA DISCUTIDA|DR\.?\s+[A-Z].{0,40}ORIENTA|ORIENTADO E DISCUTIDO)/i;
+var ROT_EVO=/AVALIO PACIENTE|ORIENTO RETORNO AO PRONTO|^\W*EVOLU[CÇ][AÃ]O\s*:?\s*$|^\W*EVO\s*:/i;
+var ROT_OUT=/^\W*(RX|RADIOGRAFIA|TC\b|TOMOGRAFIA|RM\b|RNM|RESSON[AÂ]NCIA|USG|ULTRASSOM|US\b|ANATOMO|AP\s*:?\s*\(|LAUDO|BI[OÓ]PSIA\s*:|ECG|ECO(CARDIO)?|CINTILO|DENSITOMETRIA|ENMG|ELETRO|EXAMES?\s*(DE\s*)?IMAGEM|IMAGEM)/i;
+var EVO_FRAG=/AVALIO|RETORNO NO AMBULAT|DEAMBULAND|ACOMPANHAD|CIENTE|PROCEDIMENTO CIR|REALIZA[CÇ]|ALTERA[CÇ][OÕ]ES RECENTES|BASAL|RESPIRAT|GRIPAIS|N[AÁ]USEA|V[OÔ]MITO|INTESTINAL|POSTI[CÇ]|PIERCING|CABELOS|C[IÍ]LIOS|PRONTO.?SOCORRO|ORIENTO RETORNO|JEJUM|L[IÍ]QUIDOS|S[OÓ]LIDOS|23H|CONFORME ORIENTA|D[UÚ]VIDAS|^\W*ORIENTA[CÇ][OÕ]ES\W*$/i;
+var EVO_FORTE=/AVALIO PACIENTE|ORIENTO RETORNO AO PRONT|NEGA ALTERA[CÇ][OÕ]ES RECENTES|NEGA USO DE CABELOS|RETORNO NO AMBULAT[OÓ]RIO DE ORTOP|CIENTE DO PROCEDIMENTO|DATA DE SUA|SINTOMAS GRIPAIS|H[AÁ]BITO INTESTINAL|POSTI[CÇ]OS|PIERCINGS|ESTADO BASAL|JEJUM ABSOLUTO|SOCORRO PARA INTERNA|CONFORME ORIENTA[CÇ][AÃ]O PR|NEGA D[UÚ]VIDAS/i;
+function ehMarca(t){ var u=A(t).replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim(); if(!/INTERNACAO/.test(u)||u.length>34) return false;
+  return u.split(' ').every(function(w){ return /^(H?AMB\w*|DE|DA|INTERNACAO|ORTOPEDIA)$/.test(w)||w.length<=2; }); }
+function secoes(txt){
+  var L=String(txt||'').replace(/\r/g,'').split('\n').map(function(l){return l.replace(/\s+$/,'');});
+  var temMarca=L.some(function(l){ return ehMarca(l)||/DESCRI[CÇ][AÃ]O DA EVOLU/i.test(l); });
+  var S={cab:[],ap:[],hma:[],evo:[],ef:[],outros:[],cd:[]}, st=temMarca?'pre':'cab', branco=false;
+  L.forEach(function(l){
+    var t=l.trim().replace(/^[\[\]({|$!]+\s*-?\s*/,'').replace(/^[IÍ|](?=(POT|PO\b|\d+\s*(D|PO)\b|FRATURA|LES[AÃ]O|LUXA|RCH|UTI|AVISO|APA|RX|PR[EÉ]))/,''), u=A(t).replace(/^[\s#*\-–—•·>|]+/,'');
+    if(!t){ branco=true; return; }
+    if(SEP.test(t)){ branco=true; return; }
+    if(ehMarca(t)||/DESCRI[CÇ][AÃ]O DA EVOLU/i.test(t)){ if(st==='pre') st='cab'; branco=false; return; }
+    if(RUIDO.test(t)||/^EXAME F[IÍ]SICO\s*\/\s*PS/i.test(t)){ branco=false; return; }
+    if(st==='pre'){ return; }
+    if(st!=='cd'&&ROT_CD.test(u)) st='cd';
+    else if(st!=='cd'){
+      if(EVO_FORTE.test(u)) st='evo';
+      else if(ROT_EF.test(u)) st='ef';
+      else if(ROT_HMA.test(u)) st='hma';
+      else if(ROT_AP.test(u)&&!(st==='ef'&&/^\W*(AP\b)/.test(u))) st='ap';
+      else if(ROT_OUT.test(u)&&(st!=='cab'||branco)) st='outros';
+      else if(st==='evo'&&!EVO_FRAG.test(u)) st=(branco?'ef':'evo');
+      else if(st==='ap'&&branco) st='hma';
+    }
+    branco=false;
+    if(st==='evo'&&!EVO_FRAG.test(u)&&u.length>3) { S.ef.push(t); return; }
+    S[st].push(t);
+  });
+  return S;
+}
+function ler(){
+  var txt=$('ant').value; if(!txt.trim()) return;
+  var S=secoes(txt), ap=S.ap;
+  var C=window.SOTCAMPOS?SOTCAMPOS.ap(ap.join('\n')):{cmb:'',muc:'',alergia:''};
+  if(!C.cmb){ var kA=ap.findIndex(function(l){ return /^\W*(AP|CMB|COMORBIDADES?|ANTECEDENTES(\s+PESSOAIS)?)\W*$/.test(A(l).trim()); });
+    if(kA>=0){ var v=[]; for(var q=kA+1;q<ap.length&&!/^\W*(MUC|ALERGI|NEGA\s+(MUC|ALERG)|H[AÁ]BITOS|V[IÍ]CIOS)/i.test(A(ap[q]));q++) v.push(ap[q].trim()); C.cmb=v.join(' / '); ap=ap.slice(0,kA).concat(ap.slice(q)); } }
+  $('cmb').value=UP(C.cmb); $('muc').value=UP(C.muc); $('alergia').value=UP(C.alergia||'');
+  var resto=ap.filter(function(l){ var u=A(l).replace(/^[\s#*\-–—•·>|]+/,'').trim(); return u&&u!=='.'&&!/^(AP|CMB|COMORBIDADES?|ANTECEDENTES(\s+PESSOAIS)?|MUC|ALERGI\w*|NEGA\s+(CMB|COMORB\w*|MUC|ALERG\w*))\b/.test(u); });
+  resto=resto.filter(function(l){ var u=A(l).trim(); return !(C.cmb&&A(C.cmb).indexOf(u)>=0) && !(C.muc&&A(C.muc).indexOf(u)>=0) && !(C.alergia&&A(C.alergia).indexOf(u)>=0); });
+  $('apOutros').value=UP(resto.join('\n'));
+  var fc0=null; try{ fc0=window.SOTOCR?SOTOCR.ficha(txt):null; }catch(e){}
+  var nomeP=A((fc0&&fc0.nome)||(SEL&&SEL.nome)||'');
+  $('cab').value=UP(S.cab.filter(function(l){ var u=A(l).trim(); return u!=='.'&&!(nomeP&&u===nomeP)&&!/^IDADE\s*\d+$/.test(u); }).join('\n'));
+  $('hma').value=UP(S.hma.join('\n')); $('ef').value=UP(S.ef.join('\n')); $('outros').value=UP(S.outros.join('\n'));
+  // concordância e chegada: só pela evolução e pelo exame físico (não pela conduta — "ORIENTADA POR DR…")
+  var ue=A(S.cab.concat(S.hma,S.evo,S.ef).join(' '));
+  var nF=0,nM=0; (ue.match(/\b(?:DES)?ACOMPANHAD[OA]\b|\bLUCID[OA]\b|\bORIENTAD[OA]\b(?!\s+POR)|\bCOLABORATIV[OA]\b|\bCONTACTUANTE\b|\bVIGIL\b|\bENCAMINHAD[OA]\b/g)||[]).forEach(function(w){ if(/A$/.test(w)) nF++; else if(/O$/.test(w)) nM++; });
+  if(nF!==nM) $('sgSexo').setV(nF>nM?'F':'M');
+  var ev=A(S.evo.join(' '));
+  if(/\bDESACOMPANHAD/.test(ev)) $('sgAcomp').setV('DES'); else if(/\bACOMPANHAD/.test(ev)) $('sgAcomp').setV('ACO');
+  $('sgChegada').setV(/MACA/.test(ev)?'EM MACA':/CADEIRA DE RODAS/.test(ev)?'EM CADEIRA DE RODAS':/MULET/.test(ev)?'DEAMBULANDO COM AUXÍLIO DE MULETAS':/ANDADOR/.test(ev)?'DEAMBULANDO COM AUXÍLIO DE ANDADOR':'DEAMBULANDO');
+  lerConduta(S.cd);
+  conferirIdentidade(); gerar();
+}
+function st(t){ var u=A(t); return /N[AÃ]O\s+(NECESS|PRECIS)/.test(u)?'NÃO NECESSÁRIA':/SOLICITADO|SOLICITADA/.test(u)?'SOLICITADO':/SOLICIT/.test(u)?'SOLICITAR':/NO OPERA/.test(u)?'NO OPERA':/CHECADO/.test(u)?'CHECADO':/CHECAR/.test(u)?'CHECAR':/\bOK\b|✓|REALIZAD/.test(u)?'OK':/PASTA/.test(u)?'NA PASTA':/SISTEMA/.test(u)?'NO SISTEMA':''; }
+var RE_PROC=/(OSTEOSS|ARTROPL|ARTRODES|ARTROSCOP|RESSEC|RETIRADA|REVIS|TENTATIVA|TRATAMENTO DE|CIRURGIA DE|PTJ|PTQ|ATQ|ATJ|REPARO|RECONSTRU|LIMPEZA|BIOPSIA|BI[OÓ]PSIA|CORRE[CÇ]|EX[EÉ]RESE|ENDOPR[OÓ]TESE|OSTEOTOMIA|AMPUTA|TENORRAF|TRANSFER[EÊ]NCIA|PROGRAMA[CÇ][AÃ]O CIR|FIXA[CÇ]|PR[OÓ]TESE)/i;
+function lerConduta(L){
+  var extras=[], ultimoProc=-1, proc='', preops=[], noPre=false;
+  L=L.map(function(l){ return l.replace(/^[\s\-–—•*\[\](|{!$]+/,'').replace(/^[IÍ](?=(RCH|UTI|AVISO|APA|RX|PR[EÉ]|ORIENT|SOLICIT))/,'').replace(/[\s,;|]+$/,'').trim(); }).filter(function(l){ return l&&!/^\W*$/.test(l); });
+  L.forEach(function(l,i){
+    var u=A(l);
+    if(/^#?\s*(CONDUTAS?|CD|PROGRAMA[CÇ][AÃ]O)\s*:?\s*$/.test(u)) return;
+    if(noPre&&/^(HB|HT|CR|FIB\w*|TP|INR|TTPA|PLAQ|LEUCO|L\s|NA|K|UR|GLI\w*|PCR|TGO|TGP|T4|TSH)\b/.test(u)&&!/^(UTI|RCH|APA|AVISO)/.test(u)){ preops.push(l); return; }
+    noPre=false;
+    var mDr=u.match(/\bDR[A]?\.?\s+([A-Z][A-Z. ]{1,40}?)\s*(?:,|E DR|QUE|ORIENTA|EM\s+\d|:|$)/);
+    if(mDr&&/ORIENT|DISCUT/.test(u)&&!/ANESTESI/.test(u)){ if(!$('dr').value) $('dr').value=mDr[1].replace(/\s+(QUE|EM)$/,'').trim(); var dd=l.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/); if(dd&&!$('drData').value) $('drData').value=dd[1]; return; }
+    if(/^(ORIENTADA POR|CONDUTA ORIENTADA|CASO DISCUTIDO|DISCUTID)/.test(u)){ var d2=u.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/); if(d2&&!$('drData').value) $('drData').value=d2[1]; var n2=u.match(/(?:COM|POR)\s+(?:DR[A]?\.?\s+)?([A-Z][A-Z. ]{2,40}?)(?:\s+QUE|\s+EM|\s*:|$)/); if(n2&&!$('dr').value) $('dr').value=n2[1]; return; }
+    if(/^PR[EÉ][\s\-]*OPS?\b|^EXAMES PR[EÉ]/.test(u)){ var md=l.match(/\(?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*\)?/); if(md) $('preData').value=md[1]; var corpo=l.replace(/^[^:]*?(?:\)\s*:?|:)\s*/,'').replace(/^PR[EÉ][\s\-]*OPS?\s*/i,''); if(/SOLICIT|AGUARD|CHECAR|NOVOS/.test(u)&&!/\d+[.,]?\d*\s*\/|\bHB\s*\d/.test(u)){ $('sgPre').setV(/AGUARD/.test(u)?'aguardando':/CHECAR/.test(u)?'checar':'solicitados'); } else { if(corpo.trim()) preops.push(corpo); noPre=true; } if(/EXTERN/.test(u)) $('preExt').checked=true; return; }
+    if(/^UTI\b/.test(u)){ $('sg_uti').setV(st(l)||'SOLICITADO'); return; }
+    if(/^(RCH|RESERVA)\b/.test(u)||/^SOLICITO\s+(\d+\s+)?RCH/.test(u)||/^SOLICITADO\s+(\d+\s+)?RCH/.test(u)){ $('sg_rch').setV(st(l)||'SOLICITADO'); return; }
+    if(/^SOLICITADO LEITO DE UTI/.test(u)){ $('sg_uti').setV('SOLICITADO'); return; }
+    if(/^RX\s*(DE\s*)?T[OÓ]RAX|RADIOGRAFIA DE T[OÓ]RAX/.test(u)){ $('sg_rxt').setV(st(l)||'NA PASTA'); return; }
+    if(/^RX\s*AGENDA/.test(u)){ $('sg_rxa').setV(st(l)||'CHECAR'); return; }
+    if(/^AVISO/.test(u)){ $('sg_aviso').setV(st(l)||'OK'); var det=l.match(/\(([^)]*CHECAR[^)]*|[^)]*PLACA[^)]*|[^)]*MATERIAL[^)]*|[^)]*OPME[^)]*)\)/i); if(det) extras.push('AVISO CC: '+det[1]); return; }
+    var mA=u.match(/^(APA|AVAL(IA[CÇ][AÃ]O)?\.?\s*PR[EÉ][\s-]*ANEST\w*|AV\.?\s*ANEST\w*)\s*(?:\((\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)|(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?))?\s*[:\-]?\s*(.*)$/);
+    if(mA){ var dA=mA[3]||mA[4]||''; var rA=l.slice(l.length-mA[5].length).trim(); if(/^SOLICIT/.test(A(rA))&&!dA){ extras.push(l); return; } if(dA) $('apaData').value=dA; if(rA) $('apaRes').value=UP(rA); if(/EXTERN/.test(u)) $('apaExt').checked=true; return; }
+    var mC=u.match(/^(AV(AL)?\.?\s*CARDIO\w*|AVALIA[CÇ][AÃ]O CARDIO\w*)\s*(?:\((\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)|(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?))?\s*[:\-]?\s*(.*)$/);
+    if(mC){ var dC=mC[3]||mC[4]||''; var rC=l.slice(l.length-mC[5].length).trim(); if(/^SOLICIT/.test(A(rC))&&!dC){ extras.push(l); return; } if(dC) $('carData').value=dC; if(rC) $('carRes').value=UP(rC); if(/EXTERN/.test(u)) $('carExt').checked=true; return; }
+    if(/^ASS\b/.test(u)){ var as=l.replace(/^ASS\.?\s*:?\s*(DR[A]?\.?\s*)?/i,'').trim(); if(as&&!$('ass').value) $('ass').value=UP(as); return; }
+    if(/^(ORIENTO RETORNO AO PRONTO|RETORNO (EM|AO) PS INTERNA|RETORNO AO PS PARA INTERNA|ORIENTA[CÇ][OÕ]ES GERAIS|ORIENTA[CÇ]OES GERAIS|PACIENTE( E (ACOMPANHANTE|FAMILIARES?|RESPONS\w+))? (PREVIAMENTE )?CIENTES? D|FAMILIARES CIENTES|RETORNO AO (PS|PRONTO) SE NECESS|ORIENTO SINAIS DE ALARME|ORIENTO SINAIS|INTERNA[CÇ][AÃ]O HOSPITALAR$|RETORNO EM AMBULATORIO ORTOPEDIA INTERNA)/.test(u)) return;
+    var dP=l.match(/(?:EM|DIA|PARA)\s+(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*\.?$/i);
+    if(RE_PROC.test(u)&&!/^(SOLICIT|COBRAR|RETORNO|ORIENTO)/.test(u)){
+      if(dP){ var p0=(ultimoProc===i-1&&!proc.match(/\d{1,2}\/\d{1,2}/)?proc+' ':'')+l.slice(0,l.length-dP[0].length).trim(); if(!$('proc').value||ultimoProc===i-1) $('proc').value=UP(p0.replace(/^[-\s]*(PROGRAMA[CÇ][AÃ]O CIR[UÚ]RGICA DE|PROGRAMAR)\s*/i,'')); if(!$('dataCx').value){ $('dataCx').value=isoDe(dP[1]); datasPadrao(true); } proc=''; return; }
+      if(i===L.length-1||!RE_PROC.test(A(L[i+1]||''))||/\d{1,2}\/\d{1,2}/.test(L[i+1])){ proc=l; ultimoProc=i; return; }
+    }
+    if(ultimoProc===i-1&&proc&&dP){ $('proc').value=UP((proc+' '+l.slice(0,l.length-dP[0].length)).trim()); if(!$('dataCx').value){ $('dataCx').value=isoDe(dP[1]); datasPadrao(true); } proc=''; return; }
+    if(proc&&ultimoProc===i-1){ extras.push(proc); proc=''; }
+    extras.push(l);
+  });
+  if(proc) extras.push(proc);
+  if(preops.length){ $('preops').value=preops.join(' / '); $('sgPre').setV('lab'); }
+  $('extras').value=UP(extras.join('\n'));
+}
+$('btLer').addEventListener('click',ler);
+
+/* ---------------- foto / print da evolução ---------------- */
+$('fFoto').addEventListener('change',function(){
+  var f=this.files&&this.files[0]; this.value=''; if(!f) return;
+  if(!window.SOTOCR){ $('stFoto').textContent='Leitor de imagem indisponível.'; return; }
+  var u=URL.createObjectURL(f), im=new Image();
+  $('stFoto').textContent='Lendo a foto neste aparelho…';
+  SOTOCR.logger=function(m){ if(m.status==='recognizing text') $('stFoto').textContent='Lendo a foto… '+Math.round((m.progress||0)*100)+'%'; };
+  im.onload=function(){ SOTOCR.ler(SOTOCR.prep(im,0,2000)).then(function(o){
+      var t=SOTOCR.limparTexto?SOTOCR.limparTexto(o.text):o.text; FOTO_FICHA=SOTOCR.ficha(o.text,o.hdr);
+      $('ant').value=(FOTO_FICHA.prontuario?'Paciente '+FOTO_FICHA.prontuario+' '+(FOTO_FICHA.nome||'')+'\n':'')+t;
+      $('stFoto').textContent='Foto lida. Confira o texto (a leitura de foto pode errar letras) e toque em “Ler evolução”.';
+      ler();
+    },function(e){ $('stFoto').textContent='Não consegui ler a foto ('+(e&&e.message||e)+').'; }); };
+  im.src=u;
+});
+var FOTO_FICHA=null;
+
+/* ---------------- identidade: a evolução colada é deste paciente? ---------------- */
+function conferirIdentidade(){
+  var t=$('ant').value, el=$('idAviso'); el.innerHTML='';
+  if(!t.trim()) return;
+  var mR=A(t).match(/(?:PACIENTE|PRONTUARIO|REGISTRO|P\s*:)\s*:?\s*(\d{4,9})/), mN=t.match(/(?:PACIENTE|PRONTU[AÁ]RIO)\s*:?\s*\d{4,9}\s+(?:PACIENTE\s+)?([A-ZÀ-Úa-zà-ú' ]{6,60})/i);
+  var fc=null; try{ fc=window.SOTOCR?SOTOCR.ficha(t):null; }catch(e){}
+  var regT=(fc&&fc.prontuario)||(mR?mR[1]:'')||(FOTO_FICHA&&FOTO_FICHA.prontuario)||'', nomeT=(fc&&fc.nome)||(mN?mN[1].replace(/\s+IDADE.*$/i,'').trim():'')||(FOTO_FICHA&&FOTO_FICHA.nome)||'';
+  var regSel=String($('reg').value||'').replace(/\D/g,'');
+  if(!regSel&&regT){ $('reg').value=regT; desenharLista(); var e1=EVS.filter(function(e){return e.reg===regT&&e.data>=HOJE;}); if(e1.length===1&&!SEL){ escolher(e1[0]); return; } }
+  if(!SEL) { if(regT) el.innerHTML='<div class="info">Prontuário na evolução: <b>'+esc(regT)+'</b>'+(nomeT?' ('+esc(nomeT)+')':'')+'. Escolha o evento da Agenda acima.</div>'; return; }
+  var r=SOTPESSOA.comparar({nome:nomeT||'',reg:regT},{nome:SEL.nome,reg:SEL.reg,idade:SEL.idade});
+  if(regT&&SEL.reg&&regT!==SEL.reg) el.innerHTML='<div class="alerta">⚠ A evolução colada é do prontuário <b>'+esc(regT)+'</b>'+(nomeT?' ('+esc(nomeT)+')':'')+', mas o paciente escolhido é <b>'+esc(SEL.nome)+'</b> (P: '+esc(SEL.reg)+'). Confira antes de salvar.</div>';
+  else if(r==='diferente'&&nomeT) el.innerHTML='<div class="alerta">⚠ O nome na evolução (“'+esc(nomeT)+'”) não bate com o paciente escolhido (“'+esc(SEL.nome)+'”). Confira antes de salvar.</div>';
+  else if(regT&&SEL.reg&&regT===SEL.reg) el.innerHTML='<div class="okmsg">✓ Evolução do mesmo prontuário do paciente escolhido ('+esc(regT)+').</div>';
+}
+$('ant').addEventListener('change',conferirIdentidade);
+
+/* ---------------- pré-ops ---------------- */
+function preTexto(){
+  var raw=$('preops').value.trim(), situ=V('sgPre'), d=$('preData').value.trim(), ext=$('preExt').checked;
+  if(situ!=='lab') return { linha:'PRÉ-OPS ('+(situ==='solicitados'?'SOLICITADOS':situ==='aguardando'?'AGUARDANDO':'CHECAR')+')', labs:{}, data:'', outros:'' };
+  if(!raw) return { linha:'', labs:{}, data:'', outros:'' };
+  var r=window.SOTOCR?SOTOCR.exames('PRE OPS '+(d?d+': ':'')+raw):null, txt=raw;
+  if(r&&Object.keys(r.labs).length){
+    var ord=['Hb','Ht','Leuco','Plaq','TP','INR','TTPA','Fib','Cr','Ur','Na','K','Glic'];
+    txt=ord.filter(function(k){return r.labs[k];}).map(function(k){return UP(k)+' '+r.labs[k];}).join(' / ')+(r.outrosTxt?' / '+UP(r.outrosTxt):'');
+  }
+  if(!d&&r&&r.data) d=r.data;
+  return { linha:'PRÉ-OPS'+(d||ext?' ('+[d,ext?'EXTERNO':''].filter(Boolean).join(' - ')+')':'')+': '+txt, labs:r?r.labs:{}, data:d, outros:r?r.outrosTxt:'' };
+}
+
+/* ---------------- texto final ---------------- */
+function gerar(){
+  var F=V('sgSexo')==='F', menor=$('menor').checked, a=function(m,f){return F?f:m;};
+  var acomp=V('sgAcomp')==='DES'?a('DESACOMPANHADO','DESACOMPANHADA'):a('ACOMPANHADO','ACOMPANHADA')+($('acompQuem').value.trim()?' '+UP($('acompQuem').value.trim()):'');
+  var cx=$('dataCx').value, quem=menor?'RESPONSÁVEL CIENTE':'PACIENTE '+a('CIENTE','CIENTE');
+  var T=[];
+  T.push('# AMB INTERNAÇÃO #');
+  if($('cab').value.trim()) T.push(UP($('cab').value.trim()));
+  T.push(''); [['AP','cmb'],['MUC','muc'],['ALERGIA','alergia']].forEach(function(x){ var v=UP($(x[1]).value.trim()); if(v) T.push(x[0]+': '+v); });
+  if($('apOutros').value.trim()) T.push(UP($('apOutros').value.trim()));
+  if($('hma').value.trim()){ T.push('---'); T.push(UP($('hma').value.trim())); }
+  T.push('---');
+  var q=UP($('queixa').value.trim());
+  T.push('AVALIO PACIENTE EM RETORNO NO AMBULATÓRIO DE ORTOPEDIA – INTERNAÇÃO, '+V('sgChegada')+', '+acomp+'. '+quem+' DO PROCEDIMENTO CIRÚRGICO PROPOSTO, BEM COMO DA DATA DE SUA REALIZAÇÃO ('+br(cx)+'). '+
+    (q?q.replace(/\.?$/,'. '):'')+'NEGA ALTERAÇÕES RECENTES DO ESTADO GERAL DE SAÚDE EM RELAÇÃO AO SEU ESTADO BASAL. NEGA QUEIXAS RESPIRATÓRIAS OU SINTOMAS GRIPAIS. NEGA NÁUSEAS, VÔMITOS OU ALTERAÇÕES DO HÁBITO INTESTINAL. NEGA USO DE CABELOS OU CÍLIOS POSTIÇOS, BEM COMO DE PIERCINGS.');
+  if($('ef').value.trim()){ T.push('---'); T.push(UP($('ef').value.trim())); }
+  if($('outros').value.trim()){ T.push('---'); T.push(UP($('outros').value.trim())); }
+  T.push('---'); T.push('CONDUTA:');
+  if($('dr').value.trim()) T.push('DR '+UP($('dr').value.trim()).replace(/^DR[A]?\.?\s+/,'')+' ORIENTA'+($('drData').value.trim()?' EM '+$('drData').value.trim():''));
+  if($('proc').value.trim()) T.push(UP($('proc').value.trim())+' EM '+br(cx));
+  var P=preTexto(); if(P.linha) T.push(P.linha); $('preFmt').textContent=P.linha||'Sem pré-ops.';
+  LINHAS.forEach(function(l){ var v=V('sg_'+l[0]); if(v) T.push((l[0]==='uti'?'UTI':l[0]==='rch'?'RCH':l[0]==='rxt'?'RX DE TÓRAX':l[0]==='rxa'?'RX AGENDA':'AVISO CC')+' ('+v+')'); });
+  if($('apaData').value.trim()||$('apaRes').value.trim()) T.push('APA'+($('apaData').value.trim()?' ('+$('apaData').value.trim()+')':'')+': '+(UP($('apaRes').value.trim())||'—')+($('apaExt').checked?' (EXTERNA)':''));
+  if($('carData').value.trim()||$('carRes').value.trim()) T.push('AV. CARDIO'+($('carData').value.trim()?' ('+$('carData').value.trim()+')':'')+': '+(UP($('carRes').value.trim())||'—')+($('carExt').checked?' (EXTERNA)':''));
+  if($('extras').value.trim()) T.push(UP($('extras').value.trim()));
+  T.push('ORIENTO RETORNO AO PRONTO-SOCORRO PARA INTERNAÇÃO NA DATA DE '+br($('dataInt').value)+', EM JEJUM ABSOLUTO (LÍQUIDOS E SÓLIDOS) A PARTIR DAS 23H59 DO DIA '+br($('dataJejum').value)+', CONFORME ORIENTAÇÃO PRÉ-OPERATÓRIA. '+(menor?'PACIENTE E RESPONSÁVEL CIENTES':'PACIENTE CIENTE')+' DAS ORIENTAÇÕES, NEGA DÚVIDAS.');
+  T.push('ORIENTAÇÕES GERAIS');
+  T.push((menor?'PACIENTE E RESPONSÁVEL CIENTES':'PACIENTE CIENTE')+' DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES');
+  T.push('ASS DR '+(UP($('ass').value.trim()).replace(/^DR[A]?\.?\s+/,'')||'________'));
+  $('saida').textContent=T.join('\n');
+  checklist(P);
+  return T.join('\n');
+}
+['cab','cmb','muc','alergia','apOutros','hma','queixa','ef','outros','dr','drData','proc','preops','preData','apaData','apaRes','carData','carRes','extras','ass','acompQuem','dataJejum'].forEach(function(id){ $(id).addEventListener('input',gerar); });
+['menor','preExt','apaExt','carExt'].forEach(function(id){ $(id).addEventListener('change',gerar); });
+document.querySelectorAll('.seg').forEach(function(s){ s.addEventListener('click',function(){ setTimeout(gerar,0); }); });
+
+/* ---------------- checklist ---------------- */
+var MEDS=[
+  [/VARFARINA|MAREVAN|COUMADIN|WARFARIN/, 'Varfarina', 'suspender ~5 dias antes e conferir INR no pré-op (ponte com heparina se alto risco trombótico).'],
+  [/RIVAROXABAN|XARELTO|APIXABAN|ELIQUIS|EDOXABAN|LIXIANA/, 'DOAC (rivaroxabana/apixabana/edoxabana)', 'suspender 48–72 h antes conforme função renal e risco de sangramento.'],
+  [/DABIGATRAN|PRADAXA/, 'Dabigatrana', 'suspender 48–96 h antes conforme função renal.'],
+  [/CLOPIDOGREL|PLAVIX/, 'Clopidogrel', 'suspender ~5 dias antes (avaliar indicação — stent recente: discutir com cardiologia).'],
+  [/TICAGRELOR|BRILINTA/, 'Ticagrelor', 'suspender 3–5 dias antes (discutir com cardiologia).'],
+  [/PRASUGREL|EFFIENT/, 'Prasugrel', 'suspender ~7 dias antes (discutir com cardiologia).'],
+  [/\bAAS\b|ACIDO ACETILSALICILICO|ASPIRINA|SOMALGIN|ECASIL/, 'AAS', 'em geral mantido (prevenção secundária); suspensão só se orientado pela equipe/anestesia.'],
+  [/ENOXAPARINA|CLEXANE|HEPARINA/, 'Heparina/enoxaparina', 'última dose profilática ≥12 h antes; terapêutica ≥24 h antes (bloqueio neuroaxial).'],
+  [/METFORMINA|GLIFAGE|GLUCOFORMIN/, 'Metformina', 'suspender no dia da cirurgia (24–48 h se contraste ou disfunção renal).'],
+  [/DAPAGLIFLOZINA|FORXIGA|EMPAGLIFLOZINA|JARDIANCE|CANAGLIFLOZINA|XIGDUO|SYNJARDY/, 'iSGLT2 (dapagliflozina/empagliflozina)', 'suspender 3 dias antes (risco de cetoacidose euglicêmica).'],
+  [/SEMAGLUTIDA|OZEMPIC|WEGOVY|RYBELSUS|DULAGLUTIDA|TRULICITY|TIRZEPATIDA|MOUNJARO|LIRAGLUTIDA|VICTOZA|SAXENDA/, 'Agonista GLP-1', 'semanal: suspender 7 dias antes; diário: 1 dia antes (esvaziamento gástrico/aspiração).'],
+  [/INSULINA|NPH|GLARGINA|LANTUS|DEGLUDEC|TRESIBA/, 'Insulina', 'ajustar dose da noite anterior/manhã conforme protocolo; glicemia capilar na internação.'],
+  [/GLIBENCLAMIDA|GLICLAZIDA|GLIMEPIRIDA|DAONIL|DIAMICRON|AMARYL/, 'Sulfonilureia', 'não tomar no dia da cirurgia (hipoglicemia em jejum).'],
+  [/LOSARTANA|VALSARTANA|OLMESARTANA|IRBESARTANA|CANDESARTANA|TELMISARTANA|ENALAPRIL|CAPTOPRIL|RAMIPRIL|LISINOPRIL|PERINDOPRIL|ARADOIS/, 'IECA/BRA', 'muitos serviços suspendem no dia da cirurgia (hipotensão na indução) — conforme anestesia.'],
+  [/ANTICONCEPCIONAL|ETINILESTRADIOL|ESTRADIOL|TERAPIA HORMONAL|\bTRH\b|DIANE|YASMIN|SELENE|CICLO 21/, 'Estrogênio (ACO/TRH)', 'risco de TEV: discutir suspensão (~4 semanas) em cirurgia de grande porte/imobilização de MMII.'],
+  [/GINKGO|GINSENG|ALHO|OMEGA ?3|CASTANHA DA INDIA/, 'Fitoterápico', 'suspender ~7 dias antes (efeito antiplaquetário).'],
+  [/METOTREXATO|LEFLUNOMIDA|UPADACITINIBE|TOFACITINIBE|ADALIMUMABE|ETANERCEPT|INFLIXIMABE|BARICITINIBE/, 'Imunossupressor/DMARD', 'conduta individual (risco de infecção × atividade da doença) — reumatologia/anestesia.'],
+  [/PREDNISONA|PREDNISOLONA|DEXAMETASONA|HIDROCORTISONA|CORTICOIDE/, 'Corticoide crônico', 'não suspender; avaliar dose de estresse peroperatória.']
+];
+var CHK=[['pele','Pele no sítio cirúrgico íntegra, sem LPP/feridas/infecção ativa'],['gripe','Sem febre, sintomas gripais ou infecção em curso (urinária, dentária…)'],['jejum','Jejum e data/hora de internação orientados (e entendidos)'],['meds','Medicações a suspender/manter orientadas (ver acima)'],
+  ['adornos','Sem piercings, unhas/cabelos/cílios postiços (ou orientado a retirar)'],['acomp','Acompanhante garantido (idoso, menor ou dependente)'],['preops','Pré-ops dentro da validade e sem alteração que impeça a cirurgia'],['apa','APA feita / liberado (ou agendada antes da data)'],
+  ['cardio','Avaliação cardiológica quando indicada (idade, cardiopatia, porte)'],['rch','Reserva de sangue (RCH) e UTI conforme porte'],['aviso','Aviso CC / material / OPME conferidos'],['imagem','Exames de imagem disponíveis (RX, TC, RM na pasta ou no sistema)'],['lado','Lado e procedimento conferidos com o paciente']];
+var MARC={};
+function checklist(P){
+  var mu=A($('muc').value+' '+$('cmb').value+' '+$('apOutros').value), achou=[];
+  MEDS.forEach(function(m){ if(m[0].test(mu)) achou.push(m); });
+  $('meds').innerHTML=(achou.length?achou.map(function(m){ return '<div class="med">💊 <b>'+esc(m[1])+'</b>: '+esc(m[2])+'</div>'; }).join('')+'<p class="mini">Referência geral — confirmar sempre com a anestesia e o protocolo do serviço.</p>':'<p class="mini">Nenhuma medicação de atenção encontrada no MUC.</p>');
+  var av=[];
+  if(P&&P.data&&$('dataCx').value){ var d=isoDe(P.data,$('dataCx').value); if(d){ var dias=Math.round((new Date($('dataCx').value)-new Date(d))/864e5); if(dias>60) av.push('Pré-ops de '+P.data+' — '+dias+' dias antes da cirurgia: considerar novos exames.'); } }
+  if(P&&P.labs){ var hb=parseFloat(String(P.labs.Hb||'').replace(',','.')); if(hb&&hb<10) av.push('Hb '+P.labs.Hb+' — considerar reserva/transfusão e investigação.'); var pl=String(P.labs.Plaq||'').replace(/[^\d,]/g,''); var pn=parseFloat(pl.replace(',','.'))*(/k/i.test(P.labs.Plaq)?1000:1); if(pn&&pn<100000) av.push('Plaquetas '+P.labs.Plaq+' — baixas.'); var inr=parseFloat(String(P.labs.INR||'').replace(',','.')); if(inr&&inr>1.5) av.push('INR '+P.labs.INR+' — alargado.'); }
+  if(!$('dataCx').value) av.push('Sem data da cirurgia.');
+  ['cmb','muc','alergia'].forEach(function(k){ if(!$(k).value.trim()) av.push(({cmb:'AP/CMB',muc:'MUC',alergia:'Alergia'})[k]+' em branco — perguntar (escreva NEGA se nega).'); });
+  if(!SEL||!SEL.reg) av.push('Paciente sem prontuário escolhido: a ficha não vai para o mapa.');
+  $('chk').innerHTML=av.map(function(t){return '<div class="chk"><span class="r">⚠</span><span>'+esc(t)+'</span></div>';}).join('')+
+    CHK.map(function(c){ return '<label class="chk"><input type="checkbox" data-chk="'+c[0]+'"'+(MARC[c[0]]?' checked':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
+}
+$('chk').addEventListener('change',function(e){ var c=e.target.dataset.chk; if(c) MARC[c]=e.target.checked; });
+
+/* ---------------- salvar / enviar ---------------- */
+function formAtual(){ var o={}; ['reg','cab','cmb','muc','alergia','apOutros','hma','queixa','ef','outros','dr','drData','proc','dataCx','preops','preData','apaData','apaRes','carData','carRes','extras','dataInt','dataJejum','ass','acompQuem'].forEach(function(id){ o[id]=$(id).value; });
+  ['menor','preExt','apaExt','carExt'].forEach(function(id){ o[id]=$(id).checked; }); ['sgChegada','sgAcomp','sgSexo','sgPre','sg_uti','sg_rch','sg_rxt','sg_rxa','sg_aviso'].forEach(function(id){ o[id]=V(id); }); o.ant=$('ant').value; o.marc=MARC; return o; }
+function carregarForm(o){ Object.keys(o).forEach(function(k){ var el=$(k); if(!el) return; if(el.classList.contains('seg')) el.setV(o[k]); else if(el.type==='checkbox') el.checked=!!o[k]; else el.value=o[k]; }); if(o.ant) $('ant').value=o.ant; MARC=o.marc||{}; gerar(); }
+function paraMapa(texto,P){
+  var f=window.SOTOCR?SOTOCR.ficha('# AMB INTERNAÇÃO #\n'+$('cab').value):{dx:'',mec:'',cirPrev:''};
+  var stM=function(v){ return v==='SOLICITADO'||v==='SOLICITAR'?'SOLIC':v==='OK'?'✓':v==='NÃO NECESSÁRIA'?'—':''; };
+  return { dx:f.dx||UP($('cab').value.split('\n')[0]||''), mec:f.mec||'', cirPrev:f.cirPrev||'', cmb:UP($('cmb').value.trim()), muc:UP($('muc').value.trim()), alergia:UP($('alergia').value.trim()),
+    preData:P.data||'', labs:P.labs||{}, extras:P.outros?UP(P.outros):'',
+    apa:($('apaData').value||$('apaRes').value)?[$('apaData').value.trim(),UP($('apaRes').value.trim())].filter(Boolean).join(' - ')+($('apaExt').checked?' (EXTERNA)':''):'',
+    cardio:($('carData').value||$('carRes').value)?[$('carData').value.trim(),UP($('carRes').value.trim())].filter(Boolean).join(' - ')+($('carExt').checked?' (EXTERNA)':''):'',
+    rch:stM(V('sg_rch')), uti:stM(V('sg_uti')) };
+}
+$('btSalvar').addEventListener('click',function(){
+  var texto=gerar(), reg=String($('reg').value||'').replace(/\D/g,''), el=$('stSalvar');
+  if(!reg){ el.innerHTML='<div class="alerta">Informe o prontuário (ou escolha o paciente na Agenda) para enviar ao mapa.</div>'; return; }
+  if(!$('dataCx').value){ el.innerHTML='<div class="alerta">Falta a data da cirurgia.</div>'; return; }
+  if($('idAviso').querySelector('.alerta')&&!this.dataset.conf){ this.dataset.conf='1'; this.textContent='A evolução parece ser de OUTRO paciente — toque de novo para salvar mesmo assim'; return; }
+  delete this.dataset.conf; this.textContent='Salvar e enviar ao mapa';
+  var P=preTexto();
+  var rec={ reg:reg, nome:SEL?SEL.nome:'', idade:SEL?SEL.idade:'', evId:SEL?SEL.id:'', dataCx:$('dataCx').value, data:HOJE, texto:texto, mapa:paraMapa(texto,P), form:formAtual() };
+  if(NOAPP){ el.innerHTML='<div class="info">Aberto fora do SOT APP: copie o texto. (Para ir ao mapa, abra pelo OrthoHub.)</div>'; return; }
+  el.innerHTML='<div class="info">Salvando…</div>';
+  parent.postMessage({src:'ambint',type:'ambint-salvar',rec:rec},'*');
+});
+$('btCopiar').addEventListener('click',function(){ var t=gerar(); var ok=function(){ $('stSalvar').innerHTML='<div class="okmsg">Texto copiado.</div>'; };
+  try{ navigator.clipboard.writeText(t).then(ok,function(){ selecionar(); }); }catch(e){ selecionar(); } });
+function selecionar(){ var r=document.createRange(); r.selectNodeContents($('saida')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); $('stSalvar').innerHTML='<div class="info">Texto selecionado — copie.</div>'; }
+
+/* ---------------- ponte com o app ---------------- */
+window.addEventListener('message',function(e){
+  var m=e.data||{}; if(m.src!=='sot') return;
+  if(m.type==='ambint-dados'){ EVS=(m.eventos||[]).sort(function(a,b){ return (a.data+a.hora).localeCompare(b.data+b.hora); }); FICHAS=m.fichas||{}; EU=m.eu||''; if(m.hoje) HOJE=m.hoje; desenharLista(); if(SEL){ var n=EVS.find(function(x){return x.id===SEL.id;}); if(n) SEL=n; } checklist(preTexto()); }
+  else if(m.type==='ambint-salvo'){ $('stSalvar').innerHTML='<div class="'+(m.ok?'okmsg':'info')+'">'+esc(m.msg)+' Na próxima atualização do mapa de '+esc(br($('dataCx').value))+', a célula deste prontuário recebe os dados (só campos vazios).</div>'; FICHAS[m.reg]=FICHAS[m.reg]||{data:HOJE}; desenharLista(); }
+});
+if(!NOAPP) parent.postMessage({src:'ambint',type:'ambint-pronto'},'*');
+desenharLista(); gerar();
+window.__AMB={ler:ler,gerar:gerar,escolher:escolher,blocos:blocos,preTexto:preTexto,formAtual:formAtual};
+})();
+</script>
+</body></html>
