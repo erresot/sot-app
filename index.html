@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v40</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v41</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -628,7 +628,7 @@ function verificar(p, hj) {
   ];
   // começo de outra seção: encerra a leitura das linhas de baixo
   var OUTRA = /^(?:HMA|HDA|HPMA|QP|EF|EXAME|EVO|EVOLUCAO|CD|CONDUTA|HV|HF|HABITOS|VICIOS|CIRURGIAS?|INTERNA|ORIGEM|RX|RADIOGRAF|LAB|EXAMES|PROGRAMA|PLANO|HD|HIPOTESE|DIAGNOSTICO|ASS\b|CX\b|SOCIAL|TABAG|ETIL|PESO|ALTURA|JEJUM|AVALIO|PACIENTE\s+(?:VEM|DA|REFERE|ENCAMINH|PROVENIENTE)|TESTEMUNH|RELIGI)/;
-  function semDecor(l) { return l.replace(/^[\s#*\-–—•·>|]+/, '').replace(/^\d{1,2}[).]\s+/, ''); }
+  function semDecor(l) { return l.replace(/^[\s#*\-–—•·>|\[\]{}_]+/, '').replace(/^\d{1,2}[).]\s+/, ''); }
   function limpa(v) {
     return String(v || '').replace(/\*\*/g, '').replace(/^[\s:=\-–—.]+/, '').replace(/[\s:;,.]+$/, '').replace(/\s{2,}/g, ' ').trim();
   }
@@ -639,6 +639,8 @@ function verificar(p, hj) {
       var resto = s.slice(m[0].length);
       // separador: ":" "-" "=" "–" ou só espaço; "MUC NEGA", "MUC: x", "MUC - x"
       if (resto && !/^\s*(?:\*\*)?\s*(?:[:=\-–—]|$|\s)/.test(resto)) continue;
+      // rótulo por extenso ("MEDICAÇÃO", "ANTECEDENTES", "ALÉRGICO") sem ":" no meio de uma frase não é rótulo ("MEDICAÇÃO ANTICOAGULANTE. NEGA…")
+      if (m[0].length > 4 && resto && !/^\s*(?:\*\*)?\s*(?:[:=\-–—]|$)/.test(resto) && ROT[i][0] !== 'alergia' && !/^\s*(NEGA|NAO|DESCONHE)/i.test(resto)) continue;
       resto = resto.replace(/^\s*(?:\*\*)?\s*[:=\-–—]*\s*(?:\*\*)?\s*/, '');
       if (ROT[i][0] === 'alergia') resto = resto.replace(/^(?:A|À|AO|AOS|AS)\s+/i, '');
       return { campo: ROT[i][0], resto: resto };
@@ -1090,7 +1092,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '40';
+var VERSAO = '41';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2435,12 +2437,12 @@ function trechoIG(p, re) {
 }
 function celulaMapa(ev, pFixo) {
   var p = pFixo || pacientePorEvento(ev), id = ev.idCel || ('ev_' + ev.id);
-  if (!p) return { id: id, hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '').replace(/,?\s*(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(-feira)?,\s*\d{1,2}\s+de\s+[a-zç]+\.?(\s+de\s+\d{4})?\s*[·•-]?\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/gi, '').trim(), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
+  if (!p) return { id: id, pac: 'AMB', hora: horaMapa(ev), cab: ev.titulo.replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/, '').replace(/,?\s*(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(-feira)?,\s*\d{1,2}\s+de\s+[a-zç]+\.?(\s+de\s+\d{4})?\s*[·•-]?\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}/gi, '').trim(), origem: 'AMB', fonte: 'amb', cir: ev.proc || '' };
   var limpa = function (x) { return String(x || '').replace(/^\s*(muc\s*e\s*alergias?|alergias?|muc|cmb|ap|comorbidades)\s*[:\-]?\s*/i, '').replace(/[\s,;.]+$/, '').trim(); };
   var ap = p.apL || {}, evs = (typeof evoSecoes === 'function' ? evoSecoes(p) : null) || {}, lb = labsMapa(p), dx = (p.dxL || []).join(' / ') || p.dx || '';
   var idade = String(p.idade || '').trim();
   var o = {
-    id: id, hora: horaMapa(ev),
+    id: id, pac: p.id, hora: horaMapa(ev),
     cab: [p.nome, idade ? idade + 'a' : '', 'P: ' + (p.registro || ev.P || ''), ev.proc || '', 'Ass. Dr. ' + (ev.ass || assDe(p) || '')].filter(function (x) { return x && x !== 'P: ' && x !== 'Ass. Dr. '; }).join(', '),
     origem: ((p.lugar || p.local || '') + ' ' + (p.leito || '')).replace(/\s+/g, ' ').trim().toUpperCase() || 'INTERNADO', fonte: 'internograma',
     preData: lb.data, labs: lb.labs, extras: lb.extras,

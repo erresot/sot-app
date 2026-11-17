@@ -14,7 +14,7 @@
   ];
   // começo de outra seção: encerra a leitura das linhas de baixo
   var OUTRA = /^(?:HMA|HDA|HPMA|QP|EF|EXAME|EVO|EVOLUCAO|CD|CONDUTA|HV|HF|HABITOS|VICIOS|CIRURGIAS?|INTERNA|ORIGEM|RX|RADIOGRAF|LAB|EXAMES|PROGRAMA|PLANO|HD|HIPOTESE|DIAGNOSTICO|ASS\b|CX\b|SOCIAL|TABAG|ETIL|PESO|ALTURA|JEJUM|AVALIO|PACIENTE\s+(?:VEM|DA|REFERE|ENCAMINH|PROVENIENTE)|TESTEMUNH|RELIGI)/;
-  function semDecor(l) { return l.replace(/^[\s#*\-–—•·>|]+/, '').replace(/^\d{1,2}[).]\s+/, ''); }
+  function semDecor(l) { return l.replace(/^[\s#*\-–—•·>|\[\]{}_]+/, '').replace(/^\d{1,2}[).]\s+/, ''); }
   function limpa(v) {
     return String(v || '').replace(/\*\*/g, '').replace(/^[\s:=\-–—.]+/, '').replace(/[\s:;,.]+$/, '').replace(/\s{2,}/g, ' ').trim();
   }
@@ -25,6 +25,8 @@
       var resto = s.slice(m[0].length);
       // separador: ":" "-" "=" "–" ou só espaço; "MUC NEGA", "MUC: x", "MUC - x"
       if (resto && !/^\s*(?:\*\*)?\s*(?:[:=\-–—]|$|\s)/.test(resto)) continue;
+      // rótulo por extenso ("MEDICAÇÃO", "ANTECEDENTES", "ALÉRGICO") sem ":" no meio de uma frase não é rótulo ("MEDICAÇÃO ANTICOAGULANTE. NEGA…")
+      if (m[0].length > 4 && resto && !/^\s*(?:\*\*)?\s*(?:[:=\-–—]|$)/.test(resto) && ROT[i][0] !== 'alergia' && !/^\s*(NEGA|NAO|DESCONHE)/i.test(resto)) continue;
       resto = resto.replace(/^\s*(?:\*\*)?\s*[:=\-–—]*\s*(?:\*\*)?\s*/, '');
       if (ROT[i][0] === 'alergia') resto = resto.replace(/^(?:A|À|AO|AOS|AS)\s+/i, '');
       return { campo: ROT[i][0], resto: resto };

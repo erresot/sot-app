@@ -101,6 +101,10 @@ S.posCabecalho=function(data,H){
   for(i=0;i<L.length;i++){var t=deacc(L[i].text||'').toUpperCase();
     if(/PAC\w{0,3}NTE\s*:?\s*[\dOIL|—\-~]{4,}|PRONTUARIO\s*:?\s*\d|^\W*IENTE\s+\d{5}/.test(t)&&L[i].bbox&&L[i].bbox.y0<H*0.6)
       return {top:Math.max(0,L[i].bbox.y0-Math.round(H*0.035)),frac:0.13};}
+  // folha com timbre (Secretaria/HCFAMEMA) em cima: a caixa do paciente fica logo acima de "Idade"/"Atendimento em"
+  for(i=0;i<L.length;i++){var u=deacc(L[i].text||'').toUpperCase();
+    if(L[i].bbox&&L[i].bbox.y0<H*0.6&&(/\bIDADE\s*:?\s*\d/.test(u)||/ATENDIMENTO\s+EM/.test(u)||/NASCIMENTO/.test(u)))
+      return {top:Math.max(0,L[i].bbox.y0-Math.round(H*(/ATENDIMENTO/.test(u)?0.06:0.03))),frac:0.12};}
   return {top:0,frac:0.18};
 };
 /* ---------------- Tesseract ---------------- */
@@ -335,6 +339,14 @@ var RE_LIXO=/^(PS ORTOPEDIA|FICHA INCLUIDA|ANAMNESE EM|EVOLUCAO EM|POR\b|S?INTER
 var RE_ITEM=/^(\d+\s*[º°]?\s*(D|DIAS?|PO|DPO|POI|POT|M|MESES|A|ANOS?|SEM)\b|POT?\b|POI\b|PO\b|DPO\b|FX\b|FRATURA|LUXA|TCG|TUMOR|INFEC|LESAO|DISPLASIA|PSEUDO|OSTEO|ARTRO|PROTESE|REVIS|QUEDA|QPA\b|ACIDENTE|TRAUMA|ATROPEL|AGRESS|LOMBO|HERNIA|ESPONDIL|RUPTURA|ROTURA|LCA\b|SEQUELA|DEFORM|HALUX|SINDROME|NEOPLASIA|METAST|CONTUS|ENTORSE|AMPUTA|ESCOLIOSE|CANAL|ESTENOSE|GONARTROSE|COXARTROSE|ARTROSE|EPIFISIOLISE|DDQ|PE TORTO|CERVICALGIA|LOMBALGIA|TENDIN|BURSITE|CAPSULITE|SINOVITE|CISTO|ENCONDROMA|OSTEOCONDROMA|SARCOMA|MIELOMA|DMMO|POLITRAUMA|FERIMENTO|PAF\b|FAB\b|EXPOSICAO|NECROSE|OSTEONECROSE|SOLTURA)/;
 var RE_MEC=/\b(QUEDA|QPA|ACIDENTE|ATROPELAMENTO|ATROPELAD|AGRESS[AO]|COLIS[AO]|ENTORSE|TORCAO|PAF|FAB|CAPOTAMENTO|MOTO X|CARRO X|BICICLETA|TRAUMA (DIRETO|INDIRETO|TORCIONAL|DE ALTA|DE BAIXA)|ESMAGAMENTO|PRENSAMENTO|MORDEDURA|COICE)\b/;
 function limpaItem(l){return l.replace(/^[^A-Za-zÀ-ÿ0-9(]+/,'').replace(/^[ÍIl|\[](?=[A-ZÀ-Ý]{2})/,'').replace(/\s+[^A-Za-zÀ-ÿ0-9()\/]{1,3}$/,'').replace(/\s{2,}/g,' ').trim();}
+// trecho do mecanismo: do começo da frase (nunca no meio de parênteses) até o fim da frase, no máximo ~90 letras
+function frase(it,k){
+  var ini=Math.max(it.lastIndexOf('. ',k)+1,0), pa=it.lastIndexOf('(',k), pf=it.lastIndexOf(')',k);
+  if(pa>pf&&pa>=ini){ var sp=it.lastIndexOf(' ',pa-1); ini=Math.max(ini, it.lastIndexOf(' ',Math.max(0,sp-1))+1); var a2=it.slice(0,pa).search(/\b(TRAUMA|DOR|ACIDENTE|VITIMA|HISTORIA|DEVIDO)\b[^.]*$/i); if(a2>=ini-40&&a2>=0) ini=a2; }
+  var fim=it.indexOf('. ',k); if(fim<0) fim=it.length; var t=it.slice(ini,fim).trim();
+  if(t.length>90){ t=t.slice(0,90); t=t.slice(0,t.lastIndexOf(' ')); }
+  return t.replace(/^[\s.,;:]+|[\s,;:]+$/g,'');
+}
 S.blocoDx=function(lines,U){
   var res={dx:[],po:[],mec:'',duv:false,mecDuv:false},i,ini=-1,fim=-1;
   for(i=0;i<U.length&&i<80;i++){var t=U[i].trim();if(RE_MARCA.test(t)||RE_INICIO.test(t)){ini=i;break;}}
@@ -346,19 +358,23 @@ S.blocoDx=function(lines,U){
       var t2=U[i].trim();if(!t2)continue;
       if(RE_MARCA.test(t2))continue;
       if(RE_FIM.test(t2))break;
+      if(/^[^A-Z0-9]{0,3}[A-Z]{1,6}\s*:\s*$/.test(t2)&&itens.length)break;                       // "NEC:", "AP:" mal lidos: começa outra seção
+      if((t2.match(/\d+\s*(MG|MCG|UI|ML)\b|\b\d-\d-\d\b|\b\d{1,2}\/\d{1,2}\s*H\b/g)||[]).length>=2)break;   // lista de remédios = MUC, não Dx
+      if(/^(HAS|DM2?|DLP|NEGA\b|EX-?TABAG|TABAGIS|ETILIS|ANTECEDENTES|COMORBIDADES)/.test(t2)&&itens.length)break;
       if(RE_LIXO.test(t2.replace(/^\W+/,''))||/^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/.test(t2))continue;
       var al=(t2.match(/[A-Z0-9]/g)||[]).length;if(al<4||al/t2.length<.55)continue;
       var L=limpaItem(lines[i]),LU=deacc(L).toUpperCase();
       if(!L)continue;
       if(L.length>110&&/,|\bHA \d+|\bPACIENTE\b/.test(LU))break;
-      var novo=RE_ITEM.test(LU)||!itens.length||(itens[itens.length-1].length+L.length>220)||/[)]\s*$|\d{2}\/\d{2}\/?\d{0,4}\)?\s*$/.test(itens[itens.length-1]);
+      if(/^(TRABALHA|LABORAL|PROFISS|NATURAL DE|PROCEDENTE)/.test(LU))continue;                    // dado social, não é Dx
+      var novo=RE_ITEM.test(LU)||RE_MEC.test(LU)||/^(DOR|PACIENTE|REFERE|HISTORIA)\b/.test(LU)||!itens.length||(itens[itens.length-1].length+L.length>220)||/[)]\s*$|\d{2}\/\d{2}\/?\d{0,4}\)?\s*$/.test(itens[itens.length-1]);
       if(novo)itens.push(L);else itens[itens.length-1]+=' '+L;
     }
     // linha anterior à marca com PO/POT (ex.: POT antes de "# AMB INTERNAÇÃO")
     for(i=Math.max(0,ini-2);i<ini;i++){var tp=U[i].trim();if(/^\W*(\d+\s*[º°]?\s*(PO|DPO|D)\b|POT?\b|POI\b)/.test(tp)&&!RE_INICIO.test(tp))itens.unshift(limpaItem(lines[i]));}
     itens.forEach(function(it){
       var u=deacc(it).toUpperCase();
-      if(RE_MEC.test(u)&&!/FRATURA|\bFX\b|LUXA|\bPO\b|\bPOT\b/.test(u)){if(!res.mec)res.mec=(it.length>70?it.substr(u.search(RE_MEC),60):it).replace(/^QPA\b/i,'Queda da própria altura');return;}
+      if(RE_MEC.test(u)&&!/FRATURA|\bFX\b|LUXA|\bPO\b|\bPOT\b/.test(u)){if(!res.mec)res.mec=frase(it,u.search(RE_MEC)).replace(/^QPA\b/i,'Queda da própria altura');return;}
       res.dx.push(it);
       if(/^(\d+\s*[º°]?\s*(PO|DPO|POI|POT)\b|POT?\b|POI\b)/.test(u))res.po.push(it);
     });
@@ -394,7 +410,8 @@ S.ficha=function(text,hdr){
   if(!r.nome)for(i=0;i<Math.min(U.length,15);i++){if(m=U[i].match(/^\W*(\d{6,7})\s+([A-Z][A-Z' ]{8,60})\s*$/)){r.prontuario=r.prontuario||m[1];r.nome=lines[i].substr(U[i].indexOf(m[2]),m[2].length).trim();break;}}
   if(!r.nome){var nI=U.findIndex(function(u){return /NASCIMENTO\s*:?\s*\d/.test(u);});
     for(i=Math.max(0,(nI<0?12:nI)-8);i<(nI<0?12:nI)&&i<U.length;i++){var t0=U[i].trim();
-      if(/^[A-Z' ]{10,60}$/.test(t0)&&t0.split(' ').length>=2&&t0.split(' ').length<=7&&!/HCFAMEMA|SECRETARIA|HOSPITAL|MEDICINA|ANAMNESE|URGENCIA|EMERGENCIA|SISTEMA|ATENDIMENTO|ORTOPEDIA|TRAUMATOLOGIA|FACULDADE|CLINICAS/.test(t0)){r.nome=lines[i].trim();break;}}}
+      t0=t0.replace(/\s+IDADE\s*:?\s*\d+.*$/,'').replace(/^PACIENTE\s*:?\s*\d*\s*/,'').trim();
+      if(/^[A-Z' ]{10,60}$/.test(t0)&&t0.split(' ').length>=2&&t0.split(' ').length<=7&&!/HCFAMEMA|SECRETARIA|HOSPITAL|MEDICINA|ANAMNESE|URGENCIA|EMERGENCIA|SISTEMA|ATENDIMENTO|ORTOPEDIA|TRAUMATOLOGIA|FACULDADE|CLINICAS/.test(t0)){r.nome=lines[i].replace(/\s+idade\s*:?\s*\d+.*$/i,"").replace(/^\s*paciente\s*:?\s*\d*\s*/i,"").trim();break;}}}
   if(!r.prontuario&&(m=all.match(/(?:PACIENTE|REGISTRO|PRONTUARIO|RGHC)\s*:?\s*(\d{5,9})/)))r.prontuario=m[1];
   if(!r.nome&&(m=T.match(/\bNome\s*:?\s*([A-Za-zÀ-ÿ' ]{6,})/i)))r.nome=m[1].trim();
   var allH=all+'\n'+deacc(String(hdr||'')).toUpperCase();
@@ -418,7 +435,7 @@ S.ficha=function(text,hdr){
   }
   r.cmb=campo(/^[^A-Z0-9]{0,3}R?(?:AP|CMB|HPP|COMORBIDADES?|ANTECEDENTES(?: PESSOAIS)?)\s*[:.]\s*/);
   var cmb2=campo(/^\s*CMB\s*:\s*/);if(cmb2&&r.cmb.indexOf(cmb2)<0&&!/^AP/.test(r.cmb))r.cmb+=(r.cmb?' / ':'')+cmb2;
-  r.muc=campo(/^[^A-Z0-9]{0,3}(?:MUC|MEDICACOES(?: EM USO)?(?: CONTINU[AO]S?)?|MEDICAMENTOS(?: EM USO)?)(?:\s*[:.;]\s*|\s*$|\s+(?=[A-Z0-9]))/,true);
+  r.muc=campo(/^[^A-Z0-9]{0,3}(?:MUC(?:\s*[:.;]\s*|\s*$|\s+(?=[A-Z0-9]))|(?:NUC|MUG|MLC|NEC|MUE|MVC)\s*[:;]\s*|(?:MEDICACOES(?: EM USO)?(?: CONTINU[AO]S?)?|MEDICAMENTOS(?: EM USO)?)\s*[:;]\s*)/,true);
   r.alergia=campo(/^[^A-Z0-9]{0,3}ALERGIAS?\s*[:.]?\s*(?=\S|$)/);
   // linhas "NEGA CMB / NEGA MUC / NEGA ALERGIAS" soltas
   U.forEach(function(u,j){var t=u.trim();

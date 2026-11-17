@@ -961,7 +961,7 @@ function carregar(){
 // Cada campo guarda a hora da última mudança (x.t[campo]). Ao sincronizar, vence o mais recente, campo a campo:
 // duas pessoas podem preencher o mesmo mapa ao mesmo tempo sem uma apagar o que a outra fez.
 var CAMPOS_M=["hora","cab","origem","fonte","preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","cir","dx","mec","cirPrev","fxPrev","laudos","obs","cidade"];
-var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev","semAgenda"];
+var META_M=["ocultos","quebra","sozinho","ign","duv","alt","fixo","ident","reuso","reusoNao","ev","semAgenda","pac"];
 var SNAP={}, SKEW=0, FOTOS={}, QUEM="";
 function agoraM(){ return Date.now()+(SKEW||0); }
 function canonM(o){ if(o===undefined) return ""; if(o===null||typeof o!=="object") return JSON.stringify(o); if(Array.isArray(o)) return "["+o.map(canonM).join(",")+"]"; return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+canonM(o[k]);}).join(",")+"}"; }
@@ -1045,6 +1045,11 @@ function mesmoPaciente(a,b){
   return r==="mesmo"||r==="incerto";
 }
 function baseId(id){ return String(id).split("~")[0]; }
+function limparAuto(x){
+  ["preData","extras","cmb","muc","alergia","peso","cardio","apa","rch","uti","pend","dx","mec","cirPrev","fxPrev","laudos","obs","origem"].forEach(function(f){ if(!x.locked[f]&&x[f]){ x[f]=""; (x.t=x.t||{})[f]=agoraM(); } });
+  Object.keys(x.labs||{}).forEach(function(k){ if(!x.locked["labs."+k]){ delete x.labs[k]; (x.t=x.t||{})["labs."+k]=agoraM(); } });
+  x.duv={};
+}
 function temDados(x){
   if(Object.keys(x.locked||{}).length) return true;
   if(LABS.some(function(k){return x.labs&&x.labs[k];})) return true;
@@ -1290,6 +1295,20 @@ function chips(x,f){
   return '<span class="chips">'+["✓","SOLIC","—"].map(function(v){
     return '<button class="chip" data-id="'+x.id+'" data-set="'+f+'" data-v="'+v+'">'+v+'</button>';}).join("")+'</span>';
 }
+/* proteção: texto idêntico ao de OUTRO paciente no mesmo mapa = provável mistura de dados */
+var CAMPOS_DUP=["cmb","muc","dx","mec","cirPrev","fxPrev","obs","cardio","apa","laudos"];
+function dupsDe(x){
+  var out=[], vx=SOTPESSOA.deCab(x.cab);
+  CAMPOS_DUP.forEach(function(f){
+    var v=semAcento(x[f]||"").replace(/[^A-Z0-9]/g,""); if(v.length<20) return;
+    dados[dia].cels.forEach(function(y){
+      if(y===x) return; var w=semAcento(y[f]||"").replace(/[^A-Z0-9]/g,""); if(w!==v) return;
+      if(SOTPESSOA.comparar(vx,SOTPESSOA.deCab(y.cab))==="mesmo") return;
+      out.push({f:f,quem:String(y.cab).split(",")[0]});
+    });
+  });
+  return out;
+}
 function celHTML(x){
   var pa=pendAuto(x), sg=sugestoes(x);
   var alPos=x.alergia && !neg(x.alergia);
@@ -1297,6 +1316,7 @@ function celHTML(x){
   var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
   var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
   h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x)+
+     (function(){ var D=dupsDe(x); return D.length?'<div class="reuso" style="background:#ffe3e3;border-color:#c62828">⚠ <b>Dados de outro paciente?</b> '+D.map(function(d){return esc(rot(d.f))+' igual ao de '+esc(d.quem);}).join("; ")+'. Conferir e corrigir.</div>':''; })()+
      (x.semAgenda?'<div class="reuso" style="background:#fff3e0;border-color:#e0a03a">⚠ <b>Falta na Agenda:</b> internado com esta cirurgia marcada no internograma para o dia, mas sem evento na Agenda. Coloque na Agenda (o horário vem de lá).</div>':'');
   h+='<div class="corpo">';
   h+='<div class="col origem"><small>Origem</small>'+ed(x,"origem")+'</div>';
@@ -1755,7 +1775,7 @@ function aplicar(x,r,soVazios){
   return n;
 }
 function desenharLote(){
-  var ops=dados[dia].cels.map(function(x){return '<option value="'+x.id+'">'+esc(x.cab.split(",")[0])+" ("+esc(x.hora)+")</option>";}).join("");
+  var ops='<option value="">— escolha o paciente —</option>'+dados[dia].cels.map(function(x){return '<option value="'+x.id+'">'+esc(x.cab.split(",")[0])+" ("+esc(x.hora)+")</option>";}).join("");
   document.getElementById("loteLista").innerHTML=lote.map(function(it,i){
     var s='<div class="item"><img alt="" src="'+it.url+'"><div><div>'+esc(it.nome)+'</div>';
     if(it.st==="espera") s+='<div class="st es">Na fila</div>';
@@ -1778,9 +1798,10 @@ function processarLote(){
     if(!r){it.st="erro";it.msg="Não consegui ler esta foto. Use Captar dados na célula.";return;}
     it.r=r;
     var x=casar(r), quem=(r.nome||"sem nome")+(r.prontuario?" (P: "+r.prontuario+")":"");
-    if(!x&&!r.nome&&!r.prontuario&&ultimoX){ x=ultimoX; quem="Continuação"; }
+    // foto sem nome/prontuário legível NUNCA vai sozinha para um paciente (antes ia para o "paciente anterior" e misturava dados)
+    if(!x&&!r.nome&&!r.prontuario){ it.st="semcel"; it.msg="Foto sem nome e prontuário legíveis (página 2 ou recorte?). Escolha o paciente desta foto:"; return; }
     if(x){ ultimoX=x; if(!it.guardada){ it.guardada=true; guardarFotoCel(x,it.blob); } var n=aplicar(x,r), nd=(r.duvidas||[]).length; it.st="ok"; it.msg=quem+" → "+x.cab.split(",")[0]+": "+n+" campo(s) preenchido(s)"+(nd?", "+nd+" com ? para conferir":"")+"."; salvar(); desenhar(); }
-    else { it.st="semcel"; it.msg="Li "+quem+", mas não achei esse paciente no mapa do dia."; }
+    else { it.st="semcel"; it.msg="Li "+quem+", mas não tenho certeza de quem é no mapa do dia (sem prontuário igual ou nome completo). Escolha:"; }
   }).catch(function(e){
     it.st="erro";
     it.msg="Falha ao ler esta foto"+(e&&e.message?" ("+e.message+")":"")+". Use Captar dados na célula.";
@@ -1965,7 +1986,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       var NAOPAC=/^\s*(proclama|feriado|ponto facultativo|f[eé]rias|folga|sala\s*\d|sala\b|congresso|plant[aã]o|reuni[aã]o|tiradentes|natal|finados|independ[eê]ncia|carnaval|ano novo|corpus christi|sexta.feira santa|consci[eê]ncia negra|nossa senhora|aniversário)/i;
       var ids={}; (m.cels||[]).forEach(function(z){ ids[z.id]=identCab(z.cab); });
       var completo=m.completo!==false&&(m.completo===true||(m.cels||[]).length>0);   // Agenda do dia lida inteira
-      var foram=0, trocados=0, voltaram=0, ligados=0;
+      var foram=0, trocados=0, voltaram=0, ligados=0, limpos=0;
       loc.cels=loc.cels.filter(function(z){
         var cab=String(z.cab||"").replace(/^\s*[\(\[][^\)\]]*[\)\]]\s*/,"");
         if(NAOPAC.test(cab)&&!LABS.some(function(k){return z.labs&&z.labs[k];})){ tirados++; return false; }
@@ -2018,9 +2039,15 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
         }
         x.ident=x.ident||idt;
         if(/^ev_/.test(inc.id)) delete x.semAgenda;
+        // dados automáticos vindos de OUTRO paciente (ligação errada antiga): limpa o que não foi editado à mão
+        // (célula antiga sem essa marca: não apaga nada sozinho — o aviso "Dados de outro paciente?" aponta o que conferir)
+        var outraFonte=!!(x.pac&&inc.pac&&x.pac!==inc.pac);
+        if(outraFonte){ limparAuto(x); limpos++; }
+        if(inc.pac) x.pac=inc.pac;
         Object.keys(inc).forEach(function(f){
           if(f==="id"||f==="duv"||f==="locked"||f==="alt"||f==="ign") return;
           if(f==="semAgenda"){ if(inc.semAgenda) x.semAgenda=inc.semAgenda; return; }
+          if(f==="pac") return;
           if(f==="labs"){ Object.keys(inc.labs||{}).forEach(function(k){ if(x.locked["labs."+k]){mant++;return;} if(inc.labs[k]&&gravar(x,"labs."+k,inc.labs[k],false)) mud++; }); return; }
           var v=inc[f]; if(v==null||v==="") return;
           if((f==="hora"||f==="cab")&&/_{2}|Nome, idade/.test(x[f]||"")) delete x.locked[f];   // horário/cabeçalho ainda em branco: vem da Agenda
@@ -2032,7 +2059,7 @@ document.getElementById("estado").textContent=window.__SOT?"Salva automaticament
       if(!loc.to) loc.cels.sort(function(a,b){ return String(a.hora).localeCompare(String(b.hora)); });
       pacSel=m.foco||pacSel; if(m.foco) trocarVista("pac");
       montarDias(); salvar(); desenhar();
-      if(m.aviso!==false) toast([novos?(novos===1?"1 cirurgia nova":novos+" cirurgias novas")+" da Agenda":"", (foram+tirados)?((foram+tirados)===1?"1 saiu da Agenda":(foram+tirados)+" saíram da Agenda"):"", trocados?(trocados===1?"1 horário passou para outro paciente":trocados+" horários passaram para outros pacientes"):"", voltaram?(voltaram===1?"1 voltou para a Agenda":voltaram+" voltaram para a Agenda"):"", reus?(reus===1?"1 remarcada com dados reaproveitados":reus+" remarcadas com dados reaproveitados"):"", ligados?(ligados===1?"1 célula feita à mão ligada à Agenda":ligados+" células feitas à mão ligadas à Agenda"):"", mud===1?"1 campo atualizado":mud+" campos atualizados", mant?(mant===1?"1 editado à mão mantido":mant+" editados à mão mantidos"):""].filter(Boolean).join(" · ")+"."+(completo?"":" (Agenda incompleta: ninguém foi tirado)"));
+      if(m.aviso!==false) toast([novos?(novos===1?"1 cirurgia nova":novos+" cirurgias novas")+" da Agenda":"", (foram+tirados)?((foram+tirados)===1?"1 saiu da Agenda":(foram+tirados)+" saíram da Agenda"):"", trocados?(trocados===1?"1 horário passou para outro paciente":trocados+" horários passaram para outros pacientes"):"", voltaram?(voltaram===1?"1 voltou para a Agenda":voltaram+" voltaram para a Agenda"):"", reus?(reus===1?"1 remarcada com dados reaproveitados":reus+" remarcadas com dados reaproveitados"):"", ligados?(ligados===1?"1 célula feita à mão ligada à Agenda":ligados+" células feitas à mão ligadas à Agenda"):"", limpos?(limpos===1?"1 célula tinha dados de outro paciente (limpos)":limpos+" células tinham dados de outro paciente (limpos)"):"", mud===1?"1 campo atualizado":mud+" campos atualizados", mant?(mant===1?"1 editado à mão mantido":mant+" editados à mão mantidos"):""].filter(Boolean).join(" · ")+"."+(completo?"":" (Agenda incompleta: ninguém foi tirado)"));
     }
   });
   // o app baixou o mapa do Drive: mescla aqui e devolve o resultado para ele enviar (se houver algo novo deste aparelho)
