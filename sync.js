@@ -104,13 +104,15 @@ var SYNC = (function () {
   }
   function q(s) { return encodeURIComponent(s); }
   function pasta(nome, pai) {
-    var k = (pai || 'root') + '/' + nome; if (pastas[k]) return Promise.resolve(pastas[k]);
+    var k = (pai || 'root') + '/' + nome; if (pastas[k]) return pastas[k];   // guarda a PROMESSA: duas chamadas ao mesmo tempo não criam duas pastas
     var busca = "name='" + nome.replace(/'/g, "\\'") + "' and mimeType='application/vnd.google-apps.folder' and trashed=false and '" + (pai || 'root') + "' in parents";
-    return req(API + '/files?q=' + q(busca) + '&fields=files(id,name)&spaces=drive').then(function (r) { return r.json(); }).then(function (j) {
-      if (j.files && j.files.length) return (pastas[k] = j.files[0].id);
+    var p = req(API + '/files?q=' + q(busca) + '&fields=files(id,name)&orderBy=createdTime&spaces=drive').then(function (r) { return r.json(); }).then(function (j) {
+      if (j.files && j.files.length) return j.files[0].id;   // se já houver duplicadas, usa sempre a mais antiga
       return req(API + '/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nome, mimeType: 'application/vnd.google-apps.folder', parents: [pai || 'root'] }) })
-        .then(function (r) { return r.json(); }).then(function (f) { return (pastas[k] = f.id); });
+        .then(function (r) { return r.json(); }).then(function (f) { return f.id; });
     });
+    pastas[k] = p; p.catch(function () { if (pastas[k] === p) delete pastas[k]; });
+    return p;
   }
   function raiz() { return pasta(CFG.PASTA || 'SOT App - Visitas'); }
   function sub(n) { return raiz().then(function (id) { return pasta(n, id); }); }
@@ -426,13 +428,20 @@ var SYNC = (function () {
       return L.reduce(function (pr, id) { return pr.then(function () { return req(API + '/files/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }).catch(function () {}); }); }, Promise.resolve());
     }).then(function () { S.lixo = []; S.lixoLid = []; });
   }
+  var backupRodando = null;
   function backupDiario() {
     S.sync.backups = S.sync.backups || {};
     if (S.sync.backups[S.hoje]) return Promise.resolve();
-    return sub('backups').then(function (pb) {
-      var b = new Blob([JSON.stringify(backupObj())], { type: 'application/json' });
-      return criarArquivo('backup-' + S.hoje + '-' + hhmm(new Date()).replace(':', 'h') + '.json', pb, b, 'application/json');
-    }).then(function () { S.sync.backups[S.hoje] = 1; });
+    if (backupRodando) return backupRodando;
+    backupRodando = sub('backups').then(function (pb) {
+      // já existe backup de hoje no Drive (feito por este ou por outro aparelho)? então não cria outro
+      return req(API + '/files?q=' + q("name contains 'backup-" + S.hoje + "' and '" + pb + "' in parents and trashed=false") + '&fields=files(id)&pageSize=1').then(function (r) { return r.json(); }).then(function (j) {
+        if (j.files && j.files.length) return;
+        var b = new Blob([JSON.stringify(backupObj())], { type: 'application/json' });
+        return criarArquivo('backup-' + S.hoje + '-' + hhmm(new Date()).replace(':', 'h') + '.json', pb, b, 'application/json');
+      });
+    }).then(function () { S.sync.backups[S.hoje] = 1; backupRodando = null; }, function (e) { backupRodando = null; throw e; });
+    return backupRodando;
   }
   function backupObj() {
     var o = {}; ['hoje', 'pacientes', 'vis', 'pend', 'pendDel', 'evo', 'fotos', 'conf', 'fonte', 'dataIG', 'cab', 'idents', 'dihConv', 'igHist', 'vistoEm', 'altaEm', 'ultimos', 'apagados', 'rasc'].forEach(function (k) { o[k] = S[k]; });
@@ -463,7 +472,7 @@ var SYNC = (function () {
   /* ---------- Mapa cirúrgico: pasta "MAPA CIRURGICO" no Drive da equipe ---------- */
   function mapaArquivo(iso) {
     return pasta('MAPA CIRURGICO').then(function (raizM) { return pasta(iso.slice(0, 7), raizM); }).then(function (pid) {
-      return req(API + '/files?q=' + q("name='mapa-" + iso + ".json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: (j.files || [])[0] || null }; });
+      return req(API + '/files?q=' + q("name='mapa-" + iso + ".json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq['mapa' + iso] ? { id: idsArq['mapa' + iso] } : null) }; });
     });
   }
   function mapaBaixar(iso) { return mapaArquivo(iso).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
@@ -481,20 +490,27 @@ var SYNC = (function () {
   }
   /* ---------- AMB Internação: uma ficha por prontuário em "AMB INTERNACAO" (Drive da equipe) ---------- */
   function ambPasta() { return pasta('AMB INTERNACAO'); }
+  var idsArq = {}, fila = {};
+  function enfileirar(k, fn) { var p = (fila[k] || Promise.resolve()).catch(function () {}).then(fn); fila[k] = p; return p; }
+  function maisNovo(j) { var L = (j.files || []).slice().sort(function (a, b) { return String(b.modifiedTime).localeCompare(String(a.modifiedTime)); }); return L[0] || null; }
+  function salvarPorNome(chave, pid, nome, obj, achar) {
+    var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+    return enfileirar(chave, function () {
+      return achar().then(function (o) {
+        var f = o.f || (idsArq[chave] ? { id: idsArq[chave] } : null);     // o índice do Drive demora a ver arquivo novo: usa o id já conhecido
+        if (f) { idsArq[chave] = f.id; return atualizarArquivo(f.id, b, 'application/json'); }
+        return criarArquivo(nome, o.pai, b, 'application/json').then(function (r) { if (r && r.id) idsArq[chave] = r.id; return r; });
+      });
+    });
+  }
   function ambArquivo(reg) {
-    return ambPasta().then(function (pid) {
-      return req(API + '/files?q=' + q("name='amb-" + reg + ".json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: (j.files || [])[0] || null }; });
+    return ambPasta().then(function (pid) {   // procura em todo o Drive: acha a ficha mesmo que esteja numa pasta duplicada antiga
+      return req(API + '/files?q=' + q("name='amb-" + reg + ".json' and trashed=false") + '&fields=files(id,modifiedTime)&pageSize=20').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq['amb' + reg] ? { id: idsArq['amb' + reg] } : null) }; });
     });
   }
   function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
-  function ambSalvar(reg, obj) {
-    var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
-    return ambArquivo(reg).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('amb-' + reg + '.json', o.pai, b, 'application/json'); });
-  }
-  function mapaSalvar(iso, obj) {
-    var b = new Blob([JSON.stringify(obj)], { type: 'application/json' });
-    return mapaArquivo(iso).then(function (o) { return o.f ? atualizarArquivo(o.f.id, b, 'application/json') : criarArquivo('mapa-' + iso + '.json', o.pai, b, 'application/json'); });
-  }
+  function ambSalvar(reg, obj) { return salvarPorNome('amb' + reg, null, 'amb-' + reg + '.json', obj, function () { return ambArquivo(reg); }); }
+  function mapaSalvar(iso, obj) { return salvarPorNome('mapa' + iso, null, 'mapa-' + iso + '.json', obj, function () { return mapaArquivo(iso); }); }
   return { ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();

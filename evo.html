@@ -61,6 +61,7 @@ details>summary{cursor:pointer;font-weight:700;color:var(--accent);margin:4px 0}
 html.escuro #ambPainel #amb_alertas .a.i{background:#17263a;border-color:#2c4a6e}
 #ambPainel .chips .chip{min-height:32px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:13px;cursor:pointer}
 #ambPainel .chips .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#ambPainel .mant>label{display:none}
 
   :root{
     --bg:#f6f7f9; --card:#fff; --ink:#1b2430; --muted:#5d6b7c; --line:#dde3ea;
@@ -2565,7 +2566,7 @@ var CHK=[['pele','Pele no sítio cirúrgico íntegra, sem LPP/feridas/infecção
   ['cardio','Avaliação cardiológica quando indicada (idade, cardiopatia, porte)'],['rch','Reserva de sangue (RCH) e UTI conforme porte'],['aviso','Aviso CC / material / OPME conferidos'],['imagem','Exames de imagem disponíveis (RX, TC, RM na pasta ou no sistema)'],['lado','Lado e procedimento conferidos com o paciente']];
 var MARC={};
 /* ---------------- painel de alertas (só o que exige decisão) ---------------- */
-var RE_GRANDE=/(ARTROPL|\bPT[JQ]\b|\bAT[JQ]\b|ENDOPR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE)|TUMOR|ESPA[CÇ]ADOR)/;
+var RE_GRANDE=/(ARTROPL|\bPT[JQOC]\b|\bAT[JQOC]\b|ENDOPR|HEMIARTR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE|ATQ|ATJ|PTJ|PTQ)|ESPA[CÇ]ADOR|TUMOR|RESSEC[CÇ][AÃ]O (ONCOL|TUMORAL|DE (SARCOMA|TUMOR))|SARCOMA|PELVE|PELVIC|ACET[AÁ]BUL|F[EÊ]MUR|COLO FEMORAL|TROCANT|\bDHS\b|\bPFN\b|\bTFN\b|HASTE (INTRAMEDULAR )?DE F[EÊ]MUR|ARTRODESE (DE )?(COLUNA|LOMBAR|CERVICAL|TORAC|VERTEBRAL)|ESCOLIOSE|DESCOMPRESS[AÃ]O (LOMBAR|CERVICAL|MEDULAR)|\bTLIF\b|\bPLIF\b|\bALIF\b|AMPUTA[CÇ][AÃ]O (DE |TRANS)?(COXA|PERNA|TRANSFEMORAL|TRANSTIBIAL)|DESARTICULA|OSTEOMIELITE|DESBRIDAMENTO EXTENSO|RETALHO|TRANSFER[EÊ]NCIA (LIVRE|MICROCIR)|OSTEOTOMIA (PELVICA|PERIACETABULAR|DE (QUADRIL|FEMUR))|POLITRAUMA)/;
 function alertas(P){
   var r=[], w=[], i=[], u=A($('proc').value+' '+$('cab').value);
   var idA=$('idAviso').querySelector('.alerta'); if(idA) r.push(idA.textContent.replace(/^⚠\s*/,''));
@@ -2582,7 +2583,7 @@ function alertas(P){
   // APA / cardio antigos (> 6 meses) e grande porte sem UTI/RCH
   var cx=$('dataCx').value;
   [['apaData','APA'],['carData','Av. cardio']].forEach(function(x){ var dd=isoDe($(x[0]).value,cx||HOJE); if(dd&&cx&&Math.round((new Date(cx)-new Date(dd))/864e5)>180) w.push(x[1]+' de '+$(x[0]).value+' tem mais de 6 meses na data da cirurgia.'); });
-  if(RE_GRANDE.test(u)&&(!V('sg_uti')||!V('sg_rch'))) w.push('Cirurgia de grande porte: definir UTI e RCH ('+[!V('sg_uti')?'UTI':'',!V('sg_rch')?'RCH':''].filter(Boolean).join(' e ')+' sem definição).');
+  if(RE_GRANDE.test(u)&&(!V('sg_uti')||!V('sg_rch'))) w.push('Cirurgia de grande porte: falta definir '+[!V('sg_uti')?'UTI':'',!V('sg_rch')?'RCH':''].filter(Boolean).join(' e ')+'.');
   // contradições na evolução anterior (análise do evoluidor)
   try{ if(typeof textRed==='function'&&$('ant').value.trim()){ var tr=textRed($('ant').value); if(tr.length) i.push('Na evolução anterior: '+tr.join(', ')+' — conferir antes de manter.'); } }catch(e){}
   var h=r.map(function(t){return '<div class="a r">⚠ '+esc(t)+'</div>';}).concat(w.map(function(t){return '<div class="a w">'+esc(t)+'</div>';}),i.map(function(t){return '<div class="a i">ℹ '+esc(t)+'</div>';})).join('');
@@ -2596,25 +2597,100 @@ function resumo(){
 var ativoLeu=false;
 /* ---------------- sugestões de conduta por procedimento (editáveis: ajuste a tabela abaixo) ---------------- */
 var SUG=[
-  { k:'artro', re:/(ARTROPL|\bPT[JQ]\b|\bAT[JQ]\b|ENDOPR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE)|ESPA[CÇ]ADOR)/, itens:[
-    {t:'UTI SOLICITADA',set:{uti:'SOLICITAR'}},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},{l:'CONFERIR IMPLANTES / INSTRUMENTAL ESPECÍFICO COM O CENTRO CIRÚRGICO'},{l:'CONFERIR SUSPENSÃO DE ANTICOAGULANTES/ANTIAGREGANTES'}] },
-  { k:'osteo', re:/(OSTEOSS|FIXA[CÇ][AÃ]O|FIXADOR|REDU[CÇ][AÃ]O|HASTE|PLACA|FRATURA)/, itens:[
-    {l:'CONFERIR MATERIAL DE OSTEOSSÍNTESE (PLACA/HASTE/FIOS) E INTENSIFICADOR'},{l:'RX DE CONTROLE CONFORME PROTOCOLO'},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}}] },
-  { k:'artros', re:/(ARTROSCOP|LCA|MENISC|MANGUITO|LABRUM|REPARO)/, itens:[
-    {l:'CONFERIR ÂNCORAS / ENXERTO / INSTRUMENTAL DE ARTROSCOPIA'},{l:'ORIENTAR ÓRTESE E REABILITAÇÃO PÓS-OPERATÓRIA'}] },
-  { k:'retirada', re:/(RETIRADA|REMO[CÇ][AÃ]O|EXTRA[CÇ][AÃ]O) DE (MATERIAL|IMPLANTE|FIO|PLACA|HASTE|PINO)/, itens:[
-    {l:'CONFERIR TIPO DE IMPLANTE E CHAVES/INSTRUMENTAL DE RETIRADA'}] },
-  { k:'tumor', re:/(BI[OÓ]PSIA|TUMOR|RESSEC)/, itens:[
-    {l:'AVISAR ANATOMOPATOLÓGICO (FRASCO E REQUISIÇÃO)'},{l:'RESERVA DE SANGUE'},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}}] }
+  { k:'artro', re:/(ARTROPL|\bPT[JQOC]\b|\bAT[JQOC]\b|ENDOPR|HEMIARTR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE|ATQ|ATJ|PTJ|PTQ))/, itens:[
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},
+    {t:'Conferir implantes',l:'CONFERIR IMPLANTES, TAMANHOS E INSTRUMENTAL ESPECÍFICO COM O CENTRO CIRÚRGICO'},
+    {t:'Suspensão de anticoagulantes',l:'CONFERIR SUSPENSÃO DE ANTICOAGULANTES/ANTIAGREGANTES'},
+    {t:'ATB profilático',l:'PROFILAXIA ANTIBIÓTICA CONFORME PROTOCOLO DO SERVIÇO'},
+    {t:'Profilaxia de TEV',l:'PROFILAXIA DE TEV NO PÓS-OPERATÓRIO CONFORME PROTOCOLO'},
+    {t:'Foco infeccioso',l:'CONFERIR FOCOS INFECCIOSOS (URINA, DENTÁRIO, PELE) ANTES DA CIRURGIA'},
+    {t:'Avisar anestesia: sangramento',l:'AVISAR ANESTESIA: GRANDE PORTE / RISCO DE SANGRAMENTO'}] },
+  { k:'revisao', re:/(REVIS|ESPA[CÇ]ADOR|OSTEOMIELITE|INFEC[CÇ][AÃ]O|DESBRIDAMENTO|ARTRITE S[EÉ]PTICA|LAVAGEM)/, itens:[
+    {t:'Culturas intraoperatórias',l:'COLETAR CULTURAS E MATERIAL PARA ANATOMOPATOLÓGICO NO INTRAOPERATÓRIO'},
+    {t:'ATB conforme CCIH',l:'ANTIBIÓTICO CONFORME ORIENTAÇÃO DA CCIH/INFECTOLOGIA (SUSPENSÃO PRÉVIA, SE INDICADA)'},
+    {t:'Cimento c/ antibiótico',l:'CONFERIR CIMENTO COM ANTIBIÓTICO / ESPAÇADOR DISPONÍVEIS'},
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'}] },
+  { k:'femur', re:/(F[EÊ]MUR|COLO FEMORAL|TROCANT|\bDHS\b|\bPFN\b|\bTFN\b|HASTE (INTRAMEDULAR )?DE F[EÊ]MUR)/, itens:[
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},
+    {t:'Mesa e intensificador',l:'CONFERIR MESA ORTOPÉDICA/TRAÇÃO E INTENSIFICADOR DE IMAGEM'},
+    {t:'Conferir material',l:'CONFERIR MATERIAL (HASTE/PARAFUSOS/PLACA/PRÓTESE) COM O CENTRO CIRÚRGICO'},
+    {t:'Profilaxia de TEV',l:'PROFILAXIA DE TEV CONFORME PROTOCOLO'},{t:'Risco de delirium (idoso)',l:'IDOSO: ORIENTAR ACOMPANHANTE E RISCO DE DELIRIUM'}] },
+  { k:'pelve', re:/(PELVE|PELVIC|ACET[AÁ]BUL|SACROIL[IÍ]AC|SINFISE)/, itens:[
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},
+    {t:'TC com reconstrução',l:'CONFERIR TC COM RECONSTRUÇÃO E PLANEJAMENTO PRÉ-OPERATÓRIO ATUALIZADOS'},
+    {t:'Material de pelve/acetábulo',l:'CONFERIR MATERIAL ESPECÍFICO (PLACAS DE PELVE/ACETÁBULO, AFASTADORES) E INTENSIFICADOR'},
+    {t:'Cell saver',l:'AVISAR ANESTESIA SOBRE NECESSIDADE DE CELL SAVER / REPOSIÇÃO VOLÊMICA'}] },
+  { k:'coluna', re:/(ARTRODESE (DE )?(COLUNA|LOMBAR|CERVICAL|TORAC|VERTEBRAL)|ESCOLIOSE|DESCOMPRESS[AÃ]O|LAMINECTOMIA|H[EÉ]RNIA DE DISCO|DISCECTOMIA|\bTLIF\b|\bPLIF\b|\bALIF\b|VERTEBROPLASTIA|CIFOPLASTIA|COLUNA)/, itens:[
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},
+    {t:'Instrumental/implantes',l:'CONFERIR INSTRUMENTAL, IMPLANTES (PARAFUSOS/HASTES/CAGES) E INTENSIFICADOR'},
+    {t:'Neuromonitorização',l:'CONFERIR NEUROMONITORIZAÇÃO E MICROSCÓPIO/NAVEGAÇÃO, SE INDICADOS'},
+    {t:'Órtese (colete)',l:'ORIENTAR USO DE ÓRTESE/COLETE NO PÓS-OPERATÓRIO'},{t:'RM/TC atualizada',l:'CONFERIR EXAME DE IMAGEM ATUALIZADO NO PRONTUÁRIO'}] },
+  { k:'osteo', re:/(OSTEOSS|FIXA[CÇ][AÃ]O|REDU[CÇ][AÃ]O|HASTE|PLACA|FRATURA|LUXA[CÇ][AÃ]O|PSEUDOARTROSE|CONSOLIDA[CÇ][AÃ]O VICIOSA|ARTRODESE|MALEOLO|TORNOZELO|CALC[AÂ]NEO|T[IÍ]BIA|[UÚ]MERO|R[AÁ]DIO|ULNA|OLECRANO|CLAV[IÍ]CULA|PATELA|ESCAFOIDE|METACARP|FALANGE)/, itens:[
+    {t:'Conferir material',l:'CONFERIR MATERIAL DE OSTEOSSÍNTESE (PLACA/HASTE/PARAFUSOS/FIOS) COM O CENTRO CIRÚRGICO'},
+    {t:'Intensificador',l:'CONFERIR INTENSIFICADOR DE IMAGEM'},{t:'Garrote',l:'GARROTE PNEUMÁTICO CONFORME TÉCNICA'},
+    {t:'Pele/edema',l:'CONFERIR CONDIÇÕES DE PELE E EDEMA (BOLHAS, FERIDAS) ANTES DA CIRURGIA'},
+    {t:'RX atualizado',l:'CONFERIR RX/TC ATUALIZADOS NO PRONTUÁRIO'},
+    {t:'Imobilização pós-op',l:'IMOBILIZAÇÃO PÓS-OPERATÓRIA CONFORME TÉCNICA (TALA/BOTA/TIPOIA)'},{t:'RCH solicitada',set:{rch:'SOLICITAR'}}] },
+  { k:'fixador', re:/(FIXADOR|FIXA[CÇ][AÃ]O EXTERNA|ILIZAROV|TAYLOR)/, itens:[
+    {t:'Conferir fixador',l:'CONFERIR FIXADOR EXTERNO (BARRAS/PINOS/ANÉIS) COM O CENTRO CIRÚRGICO'},
+    {t:'Cuidado com pinos',l:'ORIENTAR CUIDADOS E CURATIVO DOS PINOS'}] },
+  { k:'artros', re:/(ARTROSCOP|\bLCA\b|\bLCP\b|MENISC|MANGUITO|LABRUM|BANKART|SLAP|CONDROPLAST|SINOVECTOM|REPARO|REINSER[CÇ][AÃ]O)/, itens:[
+    {t:'Âncoras/enxerto/instrumental',l:'CONFERIR ÂNCORAS, ENXERTO E INSTRUMENTAL DE ARTROSCOPIA COM O CENTRO CIRÚRGICO'},
+    {t:'Enxerto',l:'CONFERIR ENXERTO (AUTÓLOGO/BANCO DE TECIDOS) E FIXAÇÃO'},{t:'Bloqueio anestésico',l:'AVISAR ANESTESIA: BLOQUEIO REGIONAL, SE INDICADO'},
+    {t:'Órtese/tipoia',l:'ORIENTAR ÓRTESE/IMOBILIZADOR/TIPOIA E REABILITAÇÃO PÓS-OPERATÓRIA'},{t:'RM atualizada',l:'CONFERIR RM ATUALIZADA NO PRONTUÁRIO'}] },
+  { k:'mao', re:/(T[UÚ]NEL DO CARPO|DEDO EM GATILHO|QUERVAIN|DUPUYTREN|MICROCIR|TENDINOPATIA|TENOSSINOV|CISTO SINOVIAL|NEUROMA|H[AÁ]LUX|HALUX|JUANETE|METATARS|DEDO EM MARTELO|FASCIITE|MORTON|PUNHO|M[AÃ]O)/, itens:[
+    {t:'Material de mão/microinstrumental',l:'CONFERIR MATERIAL E MICROINSTRUMENTAL ESPECÍFICOS COM O CENTRO CIRÚRGICO'},
+    {t:'Anestesia local/bloqueio',l:'AVISAR ANESTESIA: ANESTESIA LOCAL/BLOQUEIO REGIONAL COM SEDAÇÃO, SE INDICADO'},
+    {t:'Garrote',l:'GARROTE PNEUMÁTICO CONFORME TÉCNICA'},{t:'Curativo/mobilização',l:'ORIENTAR CURATIVO E MOVIMENTAÇÃO PRECOCE CONFORME TÉCNICA'},{t:'Calçado pós-op',l:'ORIENTAR CALÇADO PÓS-OPERATÓRIO E CARGA CONFORME TÉCNICA'}] },
+  { k:'tendao', re:/(TENORRAFIA|TENDÃO|TENDAO|AQUILES|CALC[AÂ]NEO.*TEND|TRANSFER[EÊ]NCIA TENDINOSA|RECONSTRU[CÇ][AÃ]O LIGAMENTAR)/, itens:[
+    {t:'Fios/âncoras',l:'CONFERIR FIOS/ÂNCORAS E ENXERTO COM O CENTRO CIRÚRGICO'},{t:'Imobilização pós-op',l:'IMOBILIZAÇÃO PÓS-OPERATÓRIA (BOTA/TALA) CONFORME TÉCNICA'}] },
+  { k:'retirada', re:/(RETIRADA|REMO[CÇ][AÃ]O|EXTRA[CÇ][AÃ]O|EXPLANTE) (DE )?(MATERIAL|IMPLANTE|FIO|PLACA|HASTE|PINO|PARAFUSO|OSTEOSS|FIXADOR)/, itens:[
+    {t:'Chaves/instrumental de retirada',l:'CONFERIR TIPO DE IMPLANTE E CHAVES/INSTRUMENTAL ESPECÍFICOS PARA A RETIRADA'},
+    {t:'RX com implante',l:'CONFERIR RX RECENTE COM O IMPLANTE A SER RETIRADO'}] },
+  { k:'tumor', re:/(BI[OÓ]PSIA|TUMOR|RESSEC|SARCOMA|OSTEOSSARCOMA|CONDROSSARCOMA|METAST[AÁ]SE|CISTO [OÓ]SSEO|LES[AÃ]O LITICA|CURETAGEM)/, itens:[
+    {t:'Anatomopatológico',l:'AVISAR ANATOMOPATOLÓGICO (FRASCO E REQUISIÇÃO) E CONGELAÇÃO, SE INDICADA'},{l:'RESERVA DE SANGUE'},
+    {t:'Estadiamento/imagens',l:'CONFERIR ESTADIAMENTO E IMAGENS (RM/TC/CINTILOGRAFIA) NO PRONTUÁRIO'},
+    {t:'UTI solicitada',set:{uti:'SOLICITAR'}},{t:'RCH solicitada',set:{rch:'SOLICITAR'}}] },
+  { k:'amput', re:/(AMPUTA|DESARTICULA)/, itens:[
+    {t:'Nível e material',l:'CONFERIR NÍVEL DE AMPUTAÇÃO, LADO E MATERIAL COM O CENTRO CIRÚRGICO'},
+    {t:'Apoio psicológico/fisio',l:'SOLICITAR APOIO DA PSICOLOGIA E FISIOTERAPIA/REABILITAÇÃO'},{l:'RESERVA DE SANGUE'},{t:'UTI solicitada',set:{uti:'SOLICITAR'}}] },
+  { k:'osteotomia', re:/(OSTEOTOMIA|ALONGAMENTO|CORRE[CÇ][AÃ]O DE (DEFORMIDADE|ESCOLIOSE|P[EÉ] TORTO|GENU))/, itens:[
+    {t:'Planejamento',l:'CONFERIR PLANEJAMENTO PRÉ-OPERATÓRIO E ESCANOGRAMA/TELERRADIOGRAFIA'},
+    {t:'Material/enxerto',l:'CONFERIR MATERIAL DE FIXAÇÃO E ENXERTO, SE INDICADO'},{t:'RCH solicitada',set:{rch:'SOLICITAR'}}] },
+  { k:'ped', re:/(SUPRACONDIL|PEDI[AÁ]TR|PE TORTO|P[EÉ] TORTO|DISPLASIA|LEGG|EPIFISE|EP[IÍ]FISE|\bDDQ\b|TALA GESSADA|GESSO PELVIPODÁLICO)/, itens:[
+    {t:'Material pediátrico',l:'CONFERIR MATERIAL PEDIÁTRICO (FIOS DE KIRSCHNER/PLACAS/TENS) COM O CENTRO CIRÚRGICO'},
+    {t:'Gesso pós-op',l:'CONFERIR MATERIAL DE GESSO/IMOBILIZAÇÃO PEDIÁTRICA'}] }
+];
+// condutas guiadas pelas comorbidades/alergias lidas do paciente (sugestões; sempre conferir com a anestesia)
+var SUGCOM=[
+  { re:/(\bDM\b|DIABET|INSULINA|METFORMINA)/, itens:[{t:'Glicemia na internação',l:'GLICEMIA CAPILAR NA INTERNAÇÃO E ORIENTAÇÃO SOBRE HIPOGLICEMIANTES/INSULINA COM A ANESTESIA'}] },
+  { re:/(\bHAS\b|HIPERTENS|LOSARTANA|ENALAPRIL|ANLODIPINO|CAPTOPRIL|VALSARTANA|OLMESARTANA)/, itens:[{t:'Anti-hipertensivos',l:'CONFERIR COM A ANESTESIA QUAIS ANTI-HIPERTENSIVOS TOMAR NA MANHÃ DA CIRURGIA'}] },
+  { re:/(CARDIOPAT|\bICC\b|INSUFICI[EÊ]NCIA CARD|\bFA\b|FIBRILA|ARRITM|MARCAPASSO|\bIAM\b|INFARTO|STENT|REVASCULAR|VALVULOPAT|CORONARI)/, itens:[{t:'Cardiologia atualizada',l:'AVALIAÇÃO CARDIOLÓGICA ATUALIZADA ANTES DA CIRURGIA'},{t:'Marcapasso/stent',l:'AVISAR ANESTESIA: MARCAPASSO/STENT/CARDIOPATIA'}] },
+  { re:/(DPOC|ASMA|ENFISEMA|PNEUMOPAT|APNEIA|TABAGIS|FUMANTE)/, itens:[{t:'Avaliação respiratória',l:'AVALIAÇÃO RESPIRATÓRIA E ORIENTAÇÃO SOBRE BRONCODILATADORES COM A ANESTESIA'}] },
+  { re:/(\bDRC\b|INSUFICI[EÊ]NCIA RENAL|HEMODI[AÁ]LISE|\bIRC\b|NEFROPAT)/, itens:[{t:'Função renal',l:'CONFERIR FUNÇÃO RENAL E AVISAR NEFROLOGIA/ANESTESIA (EVITAR NEFROTÓXICOS)'}] },
+  { re:/(OBESIDADE|IMC (DE )?(3\d|4\d)|OBESO)/, itens:[{t:'Obesidade',l:'AVISAR ANESTESIA: OBESIDADE (VIA AÉREA / POSICIONAMENTO / DOSE DE ATB)'}] },
+  { re:/(EPILEPSIA|CONVULS)/, itens:[{t:'Anticonvulsivante',l:'MANTER ANTICONVULSIVANTE NO PERI-OPERATÓRIO'}] },
+  { re:/(AVC|ACIDENTE VASCULAR|TROMBOSE|\bTVP\b|\bTEP\b|EMBOLIA)/, itens:[{t:'Risco trombótico',l:'RISCO TROMBÓTICO: DEFINIR PONTE/PROFILAXIA COM A EQUIPE E ANESTESIA'}] },
+  { re:/(ALZHEIMER|DEMENCIA|DEMÊNCIA|PARKINSON|DELIRIUM)/, itens:[{t:'Acompanhante/delirium',l:'ORIENTAR ACOMPANHANTE INTEGRAL E CUIDADOS PARA DELIRIUM'}] },
+  { re:/(HIPOTIREOID|HIPERTIREOID|TIREOID)/, itens:[{t:'TSH',l:'CONFERIR TSH E MANTER REPOSIÇÃO HORMONAL'}] },
+  { re:/(L[AÁ]TEX)/, itens:[{t:'Alergia a látex',l:'AVISAR CENTRO CIRÚRGICO: ALERGIA A LÁTEX'}] },
+  { re:/(PENICILINA|CEFALOSPORINA|CEFAZOLINA|BETALACT|BETA-LACT)/, itens:[{t:'Alergia a betalactâmico',l:'ALERGIA A BETALACTÂMICO: DEFINIR ANTIBIÓTICO PROFILÁTICO ALTERNATIVO COM A ANESTESIA/CCIH'}] },
+  { re:/(IODO|CLOREXIDINA|ADESIVO|ESPARADRAPO|MICROPORE)/, itens:[{t:'Alergia a antissépticos/adesivos',l:'AVISAR CENTRO CIRÚRGICO: ALERGIA A ANTISSÉPTICO/ADESIVO'}] },
+  { re:/(HIV|HEPATITE|\bVHC\b|\bVHB\b|TUBERCULOSE|\bTB\b|\bMRSA\b|\bKPC\b|\bVRE\b)/, itens:[{t:'Precaução/isolamento',l:'AVISAR CENTRO CIRÚRGICO/CCIH: PRECAUÇÕES ESPECIAIS / ISOLAMENTO'}] },
+  { re:/(CIRROSE|HEPATOPAT|ESTEATOSE)/, itens:[{t:'Hepatopatia',l:'CONFERIR COAGULOGRAMA E FUNÇÃO HEPÁTICA; AVISAR ANESTESIA'}] },
+  { re:/(ANEMIA|HEMOFILIA|PLAQUETOPENIA|TROMBOCITOPENIA|DOEN[CÇ]A FALCIFORME|ANEMIA FALCIFORME)/, itens:[{t:'Hematologia',l:'AVISAR HEMATOLOGIA/ANESTESIA: PREPARO E RESERVA DE HEMOCOMPONENTES'}] },
+  { re:/(TESTEMUNHA DE JEOV|RECUSA TRANSFUS)/, itens:[{t:'Recusa de transfusão',l:'PACIENTE RECUSA TRANSFUSÃO: DOCUMENTAR E AVISAR ANESTESIA/CENTRO CIRÚRGICO'}] }
 ];
 function sugAtivas(){ var u=A($('proc').value+' '+$('cab').value), o=[]; SUG.forEach(function(g){ if(g.re.test(u)) g.itens.forEach(function(x){ o.push(x); }); });
-  if($('menor').checked) o.push({l:'JEJUM E ANESTESIA PEDIÁTRICOS CONFORME ORIENTAÇÃO DA ANESTESIA'},{l:'PESO DO PACIENTE REGISTRADO'});
+  var com=A($('cmb').value+' '+$('muc').value+' '+$('alergia').value+' '+$('apOutros').value); SUGCOM.forEach(function(g){ if(g.re.test(com)) g.itens.forEach(function(x){ o.push(x); }); });
+  var id=parseInt((SEL&&SEL.idade)||'',10); if(id>=80) o.push({t:'Idoso ≥ 80 anos',l:'IDOSO: CONFERIR AVALIAÇÃO GERIÁTRICA/RISCO DE DELIRIUM E ACOMPANHANTE INTEGRAL'});
+  if($('menor').checked) o.push({t:'Jejum pediátrico',l:'JEJUM E ANESTESIA PEDIÁTRICOS CONFORME ORIENTAÇÃO DA ANESTESIA'},{t:'Peso registrado',l:'PESO DO PACIENTE REGISTRADO'});
   // medicações de atenção encontradas (módulo único de medicamentos): linha "SUSPENDER … EM __/__"
-  if(window.SOTMED) SOTMED.achar($('muc').value+' '+$('cmb').value).filter(function(r){ return r.anticoag||/metformina|sglt2|glp1|ieca|estrogenio/.test(r.k); }).forEach(function(r){ o.push({l:'SUSPENDER '+UP(r.nome.replace(/\s*\(.*\)/,''))+' EM __/__'}); });
+  if(window.SOTMED) SOTMED.achar($('muc').value+' '+$('cmb').value).filter(function(r){ return r.anticoag||/metformina|sglt2|glp1|ieca|estrogenio|fito/.test(r.k); }).forEach(function(r){ o.push({t:'Suspender '+r.nome.replace(/\s*\(.*\)/,''),l:'SUSPENDER '+UP(r.nome.replace(/\s*\(.*\)/,''))+' EM __/__'}); });
   var vis={}; return o.filter(function(x){ var k=x.t||x.l; if(vis[k]) return false; vis[k]=1; return true; }); }
 function desenharSug(){
   var L=sugAtivas(), ex=A($('extras').value), el=$('sug'); el.innerHTML=L.length?L.map(function(x,i){ var on=x.l?ex.indexOf(A(x.l))>=0:(V('sg_uti')==='SOLICITAR'&&x.set&&x.set.uti)||(V('sg_rch')==='SOLICITAR'&&x.set&&x.set.rch);
-    return '<button type="button" class="chip'+(on?' on':'')+'" data-sug="'+i+'">'+esc(x.t||x.l.replace(/ \/ .*$/,'').slice(0,48))+'</button>'; }).join(''):'<span class="mini">Sem sugestões para este procedimento.</span>';
+    return '<button type="button" class="chip'+(on?' on':'')+'" data-sug="'+i+'">'+esc(x.t||x.l.slice(0,48))+'</button>'; }).join(''):'<span class="mini">Sem sugestões para este procedimento.</span>';
   el._L=L; }
 $('sug').addEventListener('click',function(e){ var b=e.target.closest('[data-sug]'); if(!b) return; var x=this._L[+b.dataset.sug]; if(!x) return;
   if(x.set){ Object.keys(x.set).forEach(function(k){ var c=$('sg_'+k); c.setV(V('sg_'+k)===x.set[k]?'':x.set[k]); }); }
