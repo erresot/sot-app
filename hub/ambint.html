@@ -61,6 +61,7 @@ details>summary{cursor:pointer;font-weight:700;color:var(--accent);margin:4px 0}
   <p class="mini">Cole a última evolução do sistema do hospital (ou envie a foto/print). O app separa cabeçalho, AP, exame físico, outros blocos e conduta, e confere se é do mesmo paciente.</p>
   <textarea id="ant" style="min-height:140px" placeholder="Cole aqui a evolução anterior…"></textarea>
   <div class="chips" style="margin-top:8px"><button class="btn pri" id="btLer">Ler evolução</button><label class="btn" style="margin:0">📷 Foto / print<input type="file" id="fFoto" accept="image/*" hidden></label><span class="mini" id="stFoto"></span></div>
+  <p class="mini">Dica: tire um print e cole aqui com <b>Ctrl+V</b>.</p>
   <div id="idAviso"></div>
 </div>
 
@@ -87,7 +88,9 @@ details>summary{cursor:pointer;font-weight:700;color:var(--accent);margin:4px 0}
   <div class="row"><div style="grid-column:span 2"><label for="proc">Procedimento</label><input id="proc" class="up"></div><div><label for="dataCx">Data da cirurgia</label><input id="dataCx" type="date"></div></div>
   <label for="preops">Pré-operatórios — cole os exames (o app formata)</label><textarea id="preops" style="min-height:52px" placeholder="ex.: HB 13,2 / HT 39 / PLAQ 354000 / CR 0,8 / FIB 358 / TP 11,6 / INR 0,95 / TTPA 23,1"></textarea>
   <div class="row"><div><label for="preData">Data dos pré-ops</label><input id="preData" placeholder="dd/mm/aa"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="preExt"> Exames externos</label></div><div><label>Situação</label><div class="seg" id="sgPre" data-v="lab"></div></div></div>
-  <div class="info" id="preFmt">—</div>
+  <div class="chips" style="margin:4px 0"><label class="btn sm" style="margin:0">📷 Foto dos exames<input type="file" id="fFotoPre" accept="image/*" hidden></label><span class="mini" id="stFotoPre">ou cole um print com Ctrl+V na caixa acima</span></div>
+  <div id="preDias" class="chips" style="margin:4px 0"></div>
+  <div class="info" id="preFmt" style="white-space:pre-wrap">—</div>
   <div id="linhas"></div>
   <div class="row"><div><label for="apaData">APA — data</label><input id="apaData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="apaRes">APA — o que diz</label><input id="apaRes" class="up" placeholder="ex.: LIBERADO PARA CIRURGIA"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="apaExt"> Externa</label></div></div>
   <div class="row"><div><label for="carData">Av. cardio — data</label><input id="carData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="carRes">Av. cardio — o que diz</label><input id="carRes" class="up" placeholder="ex.: BAIXO RISCO CARDIOVASCULAR"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="carExt"> Externa</label></div></div>
@@ -311,19 +314,30 @@ function lerConduta(L){
 $('btLer').addEventListener('click',ler);
 
 /* ---------------- foto / print da evolução ---------------- */
-$('fFoto').addEventListener('change',function(){
-  var f=this.files&&this.files[0]; this.value=''; if(!f) return;
+function lerFoto(f,destino){
+  if(!f) return;
   if(!window.SOTOCR){ $('stFoto').textContent='Leitor de imagem indisponível.'; return; }
-  var u=URL.createObjectURL(f), im=new Image();
-  $('stFoto').textContent='Lendo a foto neste aparelho…';
-  SOTOCR.logger=function(m){ if(m.status==='recognizing text') $('stFoto').textContent='Lendo a foto… '+Math.round((m.progress||0)*100)+'%'; };
+  var u=URL.createObjectURL(f), im=new Image(), st=destino==='pre'?$('stFotoPre'):$('stFoto');
+  st.textContent='Lendo a foto neste aparelho…';
+  SOTOCR.logger=function(m){ if(m.status==='recognizing text') st.textContent='Lendo a foto… '+Math.round((m.progress||0)*100)+'%'; };
   im.onload=function(){ SOTOCR.ler(SOTOCR.prep(im,0,2000)).then(function(o){
-      var t=SOTOCR.limparTexto?SOTOCR.limparTexto(o.text):o.text; FOTO_FICHA=SOTOCR.ficha(o.text,o.hdr);
+      var t=SOTOCR.posTexto?SOTOCR.posTexto(o.text,o.hdr).text:o.text;
+      if(destino==='pre'){ var ta=$('preops'); ta.value=(ta.value?ta.value+'\n':'')+t; st.textContent='Exames lidos da foto. Confira os valores (a foto pode errar um número).'; gerar(); return; }
+      FOTO_FICHA=SOTOCR.ficha(o.text,o.hdr);
       $('ant').value=(FOTO_FICHA.prontuario?'Paciente '+FOTO_FICHA.prontuario+' '+(FOTO_FICHA.nome||'')+'\n':'')+t;
-      $('stFoto').textContent='Foto lida. Confira o texto (a leitura de foto pode errar letras) e toque em “Ler evolução”.';
+      st.textContent='Foto lida. Confira o texto (a leitura de foto pode errar letras).';
       ler();
-    },function(e){ $('stFoto').textContent='Não consegui ler a foto ('+(e&&e.message||e)+').'; }); };
+    },function(e){ st.textContent='Não consegui ler a foto ('+(e&&e.message||e)+').'; }); };
   im.src=u;
+}
+$('fFoto').addEventListener('change',function(){ var f=this.files&&this.files[0]; this.value=''; lerFoto(f,'ant'); });
+$('fFotoPre').addEventListener('change',function(){ var f=this.files&&this.files[0]; this.value=''; lerFoto(f,'pre'); });
+// Ctrl+V de um print: com o cursor na caixa dos pré-ops, lê como exames; em qualquer outro lugar, como evolução anterior
+document.addEventListener('paste',function(e){
+  var its=(e.clipboardData&&e.clipboardData.items)||[], img=null, k;
+  for(k=0;k<its.length;k++) if(/^image\//.test(its[k].type)){ img=its[k].getAsFile(); break; }
+  if(!img) return; e.preventDefault();
+  lerFoto(img,(e.target&&e.target.id==='preops')?'pre':'ant');
 });
 var FOTO_FICHA=null;
 
@@ -348,18 +362,65 @@ function conferirIdentidade(){
 $('ant').addEventListener('change',conferirIdentidade);
 
 /* ---------------- pré-ops ---------------- */
-function preTexto(){
-  var raw=$('preops').value.trim().replace(/\bPLAQUE(TAS)?\b/gi,'PLAQ').replace(/\bCREAT(ININA)?\b/gi,'CR'), situ=V('sgPre'), d=$('preData').value.trim(), ext=$('preExt').checked;
-  if(situ!=='lab') return { linha:'PRÉ-OPS ('+(situ==='solicitados'?'SOLICITADOS':situ==='aguardando'?'AGUARDANDO':'CHECAR')+')', labs:{}, data:'', outros:'' };
-  if(!raw) return { linha:'', labs:{}, data:'', outros:'' };
-  var r=window.SOTOCR?SOTOCR.exames('PRE OPS '+(d?d+': ':'')+raw):null, txt=raw;
-  if(r&&Object.keys(r.labs).length){
-    var ord=['Hb','Ht','Leuco','Plaq','TP','INR','TTPA','Fib','Cr','Ur','Na','K','Glic'];
-    txt=ord.filter(function(k){return r.labs[k];}).map(function(k){return UP(k)+' '+r.labs[k];}).join(' / ')+(r.outrosTxt?' / '+UP(r.outrosTxt):'');
-  }
-  if(!d&&r&&r.data) d=r.data;
-  return { linha:'PRÉ-OPS'+(d||ext?' ('+[d,ext?'EXTERNO':''].filter(Boolean).join(' - ')+')':'')+': '+txt, labs:r?r.labs:{}, data:d, outros:r?r.outrosTxt:'' };
+/* Mesmo leitor do EXAMES UPDATER (hub/exames.html): o motor é lido do próprio arquivo, então qualquer ajuste lá vale aqui,
+   e as configurações salvas no Exames Updater (decimal, referências, desmarcados…) também são respeitadas. */
+var EX=null;
+fetch('exames.html').then(function(r){ return r.text(); }).then(function(t){
+  var m=t.match(/<script id="parser">([\s\S]*?)<\/script>/); if(!m) throw new Error('sem motor');
+  EX=new Function(m[1]+'\nreturn {processar:processar,EXAMES:EXAMES};')(); gerar();
+}).catch(function(){ EX=false; });
+function cfgEx(){ var c={refs:{},disabled:{},diff:true,ast:true,dec:'.',data:true,dias:'todos',sexRef:true,gasoExtra:false,gaso:false};
+  try{ var s0=JSON.parse(localStorage.getItem('examesUpdater.sot.v4')); if(s0) for(var k in s0) c[k]=s0[k]; }catch(e){} return c; }
+var MAPA_AB={HB:'Hb',HT:'Ht',LEUCO:'Leuco',PLAQ:'Plaq',TP:'TP',INR:'INR',TTPA:'TTPA',FIBRI:'Fib',CR:'Cr',UR:'Ur',NA:'Na',K:'K',GLIC:'Glic'};
+var PRE={raw:'',sel:{},dias:[],cache:null};
+function ehLaudo(raw){ return (raw.match(/Resultado/gi)||[]).length>=2||/M[eé]todo\s*:/i.test(raw)||/Refer[eê]ncia\s*:/i.test(raw); }
+function ddmmyy(d){ var m=String(d||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m?m[1]+'/'+m[2]+'/'+m[3].slice(2):String(d||''); }
+function cab(dt,ext){ return 'PRÉ-OPS'+(dt||ext?' ('+[dt,ext?'EXTERNO':''].filter(Boolean).join(' - ')+')':''); }
+function exLaudo(raw,dIn,ext){
+  var c=cfgEx(), res=null;
+  if(EX){ try{ res=EX.processar(raw,c); }catch(e){ res=null; } }
+  var dias=res?res.dias.filter(function(d){return d.itens.length;}):[];
+  if(!dias.length) return null;
+  var key=function(d){ return d.data||'?'; };
+  if(PRE.raw!==raw){ PRE.raw=raw; PRE.sel={}; var iHb=-1; dias.forEach(function(d,i){ if(d.itens.some(function(it){return it.ab==='HB';})) iHb=i; });
+    dias.slice(iHb>=0?iHb:dias.length-1).forEach(function(d){ PRE.sel[key(d)]=1; }); }
+  PRE.dias=dias.map(function(d){ return {k:key(d),n:d.itens.length}; });
+  var usados=dias.filter(function(d){ return PRE.sel[key(d)]; });
+  var fd=function(x){ return c.dec===','?String(x).replace(/(\d)\.(\d)/g,'$1,$2'):String(x); };
+  var linhas=usados.map(function(d){
+    var corpo=d.itens.map(function(it){ return it.vals.map(function(v,i){ var t=(i===0?it.ab+' ':'')+fd(v.val)+(v.diff?' ('+v.diff+')':'')+(v.tag?' ('+v.tag+')':''); return (v.alt&&c.ast)?'*'+t+'*':t; }).join(' → '); }).join(' / ');
+    return cab(d.data||dIn,ext)+': '+corpo; });
+  var labs={}, outros=[], principal='';
+  usados.forEach(function(d){ if(d.itens.some(function(it){return it.ab==='HB';})) principal=d.data; });
+  if(!principal&&usados.length) principal=usados[0].data;
+  usados.forEach(function(d){ d.itens.forEach(function(it){ var v=it.vals[it.vals.length-1]; if(!v||v.val==null) return; var val=String(v.val).replace('.',','), campo=MAPA_AB[it.ab];
+    if(campo){ if(campo==='Plaq'&&v.v>=1000) val=Math.round(v.v/1000)+'k'; labs[campo]=val+((d.data&&principal&&d.data!==principal)?' ('+d.data.slice(0,5)+')':''); }
+    else outros.push(it.ab+' '+val); }); });
+  return { linha:linhas.join('\n'), labs:labs, data:ddmmyy(principal||dIn), outros:outros.join(' / '), aviso:(res.dias.length>1?'O laudo tem exames de '+PRE.dias.length+' dia(s). Marque abaixo quais entram.':'') };
 }
+function exAbrev(raw,dIn,ext){
+  var tx=raw.replace(/\*/g,'').replace(/\s*→\s*/g,' / ').replace(/\bPLAQUE(TAS)?\b/gi,'PLAQ').replace(/\bCREAT(ININA)?\b/gi,'CR');
+  var r=window.SOTOCR?SOTOCR.exames('PRE OPS '+(dIn||'')+': '+tx):null;
+  if(!r||!Object.keys(r.labs).length) return null;
+  var ord=['Hb','Ht','Leuco','Plaq','TP','INR','TTPA','Fib','Cr','Ur','Na','K','Glic'];
+  var txt=ord.filter(function(k){return r.labs[k];}).map(function(k){return UP(k)+' '+r.labs[k];}).join(' / ')+(r.outrosTxt?' / '+UP(r.outrosTxt):'');
+  var d=dIn||r.data||'';
+  return { linha:cab(d,ext)+': '+txt, labs:r.labs, data:d, outros:r.outrosTxt||'', aviso:'' };
+}
+function preTexto(){
+  var raw=$('preops').value.trim(), situ=V('sgPre'), d=$('preData').value.trim(), ext=$('preExt').checked;
+  if(situ!=='lab') return { linha:'PRÉ-OPS ('+(situ==='solicitados'?'SOLICITADOS':situ==='aguardando'?'AGUARDANDO':'CHECAR')+')', labs:{}, data:'', outros:'', aviso:'' };
+  if(!raw){ PRE.raw=''; PRE.dias=[]; return { linha:'', labs:{}, data:'', outros:'', aviso:'' }; }
+  var r=null;
+  if(ehLaudo(raw)){ if(EX===null) return { linha:'', labs:{}, data:'', outros:'', aviso:'Carregando o leitor do Exames Updater…' }; r=exLaudo(raw,d,ext)||exAbrev(raw,d,ext); }
+  else { PRE.dias=[]; PRE.raw=''; r=exAbrev(raw,d,ext)||(EX?exLaudo(raw,d,ext):null); }
+  if(!r) return { linha:'', labs:{}, data:'', outros:'', aviso:'Não reconheci exames neste texto — nada foi colocado na evolução. Cole o laudo do sistema (como no Exames Updater) ou uma linha como “Hb 14 / Ht 43 / Plaq 250000 / INR 1,0”.' };
+  return r;
+}
+function desenharPreDias(){
+  var el=$('preDias'); el.innerHTML=PRE.dias.length>1?'<span class="mini">Dias do laudo:</span>'+PRE.dias.map(function(d){ return '<button type="button" class="btn sm'+(PRE.sel[d.k]?' pri':'')+'" data-dia="'+esc(d.k)+'">'+esc(d.k)+' · '+d.n+' exame(s)</button>'; }).join(''):'';
+}
+$('preDias').addEventListener('click',function(e){ var b=e.target.closest('[data-dia]'); if(!b) return; var k=b.dataset.dia; if(PRE.sel[k]) delete PRE.sel[k]; else PRE.sel[k]=1; gerar(); });
 
 /* ---------------- texto final ---------------- */
 function gerar(){
@@ -381,7 +442,7 @@ function gerar(){
   T.push('---'); T.push('CONDUTA:');
   if($('dr').value.trim()) T.push('DR '+UP($('dr').value.trim()).replace(/^DR[A]?\.?\s+/,'')+' ORIENTA'+($('drData').value.trim()?' EM '+$('drData').value.trim():''));
   if($('proc').value.trim()) T.push(UP($('proc').value.trim())+' EM '+br(cx));
-  var P=preTexto(); if(P.linha) T.push(P.linha); $('preFmt').textContent=P.linha||'Sem pré-ops.';
+  var P=preTexto(); if(P.linha) T.push(P.linha); $('preFmt').textContent=P.linha||P.aviso||'Sem pré-ops.'; $('preFmt').style.cssText=(!P.linha&&P.aviso)?'white-space:pre-wrap;border-color:#b4231a;background:#fbe9e7;color:#5c1510':'white-space:pre-wrap'; desenharPreDias();
   LINHAS.forEach(function(l){ var v=V('sg_'+l[0]); if(v) T.push((l[0]==='uti'?'UTI':l[0]==='rch'?'RCH':l[0]==='rxt'?'RX DE TÓRAX':l[0]==='rxa'?'RX AGENDA':'AVISO CC')+' ('+v+')'); });
   if($('apaData').value.trim()||$('apaRes').value.trim()) T.push('APA'+($('apaData').value.trim()?' ('+$('apaData').value.trim()+')':'')+': '+(UP($('apaRes').value.trim())||'—')+($('apaExt').checked?' (EXTERNA)':''));
   if($('carData').value.trim()||$('carRes').value.trim()) T.push('AV. CARDIO'+($('carData').value.trim()?' ('+$('carData').value.trim()+')':'')+': '+(UP($('carRes').value.trim())||'—')+($('carExt').checked?' (EXTERNA)':''));

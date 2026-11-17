@@ -352,7 +352,7 @@ details.legd[open]>summary{width:100%}
       </div>
       <div>
         <label for="capFoto" style="font-size:13px;font-weight:600">Foto ou print da folha</label><br>
-        <input type="file" id="capFoto" accept="image/*">
+        <input type="file" id="capFoto" accept="image/*"> <small>ou cole o print com <b>Ctrl+V</b></small>
         <p style="margin-top:6px" id="capOcrMsg">A foto é lida aqui no aparelho e o texto aparece ao lado para você conferir antes de preencher.</p>
         <div id="capImg"></div>
       </div>
@@ -1639,8 +1639,9 @@ function fecharCap(){document.getElementById("modal").classList.remove("aberto")
 document.getElementById("capFechar").addEventListener("click",fecharCap);
 document.getElementById("modal").addEventListener("click",function(ev){if(ev.target===this) fecharCap();});
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){fecharCap();document.getElementById("modalLote").classList.remove("aberto");}});
-document.getElementById("capFoto").addEventListener("change",function(){
-  var f=this.files&&this.files[0]; if(!f) return;
+document.getElementById("capFoto").addEventListener("change",function(){ var f=this.files&&this.files[0]; if(f) lerFotoCap(f); });
+function lerFotoCap(f){
+  if(!f) return;
   var r=new FileReader(); r.onload=function(){document.getElementById("capImg").innerHTML='<img alt="Folha enviada" src="'+r.result+'">';}; r.readAsDataURL(f);
   var u=URL.createObjectURL(f), msg=document.getElementById("capOcrMsg");
   guardarFotoCel(capAlvo,f);
@@ -1653,6 +1654,16 @@ document.getElementById("capFoto").addEventListener("change",function(){
     ta.value=(ta.value?ta.value+"\n":"")+(res.length?"== RESUMO LIDO ==\n"+res.join("\n")+"\n== TEXTO DA FOTO ==\n":"")+t;
     msg.textContent="Pronto. Confira o texto (valores com ? são duvidosos) e toque em Ler texto e preencher.";
   }).catch(function(e){ msg.textContent="Não consegui ler a foto"+(e&&e.message?" ("+e.message+")":"")+". Digite os dados ao lado."; });
+}
+// Ctrl+V (ou colar do celular) de um print/foto: com "Captar dados" aberto lê na célula; com "Fotos dos ambulatoriais" aberto entra na fila
+document.addEventListener("paste",function(ev){
+  var its=(ev.clipboardData&&ev.clipboardData.items)||[], img=null, i;
+  for(i=0;i<its.length;i++) if(/^image\//.test(its[i].type)){ img=its[i].getAsFile(); break; }
+  if(!img) return;
+  var cap=document.getElementById("modal").classList.contains("aberto"), lt=document.getElementById("modalLote").classList.contains("aberto");
+  if(cap&&capAlvo){ ev.preventDefault(); if(!img.name||img.name==="image.png") try{ img=new File([img],"print-colado.png",{type:img.type}); }catch(e){} lerFotoCap(img); }
+  else if(lt&&amostra){ ev.preventDefault(); try{ img=new File([img],"print-colado-"+Date.now()+".png",{type:img.type}); }catch(e){} reduzir(img).then(function(o){
+      var ocupado=lote.some(function(x){return x.st==="lendo";}); lote=lote.concat([{nome:img.name,blob:o.blob,url:o.url,st:"espera"}]); desenharLote(); if(!ocupado) processarLote(); }); }
 });
 var RX={
   Hb:/\b(?:hb|hemoglobina)(?!a1c)(?!\s*glic)\s*[:=]?\s*([\d.,]+)/i, Ht:/\b(?:ht|hto|hemat[óo]crito)\s*[:=]?\s*([\d.,]+)/i,

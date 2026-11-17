@@ -358,7 +358,7 @@ ul.lin.dx li .mais{display:inline-block;width:1.1em;font-weight:800;color:var(--
 
 <div class="top">
   <div class="hrow"><h1 id="titSec">SOT · Enfermaria</h1><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v43</button></div>
+  <div class="sub"><input type="date" id="hoje"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">HOJE</button><span id="resumo">—</span><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v44</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <div class="prog"><i id="progbar"></i><i class="e" id="progevo"></i></div>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
@@ -1092,7 +1092,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '43';
+var VERSAO = '44';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2410,13 +2410,15 @@ function labsCompletos(p) {
     if (/solicit|pedir|colher|aguard|programar|repetir/i.test(linha) && !/\d+[.,]\d/.test(linha)) return;
     var mD = linha.match(/^\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*[:\-–]?\s*/), data = mD ? mD[1] : '', resto = mD ? linha.slice(mD[0].length) : linha;
     var dt = data ? parseData(data, hoje) : null; ordem++;
-    resto.split(/\s\/\s|\/(?=\s*\*?\s*[A-Za-zÀ-ÿ])/).forEach(function (seg) {
-      var m = seg.match(/^\s*(\*?)\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,14}?)(?:\s*:\s*|\s+)(\*?)\s*(\d{1,3}(?:\.\d{3})+|\d+(?:[.,]\d+)?)\s*(mil\b|%)?\s*(\*?)/i);
+    // separadores: " / ", "/" antes de letra e ";" (linha do Exames Updater/colada com ponto-e-vírgula); parênteses e "," antes de letra também separam
+    // ex.: "Leuco 8.080 (Seg 81%, Linf 14%); TP 11,4 (Ativ 111,1%; INR 0,95)" → cada analito vira um segmento
+    resto.replace(/[()]/g, ' ; ').replace(/,\s+(?=[A-Za-zÀ-ÿ])/g, ' ; ').split(/\s*;\s*|\s\/\s|\/(?=\s*\*?\s*[A-Za-zÀ-ÿ])/).forEach(function (seg) {
+      var m = seg.match(/^\s*([*↑↓]?)\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,14}?)(?:\s*:\s*|\s+)([*↑↓]?)\s*(\d{1,3}(?:\.\d{3})+|\d+(?:[.,]\d+)?)\s*(mil\b|%)?\s*([*↑↓]?)/i);
       if (!m) return;
       var k = labNome(m[2]); if (!k || k === 'ATV') return;
       var alt = !!(m[1] || m[3] || m[6]), num = m[4], v = num;
       if (k === 'Plaq') { var pv = /^\d{1,3}(\.\d{3})+$/.test(num) ? parseFloat(num.replace(/\./g, '')) : parseFloat(num.replace(',', '.')); if (m[5] && /mil/i.test(m[5])) pv *= 1000; else if (pv < 2000) pv *= 1000; v = Math.round(pv / 1000) + 'k'; }
-      else v = num.replace('.', ',');
+      else v = /^\d{1,3}(\.\d{3})+$/.test(num) ? num.replace(/\./g, '') : num.replace('.', ',');
       var chave = (dt ? dt.getTime() : 0) * 1000 + ordem, ant = out[k];
       if (!ant || chave >= ant.chave) out[k] = { k: k, v: v, alt: alt, data: data ? data.replace(/^(\d{1,2}\/\d{1,2})\/\d{2,4}$/, '$1') : '', chave: chave };
     });
