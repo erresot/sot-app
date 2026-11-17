@@ -410,12 +410,17 @@ S.ficha=function(text,hdr){
   if(!r.prontuario)for(i=0;i<Math.min(U.length,30);i++){if(m=U[i].match(/^\W*(?:PACIENTE|PRONTUARIO)\s*:?\s*(\d{5,9})\s*(?:IDADE.*)?$/)){r.prontuario=m[1];break;}}
   if(!r.nome)for(i=0;i<Math.min(U.length,15);i++){if((m=U[i].match(/^\W*(\d{6,7})\s+([A-Z][A-Z' ]{8,60})\s*$/))&&!/ORTOPEDIA|TRAUMATOLOGIA|SISTEMA|URGENCIA|EMERGENCIA|HCFAMEMA|FAA/.test(U[i])&&!/FAA\s*$/.test(U[i-1]||'')){r.prontuario=r.prontuario||m[1];r.nome=lines[i].substr(U[i].indexOf(m[2]),m[2].length).trim();break;}}
   // nome na mesma linha de "Paciente 123456 NOME" (mesmo com o número mal lido): as palavras em maiúsculas no fim da linha
-  if(!r.nome){for(var ip=0;ip<Math.min(U.length,30);ip++){var up=U[ip];if(!/^\W{0,3}[PRF]A[CG]I?ENTE\s*:?\s*\d{5,9}\s/.test(up))continue;   // só com número limpo (número mal lido = linha não confiável)   // "Paciente 123456 NOME" (número pode vir mal lido)
+  if(!r.nome){for(var ip=0;ip<Math.min(U.length,30);ip++){var up=U[ip];if(!/^\W{0,3}[PRF]A[CG]I?ENTE\b/.test(up)||!/\d/.test(up.slice(0,24)))continue;   // "Paciente 123456 NOME" (número pode vir mal lido: o nome vale, o número não)   // "Paciente 123456 NOME" (número pode vir mal lido)
     var mm2=lines[ip].replace(/\s+idade.*$/i,'').match(/([A-ZÀ-Ý][A-ZÀ-Ý']{2,}(?:\s+(?:D[AEO]S?\s+|E\s+)?[A-ZÀ-Ý][A-ZÀ-Ý']{1,}){1,6})\s*$/);
     if(mm2&&!/HCFAMEMA|SECRETARIA|HOSPITAL|ORTOPEDIA|SISTEMA/.test(deacc(mm2[1]).toUpperCase())){r.nome=mm2[1].trim();break;}}}
   if(!r.nome){var nI=U.findIndex(function(u){return /NASCIMENTO\s*:?\s*\d/.test(u);});
     for(i=(nI<0?0:Math.max(0,nI-8));i<(nI<0?16:nI)&&i<U.length;i++){var t0=U[i].trim();
       t0=t0.replace(/\s+IDADE\s*:?\s*\d+.*$/,'').replace(/^PACIENTE\s*:?\s*\d*\s*/,'').trim();
+      // bloco de médicos: duas linhas de nome diferentes seguidas, com "Anamnese em"/"Evolução em … Por" logo depois
+      var nn=function(k,d){ for(k+=d;k>=0&&k<U.length&&!U[k].trim();k+=d); return k; };
+      var ehNomeL=function(k){ return k>=0&&k<U.length&&/^[A-Z' ]{8,60}$/.test(U[k].trim())&&U[k].trim().split(' ').length>=2; };
+      var kA=nn(i,1), kB=nn(i,-1), perto=U.slice(i,i+8).join(' | ');
+      if(((ehNomeL(kA)&&U[kA].trim()!==U[i].trim())||(ehNomeL(kB)&&U[kB].trim()!==U[i].trim()))&&/ANAMNESE EM|EVOLUCAO\s*EM/.test(perto)&&!/NASCIMENTO/.test(perto))continue;
       var viz=U.slice(Math.max(0,i-2),i+3).join(' | ');
       if(/\bPOR\s*($|\|)|ANAMNESE EM|EVOLUCAO EM|EVOLUCAOEM/.test(viz)&&!/PACIENTE/.test(U[i]))continue;   // nome de médico (Anamnese/Evolução … Por)
       if(/^[A-Z' ]{10,60}$/.test(t0)&&t0.split(' ').length>=2&&t0.split(' ').length<=7&&!/HCFAMEMA|SECRETARIA|HOSPITAL|MEDICINA|ANAMNESE|URGENCIA|EMERGENCIA|SISTEMA|ATENDIMENTO|ORTOPEDIA|TRAUMATOLOGIA|FACULDADE|CLINICAS/.test(t0)){r.nome=lines[i].replace(/\s+idade\s*:?\s*\d+.*$/i,"").replace(/^\s*paciente\s*:?\s*\d*\s*/i,"").trim();break;}}}

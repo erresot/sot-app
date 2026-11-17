@@ -2009,6 +2009,7 @@ if(EMBED){
       $("embedHint").innerHTML = (d.naoHoje?`<b style="color:#c92a2a">⚠ Data desta evolução: ${d.date} — NÃO é hoje (o app está em outro dia; toque em HOJE no app se for engano).</b><br>`:"") + (d.visited?"":"⚠ Paciente ainda não marcado como visitado hoje. ") + (d.text
         ? `Abaixo está a evolução salva de ${d.baseDate}. <b>Cole por cima a evolução de ontem do sistema do hospital</b> (se for a mesma, só toque em “Analisar texto”). As marcações da visita entram em seguida.`
         : "Cole a evolução de ontem do sistema do hospital e toque em “Analisar texto”. As marcações da visita entram em seguida.");
+      if(d.auto){ $("days").value=0; go(); return; }
       $("input").focus(); $("input").select();
     }
     if(d.type==="evo-get"){
