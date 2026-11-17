@@ -51,6 +51,16 @@ details>summary{cursor:pointer;font-weight:700;color:var(--accent);margin:4px 0}
 }
 @media (max-width:560px){#ambPainel .row3{grid-template-columns:1fr 1fr}#ambPainel .row3>*:nth-child(2){grid-column:1/-1;order:3}#ambPainel .lin{grid-template-columns:1fr}}
 #ambPainel .hidden{display:none!important}
+#ambPainel .mant{border-top:1px solid var(--line);padding:2px 0}#ambPainel .mant>summary{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;margin:4px 0}#ambPainel .mant .ml{white-space:normal}
+#ambPainel .mant .mv{font-weight:400;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;flex:1 1 220px}
+#ambPainel .mant .mv.ok::before{content:"✓ ";color:var(--ok)}
+#ambPainel #amb_alertas .a{border-radius:10px;padding:7px 10px;margin:0 0 6px;font-size:13.5px;max-width:980px}
+#ambPainel #amb_alertas .a.r{border:2px solid var(--warn);background:var(--warnsoft);font-weight:600}
+#ambPainel #amb_alertas .a.w{border:1px solid #f0c36d;background:var(--amar)}
+#ambPainel #amb_alertas .a.i{border:1px solid #9cc3e6;background:#eef6ff}
+html.escuro #ambPainel #amb_alertas .a.i{background:#17263a;border-color:#2c4a6e}
+#ambPainel .chips .chip{min-height:32px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:13px;cursor:pointer}
+#ambPainel .chips .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
   :root{
     --bg:#f6f7f9; --card:#fff; --ink:#1b2430; --muted:#5d6b7c; --line:#dde3ea;
@@ -179,6 +189,8 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
 <h1 style="font-size:19px;margin:4px 0 2px">🏥 AMB Internação</h1>
 <p class="sub">Consulta pré-operatória do ambulatório de internação. O paciente é encontrado na Agenda pelo <b>prontuário</b>; ao salvar, os dados vão para a célula dele no mapa cirúrgico.</p>
 
+<div id="amb_alertas"></div>
+
 <div class="card" id="amb_cPac">
   <h2>1. Paciente (pelo prontuário)</h2>
   <div class="row3"><div><label for="amb_reg">Prontuário</label><input id="amb_reg" inputmode="numeric" autocomplete="off" placeholder="ex.: 776768"></div>
@@ -199,20 +211,20 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
 
 <div class="card" id="amb_cForm">
   <h2>3. Evolução de hoje</h2>
-  <label for="amb_cab">Cabeçalho (diagnóstico / procedimento prévio / mecanismo)</label><textarea id="amb_cab" class="up"></textarea>
-  <div class="row"><div><label for="amb_cmb">AP / CMB</label><input id="amb_cmb" class="up"></div><div><label for="amb_muc">MUC</label><input id="amb_muc" class="up"></div><div><label for="amb_alergia">Alergia</label><input id="amb_alergia" class="up"></div></div>
-  <label for="amb_apOutros">Outros antecedentes (hábitos, origem, cirurgias, peso, vacinas…)</label><textarea id="amb_apOutros" class="up" style="min-height:44px"></textarea>
-  <label for="amb_hma">HMA (mantida da evolução anterior)</label><textarea id="amb_hma" class="up" style="min-height:44px"></textarea>
-
+<details class="mant" data-mant="Cabeçalho (diagnóstico / procedimento prévio / mecanismo)"><summary><span class="ml">Cabeçalho (diagnóstico / procedimento prévio / mecanismo)</span> <span class="mv mini"></span></summary>  <label for="amb_cab">Cabeçalho (diagnóstico / procedimento prévio / mecanismo)</label><textarea id="amb_cab" class="up"></textarea>
+</details>  <div class="row"><div><label for="amb_cmb">AP / CMB</label><input id="amb_cmb" class="up"></div><div><label for="amb_muc">MUC</label><input id="amb_muc" class="up"></div><div><label for="amb_alergia">Alergia</label><input id="amb_alergia" class="up"></div></div>
+<details class="mant" data-mant="Outros antecedentes"><summary><span class="ml">Outros antecedentes</span> <span class="mv mini"></span></summary>  <label for="amb_apOutros">Outros antecedentes (hábitos, origem, cirurgias, peso, vacinas…)</label><textarea id="amb_apOutros" class="up" style="min-height:44px"></textarea>
+</details><details class="mant" data-mant="HMA"><summary><span class="ml">HMA</span> <span class="mv mini"></span></summary>  <label for="amb_hma">HMA (mantida da evolução anterior)</label><textarea id="amb_hma" class="up" style="min-height:44px"></textarea>
+</details>
   <label>Chegada</label><div class="seg" id="amb_sgChegada" data-v="DEAMBULANDO"></div>
   <div class="row"><div><label>Acompanhamento</label><div class="seg" id="amb_sgAcomp" data-v="DES"></div></div>
     <div><label for="amb_acompQuem">Acompanhado(a) por (opcional)</label><input id="amb_acompQuem" class="up" placeholder="ex.: PELA FILHA"></div></div>
   <div class="row"><div><label>Sexo (concordância do texto)</label><div class="seg" id="amb_sgSexo" data-v="M"></div></div>
     <div><label class="chk" style="border:0"><input type="checkbox" id="amb_menor"> Menor de idade (orientações ao responsável)</label></div></div>
   <label for="amb_queixa">Queixas / intercorrências (deixe em branco se nega)</label><input id="amb_queixa" class="up" placeholder="ex.: REFERE DOR LEVE EM JOELHO DIREITO">
-  <label for="amb_ef">Exame físico</label><textarea id="amb_ef" class="up"></textarea>
-  <label for="amb_outros">Outros blocos (radiografias, anatomopatológico, avaliações, laudos…)</label><textarea id="amb_outros" class="up"></textarea>
-</div>
+<details class="mant" data-mant="Exame físico"><summary><span class="ml">Exame físico</span> <span class="mv mini"></span></summary>  <label for="amb_ef">Exame físico</label><textarea id="amb_ef" class="up"></textarea>
+</details><details class="mant" data-mant="Outros blocos (RX, anátomo, avaliações, laudos)"><summary><span class="ml">Outros blocos (RX, anátomo, avaliações, laudos)</span> <span class="mv mini"></span></summary>  <label for="amb_outros">Outros blocos (radiografias, anatomopatológico, avaliações, laudos…)</label><textarea id="amb_outros" class="up"></textarea>
+</details></div>
 
 <div class="card" id="amb_cCond">
   <h2>4. Conduta pré-operatória</h2>
@@ -226,12 +238,13 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
   <div id="amb_linhas"></div>
   <div class="row"><div><label for="amb_apaData">APA — data</label><input id="amb_apaData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="amb_apaRes">APA — o que diz</label><input id="amb_apaRes" class="up" placeholder="ex.: LIBERADO PARA CIRURGIA"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="amb_apaExt"> Externa</label></div></div>
   <div class="row"><div><label for="amb_carData">Av. cardio — data</label><input id="amb_carData" placeholder="dd/mm/aa"></div><div style="grid-column:span 2"><label for="amb_carRes">Av. cardio — o que diz</label><input id="amb_carRes" class="up" placeholder="ex.: BAIXO RISCO CARDIOVASCULAR"></div><div><label class="chk" style="border:0;margin-top:26px"><input type="checkbox" id="amb_carExt"> Externa</label></div></div>
-  <label for="amb_extras">Outras linhas da conduta (mantidas da anterior — edite à vontade)</label><textarea id="amb_extras" class="up"></textarea>
-  <div class="row"><div><label for="amb_dataInt">Internação (retorno ao PS)</label><input id="amb_dataInt" type="date"></div><div><label for="amb_dataJejum">Jejum a partir das 23h59 do dia</label><input id="amb_dataJejum" type="date"></div><div><label for="amb_ass">Ass Dr</label><input id="amb_ass" class="up" placeholder="ex.: EDERSON KIDA"></div></div>
+  <div class="mini" style="margin:8px 0 2px">Sugestões para esta cirurgia — toque para incluir/retirar na conduta (edite à vontade):</div><div class="chips" id="amb_sug"></div>
+<details class="mant" data-mant="Outras linhas da conduta (mantidas da anterior)"><summary><span class="ml">Outras linhas da conduta (mantidas da anterior)</span> <span class="mv mini"></span></summary>  <label for="amb_extras">Outras linhas da conduta (mantidas da anterior — edite à vontade)</label><textarea id="amb_extras" class="up"></textarea>
+</details>  <div class="row"><div><label for="amb_dataInt">Internação (retorno ao PS)</label><input id="amb_dataInt" type="date"></div><div><label for="amb_dataJejum">Jejum a partir das 23h59 do dia</label><input id="amb_dataJejum" type="date"></div><div><label for="amb_ass">Ass Dr</label><input id="amb_ass" class="up" placeholder="ex.: EDERSON KIDA"></div></div>
 </div>
 
 <div class="card" id="amb_cChk">
-  <h2>5. Checklist (não vai para o texto)</h2>
+  <h2>5. Checklist de conferência manual (não vai para o texto)</h2>
   <div id="amb_meds"></div>
   <div id="amb_chk"></div>
 </div>
@@ -240,11 +253,10 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
   <h2>6. Evolução pronta — revisão no evoluidor (logo abaixo)</h2>
   <p class="mini">O texto montado acima abre no evoluidor (o mesmo do internograma): o que costuma mudar fica marcado, datas e concordância são conferidas e dá para editar à mão. O que for copiado/salvo é o texto do evoluidor.</p>
   <div class="chips" style="margin-bottom:8px"><button class="btn pri" id="amb_btEvo">↻ Levar os campos acima para o evoluidor</button><span class="mini" id="amb_stEvo"></span></div>
-    <details style="margin-top:8px"><summary>Texto montado pelos campos (antes do evoluidor)</summary><pre id="amb_saida" class="saida"></pre></details>
   <div id="amb_stSalvar"></div>
 </div>
 
-<div class="barra"><button class="btn" id="amb_btCopiar">Copiar texto</button><button class="btn pri" id="amb_btSalvar">Salvar e enviar ao mapa</button></div>
+<div class="barra"><span class="mini" id="amb_stBarra" style="align-self:center;margin-right:auto"></span><button class="btn pri" id="amb_btSalvar">Salvar, copiar e enviar ao mapa</button></div>
 
 
 </div>
@@ -2262,7 +2274,7 @@ function escolher(e){
   if(!$('ass').value&&e.ass) $('ass').value=UP(e.ass);
   if(e.idade && parseInt(e.idade,10)<18 && /ano/i.test(e.idade)) $('menor').checked=true;
   var sN=sexoNome(e.nome); if(sN) $('sgSexo').setV(sN);
-  conferirIdentidade(); gerar();
+  conferirIdentidade(); gerar(); rascAviso();
 }
 document.addEventListener('click',function(ev){ if(ev.target&&ev.target.id==='amb_btCarregar'&&SEL){ var f=FICHAS[SEL.reg]; if(f&&f.form) carregarForm(f.form); } });
 function datasPadrao(forcar){
@@ -2353,7 +2365,7 @@ function ler(){
   if(/\bDESACOM?A?PANHAD/.test(ev)) $('sgAcomp').setV('DES'); else if(/\bACOM?A?PANHAD/.test(ev)){ $('sgAcomp').setV('ACO'); var qm=ev.match(/\bACOM?A?PANHAD[OA]\s+(PEL[OA]S?\s+[A-Z]+(?:\s+[A-Z]+)?)/); if(qm&&!$('acompQuem').value) $('acompQuem').value=qm[1].replace(/\s+(EM|DE|NA|NO|E)$/,''); }
   $('sgChegada').setV(/MACA/.test(ev)?'EM MACA':/CADEIRA DE RODAS/.test(ev)?'EM CADEIRA DE RODAS':/MULET/.test(ev)?'DEAMBULANDO COM AUXÍLIO DE MULETAS':/ANDADOR/.test(ev)?'DEAMBULANDO COM AUXÍLIO DE ANDADOR':'DEAMBULANDO');
   lerConduta(S.cd);
-  conferirIdentidade(); gerar(); evoCarregar();
+  ativoLeu=true; conferirIdentidade(); gerar(); evoCarregar();
 }
 function st(t){ var u=A(t); return /N[AÃ]O\s+(NECESS|PRECIS)/.test(u)?'NÃO NECESSÁRIA':/SOLICITADO|SOLICITADA/.test(u)?'SOLICITADO':/SOLICIT/.test(u)?'SOLICITAR':/NO OPERA/.test(u)?'NO OPERA':/CHECADO/.test(u)?'CHECADO':/CHECAR/.test(u)?'CHECAR':/\bOK\b|✓|REALIZAD/.test(u)?'OK':/PASTA/.test(u)?'NA PASTA':/SISTEMA/.test(u)?'NO SISTEMA':''; }
 var RE_PROC=/(OSTEOSS|ARTROPL|ARTRODES|ARTROSCOP|RESSEC|RETIRADA|REVIS|TENTATIVA|TRATAMENTO DE|CIRURGIA DE|PTJ|PTQ|ATQ|ATJ|REPARO|RECONSTRU|LIMPEZA|BIOPSIA|BI[OÓ]PSIA|CORRE[CÇ]|EX[EÉ]RESE|ENDOPR[OÓ]TESE|OSTEOTOMIA|AMPUTA|TENORRAF|TRANSFER[EÊ]NCIA|PROGRAMA[CÇ][AÃ]O CIR|FIXA[CÇ]|PR[OÓ]TESE)/i;
@@ -2520,8 +2532,7 @@ function gerar(){
   T.push('ORIENTAÇÕES GERAIS');
   T.push((menor?'PACIENTE E RESPONSÁVEL CIENTES':'PACIENTE CIENTE')+' DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES');
   var as0=UP($('ass').value.trim()).replace(/^DR[A]?\.?\s+/,''); T.push(/^EQUIPE\b/.test(as0)?'ASS '+as0:'ASS DR '+(as0||'________'));
-  $('saida').textContent=T.join('\n');
-  checklist(P);
+  checklist(P); alertas(P); resumo(); desenharSug();
   return T.join('\n');
 }
 ['cab','cmb','muc','alergia','apOutros','hma','queixa','ef','outros','dr','drData','proc','preops','preData','apaData','apaRes','carData','carRes','extras','ass','acompQuem','dataJejum'].forEach(function(id){ $(id).addEventListener('input',gerar); });
@@ -2553,18 +2564,75 @@ var CHK=[['pele','Pele no sítio cirúrgico íntegra, sem LPP/feridas/infecção
   ['adornos','Sem piercings, unhas/cabelos/cílios postiços (ou orientado a retirar)'],['acomp','Acompanhante garantido (idoso, menor ou dependente)'],['preops','Pré-ops dentro da validade e sem alteração que impeça a cirurgia'],['apa','APA feita / liberado (ou agendada antes da data)'],
   ['cardio','Avaliação cardiológica quando indicada (idade, cardiopatia, porte)'],['rch','Reserva de sangue (RCH) e UTI conforme porte'],['aviso','Aviso CC / material / OPME conferidos'],['imagem','Exames de imagem disponíveis (RX, TC, RM na pasta ou no sistema)'],['lado','Lado e procedimento conferidos com o paciente']];
 var MARC={};
+/* ---------------- painel de alertas (só o que exige decisão) ---------------- */
+var RE_GRANDE=/(ARTROPL|\bPT[JQ]\b|\bAT[JQ]\b|ENDOPR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE)|TUMOR|ESPA[CÇ]ADOR)/;
+function alertas(P){
+  var r=[], w=[], i=[], u=A($('proc').value+' '+$('cab').value);
+  var idA=$('idAviso').querySelector('.alerta'); if(idA) r.push(idA.textContent.replace(/^⚠\s*/,''));
+  if(!$('dataCx').value) r.push('Sem data da cirurgia.');
+  if(!SEL||!SEL.reg) w.push('Paciente sem prontuário escolhido: a ficha não vai para o mapa.');
+  ['cmb','muc','alergia'].forEach(function(k){ if(!$(k).value.trim()) w.push(({cmb:'AP/CMB',muc:'MUC',alergia:'Alergia'})[k]+' em branco — perguntar (escreva NEGA se nega).'); });
+  if(P&&P.data&&$('dataCx').value){ var d=isoDe(P.data,$('dataCx').value); if(d){ var dias=Math.round((new Date($('dataCx').value)-new Date(d))/864e5); if(dias>30) w.push('Pré-ops de '+P.data+' — '+dias+' dias antes da cirurgia: considerar novos exames.'); } }
+  if(P&&P.labs){ var hb=parseFloat(String(P.labs.Hb||'').replace(',','.')); if(hb&&hb<10) r.push('Hb '+P.labs.Hb+' — considerar reserva/transfusão e investigação.');
+    var pn=parseFloat(String(P.labs.Plaq||'').replace(/[^\d,]/g,'').replace(',','.'))*(/k/i.test(P.labs.Plaq)?1000:1); if(pn&&pn<100000) w.push('Plaquetas '+P.labs.Plaq+' (< 100 mil).'); }
+  // medicação: anticoagulante/GLP-1 sem data de suspensão anotada
+  var mu=$('muc').value+' '+$('cmb').value, am=window.SOTMED&&SOTMED.alertaMapa(mu);
+  var nomeM=am?A(am.achado).slice(0,5):'', suspOk=am&&(/SUSP[^;,)\n]*\d{1,2}\/\d{1,2}/i.test(mu)||$('extras').value.split('\n').some(function(l){ return /SUSP/.test(A(l))&&/\d{1,2}\/\d{1,2}/.test(l)&&(A(l).indexOf(nomeM)>=0||A(l).indexOf(A(am.regra.nome).slice(0,5))>=0); }));
+  if(am&&!suspOk) r.push('Em uso de '+am.achado.toLowerCase()+': conferir e anotar a data de suspensão na conduta.');
+  // APA / cardio antigos (> 6 meses) e grande porte sem UTI/RCH
+  var cx=$('dataCx').value;
+  [['apaData','APA'],['carData','Av. cardio']].forEach(function(x){ var dd=isoDe($(x[0]).value,cx||HOJE); if(dd&&cx&&Math.round((new Date(cx)-new Date(dd))/864e5)>180) w.push(x[1]+' de '+$(x[0]).value+' tem mais de 6 meses na data da cirurgia.'); });
+  if(RE_GRANDE.test(u)&&(!V('sg_uti')||!V('sg_rch'))) w.push('Cirurgia de grande porte: definir UTI e RCH ('+[!V('sg_uti')?'UTI':'',!V('sg_rch')?'RCH':''].filter(Boolean).join(' e ')+' sem definição).');
+  // contradições na evolução anterior (análise do evoluidor)
+  try{ if(typeof textRed==='function'&&$('ant').value.trim()){ var tr=textRed($('ant').value); if(tr.length) i.push('Na evolução anterior: '+tr.join(', ')+' — conferir antes de manter.'); } }catch(e){}
+  var h=r.map(function(t){return '<div class="a r">⚠ '+esc(t)+'</div>';}).concat(w.map(function(t){return '<div class="a w">'+esc(t)+'</div>';}),i.map(function(t){return '<div class="a i">ℹ '+esc(t)+'</div>';})).join('');
+  $('alertas').innerHTML=h||'<div class="a i">✓ Nenhum alerta no momento.</div>';
+}
+/* ---------------- campos recolhidos: resumo de uma linha ---------------- */
+function resumo(){
+  [].forEach.call(P.querySelectorAll('details.mant'),function(d){ var t=d.querySelector('textarea'); if(!t) return; var v=t.value.trim().replace(/\s*\n\s*/g,' ⏎ '), mv=d.querySelector('.mv');
+    mv.textContent=v?(v.length>90?v.slice(0,90)+'…':v)+' ('+t.value.trim().split('\n').length+' lin.)':'vazio'; mv.classList.toggle('ok',!!v&&ativoLeu); if(!v&&t.id!=='amb_extras') d.open=true; });
+}
+var ativoLeu=false;
+/* ---------------- sugestões de conduta por procedimento (editáveis: ajuste a tabela abaixo) ---------------- */
+var SUG=[
+  { k:'artro', re:/(ARTROPL|\bPT[JQ]\b|\bAT[JQ]\b|ENDOPR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE)|ESPA[CÇ]ADOR)/, itens:[
+    {t:'UTI SOLICITADA',set:{uti:'SOLICITAR'}},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}},{l:'RESERVA DE SANGUE'},{l:'CONFERIR IMPLANTES / INSTRUMENTAL ESPECÍFICO COM O CENTRO CIRÚRGICO'},{l:'CONFERIR SUSPENSÃO DE ANTICOAGULANTES/ANTIAGREGANTES'}] },
+  { k:'osteo', re:/(OSTEOSS|FIXA[CÇ][AÃ]O|FIXADOR|REDU[CÇ][AÃ]O|HASTE|PLACA|FRATURA)/, itens:[
+    {l:'CONFERIR MATERIAL DE OSTEOSSÍNTESE (PLACA/HASTE/FIOS) E INTENSIFICADOR'},{l:'RX DE CONTROLE CONFORME PROTOCOLO'},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}}] },
+  { k:'artros', re:/(ARTROSCOP|LCA|MENISC|MANGUITO|LABRUM|REPARO)/, itens:[
+    {l:'CONFERIR ÂNCORAS / ENXERTO / INSTRUMENTAL DE ARTROSCOPIA'},{l:'ORIENTAR ÓRTESE E REABILITAÇÃO PÓS-OPERATÓRIA'}] },
+  { k:'retirada', re:/(RETIRADA|REMO[CÇ][AÃ]O|EXTRA[CÇ][AÃ]O) DE (MATERIAL|IMPLANTE|FIO|PLACA|HASTE|PINO)/, itens:[
+    {l:'CONFERIR TIPO DE IMPLANTE E CHAVES/INSTRUMENTAL DE RETIRADA'}] },
+  { k:'tumor', re:/(BI[OÓ]PSIA|TUMOR|RESSEC)/, itens:[
+    {l:'AVISAR ANATOMOPATOLÓGICO (FRASCO E REQUISIÇÃO)'},{l:'RESERVA DE SANGUE'},{t:'RCH SOLICITADA',set:{rch:'SOLICITAR'}}] }
+];
+function sugAtivas(){ var u=A($('proc').value+' '+$('cab').value), o=[]; SUG.forEach(function(g){ if(g.re.test(u)) g.itens.forEach(function(x){ o.push(x); }); });
+  if($('menor').checked) o.push({l:'JEJUM E ANESTESIA PEDIÁTRICOS CONFORME ORIENTAÇÃO DA ANESTESIA'},{l:'PESO DO PACIENTE REGISTRADO'});
+  // medicações de atenção encontradas (módulo único de medicamentos): linha "SUSPENDER … EM __/__"
+  if(window.SOTMED) SOTMED.achar($('muc').value+' '+$('cmb').value).filter(function(r){ return r.anticoag||/metformina|sglt2|glp1|ieca|estrogenio/.test(r.k); }).forEach(function(r){ o.push({l:'SUSPENDER '+UP(r.nome.replace(/\s*\(.*\)/,''))+' EM __/__'}); });
+  var vis={}; return o.filter(function(x){ var k=x.t||x.l; if(vis[k]) return false; vis[k]=1; return true; }); }
+function desenharSug(){
+  var L=sugAtivas(), ex=A($('extras').value), el=$('sug'); el.innerHTML=L.length?L.map(function(x,i){ var on=x.l?ex.indexOf(A(x.l))>=0:(V('sg_uti')==='SOLICITAR'&&x.set&&x.set.uti)||(V('sg_rch')==='SOLICITAR'&&x.set&&x.set.rch);
+    return '<button type="button" class="chip'+(on?' on':'')+'" data-sug="'+i+'">'+esc(x.t||x.l.replace(/ \/ .*$/,'').slice(0,48))+'</button>'; }).join(''):'<span class="mini">Sem sugestões para este procedimento.</span>';
+  el._L=L; }
+$('sug').addEventListener('click',function(e){ var b=e.target.closest('[data-sug]'); if(!b) return; var x=this._L[+b.dataset.sug]; if(!x) return;
+  if(x.set){ Object.keys(x.set).forEach(function(k){ var c=$('sg_'+k); c.setV(V('sg_'+k)===x.set[k]?'':x.set[k]); }); }
+  else { var ls=$('extras').value.split('\n').filter(Boolean), i=ls.findIndex(function(l){ return A(l)===A(x.l); }); if(i>=0) ls.splice(i,1); else ls.push(x.l); $('extras').value=ls.join('\n'); }
+  gerar(); });
+/* ---------------- rascunho automático por prontuário ---------------- */
+var RASC='sot-amb-rascunho', tRasc=null;
+function rascLer(){ try{ return JSON.parse(localStorage.getItem(RASC)||'{}'); }catch(e){ return {}; } }
+function rascSalvar(){ var reg=String($('reg').value||'').replace(/\D/g,''); if(!reg||!ativo) return; var o=rascLer(); o[reg]={t:Date.now(),form:formAtual()}; var ks=Object.keys(o).sort(function(a,b){return o[b].t-o[a].t;}); ks.slice(12).forEach(function(k){ delete o[k]; }); try{ localStorage.setItem(RASC,JSON.stringify(o)); }catch(e){} }
+document.addEventListener('input',function(e){ if(!P.contains(e.target)) return; clearTimeout(tRasc); tRasc=setTimeout(rascSalvar,1200); });
+function rascAviso(){ var reg=String($('reg').value||'').replace(/\D/g,''), r=rascLer()[reg]; if(!r||FICHAS[reg]||(Date.now()-r.t)>7*864e5) return; if($('pacSel').querySelector('#amb_btRasc')) return;
+  $('pacSel').insertAdjacentHTML('beforeend','<div class="info">Há um rascunho deste prontuário (salvo às '+new Date(r.t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'). <button class="btn sm" id="amb_btRasc">Recuperar</button></div>'); }
+document.addEventListener('click',function(ev){ if(ev.target&&ev.target.id==='amb_btRasc'){ var r=rascLer()[String($('reg').value||'').replace(/\D/g,'')]; if(r&&r.form) carregarForm(r.form); ev.target.parentNode.remove(); } });
 function checklist(P){
   var mu=A($('muc').value+' '+$('cmb').value+' '+$('apOutros').value), achou=[];
   MEDS.forEach(function(m){ if(m[0].test(mu)) achou.push(m); });
   $('meds').innerHTML=(achou.length?achou.map(function(m){ return '<div class="med">💊 <b>'+esc(m[1])+'</b>: '+esc(m[2])+'</div>'; }).join('')+'<p class="mini">Referência geral — confirmar sempre com a anestesia e o protocolo do serviço.</p>':'<p class="mini">Nenhuma medicação de atenção encontrada no MUC.</p>');
-  var av=[];
-  if(P&&P.data&&$('dataCx').value){ var d=isoDe(P.data,$('dataCx').value); if(d){ var dias=Math.round((new Date($('dataCx').value)-new Date(d))/864e5); if(dias>60) av.push('Pré-ops de '+P.data+' — '+dias+' dias antes da cirurgia: considerar novos exames.'); } }
-  if(P&&P.labs){ var hb=parseFloat(String(P.labs.Hb||'').replace(',','.')); if(hb&&hb<10) av.push('Hb '+P.labs.Hb+' — considerar reserva/transfusão e investigação.'); var pl=String(P.labs.Plaq||'').replace(/[^\d,]/g,''); var pn=parseFloat(pl.replace(',','.'))*(/k/i.test(P.labs.Plaq)?1000:1); if(pn&&pn<100000) av.push('Plaquetas '+P.labs.Plaq+' — baixas.'); var inr=parseFloat(String(P.labs.INR||'').replace(',','.')); if(inr&&inr>1.5) av.push('INR '+P.labs.INR+' — alargado.'); }
-  if(!$('dataCx').value) av.push('Sem data da cirurgia.');
-  ['cmb','muc','alergia'].forEach(function(k){ if(!$(k).value.trim()) av.push(({cmb:'AP/CMB',muc:'MUC',alergia:'Alergia'})[k]+' em branco — perguntar (escreva NEGA se nega).'); });
-  if(!SEL||!SEL.reg) av.push('Paciente sem prontuário escolhido: a ficha não vai para o mapa.');
-  $('chk').innerHTML=av.map(function(t){return '<div class="chk"><span class="r">⚠</span><span>'+esc(t)+'</span></div>';}).join('')+
-    CHK.map(function(c){ return '<label class="chk"><input type="checkbox" data-chk="'+c[0]+'"'+(MARC[c[0]]?' checked':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
+  $('chk').innerHTML=CHK.map(function(c){ return '<label class="chk"><input type="checkbox" data-chk="'+c[0]+'"'+(MARC[c[0]]?' checked':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
 }
 $('chk').addEventListener('change',function(e){ var c=e.target.dataset.chk; if(c) MARC[c]=e.target.checked; });
 
@@ -2599,7 +2667,7 @@ function paraMapa(texto,P){
 }
 $('btSalvar').addEventListener('click',function(){ var bt=this; evoTexto().then(function(tEvo){ salvar.call(bt,tEvo); }); });
 function salvar(tEvo){
-  var texto=tEvo||gerar(), reg=String($('reg').value||'').replace(/\D/g,''), el=$('stSalvar');
+  var texto=tEvo||gerar(); copiar(texto); var reg=String($('reg').value||'').replace(/\D/g,''), el=$('stSalvar');
   if(!reg){ el.innerHTML='<div class="alerta">Informe o prontuário (ou escolha o paciente na Agenda) para enviar ao mapa.</div>'; return; }
   if(!$('dataCx').value){ el.innerHTML='<div class="alerta">Falta a data da cirurgia.</div>'; return; }
   if($('idAviso').querySelector('.alerta')&&!this.dataset.conf){ this.dataset.conf='1'; this.textContent='A evolução parece ser de OUTRO paciente — toque de novo para salvar mesmo assim'; return; }
@@ -2610,10 +2678,9 @@ function salvar(tEvo){
   el.innerHTML='<div class="info">Salvando…</div>';
   parent.postMessage({src:'ambint',type:'ambint-salvar',rec:rec},'*');
 }
-$('btCopiar').addEventListener('click',function(){ evoTexto().then(function(tEvo){ copiar(tEvo||gerar()); }); });
-function copiar(t){ var ok=function(){ $('stSalvar').innerHTML='<div class="okmsg">Texto copiado.</div>'; };
-  try{ navigator.clipboard.writeText(t).then(ok,function(){ selecionar(); }); }catch(e){ selecionar(); } }
-function selecionar(){ var r=document.createRange(); r.selectNodeContents($('saida')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); $('stSalvar').innerHTML='<div class="info">Texto selecionado — copie.</div>'; }
+function copiar(t){ var ok=function(){ $('stBarra').textContent='Texto copiado.'; };
+  try{ navigator.clipboard.writeText(t).then(ok,function(){ selecionar(t); }); }catch(e){ selecionar(t); } }
+function selecionar(t){ var x=document.createElement('textarea'); x.value=t||''; x.style.cssText='position:fixed;opacity:0;left:-999px'; document.body.appendChild(x); x.select(); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} x.remove(); $('stBarra').textContent=ok?'Texto copiado.':'Não consegui copiar — selecione o texto no evoluidor.'; }
 
 /* ---------------- ponte com o app ---------------- */
 window.addEventListener('message',function(e){
