@@ -89,7 +89,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
 .drp{font:12px ui-monospace,monospace;display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
 </style>
 <script src="../campos.js"></script>
-<script src="ocr/sot-ocr.js"></script>
+<script src="../sot-datas.js"></script><script src="../sot-linha.js"></script><script src="../sot-exames.js"></script><script src="../sot-med.js"></script><script src="ocr/sot-ocr.js"></script>
 <link rel="stylesheet" href="sot-tema.css">
 </head>
 <body>
@@ -286,7 +286,6 @@ const SETORES=[
  ['UTIA','Uti A','Uti A'],['UTIB','Uti B','Uti B'],['UTIC','Uti C','Uti C'],
  ['CC','Cc','Cc'],['IC','Interconsulta',''],['HM','Hm','Hm'],['ALTA','Altas','']
 ];
-const PEND=[['aviso','Aviso CC'],['agenda','Agenda'],['preops','Pré-Ops'],['rch','RCH'],['uti','UTI'],['cardio','Av Cardio'],['anest','Av Anestésica'],['termo','Termo']];
 const STATUS=['','Solicitar','Solicitado','Checar','OK','No Opera'];
 const ASSIST=['Dr Fernando','Dr José Marcondes','Dr Emílio','Dr Amilton','Dra Maysa','Dr Eduardo Jacob','Dr Marcos Vinicius','Dr Antoniassi','Dr Adriano','Dr Marcos Silveira','Dra Laraya','Dr Everton','Dr R. Toma','Dr Ederson','Dr Gustavo','Dr Rogério','Equipe Quadril','Equipe Joelho','Equipe Mão','Equipe Coluna','Equipe Pediátrica'];
 const MECS=[
@@ -312,9 +311,8 @@ const MECS=[
 ];
 const MEC_LIST=['Internação Eletiva','Queda Da Própria Altura','Queda De 2 Metros','Queda De Telhado','Queda Da Cama','Acidente De Moto','Acidente Automobilístico','Carro X Carro','Moto X Carro','Atropelamento','Queda De Bicicleta','Ferimento Por Arma De Fogo','Agressão','Esmagamento','Trauma Com Maquita','Trauma Por Equino','Entorse','Trauma Direto','Atraumático','Infecção De Sítio Cirúrgico','Lombociatalgia Atraumática'];
 const CD_CHIPS=['Sem Carga Até Segunda Ordem','Carga Conforme Dor','Tala Gessada','Tala Luva Até Segunda Ordem','Velpeau','Colar Philadelphia','Tração Cutânea','Heparina Profilática','Cuidado Com LPP','Placa De Hidrocoloide','Cobrar Rx POI','Transfundir'];
-const KEEP=new Set('RCH UTI CC AO OTA TC RM RX OK ATB EV VO HAS DM DM2 DPOC IRA ITU TCE MSD MSE MID MIE MMII MMSS CME GMR LPP PCR CCIH AVC IAM FA ICC DRC HIV DLP SUS TQT IOT VM DVA PTQ ATQ ATJ PTJ LCA LCP SOR APA TEP TVP RAFI DHS DCS PFN TFN HIM PS SNC ECG ECO CROSS UBS UPA SAMU P+E AINE QDE QDD PDE PDD TCG RNM APA ADM FO BEG REG MEG'.split(' '));
-const ACC={femur:'fêmur',anatomopatologico:'anatomopatológico',anatomopatologica:'anatomopatológica',umero:'úmero',radio:'rádio',tibia:'tíbia',fibula:'fíbula',clavicula:'clavícula',acetabulo:'acetábulo',calcaneo:'calcâneo',maleolo:'maléolo',olecrano:'olécrano',escapula:'escápula',osteossintese:'osteossíntese',osteosintese:'osteossíntese',propria:'própria',pre:'pré',ate:'até',transtrocanterica:'transtrocantérica',subtrocanterica:'subtrocantérica',diafise:'diáfise',diafisaria:'diafisária',metafise:'metáfise',toracica:'torácica',luxacao:'luxação',internacao:'internação',orientacoes:'orientações',cirurgico:'cirúrgico',cirurgica:'cirúrgica',avaliacao:'avaliação',anestesica:'anestésica',nao:'não',hipertensao:'hipertensão',atraumatica:'atraumática',atraumatico:'atraumático',automobilistico:'automobilístico',agressao:'agressão',pelvico:'pélvico',iliaco:'ilíaco',pubis:'púbis',plato:'platô',pilao:'pilão',cabeca:'cabeça',fisioterapia:'fisioterapia',reducao:'redução',infeccao:'infecção',revisao:'revisão',descompressao:'descompressão',tracao:'tração',profilatica:'profilática',heparina:'heparina',sitio:'sítio',biopsia:'biópsia',vertebra:'vértebra',patelar:'patelar',umeral:'umeral',transfusao:'transfusão',ortopedica:'ortopédica',diagnostico:'diagnóstico',cronica:'crônica',necrose:'necrose',fisaria:'fisária',ulcera:'úlcera',ombro:'ombro',mao:'mão',pe:'pé',tendao:'tendão',lesao:'lesão',solicitacao:'solicitação',equipe:'equipe',medico:'médico',clinica:'clínica',sindrome:'síndrome'};
 
+const { KEEP, ACC, PEND, HEAD, build, fixAcc, titleTok, fmtCase } = SOTLINHA;   // motor único da linha (sot-linha.js)
 /* ===================== HELPERS ===================== */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
@@ -330,21 +328,6 @@ function ageAt(nasc,ref){if(!nasc||!ref)return'';const[a,b,c]=nasc.split('-').ma
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=1;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1600)}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
-function fixAcc(t){if(!t)return t;return t.replace(/[A-Za-zÀ-ÿ]+/g,w=>{const k=w.toLowerCase();if(ACC[k]&&k!==ACC[k]){const r=ACC[k];return w===w.toUpperCase()?r.toUpperCase():(w[0]===w[0].toUpperCase()?cap(r):r)}return w})}
-function titleTok(p){
-  const m=p.match(/^([^A-Za-zÀ-ÿ0-9]*)(.*?)([^A-Za-zÀ-ÿ0-9+]*)$/);if(!m)return p;
-  let [,a,core,z]=m;if(!core)return p;
-  const U=core.toUpperCase();
-  if(KEEP.has(deacc(U))||/\d/.test(core)||/^[IVX]{2,4}$/.test(U))core=U;
-  else core=cap(core.toLowerCase());
-  return a+core+z;
-}
-function fmtCase(t,mode){
-  if(!t)return'';
-  if(mode==='upper')return t.toUpperCase();
-  return t.split(/(\s+)/).map(w=>/\s/.test(w)?w:w.split(/([-\/])/).map(p=>/^[-\/]$/.test(p)?p:titleTok(p)).join('')).join('');
-}
 
 /* ===================== PARSER ===================== */
 function parse(raw){
@@ -550,30 +533,6 @@ function blank(){return{refDate:todayISO(),caseMode:$('#caseMode').value||'title
 function resetForm(){FIELDS.forEach(f=>{if(!['refDate','caseMode','cnt'].includes(f))$('#'+f).value=''});setState(blank());$('#alerts').innerHTML=''}
 
 /* ===================== BUILD ===================== */
-function build(s){
-  const T=t=>fmtCase(fixAcc(t||''),s.caseMode);
-  const ref=s.refDate||todayISO(),inc=+s.cnt;
-  const days=iso=>iso?diff(iso,ref)+inc:null;
-  const c1=[T(s.local),s.mec?T(s.mec)+(s.dtTrauma&&s.dtTrauma!==s.dih?' '+T('Em')+' '+br(s.dtTrauma):''):'',s.dih?T('Dih')+' '+br(s.dih):'',s.leito,s.marc].filter(Boolean);
-  const nDih=days(s.dih);
-  const c2=[T(s.nome),s.idade?s.idade+' '+T('Anos'):'',T(s.origem),nDih!==null?T('Dih')+' '+nDih:'',s.reg,s.classif].filter(Boolean);
-  const c3=[];
-  (s.dx||[]).forEach(d=>{if(d.tipo==='po'){const dt=d.data;const n=dt?diff(dt,ref):null;c3.push((n===null?'':n===0?T('Poi')+' ':n+' '+T('Po')+' ')+T(d.txt)+(dt?' ('+br(dt)+')':''));return}const dt=d.data||s.dtTrauma;const n=dt?days(dt):null;c3.push((n!==null?n+'d ':'')+T(d.txt)+(s.showDt&&dt?' ('+br(dt)+')':''))});
-  if(s.ap)c3.push(T('Ap: '+s.ap));if(s.muc)c3.push(T('Muc: '+s.muc));if(s.alergia)c3.push(T('Alergia: '+s.alergia));
-  if(s.outros)s.outros.split('\n').filter(x=>x.trim()).forEach(x=>c3.push(T(x.trim())));
-  if(s.ass)c3.push(T('Ass '+s.ass));
-  const c4=[];let bold=-1;
-  const or=s.orienta||s.ass;if(or)c4.push(T(or+' Orienta:'));
-  if(s.cx){bold=c4.length;c4.push(T(s.cx)+(s.dtCx?' '+T('Em')+' '+br(s.dtCx):''))}
-  if(s.orientaExtra)s.orientaExtra.split('\n').filter(x=>x.trim()).forEach(x=>c4.push(T(x.trim())));
-  const c5=[];
-  if(s.cdExtra)s.cdExtra.split('\n').filter(x=>x.trim()).forEach(x=>c5.push(T(x.trim())));
-  PEND.forEach(([k,l])=>{if(s.pend&&s.pend[k])c5.push(T(l)+' - '+T(s.pend[k]))});
-  const c6=(s.exames||'').split('\n').map(x=>x.trimEnd()).filter(Boolean);
-  return{cols:[c1,c2,c3,c4,c5,c6],bold};
-}
-const HEAD=['Local · Mecanismo · DIH · Leito','Nome · Idade · Origem · Internação · Registro','Causa · Ap · Class · Ass','Dr ----- Orienta','Condutas','Exames'];
-
 function checks(s){
   const w=[];
   if(!s.nome)w.push(['e','Falta o nome.']);

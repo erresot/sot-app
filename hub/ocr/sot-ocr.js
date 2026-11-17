@@ -305,25 +305,14 @@ function dataBR(s,ano){
   return ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+y;
 }
 /* extrai exames: {data, labs:{Hb..}, outros:"TSH 2,28 / ...", duv:[chaves]} — mantém o mais recente */
+/* exames: delega ao motor ÚNICO (sot-exames.js). Mantém o formato antigo {data, labs, outros, outrosTxt, duv}. */
 S.exames=function(text,anoRef){
-  var res={data:'',labs:{},outros:{},duv:{}},datas=[];
-  var arr=String(text).split('\n'),lab=S.linhasLab(arr);
-  arr.forEach(function(l,idx){
-    if(!lab[idx])return;
-    var pm=l.match(RE_PRE),dm=pm&&pm[1].match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/);
-    var dt=dm?dataBR(dm[1],anoRef):'';
-    var corpo=pm?l.slice(pm[0].length):l;
-    sepLab(corpo).split('/').forEach(function(s){
-      var o=segmento(s);if(!o)return;o=conferir(o);
-      var v=fmtVal(o);
-      if(S.MAPA_LABS.indexOf(o.key)>=0){res.labs[o.key]=v;if(o.duv)res.duv[o.key]=1;else delete res.duv[o.key];}
-      else{res.outros[o.key]=v+(o.duv?'?':'');}
-    });
-    if(dt)datas.push(dt);
-  });
-  res.data=datas[datas.length-1]||'';
-  res.outrosTxt=Object.keys(res.outros).map(function(k){return k+' '+res.outros[k];}).join(' / ');
-  res.duv=Object.keys(res.duv);
+  var E=window.SOTEXAMES,res={data:'',labs:{},outros:{},duv:[],outrosTxt:''};
+  if(!E)return res;
+  var r=E.ler(text,{ano:anoRef||new Date().getFullYear()}),dias=r.dias.filter(function(d){return d.itens.length;});
+  if(!dias.length)return res;
+  var pm=E.paraMapa(dias);
+  res.labs=pm.labs;res.outrosTxt=pm.extras;res.data=pm.data?pm.data.slice(0,6)+pm.data.slice(8):'';
   return res;
 };
 
