@@ -94,12 +94,35 @@ var SYNC = (function () {
   document.addEventListener('pointerdown', renovarSePreciso, true);
 
   /* ---------- chamadas ao Drive ---------- */
-  function req(url, opt) {
-    opt = opt || {}; opt.headers = Object.assign({ Authorization: 'Bearer ' + tok() }, opt.headers || {});
-    return fetch(url, opt).then(function (r) {
+  // cada pedido ao Google tem tempo-limite (conexão "pendurada" não trava mais a sincronização inteira)
+  // e tenta de novo sozinho em falhas passageiras (limite de uso, servidor ocupado, rede caiu no meio)
+  function esperarMs(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function req(url, opt, tent) {
+    opt = opt || {}; tent = tent || 0;
+    var metodo = (opt.method || 'GET').toUpperCase(), upload = url.indexOf('/upload/') > -1;
+    var o = Object.assign({}, opt); o.headers = Object.assign({ Authorization: 'Bearer ' + tok() }, opt.headers || {});
+    var ctl = window.AbortController ? new AbortController() : null, tm = null;
+    if (ctl) { o.signal = ctl.signal; tm = setTimeout(function () { ctl.abort(); }, window.__SYNC_TO || (upload ? 120000 : 30000)); }
+    function deNovo(motivo, criarSeguro) {
+      // criar arquivo (POST) só repete quando o Google garantiu que não fez nada (limite/ocupado) — evita arquivo duplicado
+      if (tent >= 3 || (metodo === 'POST' && !criarSeguro)) return null;
+      return esperarMs([1000, 3000, 8000][tent] + Math.random() * 500).then(function () { return req(url, opt, tent + 1); });
+    }
+    return fetch(url, o).then(function (r) {
+      clearTimeout(tm);
       if (r.status === 401) { token = null; tokenExp = 0; try { localStorage.removeItem('sot-tk'); } catch (e) {} throw { auth: true, msg: 'login expirado' }; }
-      if (!r.ok) return r.text().then(function (t) { throw { status: r.status, msg: t.slice(0, 200) }; });
+      if (!r.ok) return r.text().then(function (t) {
+        var limite = r.status === 429 || (r.status === 403 && /rate ?limit|userRateLimit|rateLimitExceeded/i.test(t));
+        var p = (limite || r.status === 503) ? deNovo('limite', true) : (r.status >= 500 ? deNovo('servidor', false) : null);
+        if (p) return p;
+        throw { status: r.status, msg: t.slice(0, 200) };
+      });
       return r;
+    }, function (e) {
+      clearTimeout(tm);
+      var p = deNovo('rede', false);
+      if (p) return p;
+      throw { msg: (e && e.name === 'AbortError') ? 'o Google demorou demais para responder' : ((e && e.message) || 'falha de rede') };
     });
   }
   function q(s) { return encodeURIComponent(s); }
@@ -330,15 +353,30 @@ var SYNC = (function () {
     S.evoAlt[pid] = L.slice(-6);
   }
 
+  // roda fn em cada item com até n ao mesmo tempo (antes era um por vez: 24 pacientes = 48 idas ao Google em fila)
+  function emParalelo(lista, n, fn, tolerante) {
+    var i = 0, erro = null, falhas = [];
+    function proximo() {
+      if (erro || i >= lista.length) return Promise.resolve();
+      var it = lista[i++];
+      return Promise.resolve().then(function () { return fn(it); }).then(proximo, function (e) {
+        if (tolerante && !(e && e.auth)) { falhas.push(e); return proximo(); }
+        erro = e; throw e;
+      });
+    }
+    var w = []; for (var k = 0; k < Math.min(n, lista.length); k++) w.push(proximo());
+    return Promise.all(w).then(function () { if (falhas.length) throw { msg: falhas.length + ' item(ns) não subiram: ' + ((falhas[0] && (falhas[0].msg || falhas[0].message)) || '?') }; });
+  }
   /* ---------- ciclo de sincronização ---------- */
   function estado(e, m) { st.estado = e; st.msg = m; desenharStatus(); }
   function agendar() { clearTimeout(timer); timer = setTimeout(agora, 2500); desenharStatus(); }
-  var corrente = Promise.resolve();
+  var corrente = Promise.resolve(), inicioSync = 0, listadoEm = 0, modLista = {};
   function agora() {
-    if (rodando) return corrente;
-    corrente = agora0(); return corrente;
+    if (rodando && Date.now() - inicioSync < 180000) return corrente;
+    inicioSync = Date.now(); corrente = agora0(); return corrente;
   }
   function agora0() {
+    if (window.__estadoPronto === false) return Promise.resolve();
     st.pend = contarPend().total;
     if (!navigator.onLine) { estado('off', 'sem internet — tudo salvo no aparelho'); return Promise.resolve(); }
     if (!configurado() && !window.__TEST_TOKEN) { estado('local', 'só neste aparelho (login não configurado)'); return Promise.resolve(); }
@@ -346,11 +384,21 @@ var SYNC = (function () {
     rodando = true; estado('sync', 'sincronizando…');
     S.sync = S.sync || {}; S.sync.enviado = S.sync.enviado || {}; S.sync.ids = S.sync.ids || {}; S.sync.vistos = S.sync.vistos || {};
     var pPac;
-    return sub('pacientes').then(function (id) { pPac = id; return listar(id); }).then(function (files) {
+    var dups = [];
+    return sub('pacientes').then(function (id) { pPac = id; return listar(id); }).then(function (todos) {
+      // dois aparelhos criando o mesmo paciente ao mesmo tempo geram dois arquivos com o mesmo nome:
+      // todos escolhem o MESMO (menor id); os outros são juntados nele e vão para a lixeira
+      var grp = {}, files = [];
+      todos.forEach(function (f) { (grp[f.name] = grp[f.name] || []).push(f); });
+      Object.keys(grp).forEach(function (nm) {
+        var L = grp[nm].sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+        files.push(L[0]); L.slice(1).forEach(function (f) { dups.push({ pid: nm.replace(/\.json$/, ''), f: f }); });
+      });
       // 1) baixa o que mudou na nuvem (outros aparelhos) e mescla
-      var baixar = files.filter(function (f) { var pid = f.name.replace(/\.json$/, ''); S.sync.ids[pid] = f.id; return S.sync.vistos[pid] !== f.modifiedTime; });
-      return baixar.reduce(function (pr, f) {
-        return pr.then(function () {
+      listadoEm = Date.now(); modLista = {};
+      var baixar = files.filter(function (f) { var pid = f.name.replace(/\.json$/, ''); S.sync.ids[pid] = f.id; modLista[pid] = f.modifiedTime; return S.sync.vistos[pid] !== f.modifiedTime; });
+      return emParalelo(baixar, 6, function (f) {
+        return (function () {
           var pid = f.name.replace(/\.json$/, '');
           return baixarJSON(f.id).then(function (rem) {
             var tinhaLocal = S.sync.enviado[pid] !== undefined ? sujo(pid) : idsLocais().indexOf(pid) > -1 && sujo(pid) && hasLocal(pid);
@@ -360,17 +408,26 @@ var SYNC = (function () {
               else { delete S.sync.enviado[pid]; st.reenvios = (st.reenvios || 0) + 1; }                                     // a nuvem perdeu algo deste aparelho: reenviar
             }
           });
+        })();
+      }).then(function () {
+        return emParalelo(dups, 4, function (d) {
+          return baixarJSON(d.f.id).then(function (rem) {
+            mesclar(d.pid, rem); delete S.sync.enviado[d.pid];   // reenvia tudo junto no arquivo escolhido
+            return req(API + '/files/' + d.f.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
+          }).catch(function (e) { if (window.ERR) ERR.log('sync-dup', e); });
         });
-      }, Promise.resolve()).then(function () { return baixar.length; });
+      }).then(function () { return baixar.length + dups.length; });
     }).then(function (nb) {
       return enviarFotos().then(function (nf) { return { nb: nb, nf: nf }; });
     }).then(function (x0) {
       var nb = x0.nb;
       // 2) envia o que mudou aqui (já com o endereço das fotos)
       var envia = idsLocais().filter(function (pid) { var r = registro(pid); return (r.apagado || Object.keys(r.visitas).length || r.evo.length || r.fotos.length || r.pend.some(function (x) { return !x.auto; }) || r.pendDel.length) && sujo(pid); });
-      return envia.reduce(function (pr, pid) {
-        return pr.then(function () {
-          var conferir = S.sync.ids[pid] ? req(API + '/files/' + S.sync.ids[pid] + '?fields=id,modifiedTime,trashed').then(function (r) { return r.json(); }).then(function (m) {
+      var feitos = 0; if (envia.length) estado('sync', 'enviando 0/' + envia.length + '…');
+      return emParalelo(envia, 6, function (pid) {
+        return (function () {
+          var recente = Date.now() - listadoEm < 60000 && modLista[pid] && modLista[pid] === S.sync.vistos[pid];   // lista tem menos de 1 min e ninguém mexeu: pula a conferência
+          var conferir = S.sync.ids[pid] && !recente ? req(API + '/files/' + S.sync.ids[pid] + '?fields=id,modifiedTime,trashed').then(function (r) { return r.json(); }).then(function (m) {
             if (m && !m.trashed && m.modifiedTime && m.modifiedTime !== S.sync.vistos[pid]) {
               st.conflitos = (st.conflitos || 0) + 1;
               return baixarJSON(m.id).then(function (rem) { mesclar(pid, rem); S.sync.vistos[pid] = m.modifiedTime; });
@@ -380,12 +437,12 @@ var SYNC = (function () {
             var j = JSON.stringify(registro(pid)), b = new Blob([j], { type: 'application/json' });
             var t0 = Date.now();
             var op = S.sync.ids[pid] ? atualizarArquivo(S.sync.ids[pid], b, 'application/json') : criarArquivo(pid + '.json', pPac, b, 'application/json');
-            return op.then(function (f) { S.sync.ids[pid] = f.id; S.sync.vistos[pid] = f.modifiedTime; S.sync.enviado[pid] = j; medirRelogio(f.modifiedTime, t0); });
+            return op.then(function (f) { S.sync.ids[pid] = f.id; S.sync.vistos[pid] = f.modifiedTime; S.sync.enviado[pid] = j; medirRelogio(f.modifiedTime, t0); feitos++; st.msg = 'enviando ' + feitos + '/' + envia.length + '…'; st.pend = contarPend().total; desenharStatus(); });
           });
-        });
-      }, Promise.resolve()).then(function () { return { nb: nb, ne: envia.length, nf: x0.nf }; });
+        })();
+      }, true).then(function () { return { nb: nb, ne: envia.length, nf: x0.nf }; });
     }).then(function (x) {
-      return esvaziarLixo().then(function () { return backupDiario(); }).then(function () { return arquivar().catch(function (e) { if (window.ERR) ERR.log('arquivar', e); }); }).then(function () { return x; });
+      return esvaziarLixo().then(function () { return backupDiario(); }).then(function () { return limparBackups().catch(function (e) { if (window.ERR) ERR.log('backups', e); }); }).then(function () { return arquivar().catch(function (e) { if (window.ERR) ERR.log('arquivar', e); }); }).then(function () { return x; });
     }).then(function (x) {
       S.sync.ultimo = Date.now(); saveLocal(); rodando = false;
       st.pend = contarPend().total;
@@ -406,8 +463,8 @@ var SYNC = (function () {
     if (!lista.length) return Promise.resolve(0);
     var n = 0;
     return sub('fotos').then(function (pf) {
-      return lista.reduce(function (pr, it) {
-        return pr.then(function () {
+      return emParalelo(lista, 3, function (it) {
+        return (function () {
           var pid = it[0], f = it[1];
           return FDB.get(f.lid).then(function (blob) {
             if (!blob) {   // o arquivo da foto não está neste aparelho: já está no Drive? senão, marca como perdida (para de travar o envio e o "Sair")
@@ -418,8 +475,8 @@ var SYNC = (function () {
             return destino.then(function (pp) { return criarArquivo(f.nome, pp, blob, 'image/jpeg', { pid: pid, tipo: f.tipo, lid: f.lid }); })
               .then(function (r) { f.driveId = r.id; n++; saveLocal(); });
           });
-        });
-      }, Promise.resolve());
+        })();
+      });
     }).then(function () { return n; });
   }
   function esvaziarLixo() {
@@ -445,6 +502,24 @@ var SYNC = (function () {
     }).then(function () { S.sync.backups[S.hoje] = 1; backupRodando = null; }, function (e) { backupRodando = null; throw e; });
     return backupRodando;
   }
+  /* retenção dos backups no Drive (1x por dia): últimos 14 dias = o mais recente de cada dia; mais antigos = o mais recente de cada mês.
+     Os demais vão para a LIXEIRA do Drive (recuperáveis por 30 dias), nunca apagados direto. */
+  function limparBackups() {
+    S.sync = S.sync || {};
+    if (S.sync.limpBk === S.hoje) return Promise.resolve(0);
+    return sub('backups').then(function (pb) { return listar(pb); }).then(function (L) {
+      var lim = new Date(new Date(S.hoje + 'T12:00:00').getTime() - 14 * 864e5).toISOString().slice(0, 10), fica = {}, fora = [];
+      L.filter(function (f) { return /^backup-\d{4}-\d{2}-\d{2}/.test(f.name || ''); })
+        .sort(function (a, b) { return a.name < b.name ? 1 : a.name > b.name ? -1 : (String(b.modifiedTime) > String(a.modifiedTime) ? 1 : -1); })
+        .forEach(function (f) {
+          var d = f.name.slice(7, 17), k = d >= lim ? d : d.slice(0, 7);   // um por dia (recente) ou um por mês (antigo)
+          if (fica[k]) fora.push(f); else fica[k] = f;
+        });
+      fora = fora.slice(0, 60);   // aos poucos, para não pesar
+      return fora.reduce(function (pr, f) { return pr.then(function () { return req(API + '/files/' + f.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }).catch(function () {}); }); }, Promise.resolve())
+        .then(function () { S.sync.limpBk = S.hoje; return fora.length; });
+    });
+  }
   function backupObj() {
     var o = {}; ['hoje', 'pacientes', 'vis', 'pend', 'pendDel', 'evo', 'fotos', 'conf', 'fonte', 'dataIG', 'cab', 'idents', 'dihConv', 'igHist', 'vistoEm', 'altaEm', 'ultimos', 'apagados', 'rasc'].forEach(function (k) { o[k] = S[k]; });
     o.geradoEm = new Date().toISOString(); o.por = S.eu || ''; return o;
@@ -454,7 +529,7 @@ var SYNC = (function () {
     var el = document.getElementById('sync'); if (!el) return;
     var ic = { ok: '☁︎', sync: '⟳', off: '📴', login: '🔑', erro: '⚠', local: '📱' }[st.estado] || '';
     var pend = contarPend().total;
-    el.className = 'sync ' + st.estado;
+    el.className = 'sync ' + st.estado + (st.estado === 'ok' && !pend ? ' quieto' : '');   // tudo certo: a linha some (o ícone da nuvem mostra o estado)
     el.innerHTML = ic + ' ' + esc(st.msg) + (pend ? ' · <b>' + pend + ' aguardando envio</b>' : '');
   }
 
@@ -505,6 +580,25 @@ var SYNC = (function () {
       });
     });
   }
+  // histórico do internograma (quem estava em cada dia), comum a todos os aparelhos
+  function igHistArquivo() {
+    return raiz().then(function (pid) {
+      return req(API + '/files?q=' + q("name='internograma-hist.json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq.ighist ? { id: idsArq.ighist } : null) }; });
+    });
+  }
+  function igHistTrocar(juntar) {   // baixa, junta com o local (juntar devolve {obj, mudou}) e regrava
+    var mudou = false;
+    return enfileirar('ighist', function () {
+      return igHistArquivo().then(function (o) {
+        return (o.f ? baixarJSON(o.f.id) : Promise.resolve(null)).then(function (rem) {
+          var r = juntar(rem); mudou = r.mudou;
+          var b = new Blob([JSON.stringify(r.obj)], { type: 'application/json' });
+          if (o.f) { idsArq.ighist = o.f.id; return atualizarArquivo(o.f.id, b, 'application/json'); }
+          return criarArquivo('internograma-hist.json', o.pai, b, 'application/json').then(function (x) { if (x && x.id) idsArq.ighist = x.id; });
+        });
+      });
+    }).then(function () { return mudou; });
+  }
   function ambArquivo(reg) {
     return ambPasta().then(function (pid) {   // procura em todo o Drive: acha a ficha mesmo que esteja numa pasta duplicada antiga
       return req(API + '/files?q=' + q("name='amb-" + reg + ".json' and trashed=false") + '&fields=files(id,modifiedTime)&pageSize=20').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq['amb' + reg] ? { id: idsArq['amb' + reg] } : null) }; });
@@ -513,7 +607,7 @@ var SYNC = (function () {
   function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
   function ambSalvar(reg, obj) { return salvarPorNome('amb' + reg, null, 'amb-' + reg + '.json', obj, function () { return ambArquivo(reg); }); }
   function mapaSalvar(iso, obj) { return salvarPorNome('mapa' + iso, null, 'mapa-' + iso + '.json', obj, function () { return mapaArquivo(iso); }); }
-  return { ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
