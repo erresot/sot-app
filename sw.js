@@ -1,5 +1,5 @@
 /* SOT APP — funcionamento offline. O número da versão é carimbado pelo build (python3 build.py N). */
-var V = 'sot-v53';
+var V = 'sot-v54';
 var C_OCR = 'sot-ocr-1';        // leitor de fotos (12 MB): NÃO é apagado quando sai versão nova. Se trocar os arquivos do leitor, mude este nome.
 var C_FONTES = 'sot-fontes-2';  // letras dos programas (arquivos locais em hub/fonts): não mudam entre versões
 var ESSENCIAL = ['./', 'index.html', 'evo.html', 'campos.js', 'pessoa.js', 'sot-datas.js', 'sot-med.js', 'sot-exames.js', 'sot-linha.js', 'sync.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
