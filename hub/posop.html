@@ -116,7 +116,50 @@ textarea{width:100%;resize:vertical}
 .toast.on{opacity:1}
 .save-row{display:flex;gap:6px;margin-top:8px}
 .save-row input{flex:1;min-width:0}
+.chips.collapsed .chip.extra:not([aria-pressed="true"]){display:none}
+.chip.more{border-style:dashed;color:var(--muted)}
+.atb-box{margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:6px;display:flex;flex-direction:column;gap:6px}
+.atb-h{font-size:12px;color:var(--muted)}
+.atb-h b{color:var(--ink)}
+.atb-det{margin:0;font-size:12px;color:var(--muted)}
+.atb-warn{margin:0;font-size:12px;color:var(--warn)}
+.mini.wide{width:auto;padding:4px 10px;font-size:12px;white-space:normal;text-align:left;height:auto}
+.bld{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.bld:empty{display:none}
+/* montadores: mesmos "chips" separados do resto do programa (antes eram blocos colados que quebravam com divisórias soltas) */
+.bseg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.bseg button{border:1px solid var(--line);background:var(--surface-2);border-radius:5px;padding:4px 9px;font-size:12px;line-height:1.3;cursor:pointer;color:var(--ink)}
+.bseg button:hover{border-color:var(--accent)}
+.bseg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bnum{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--muted)}
+.bnum input{width:62px;text-align:center;font-family:var(--f-mono)}
+.bsel{font-size:12.5px;padding:5px 7px}
+.bchk{font-size:12.5px}
+.btxt{flex:1 1 220px;min-width:160px;font-size:12.5px}
+.bnote{flex-basis:100%;font-size:11.5px;color:var(--muted);font-style:italic}
+.phr-t[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.esp-wrap{display:flex;flex-direction:column;gap:6px}
+.esp-sel{display:flex;flex-direction:column;gap:4px}
+.esp-tag{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:12px;background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:5px;padding:4px 6px 4px 8px}
+.esp-tag button{margin-left:auto;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px}
+.esp-tag button+button{margin-left:0}
+.esp-g{border:1px solid var(--line);border-radius:6px;padding:0 8px}
+.esp-g summary{cursor:pointer;padding:6px 0;display:flex;gap:8px;align-items:baseline;font-size:13px;font-weight:600}
+.esp-g summary small{font-weight:400;color:var(--muted);font-size:11.5px}
+.esp-body{display:flex;flex-direction:column;gap:6px;padding:2px 0 8px}
+.bseg-l{font-family:var(--f-display);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:2px}
+.bnum-i{width:190px;font-size:12.5px}
+.esp-prev{flex:1;min-width:0;font-size:11.5px;color:var(--muted);white-space:normal}
+.btn.sm{padding:4px 10px;font-size:12px}
+.asst{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.asst-day{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.asst-day b{font-size:11px;letter-spacing:.06em;color:var(--muted);width:32px;flex:none}
+.asst .chip.sug{border-style:dashed;border-color:var(--accent)}
+.awarn{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;padding:8px 10px;border:1px solid var(--warn);border-radius:6px;color:var(--warn);font-size:13px}
+.awarn button{border:1px solid var(--warn);background:var(--warn);color:var(--surface);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.awarn button.ghost{background:transparent;color:var(--warn)}
 footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
+.atualiz{display:block;margin-top:6px;font-size:10.5px;opacity:.6}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 
@@ -184,7 +227,7 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
       <div class="row">
         <span class="lbl">Itens específicos</span>
         <div class="rowbody">
-          <div class="chips" id="esp"></div>
+          <div class="esp-wrap" id="esp"></div>
           <div class="inline"><input type="text" id="espNew" placeholder="Adicionar item próprio e Enter"><button type="button" class="mini" id="espAdd" aria-label="Adicionar item">+</button></div>
         </div>
       </div>
@@ -209,6 +252,7 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
             <label class="chk"><input type="checkbox" id="retData"> Incluir data do 1º retorno</label>
           </div>
           <span class="hint" id="retHint"></span>
+          <div class="awarn" id="asstWarn" hidden></div>
         </div>
       </div>
 
@@ -230,9 +274,11 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
             <span class="hint">ciente do quadro e suas possíveis complicações</span>
           </div>
           <div class="inline">
-            <select id="sigPre"><option>ASS DR</option><option>ASS DRA</option><option>ASSISTENTE: DR</option><option>ASSISTENTE: DRA</option><option>EQUIPE</option></select>
+            <select id="sigPre"><option>ASS DR</option><option>ASS</option><option>ASS DRA</option><option>ASSISTENTE: DR</option><option>ASSISTENTE: DRA</option><option>EQUIPE</option></select>
             <input type="text" id="sigName" placeholder="Nome do assistente / equipe">
           </div>
+          <div class="asst" id="asst" aria-label="Escala dos assistentes"></div>
+          <span class="hint" id="asstHint"></span>
         </div>
       </div>
     </section>
@@ -253,7 +299,7 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
         <label class="chk"><input type="checkbox" id="oDates"> Datas nas durações</label>
         <label class="chk"><input type="checkbox" id="oAscii"> Sem acentos</label>
         <label class="chk"><input type="checkbox" id="oSot"> #SOT# no topo</label>
-        <label class="chk">Título <select id="oHead"><option>PROGRAMAÇÃO</option><option>CONDUTA</option><option>CD</option></select></label>
+        <label class="chk">Título <select id="oHead"><option>PROGRAMAÇÃO</option><option>CONDUTA</option><option>CD</option><option># PROGRAMAÇÃO</option></select></label>
       </div>
     </section>
     <section class="panel">
@@ -263,7 +309,7 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
   </div>
 </div>
 
-<footer>Modelos montados a partir das evoluções de programação do serviço. Revise cada item com o assistente antes de registrar; condutas variam por caso. Meus modelos e assinatura ficam salvos só neste navegador.</footer>
+<footer>Modelos montados a partir das evoluções de programação do serviço (revisados em nov/2026 com ~290 programações reais). Revise cada item com o assistente antes de registrar; condutas variam por caso. Meus modelos e assinatura ficam salvos só neste navegador.<span class="atualiz">última atualização das condutas pós-op: 23/11/2026</span></footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -280,14 +326,14 @@ const REGION_ORDER=["cervical","coluna","ombro","braco","cotovelo","antebraco","
 
 const FIELDS=[
  {k:"alta",l:"Alta",c:["ALTA APÓS RPA","ALTA NO 1º PO","ALTA NO 2º PO","ALTA APÓS ALTA DA UTI","ALTA NO 2º PO / APÓS ALTA DA UTI","ALTA NO 3º PO (APÓS DOSE DE ATB)","INTERNADO ATÉ SEGUNDA ORDEM","DISCUTIR ALTA APÓS RESULTADOS DE CULTURAS E DISCUSSÃO COM CCIH","ALTA DA EQUIPE ORTOPEDIA (ALTA HOSPITALAR A CRITÉRIO DA EQUIPE PRESTADORA)"]},
- {k:"atb",l:"Antibiótico",c:["ATB CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB EV ATÉ ALTA","ATB EV ATÉ ALTA + VO 7 DIAS","ATB EV ATÉ ALTA + VO 3 DIAS","ATB EV ATÉ ALTA + VO 14 DIAS","ATB CONFORME PROTOCOLO DA INSTITUIÇÃO (DOSE EXPOSTA)","ATB VO CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB CONFORME CULTURA PRÉVIA","ATB EMPÍRICO ATÉ RESULTADO DE CULTURA","ATB EV CONFORME PROTOCOLO ATÉ DISCUSSÃO COM CCIH"]},
+ {k:"atb",l:"Antibiótico",c:["ATB CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB EV ATÉ ALTA","ATB EV ATÉ ALTA + VO 7 DIAS","ATB EV ATÉ ALTA + VO 3 DIAS","ATB EV ATÉ ALTA + VO 14 DIAS","ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB VO CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB CONFORME CULTURA PRÉVIA","ATB EMPÍRICO ATÉ RESULTADO DE CULTURA","ATB EV CONFORME PROTOCOLO ATÉ DISCUSSÃO COM CCIH"]},
  {k:"analg",l:"Analgesia",c:["ANALGESIA CONFORME DOR","ANALGESIA DE HORÁRIO","ANALGESIA OTIMIZADA","ANALGESIA VO POTENTE","ANALGESIA POTENTE","ANALGESIA PÓS-OPERATÓRIA","ANALGESIA SE NECESSÁRIO"]},
  {k:"tev",l:"Profilaxia TEV",c:["HEPARINA PROFILÁTICA","HEPARINA PROFILÁTICA POR 28 DIAS","HEPARINA PROFILÁTICA (INICIAR APÓS 24 HORAS)","ANTICOAGULAÇÃO PROFILÁTICA","PROFILAXIA ANTITROMBÓTICA","RIVAROXABANA 28 DIAS","RETORNAR ANTICOAGULAÇÃO PRÉVIA"]},
- {k:"carga",l:"Carga",c:["CARGA CONFORME DOR COM ANDADOR","CARGA PARCIAL COM ANDADOR","CARGA TOTAL CONFORME DOR COM ANDADOR","CARGA PARCIAL LIBERADA COM ANDADOR - SEGURAR CARGA TOTAL","CARGA LIBERADA CONFORME DOR","SEM CARGA POR 6 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)","SEM CARGA ATÉ RETIRADA DE PONTOS","SEM CARGA ATÉ MELHORA DE PARTES MOLES","SEM CARGA ATÉ SEGUNDA ORDEM"]},
- {k:"imob",l:"Imobilização",c:["TALA AP POR 3 SEMANAS","TALA AXILOPALMAR ATÉ RETIRADA DE PONTOS E MELHORA DE PARTES MOLES","TALA LUVA POR 4-6 SEMANAS","TALA BOTA POR 4 SEMANAS","TALA BOTA POR 6 SEMANAS","TALA SUROPODÁLICA POR 6 SEMANAS (TRANSICIONAR PARA ROBOFOOT)","TALA IP POR 4 SEMANAS","TALA INGUINOPODÁLICA POR 4 SEMANAS","GESSO POR 3 SEMANAS","VELPEAU POR 3 SEMANAS","VELPEAU POR 4 SEMANAS","VELPEAU APENAS PARA CONFORTO","ROBOFOOT POR 6 SEMANAS","COLAR CERVICAL POR 60-90 DIAS","COLETE DE JEWETT POR 90-120 DIAS","TRAVA DE ABDUÇÃO ATÉ SEGUNDA ORDEM","SANDÁLIA ESPECIAL ATÉ SEGUNDA ORDEM"]},
+ {k:"carga",l:"Carga",c:["CARGA CONFORME DOR COM ANDADOR","CARGA PARCIAL COM ANDADOR","CARGA TOTAL CONFORME DOR COM ANDADOR","CARGA PARCIAL LIBERADA COM ANDADOR - SEGURAR CARGA TOTAL","CARGA CONFORME DOR","SEM CARGA POR 6 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)","SEM CARGA ATÉ RETIRADA DE PONTOS","SEM CARGA ATÉ MELHORA DE PARTES MOLES","SEM CARGA ATÉ SEGUNDA ORDEM"]},
+ {k:"imob",l:"Imobilização",c:["TALA AP POR 3 SEMANAS","TALA AXILOPALMAR ATÉ RETIRADA DE PONTOS E MELHORA DE PARTES MOLES","TALA LUVA POR 4-6 SEMANAS","TALA BOTA POR 4 SEMANAS","TALA BOTA POR 6 SEMANAS","TALA SUROPODÁLICA POR 6 SEMANAS (TROCAR POR ROBOFOOT EM AMBULATÓRIO)","TALA IP POR 4 SEMANAS","TALA INGUINOPODÁLICA POR 4 SEMANAS","GESSO POR 3 SEMANAS","VELPEAU POR 3 SEMANAS","VELPEAU POR 4 SEMANAS","VELPEAU APENAS PARA CONFORTO","ROBOFOOT POR 6 SEMANAS","COLAR CERVICAL POR 60-90 DIAS","COLETE JEWETT POR 90-120 DIAS","TRAVA DE ABDUÇÃO ATÉ SEGUNDA ORDEM","SANDÁLIA ESPECIAL ATÉ SEGUNDA ORDEM"]},
  {k:"fk",l:"Fios (FK)",c:["FK POR 3 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)","FK POR 4 SEMANAS","FK POR 4-6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)","FK POR 6 SEMANAS"]},
- {k:"fisio",l:"Fisioterapia",c:["APÓS RETIRADA DE PONTOS DE SUTURA, INICIAR FISIOTERAPIA","FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)","FISIOTERAPIA IMEDIATA","FISIOTERAPIA","AO RETIRAR A IMOBILIZAÇÃO, INICIAR FISIOTERAPIA","FISIOTERAPIA APÓS RETIRADA DE VELPEAU E FK","ORIENTAR PACIENTE SOBRE FISIOTERAPIA MOTORA PARA MMII"]},
- {k:"curativo",l:"Curativo",c:["APÓS ALTA, CURATIVO DIÁRIO EM UBS","CURATIVO DIÁRIO","AVALIAR CURATIVO DIARIAMENTE","CHECAR CURATIVO ATÉ ALTA","MANTER CURATIVO FECHADO 72 HORAS, TROCA DIÁRIA APÓS","CURATIVO OCLUSIVO 24-48H, APÓS CURATIVO DIÁRIO","CURATIVO A CADA 48 HORAS COM FOTOS","MANTER CURATIVO ESTÉRIL ATÉ RETORNO","CURATIVO FECHADO ATÉ RETORNO EM AMBULATÓRIO"]}
+ {k:"fisio",l:"Fisioterapia",c:["FISIOTERAPIA APÓS RETIRADA DE PONTOS DE SUTURA","FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)","FISIOTERAPIA IMEDIATA","FISIOTERAPIA","FISIOTERAPIA APÓS RETIRADA DA IMOBILIZAÇÃO","FISIOTERAPIA APÓS RETIRADA DE VELPEAU E FK","FISIOTERAPIA MOTORA PARA MMII"]},
+ {k:"curativo",l:"Curativo",c:["CURATIVO DIÁRIO EM UBS","CURATIVO DIÁRIO","AVALIAR CURATIVO DIARIAMENTE","CHECAR CURATIVO ATÉ A ALTA","CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO","CURATIVO OCLUSIVO 24-48H, APÓS CURATIVO DIÁRIO","CURATIVO A CADA 48 HORAS (COM FOTO, MOSTRAR PARA R+)","MANTER CURATIVO ESTÉRIL ATÉ O RETORNO","MANTER CURATIVO ESTÉRIL ATÉ O RETORNO"]}
 ];
 const E={
  dreno:"DRENO 48 HORAS OU < 50 ML (INFORMAR ASSISTENTE)",
@@ -317,88 +363,206 @@ const TEMPLATES=[
  // coluna cervical
  {id:"artrodese-cerv",r:"cervical",n:"Descompressão + artrodese cervical",t:"Coluna",d:T({proc:"DESCOMPRESSÃO + ARTRODESE C5-C6 E C6-C7",lado:"",alta:"ALTA APÓS ALTA DA UTI",imob:"COLAR CERVICAL POR 60-90 DIAS",esp:["PERMITIDO ELEVAR CABECEIRA COM USO DE COLAR CERVICAL","DRENO 48H OU SE DÉBITO < 50 ML (ALINHAR COM ASSISTENTE)"],tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA PÓS-OPERATÓRIA",sinais:false,ret:{apos:true,dia:"1",fins:["RX","REAV"]}})},
  // coluna toracolombar
- {id:"artrodese",r:"coluna",n:"Descompressão + artrodese torácica",t:"Coluna",d:T({proc:"DESCOMPRESSÃO + ARTRODESE T4-T10",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",esp:[E.dreno,E.ap],imob:"COLETE DE JEWETT POR 90-120 DIAS",curativo:"APÓS ALTA, TROCA DE CURATIVO DIÁRIO EM UBS",sinais:false,ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
- {id:"artrodese-lomb",r:"coluna",n:"Descompressão + artrodese lombar",t:"Coluna",d:T({proc:"DESCOMPRESSÃO + ARTRODESE DE L3-S1",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI (DISCUTIR COM ASSISTENTE)",esp:["DRENO 48H / MENOR DE 50 ML EM 24H"],tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA SE NECESSÁRIO",curativo:"APÓS ALTA, CURATIVO DIÁRIO EM UBS",ret:{dia:"5",fins:["CUR","RX","DISC"],obs:""}})},
- {id:"discectomia",r:"coluna",n:"Discectomia lombar",t:"Coluna",d:T({proc:"DISCECTOMIA L4-L5",alta:"ALTA NO 2º PO - INFORMAR ASSISTENTE",esp:["QUANTIFICAR DRENO, 48H OU < 50 ML",E.ap],fisio:"ORIENTAR PACIENTE SOBRE FISIOTERAPIA MOTORA PARA MMII",analg:"",sinais:false,ciente:"PACIENTE",ret:{dia:"1",fins:["CUR","REAV"]}})},
- {id:"laminectomia",r:"coluna",n:"Discectomia + laminectomia",t:"Coluna",d:T({proc:"DISCECTOMIA + LAMINECTOMIA DE L4-L5",lado:"",alta:"ALTA NO 2º PO (DISCUTIR ALTA COM ASSISTENTE)",esp:[E.ap,"RETIRAR DRENO EM 48H / MENOS DE 50 ML EM 24H",E.repouso],tev:"HEPARINA PROFILÁTICA (INICIAR APÓS 24 HORAS)",analg:"ANALGESIA DE HORÁRIO",ret:{dia:"1",fins:["CUR","REAV","DISC"]}})},
+ {id:"artrodese",r:"coluna",n:"Descompressão + artrodese torácica",t:"Coluna",d:T({proc:"DESCOMPRESSÃO + ARTRODESE T4-T10",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",esp:[E.dreno,E.ap],imob:"COLETE JEWETT POR 90-120 DIAS",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
+ {id:"artrodese-lomb",r:"coluna",n:"Descompressão + artrodese lombar",t:"Coluna",d:T({proc:"DESCOMPRESSÃO + ARTRODESE DE L3-S1",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI (DISCUTIR COM ASSISTENTE)",esp:["DRENO 48H / MENOR DE 50 ML EM 24H"],tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA SE NECESSÁRIO",curativo:"CURATIVO DIÁRIO EM UBS",ret:{dia:"5",fins:["CUR","RX","DISC"],obs:""}})},
+ {id:"discectomia",r:"coluna",n:"Discectomia lombar",t:"Coluna",d:T({proc:"DISCECTOMIA L4-L5",alta:"ALTA NO 2º PO - INFORMAR ASSISTENTE",esp:["QUANTIFICAR DRENO, 48H OU < 50 ML",E.ap],fisio:"FISIOTERAPIA MOTORA PARA MMII",analg:"",sinais:false,ciente:"PACIENTE",ret:{dia:"1",fins:["CUR","REAV"]}})},
+ {id:"laminectomia",r:"coluna",n:"Discectomia + laminectomia",t:"Coluna",d:T({proc:"DISCECTOMIA + LAMINECTOMIA DE L4-L5",lado:"",alta:"ALTA NO 2º PO (DISCUTIR COM ASSISTENTE)",esp:[E.ap,"RETIRAR DRENO EM 48H / MENOS DE 50 ML EM 24H",E.repouso],tev:"HEPARINA PROFILÁTICA (INICIAR APÓS 24 HORAS)",analg:"ANALGESIA DE HORÁRIO",ret:{dia:"1",fins:["CUR","REAV","DISC"]}})},
  {id:"rizotomia",r:"coluna",n:"Rizotomia lombar + bloqueio caudal",t:"Coluna",d:T({proc:"RIZOTOMIA DE COLUNA LOMBAR + BLOQUEIO CAUDAL",lado:"",alta:"ALTA APÓS RPA",rx:false,atb:"",analg:"MELOXICAM + RELAXANTE MUSCULAR POR 10 DIAS",esp:[E.repouso],fisio:"FISIOTERAPIA",ret:{amb:"COLUNA",apos:false,dia:"5",em:"14",fins:["REAV"]}})},
- {id:"biopsia-coluna",r:"coluna",n:"Biópsia de coluna (interconsulta)",t:"Coluna",d:T({proc:"BIÓPSIA DE COLUNA LOMBAR L4",lado:"",alta:"ALTA DA EQUIPE ORTOPEDIA (ALTA HOSPITALAR A CRITÉRIO DA EQUIPE PRESTADORA)",rx:false,atb:"",analg:"",imob:"COLETE DE JEWETT ATÉ SEGUNDA ORDEM",esp:["PREVENIR ÚLCERAS DE PRESSÃO E ESCARAS",E.inter],orient:false,sinais:false,ciente:"PACIENTE E ACOMPANHANTES",ret:{amb:"ORTOPEDIA COLUNA",apos:false,dia:"1",em:"21",fins:["AP"]}})},
- {id:"polilaminina",r:"coluna",n:"Infiltração de polilaminina",t:"Coluna",d:T({proc:"INFILTRAÇÃO DE POLILAMININA SOB SEDAÇÃO",lado:"",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB 7 DIAS",imob:"COLETE DE JEWETT POR 90-120 DIAS (DISCUTIR RETIRADA COM ASSISTENTE)",fisio:"FISIOTERAPIA",analg:"ANALGESIA",curativo:"APÓS ALTA, TROCA DE CURATIVO DIÁRIO EM UBS",ret:{dia:"1",fins:["CUR","RX","DISC"]}})},
+ {id:"biopsia-coluna",r:"coluna",n:"Biópsia de coluna (interconsulta)",t:"Coluna",d:T({proc:"BIÓPSIA DE COLUNA LOMBAR L4",lado:"",alta:"ALTA DA EQUIPE ORTOPEDIA (ALTA HOSPITALAR A CRITÉRIO DA EQUIPE PRESTADORA)",rx:false,atb:"",analg:"",imob:"COLETE JEWETT ATÉ SEGUNDA ORDEM",esp:["PREVENIR ÚLCERAS DE PRESSÃO E ESCARAS",E.inter],orient:false,sinais:false,ciente:"PACIENTE E ACOMPANHANTES",ret:{amb:"ORTOPEDIA COLUNA",apos:false,dia:"1",em:"21",fins:["AP"]}})},
+ {id:"polilaminina",r:"coluna",n:"Infiltração de polilaminina",t:"Coluna",d:T({proc:"INFILTRAÇÃO DE POLILAMININA SOB SEDAÇÃO",lado:"",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB 7 DIAS",imob:"COLETE JEWETT POR 90-120 DIAS (DISCUTIR RETIRADA COM ASSISTENTE)",fisio:"FISIOTERAPIA",analg:"ANALGESIA",curativo:"CURATIVO DIÁRIO EM UBS",ret:{dia:"1",fins:["CUR","RX","DISC"]}})},
  // ombro
  {id:"manguito",r:"ombro",n:"Reparo do manguito rotador",t:"Ombro",d:T({proc:"REPARO PARCIAL DE MANGUITO ROTADOR",alta:"ALTA APÓS RPA",imob:"VELPEAU POR 4 SEMANAS",analg:"ANALGESIA OTIMIZADA",ps:true,ret:{apos:false,dia:"2",fins:["CUR","REAV"]}})},
  {id:"clavicula",r:"ombro",n:"Osteossíntese de clavícula",t:"Ombro",d:T({proc:"OSTEOSSÍNTESE DE CLAVÍCULA",alta:"ALTA APÓS RPA",atb:"ATB VO CONFORME PROTOCOLO DA INSTITUIÇÃO",fk:"FK POR 4-6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",imob:"VELPEAU POR 4 SEMANAS",analg:"",sinais:false,ret:{apos:false,dia:"5",fins:["CUR","RX","REAV"]}})},
  {id:"acromio",r:"ombro",n:"Luxação acromioclavicular",t:"Ombro",d:T({proc:"CORREÇÃO DE LUXAÇÃO ACROMIOCLAVICULAR",alta:"ALTA NO 1º PO",imob:"VELPEAU POR 4 SEMANAS",fk:"FK POR 4 SEMANAS",fisio:"FISIOTERAPIA APÓS RETIRADA DE VELPEAU E FK",sinais:false,ps:true,ret:{apos:false,dia:"2",fins:["CUR","REAV","RX"]}})},
  {id:"umero-prox",r:"ombro",n:"Fixação de úmero proximal",t:"Ombro",d:T({proc:"REDUÇÃO E FIXAÇÃO DE ÚMERO PROXIMAL",imob:"VELPEAU POR 4-6 SEMANAS",fk:"FK POR 4-6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",ret:{dia:"3",em:"21",fins:["CUR","RX","REAV"]}})},
- {id:"endoprotese-umero",r:"ombro",n:"Revisão de endoprótese de úmero proximal",t:"Oncologia",d:T({proc:"REVISÃO DE ENDOPRÓTESE DE ÚMERO PROXIMAL",alta:"ALTA NO 2º PO OU APÓS ALTA DA UTI",analg:"",imob:"VELPEAU APENAS PARA CONFORTO",esp:["ORIENTAR PACIENTE SOBRE PERDA PONDERAL (RISCO DE NOVA LUXAÇÃO POR SOBREPESO)"],sinais:false,ret:{amb:"",dia:"4",fins:["RX","REAV"]}})},
+ {id:"endoprotese-umero",r:"ombro",n:"Revisão de endoprótese de úmero proximal",t:"Oncologia",d:T({proc:"REVISÃO DE ENDOPRÓTESE DE ÚMERO PROXIMAL",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",analg:"",imob:"VELPEAU APENAS PARA CONFORTO",esp:["ORIENTAR PACIENTE SOBRE PERDA PONDERAL (RISCO DE NOVA LUXAÇÃO POR SOBREPESO)"],sinais:false,ret:{amb:"",dia:"4",fins:["RX","REAV"]}})},
  {id:"plexo",r:"ombro",n:"Exploração de plexo braquial",t:"Mão / nervo",d:T({proc:"EXPLORAÇÃO DE PLEXO BRAQUIAL + TRANSFERÊNCIA DO ACESSÓRIO PARA O SUPRAESCAPULAR",rx:false,analg:"ANALGESIA SE NECESSÁRIO",imob:"VELPEAU POR 3 SEMANAS",curativo:"APÓS ALTA, CARTA PARA REALIZAR CURATIVO DIÁRIO EM UBS",ps:true,ret:{dia:"2",fins:["CUR","REAV","DISC"]}})},
  // braço
- {id:"umero-diaf",r:"braco",n:"Osteossíntese de úmero diafisário",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE ÚMERO DIAFISÁRIO",analg:"ANALGESIA VO SE NECESSÁRIO",imob:"VELPEAU POR 4 SEMANAS",esp:[E.neuro],fisio:"APÓS RETIRADA DE PONTOS DE SUTURA, INICIAR FISIOTERAPIA",curativo:"APÓS ALTA, TROCA DE CURATIVO DIÁRIO EM UBS",ret:{dia:"2",fins:["CUR","RX","REAV"]}})},
+ {id:"umero-diaf",r:"braco",n:"Osteossíntese de úmero diafisário",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE ÚMERO DIAFISÁRIO",analg:"ANALGESIA VO SE NECESSÁRIO",imob:"VELPEAU POR 4 SEMANAS",esp:[E.neuro],fisio:"FISIOTERAPIA APÓS RETIRADA DE PONTOS DE SUTURA",curativo:"CURATIVO DIÁRIO EM UBS",ret:{dia:"2",fins:["CUR","RX","REAV"]}})},
  // cotovelo
  {id:"olecrano",r:"cotovelo",n:"Osteossíntese de olécrano",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE OLÉCRANO",analg:"ANALGESIA",imob:"TALA AP POR 3 SEMANAS",ret:{apos:false,dia:"1",fins:["CUR","RX","REAV"]}})},
- {id:"olecrano-axilo",r:"cotovelo",n:"Olécrano com tala axilopalmar",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE OLÉCRANO",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"",imob:"TALA AXILOPALMAR ATÉ RETIRADA DE PONTOS E MELHORA DE PARTES MOLES",esp:[E.neuro],sinais:false,ret:{apos:false,dia:"2",fins:["RX","CUR"],obs:"(FORA DO DIA DO ASSISTENTE)"}})},
+ {id:"olecrano-axilo",r:"cotovelo",n:"Olécrano com tala axilopalmar",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE OLÉCRANO",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"",imob:"TALA AXILOPALMAR ATÉ RETIRADA DE PONTOS E MELHORA DE PARTES MOLES",esp:[E.neuro],sinais:false,ret:{apos:false,dia:"2",fins:["RX","CUR"],obs:"(FORA DO DIA DO ASSISTENTE)"}})},
  {id:"radio-ulna-prox",r:"cotovelo",n:"Osteossíntese de rádio e ulna proximal",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO E ULNA PROXIMAL",analg:"ANALGESIA",curativo:"CURATIVO DIÁRIO",ret:{apos:false,dia:"4",fins:["CUR","RX","REAV"]}})},
  // antebraço / punho
  {id:"radio",r:"antebraco",n:"Osteossíntese de rádio distal",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO DISTAL",alta:"ALTA APÓS RPA",analg:"",fk:"FK POR 6 SEMANAS",imob:"TALA LUVA POR 4-6 SEMANAS",ret:{amb:"GESSO",apos:false,dia:"2",fins:["REAV","RX"]}})},
  {id:"radio-rev",r:"antebraco",n:"Revisão de osteossíntese de rádio distal",t:"Trauma",d:T({proc:"REVISÃO DE OSTEOSSÍNTESE DE RÁDIO DISTAL",alta:"ALTA APÓS RPA",analg:"ANALGESIA DE HORÁRIO",imob:"TALA LUVA POR 21 DIAS",esp:[E.perf],sinais:false,ps:true,ret:{apos:false,dia:"5",em:"7",fins:["CUR","RX"]}})},
- {id:"radio-diaf-bil",r:"antebraco",n:"Rádio/ulna bilateral + bacia (politrauma)",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO DIAFISÁRIO BILATERAL + OSTEOSSÍNTESE DE ULNA + OSTEOSSÍNTESE DE BACIA COM FECHAMENTO DE SÍNFISE PÚBICA",lado:"",alta:"ALTA APÓS ALTA DA UTI / 2º PO",atb:"ATB PROFILAXIA CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA DE HORÁRIO",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",imob:"TALA AP BILATERAL POR 4 SEMANAS",fisio:"AO RETIRAR A TALA, INICIAR FISIOTERAPIA",esp:[E.sedestar,"DISCUTIR LIBERAÇÃO DE CARGA COM ASSISTENTE EM AMBULATÓRIO APÓS 60 DIAS DO PROCEDIMENTO"],sinais:false,ps:true,ciente:"PACIENTE E ACOMPANHANTE",ret:{apos:false,dia:"4",em:"7",fins:["REAV","RX"]}})},
- {id:"punho",r:"antebraco",n:"Limpeza + exploração de punho + neurólise",t:"Mão / nervo",d:T({proc:"LIMPEZA CIRÚRGICA + EXPLORAÇÃO DE PUNHO + NEURÓLISE DE MEDIANO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",rx:false,analg:"",imob:"FIXADOR EXTERNO POR 6 SEMANAS",fisio:"FISIOTERAPIA PARA AMPLITUDE DE MOVIMENTO DE QUIRODÁCTILOS",curativo:"CURATIVO A CADA 48 HORAS COM FOTOS",sinais:false,ret:{dia:"2",fins:["CUR","REAV"]}})},
- {id:"tumor-antebraco",r:"antebraco",n:"Ressecção tumoral em antebraço",t:"Oncologia",d:T({proc:"RESSECÇÃO TUMORAL EM ANTEBRAÇO",alta:"ALTA APÓS RPA",rx:false,esp:[E.ap],analg:"ANALGESIA DE HORÁRIO",curativo:"APÓS ALTA, TROCA DE CURATIVO DIÁRIO EM UBS",ret:{dia:"4",fins:["CUR","REAV","DISC"]}})},
+ {id:"radio-diaf-bil",r:"antebraco",n:"Rádio/ulna bilateral + bacia (politrauma)",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO DIAFISÁRIO BILATERAL + OSTEOSSÍNTESE DE ULNA + OSTEOSSÍNTESE DE BACIA COM FECHAMENTO DE SÍNFISE PÚBICA",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA DE HORÁRIO",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",imob:"TALA AP BILATERAL POR 4 SEMANAS",fisio:"FISIOTERAPIA APÓS RETIRADA DA IMOBILIZAÇÃO",esp:[E.sedestar,"DISCUTIR LIBERAÇÃO DE CARGA COM ASSISTENTE EM AMBULATÓRIO APÓS 60 DIAS DO PROCEDIMENTO"],sinais:false,ps:true,ciente:"PACIENTE E ACOMPANHANTE",ret:{apos:false,dia:"4",em:"7",fins:["REAV","RX"]}})},
+ {id:"punho",r:"antebraco",n:"Limpeza + exploração de punho + neurólise",t:"Mão / nervo",d:T({proc:"LIMPEZA CIRÚRGICA + EXPLORAÇÃO DE PUNHO + NEURÓLISE DE MEDIANO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",rx:false,analg:"",imob:"FIXADOR EXTERNO POR 6 SEMANAS",fisio:"FISIOTERAPIA PARA AMPLITUDE DE MOVIMENTO DE QUIRODÁCTILOS",curativo:"CURATIVO A CADA 48 HORAS (COM FOTO, MOSTRAR PARA R+)",sinais:false,ret:{dia:"2",fins:["CUR","REAV"]}})},
+ {id:"tumor-antebraco",r:"antebraco",n:"Ressecção tumoral em antebraço",t:"Oncologia",d:T({proc:"RESSECÇÃO TUMORAL EM ANTEBRAÇO",alta:"ALTA APÓS RPA",rx:false,esp:[E.ap],analg:"ANALGESIA DE HORÁRIO",curativo:"CURATIVO DIÁRIO EM UBS",ret:{dia:"4",fins:["CUR","REAV","DISC"]}})},
  // mão
- {id:"dedo-fk",r:"mao",n:"Limpeza + fixação de dedo (exposta)",t:"Mão / nervo",d:T({proc:"LIMPEZA CIRÚRGICA + REDUÇÃO E FIXAÇÃO DE PRIMEIRO QDE",alta:"ALTA NO 3º PO (APÓS DOSE DE ATB)",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO (DOSE EXPOSTA)",analg:"ANALGESIA",fk:"FK POR 3 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",imob:"TALA PARA ESCAFOIDE POR 3 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",ps:true,ret:{apos:false,dia:"4",fins:["CUR","REAV","RX"]}})},
+ {id:"dedo-fk",r:"mao",n:"Limpeza + fixação de dedo (exposta)",t:"Mão / nervo",d:T({proc:"LIMPEZA CIRÚRGICA + REDUÇÃO E FIXAÇÃO DE PRIMEIRO QDE",alta:"ALTA NO 3º PO (APÓS DOSE DE ATB)",atb:"ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"ANALGESIA",fk:"FK POR 3 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",imob:"TALA PARA ESCAFOIDE POR 3 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",ps:true,ret:{apos:false,dia:"4",fins:["CUR","REAV","RX"]}})},
  {id:"limpeza-mao",r:"mao",n:"Limpeza cirúrgica de mão",t:"Mão / nervo",d:T({proc:"LIMPEZA CIRÚRGICA DE MÃO",alta:"ALTA NO 3º PO",atb:"ATB EV DOSE EXPOSTA (GENTAMICINA + CLINDAMICINA) + TRANSICIONAR PARA VO APÓS",rx:false,imob:"TALA LUVA ATÉ MELHORA DE PARTES MOLES",esp:["CHECAR PERFUSÃO E INFORMAR R+"],analg:"ANALGESIA DE HORÁRIO",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ps:true,ret:{dia:"4",fins:["REAV","CUR"]}})},
  // bacia
  {id:"bacia",r:"bacia",n:"Osteossíntese de bacia",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE BACIA",lado:"",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA DE HORÁRIO",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",esp:[E.sedestar,"DISCUTIR LIBERAÇÃO DE CARGA COM ASSISTENTE EM AMBULATÓRIO APÓS 60 DIAS"],ret:{dia:"4",em:"7",fins:["REAV","RX"]}})},
- {id:"biopsia",r:"bacia",n:"Biópsia percutânea de ilíaco",t:"Oncologia",d:T({proc:"BIÓPSIA PERCUTÂNEA DE ILÍACO",alta:"ALTA APÓS RPA",analg:"ANALGESIA OTIMIZADA",curativo:"APÓS ALTA, CURATIVO DIÁRIO EM UBS",esp:[E.ap],ret:{dia:"5",fins:["CUR","REAV"]}})},
+ {id:"biopsia",r:"bacia",n:"Biópsia percutânea de ilíaco",t:"Oncologia",d:T({proc:"BIÓPSIA PERCUTÂNEA DE ILÍACO",alta:"ALTA APÓS RPA",analg:"ANALGESIA OTIMIZADA",curativo:"CURATIVO DIÁRIO EM UBS",esp:[E.ap],ret:{dia:"5",fins:["CUR","REAV"]}})},
  // quadril
  {id:"atq",r:"quadril",n:"Artroplastia total de quadril",t:"Quadril",d:T({proc:"ARTROPLASTIA TOTAL DE QUADRIL",alta:"ALTA NO 2º PO",atb:"ATB EV ATÉ ALTA + VO 7 DIAS",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",esp:[E.lux],ret:{dia:"3",em:"21",fins:["RX","REAV"]}})},
  {id:"atq-riva",r:"quadril",n:"ATQ com rivaroxabana (ATB VO 14 dias)",t:"Quadril",d:T({proc:"PRÓTESE TOTAL DE QUADRIL",alta:"ALTA NO 2º PO",atb:"ATB EV ATÉ ALTA + VO 14 DIAS",tev:"RIVAROXABANA 28 DIAS",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"FISIOTERAPIA IMEDIATA",esp:["ORIENTAÇÕES PARA EVITAR LUXAÇÃO DE PRÓTESE"],analg:"",ret:{apos:false,dia:"3",em:"21",fins:["REAV","RX","CUR"]}})},
  {id:"rev-atq",r:"quadril",n:"Revisão de ATQ",t:"Quadril",d:T({proc:"REVISÃO DE PTQ",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB EV ATÉ ALTA + VO 7 DIAS",tev:"HEPARINA PROFILÁTICA POR 28 DIAS",carga:"SEM CARGA POR 4 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",esp:["CHECAR CULTURA E DISCUTIR COM CCIH EM RETORNOS","NA ALTA, ORIENTAR MEDIDAS ANTILUXAÇÃO DE PRÓTESE"],sinais:false,ret:{dia:"3",em:"7",fins:["REAV","RX"]}})},
- {id:"rev-atq-trava",r:"quadril",n:"Revisão de ATQ com trava de abdução",t:"Quadril",d:T({proc:"REVISÃO DE PTQ",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",analg:"ANALGESIA DE HORÁRIO",tev:"PROFILAXIA ANTITROMBÓTICA",imob:"TRAVA DE ABDUÇÃO ATÉ SEGUNDA ORDEM",carga:"SEM CARGA - DISCUTIR LIBERAÇÃO COM ASSISTENTE",curativo:"CHECAR CURATIVO ATÉ ALTA",esp:["ORIENTADO CUIDADOS QUANTO À LUXAÇÃO DE PRÓTESE"],sinais:false,ps:true,ret:{apos:false,dia:"3",em:"7",fins:["RX","DISC"]}})},
+ {id:"rev-atq-trava",r:"quadril",n:"Revisão de ATQ com trava de abdução",t:"Quadril",d:T({proc:"REVISÃO DE PTQ",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",analg:"ANALGESIA DE HORÁRIO",tev:"PROFILAXIA ANTITROMBÓTICA",imob:"TRAVA DE ABDUÇÃO ATÉ SEGUNDA ORDEM",carga:"SEM CARGA - DISCUTIR LIBERAÇÃO COM ASSISTENTE",curativo:"CHECAR CURATIVO ATÉ A ALTA",esp:["ORIENTADO CUIDADOS QUANTO À LUXAÇÃO DE PRÓTESE"],sinais:false,ps:true,ret:{apos:false,dia:"3",em:"7",fins:["RX","DISC"]}})},
  {id:"bipolar",r:"quadril",n:"Artroplastia parcial (bipolar)",t:"Quadril",d:T({proc:"PRÓTESE DE QUADRIL BIPOLAR",alta:"ALTA APÓS ALTA DA UTI",carga:"CARGA TOTAL CONFORME DOR COM ANDADOR",tev:"HEPARINA PROFILÁTICA",curativo:"CURATIVO OCLUSIVO 24-48H, APÓS CURATIVO DIÁRIO",esp:[E.ap,E.lux,E.osteo],ret:{dia:"3",em:"21",fins:["RX","REAV"]}})},
- {id:"femur-prox",r:"quadril",n:"Osteossíntese de fêmur proximal",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR PROXIMAL",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"APÓS RETIRADA DE PONTOS DE SUTURA, INICIAR FISIOTERAPIA",curativo:"APÓS ALTA, CURATIVO DIÁRIO EM UBS",esp:[E.osteo],ret:{dia:"2",fins:["CUR","RX","REAV"]}})},
+ {id:"femur-prox",r:"quadril",n:"Osteossíntese de fêmur proximal",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR PROXIMAL",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"FISIOTERAPIA APÓS RETIRADA DE PONTOS DE SUTURA",curativo:"CURATIVO DIÁRIO EM UBS",esp:[E.osteo],ret:{dia:"2",fins:["CUR","RX","REAV"]}})},
  {id:"femur-prox-parcial",r:"quadril",n:"Fêmur proximal, carga parcial (heparina 28 d)",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR PROXIMAL",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA POR 28 DIAS",analg:"",carga:"CARGA PARCIAL LIBERADA COM ANDADOR - SEGURAR CARGA TOTAL",sinais:false,ret:{dia:"5",fins:["RX"],obs:"REAVALIAR SINAIS DE CONSOLIDAÇÃO E LIBERAÇÃO DE CARGA"}})},
- {id:"core",r:"quadril",n:"Descompressão de fêmur proximal",t:"Quadril",d:T({proc:"DESCOMPRESSÃO DE FÊMUR PROXIMAL",alta:"ALTA APÓS RPA",carga:"SEM CARGA POR 6 SEMANAS",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",curativo:"APÓS ALTA, CURATIVO DIÁRIO EM UBS",ps:true,ret:{apos:false,dia:"5",fins:["CUR","RX","REAV"]}})},
+ {id:"core",r:"quadril",n:"Descompressão de fêmur proximal",t:"Quadril",d:T({proc:"DESCOMPRESSÃO DE FÊMUR PROXIMAL",alta:"ALTA APÓS RPA",carga:"SEM CARGA POR 6 SEMANAS",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",curativo:"CURATIVO DIÁRIO EM UBS",ps:true,ret:{apos:false,dia:"5",fins:["CUR","RX","REAV"]}})},
  {id:"espacador",r:"quadril",n:"Retirada de PTQ + espaçador (infecção)",t:"Infecção",d:T({proc:"RETIRADA DE PTQ + LIMPEZA CIRÚRGICA + COLETA DE CULTURA + POSICIONAMENTO DE ESPAÇADOR",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB EV EMPÍRICO ATÉ DISCUSSÃO COM CCIH",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",esp:[E.cult],sinais:false,orient:false,ret:{dia:"3",fins:["CUR","REAV"]}})},
  {id:"girdlestone",r:"quadril",n:"Ressecção da cabeça femoral + cimento (Girdlestone)",t:"Infecção",d:T({proc:"LIMPEZA CIRÚRGICA DE TOPOGRAFIA DE TROCÂNTER MAIOR + REMOÇÃO DA CABEÇA DO FÊMUR E COLOCAÇÃO DE CIMENTO CIRÚRGICO",alta:"DISCUTIR ALTA APÓS RESULTADOS DE CULTURAS E DISCUSSÃO COM CCIH",analg:"ANALGESIA DE HORÁRIO",tev:"PROFILAXIA ANTITROMBÓTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",esp:["DISCUTIR RESULTADOS DE CULTURAS COM CCIH"],orient:false,sinais:false,ret:{amb:"",dia:"",fins:[]}})},
  {id:"pavlik",r:"quadril",ped:true,n:"Suspensório de Pavlik (DDQ)",t:"Pediatria",d:T({proc:"POSICIONAMENTO DE SUSPENSÓRIO DE PAVLIK",lado:"",alta:"INTERNADA ATÉ SEGUNDA ORDEM",atb:"",imob:"MANTER SUSPENSÓRIO DE PAVLIK 24H/DIA SEM RETIRADA",esp:["REPETIR RADIOGRAFIA CONTROLE EM 7 DIAS E MOSTRAR PARA ASSISTENTE"],sinais:false,ciente:"RESPONSÁVEL",ret:{amb:"ORTOPEDIA PEDIÁTRICA",dia:"1",fins:["REAV","DISC"]}})},
  {id:"varizante",r:"quadril",ped:true,n:"Osteotomia varizante + Hoke",t:"Pediatria",d:T({proc:"OSTEOTOMIA VARIZANTE DE QUADRIL + CIRURGIA DE HOKE BILATERAL",alta:"ALTA APÓS ALTA DA UTI",analg:"ANALGESIA DE HORÁRIO",carga:"SEM CARGA, DISCUTIR LIBERAÇÃO COM ASSISTENTE",imob:"GESSO BOTA EM MEMBROS INFERIORES POR 6 SEMANAS",ciente:"FAMILIARES",ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
  // coxa
- {id:"femur-diaf",r:"coxa",n:"Osteossíntese de fêmur diafisário",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR DIAFISÁRIO",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"APÓS RETIRADA DE PONTOS DE SUTURA, INICIAR FISIOTERAPIA",curativo:"APÓS ALTA, CURATIVO DIÁRIO EM UBS",esp:[E.osteo],ret:{dia:"1",em:"7",fins:["CUR","RX","REAV"]}})},
+ {id:"femur-diaf",r:"coxa",n:"Osteossíntese de fêmur diafisário",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR DIAFISÁRIO",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"FISIOTERAPIA APÓS RETIRADA DE PONTOS DE SUTURA",curativo:"CURATIVO DIÁRIO EM UBS",esp:[E.osteo],ret:{dia:"1",em:"7",fins:["CUR","RX","REAV"]}})},
  {id:"femur-distal",r:"coxa",n:"Osteossíntese de fêmur distal",t:"Joelho",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR DISTAL",alta:"ALTA NO 1º PO",atb:"ATB EV + 7 DIAS VO PARA CASA (ASSISTENTE ORIENTA)",imob:"TALA INGUINOPODÁLICA POR 4 SEMANAS",carga:"SEM CARGA POR 90 DIAS",tev:"HEPARINA PROFILÁTICA POR 28 DIAS",analg:"ANALGESIA VO POTENTE",ret:{apos:false,dia:"4",fins:["RX","REAV"]}})},
- {id:"fix-prof",r:"coxa",n:"Ressecção de tumor + fixação profilática",t:"Oncologia",d:T({proc:"RESSECÇÃO DE TUMORAÇÃO + FIXAÇÃO PROFILÁTICA DE FÊMUR DIAFISÁRIO",alta:"ALTA NO 1º PO OU APÓS ALTA DA UTI",atb:"ATB EV + VO CONFORME PROTOCOLO DA INSTITUIÇÃO",carga:"CARGA COM ANDADOR CONFORME DOR",esp:[E.ap],curativo:"CURATIVO DIÁRIO",analg:"ANALGESIA OTIMIZADA",ciente:"PACIENTE E FAMILIARES",ps:true,ret:{apos:false,dia:"4",fins:["CUR","RX","REAV"]}})},
+ {id:"fix-prof",r:"coxa",n:"Ressecção de tumor + fixação profilática",t:"Oncologia",d:T({proc:"RESSECÇÃO DE TUMORAÇÃO + FIXAÇÃO PROFILÁTICA DE FÊMUR DIAFISÁRIO",alta:"ALTA NO 1º PO / APÓS ALTA DA UTI",atb:"ATB EV + VO CONFORME PROTOCOLO DA INSTITUIÇÃO",carga:"CARGA CONFORME DOR COM ANDADOR",esp:[E.ap],curativo:"CURATIVO DIÁRIO",analg:"ANALGESIA OTIMIZADA",ciente:"PACIENTE E FAMILIARES",ps:true,ret:{apos:false,dia:"4",fins:["CUR","RX","REAV"]}})},
  {id:"biopsia-femur",r:"coxa",n:"Biópsia percutânea de fêmur",t:"Oncologia",d:T({proc:"BIÓPSIA PERCUTÂNEA DE FÊMUR PROXIMAL",alta:"ALTA APÓS RPA",rx:false,esp:["COBRAR ANATOMOPATOLÓGICO"],analg:"ANALGESIA",ret:{amb:"TUMOR",apos:false,dia:"4",fins:["REAV","AP"]}})},
  // joelho
- {id:"atj",r:"joelho",n:"Artroplastia total de joelho",t:"Joelho",d:T({proc:"ARTROPLASTIA TOTAL DE JOELHO",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",curativo:"CURATIVO DIÁRIO EM UNIDADE BÁSICA DE SAÚDE",sinais:false,ret:{apos:false,dia:"4",fins:["RX","CUR","REAV"]}})},
- {id:"lca",r:"joelho",n:"Reconstrução do LCA",t:"Joelho",d:T({proc:"RECONSTRUÇÃO DE LCA",carga:"CARGA PARCIAL COM ANDADOR",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",sinais:false,ret:{amb:"",dia:"4",em:"21",fins:["REAV"]}})},
+ {id:"atj",r:"joelho",n:"Artroplastia total de joelho",t:"Joelho",d:T({proc:"ARTROPLASTIA TOTAL DE JOELHO",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"4",fins:["RX","CUR","REAV"]}})},
+ {id:"lca",r:"joelho",n:"Reconstrução do LCA",t:"Joelho",d:T({proc:"RECONSTRUÇÃO DE LCA",carga:"CARGA PARCIAL COM ANDADOR",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",sinais:false,ret:{amb:"",dia:"4",em:"21",fins:["REAV"]}})},
  {id:"lca-menisco",r:"joelho",n:"LCA + meniscectomia",t:"Joelho",d:T({proc:"RECONSTRUÇÃO DE LCA + MENISCECTOMIA",carga:"CARGA CONFORME DOR COM ANDADOR",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",ciente:"",ret:{amb:"CURATIVO",apos:false,dia:"4",fins:["REAV"]}})},
- {id:"menisco",r:"joelho",n:"Meniscectomia parcial (artroscopia)",t:"Joelho",d:T({proc:"MENISCECTOMIA PARCIAL MEDIAL",alta:"ALTA APÓS RPA",rx:false,carga:"CARGA CONFORME DOR",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",fisio:"FISIOTERAPIA PRECOCE",curativo:"CURATIVO DIÁRIO EM UBS",ret:{apos:false,dia:"4",fins:["REAV"]}})},
- {id:"lesao-menisco",r:"joelho",n:"Retirada de lesão + meniscectomia",t:"Joelho",d:T({proc:"RETIRADA DE LESÃO EM COXA DISTAL + MENISCECTOMIA PARCIAL",alta:"ALTA APÓS RPA",rx:false,carga:"CARGA LIBERADA CONFORME DOR",analg:"ANALGESIA (CETOROLACO 10 MG 6/6H POR 5 DIAS)",esp:[E.ap],curativo:"CURATIVO DIÁRIO",sinais:false,ret:{amb:"",apos:false,dia:"4",fins:["REAV","CUR"]}})},
+ {id:"menisco",r:"joelho",n:"Meniscectomia parcial (artroscopia)",t:"Joelho",d:T({proc:"MENISCECTOMIA PARCIAL MEDIAL",alta:"ALTA APÓS RPA",rx:false,carga:"CARGA CONFORME DOR",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",curativo:"CURATIVO DIÁRIO EM UBS",ret:{apos:false,dia:"4",fins:["REAV"]}})},
+ {id:"lesao-menisco",r:"joelho",n:"Retirada de lesão + meniscectomia",t:"Joelho",d:T({proc:"RETIRADA DE LESÃO EM COXA DISTAL + MENISCECTOMIA PARCIAL",alta:"ALTA APÓS RPA",rx:false,carga:"CARGA CONFORME DOR",analg:"ANALGESIA (CETOROLACO 10 MG 6/6H POR 5 DIAS)",esp:[E.ap],curativo:"CURATIVO DIÁRIO",sinais:false,ret:{amb:"",apos:false,dia:"4",fins:["REAV","CUR"]}})},
  {id:"planalto",r:"joelho",n:"Osteossíntese de planalto tibial",t:"Joelho",d:T({proc:"OSTEOSSÍNTESE DE PLANALTO MEDIAL",imob:"TALA IP POR 4 SEMANAS",carga:"SEM CARGA POR 4 SEMANAS",atb:"ATB EV ATÉ ALTA CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"HEPARINA PROFILÁTICA",sinais:false,ret:{dia:"4",fins:["REAV","RX"]}})},
  {id:"fixador-joelho",r:"joelho",n:"Fixador transarticular de joelho",t:"Trauma",d:T({proc:"FIXADOR TRANSARTICULAR DE JOELHO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"",analg:"",tev:"HEPARINA PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",esp:["DISCUTIR CONDUTA DEFINITIVA COM EQUIPE JOELHO + QUESTÃO LIGAMENTAR (TOMOGRAFIAS E DEMAIS EXAMES EM SISTEMA)",E.pulsos,"AVALIAR CONDUTA EQUIPE CIRURGIA VASCULAR"],sinais:false,ret:{amb:"",dia:"4",fins:["REAV"]}})},
- {id:"ptj-endo",r:"joelho",n:"Retirada de PTJ + endoprótese (infecção)",t:"Infecção",d:T({proc:"RETIRADA DE PTJ + ENDOPRÓTESE DE JOELHO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO ATÉ DISCUSSÃO COM CCIH",esp:[E.cult],carga:"CARGA CONFORME DOR COM ANDADOR",tev:"ANTICOAGULAÇÃO PROFILÁTICA",sinais:false,ret:{amb:"",dia:"4",fins:["REAV","RX"]}})},
+ {id:"ptj-endo",r:"joelho",n:"Retirada de PTJ + endoprótese (infecção)",t:"Infecção",d:T({proc:"RETIRADA DE PTJ + ENDOPRÓTESE DE JOELHO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO ATÉ DISCUSSÃO COM CCIH",esp:[E.cult],carga:"CARGA CONFORME DOR COM ANDADOR",tev:"ANTICOAGULAÇÃO PROFILÁTICA",sinais:false,ret:{amb:"",dia:"4",fins:["REAV","RX"]}})},
  // perna
- {id:"tibia",r:"perna",n:"Retirada de fixador + osteossíntese de tíbia",t:"Trauma",d:T({proc:"RETIRADA DE FIXADOR EXTERNO E OSTEOSSÍNTESE DE TÍBIA METAFISÁRIA",imob:"TALA BOTA POR 4 SEMANAS (TROCAR PARA ROBOFOOT EM RETORNO NO AMBULATÓRIO)",carga:"SEM CARGA POR 6 SEMANAS",fisio:"FISIOTERAPIA PRECOCE",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA",curativo:"APÓS INICIAR USO DE ROBOFOOT, TROCA DE CURATIVO DIÁRIO EM UBS",ret:{apos:false,dia:"5",fins:["CUR","RX","REAV"]}})},
+ {id:"tibia",r:"perna",n:"Retirada de fixador + osteossíntese de tíbia",t:"Trauma",d:T({proc:"RETIRADA DE FIXADOR EXTERNO E OSTEOSSÍNTESE DE TÍBIA METAFISÁRIA",imob:"TALA BOTA POR 4 SEMANAS (TROCAR POR ROBOFOOT EM AMBULATÓRIO)",carga:"SEM CARGA POR 6 SEMANAS",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA",curativo:"APÓS INICIAR USO DE ROBOFOOT, TROCA DE CURATIVO DIÁRIO EM UBS",ret:{apos:false,dia:"5",fins:["CUR","RX","REAV"]}})},
  {id:"fixador",r:"perna",n:"Limpeza + fixador externo (aguardar TC)",t:"Trauma",d:T({proc:"LIMPEZA CIRÚRGICA + FIXADOR EXTERNO EM MEMBRO INFERIOR",alta:"INTERNADO ATÉ SEGUNDA ORDEM",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"HEPARINA PROFILÁTICA",analg:"ANALGESIA",esp:["SOLICITAR TOMOGRAFIA DE TORNOZELO","PROGRAMAR SÍNTESE DEFINITIVA APÓS REALIZAÇÃO DE TOMOGRAFIA"],sinais:false,ret:{dia:"5",fins:["RX","REAV"]}})},
  // tornozelo
- {id:"tornozelo",r:"tornozelo",n:"Osteossíntese de tornozelo",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE TORNOZELO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",fisio:"FISIOTERAPIA PRECOCE",carga:"SEM CARGA POR 6 SEMANAS",imob:"ROBOFOOT POR 6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",ret:{apos:false,dia:"1",fins:["RX","CUR","REAV"]}})},
- {id:"maleolo",r:"tornozelo",n:"Osteossíntese de maléolo lateral",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE MALÉOLO LATERAL",atb:"ATB EV ATÉ ALTA",tev:"ANTICOAGULAÇÃO PROFILÁTICA",imob:"TALA SUROPODÁLICA POR 6 SEMANAS (TRANSICIONAR PARA ROBOFOOT)",carga:"SEM CARGA ATÉ RETIRADA DE PONTOS",curativo:"CURATIVO DIÁRIO EM UNIDADE BÁSICA DE SAÚDE",sinais:false,ret:{apos:false,dia:"3",fins:["RX","CUR"]}})},
+ {id:"tornozelo",r:"tornozelo",n:"Osteossíntese de tornozelo",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE TORNOZELO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"ANALGESIA OTIMIZADA",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",carga:"SEM CARGA POR 6 SEMANAS",imob:"ROBOFOOT POR 6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",ret:{apos:false,dia:"1",fins:["RX","CUR","REAV"]}})},
+ {id:"maleolo",r:"tornozelo",n:"Osteossíntese de maléolo lateral",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE MALÉOLO LATERAL",atb:"ATB EV ATÉ ALTA",tev:"ANTICOAGULAÇÃO PROFILÁTICA",imob:"TALA SUROPODÁLICA POR 6 SEMANAS (TROCAR POR ROBOFOOT EM AMBULATÓRIO)",carga:"SEM CARGA ATÉ RETIRADA DE PONTOS",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"3",fins:["RX","CUR"]}})},
  {id:"maleolo-bota",r:"tornozelo",n:"Maléolo lateral com tala bota 4 semanas",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE MALÉOLO LATERAL",analg:"ANALGESIA",tev:"HEPARINA PROFILÁTICA",imob:"TALA BOTA POR 4 SEMANAS",carga:"SEM CARGA POR 4 SEMANAS",ret:{apos:true,dia:"2",fins:["RX","REAV"]}})},
- {id:"sindesmose",r:"tornozelo",n:"Fíbula + fechamento de sindesmose",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE FÍBULA + FECHAMENTO DE SINDESMOSE",imob:"TALA BOTA POR 6 SEMANAS",tev:"HEPARINA PROFILÁTICA POR 4 SEMANAS",analg:"ANALGESIA OTIMIZADA",ret:{dia:"1",fins:["DISC","RX","REAV"],obs:"(1º RETORNO PARA DISCUTIR COM EQUIPE PÉ)"}})},
+ {id:"sindesmose",r:"tornozelo",n:"Fíbula + fechamento de sindesmose",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE FÍBULA + FECHAMENTO DE SINDESMOSE",imob:"TALA BOTA POR 6 SEMANAS",tev:"HEPARINA PROFILÁTICA POR 28 DIAS",analg:"ANALGESIA OTIMIZADA",ret:{dia:"1",fins:["DISC","RX","REAV"],obs:"(1º RETORNO PARA DISCUTIR COM EQUIPE PÉ)"}})},
  {id:"pinca",r:"tornozelo",n:"Fíbula + fechamento de pinça (exposta)",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE FÍBULA DIAFISÁRIA + FECHAMENTO DE PINÇA DE TORNOZELO + FIXAÇÃO DE FRAGMENTO ANTERIOR EM TÍBIA DISTAL",analg:"ANALGESIA DE HORÁRIO",atb:"ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"HEPARINA PROFILÁTICA",imob:"TALA BOTA POR 4-6 SEMANAS",sinais:false,ps:true,ret:{amb:"ORTOPEDIA CURATIVO",apos:false,dia:"1",fins:["DISC"],obs:"SOBRE INSTABILIDADE DE TORNOZELO"}})},
- {id:"delta",r:"tornozelo",n:"Fixador externo em delta",t:"Pé e tornozelo",d:T({proc:"FIXADOR EXTERNO TRANSARTICULAR EM DELTA",alta:"ALTA APÓS REALIZAÇÃO DE TC DE TORNOZELO",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"ANTICOAGULAÇÃO PROFILÁTICA",esp:["TC DE TORNOZELO - SOLICITAR","DISCUTIR COM EQUIPE PÉ E TORNOZELO / ASSISTENTE SÍNTESE DEFINITIVA"],sinais:false,ciente:"PACIENTE E FAMILIARES",ret:{dia:"1",fins:["RX","DISC"]}})},
+ {id:"delta",r:"tornozelo",n:"Fixador externo em delta",t:"Pé e tornozelo",d:T({proc:"FIXADOR EXTERNO TRANSARTICULAR EM DELTA",alta:"ALTA APÓS REALIZAÇÃO DE TC DE TORNOZELO",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"ANTICOAGULAÇÃO PROFILÁTICA",esp:["TC DE TORNOZELO - SOLICITAR","DISCUTIR COM EQUIPE PÉ E TORNOZELO / ASSISTENTE SÍNTESE DEFINITIVA"],sinais:false,ciente:"PACIENTE E FAMILIARES",ret:{dia:"1",fins:["RX","DISC"]}})},
  {id:"fixador-mie",r:"tornozelo",n:"Limpeza + fixador transarticular",t:"Trauma",d:T({proc:"LIMPEZA CIRÚRGICA + FIXADOR EXTERNO TRANSARTICULAR",alta:"INTERNADO ATÉ SEGUNDA ORDEM",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",analg:"ANALGESIA",ret:{amb:"",dia:"",fins:[]}})},
  // pé
- {id:"navicular",r:"pe",n:"Osteossíntese de navicular + tenorrafia",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE NAVICULAR + TENORRAFIA DE TIBIAL ANTERIOR",atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"",carga:"SEM CARGA POR 6 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",curativo:"MANTER CURATIVO ESTÉRIL ATÉ RETORNO",sinais:false,ciente:"PACIENTE E ACOMPANHANTE",ret:{apos:false,dia:"1",fins:["CUR","REAV"],obs:""}})},
- {id:"hallux",r:"pe",n:"Artrodese 1ª MTF + osteotomias de MTT",t:"Pé e tornozelo",d:T({proc:"ARTRODESE DA 1ª MTF + OSTEOTOMIA DE HOFFMAN DO 2º AO 5º MTT COM ARTRORRISE",alta:"ALTA APÓS RPA (SOMENTE APÓS RX POI)",atb:"ATB EV ATÉ ALTA",analg:"ANALGESIA DE HORÁRIO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",imob:"SANDÁLIA ESPECIAL ATÉ SEGUNDA ORDEM",curativo:"CURATIVO FECHADO ATÉ RETORNO EM AMBULATÓRIO",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"],obs:"APÓS, RETORNOS ÀS SEGUNDAS"}})},
+ {id:"navicular",r:"pe",n:"Osteossíntese de navicular + tenorrafia",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE NAVICULAR + TENORRAFIA DE TIBIAL ANTERIOR",atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"",carga:"SEM CARGA POR 6 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",curativo:"MANTER CURATIVO ESTÉRIL ATÉ O RETORNO",sinais:false,ciente:"PACIENTE E ACOMPANHANTE",ret:{apos:false,dia:"1",fins:["CUR","REAV"],obs:""}})},
+ {id:"hallux",r:"pe",n:"Artrodese 1ª MTF + osteotomias de MTT",t:"Pé e tornozelo",d:T({proc:"ARTRODESE DA 1ª MTF + OSTEOTOMIA DE HOFFMAN DO 2º AO 5º MTT COM ARTRORRISE",alta:"ALTA APÓS RPA (APÓS RX POI)",atb:"ATB EV ATÉ ALTA",analg:"ANALGESIA DE HORÁRIO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",imob:"SANDÁLIA ESPECIAL ATÉ SEGUNDA ORDEM",curativo:"MANTER CURATIVO ESTÉRIL ATÉ O RETORNO",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"],obs:"APÓS, RETORNOS ÀS SEGUNDAS"}})},
  {id:"limpeza-pe",r:"pe",n:"Limpeza cirúrgica de pé (interconsulta)",t:"Infecção",d:T({proc:"LIMPEZA CIRÚRGICA DE PÉ",alta:"INTERNAÇÃO CONFORME EQUIPE PRESTADORA",rx:false,atb:"ATB EMPÍRICO ATÉ RESULTADO DE CULTURA E DISCUSSÃO COM CCIH",analg:"",esp:["CHECAR CULTURAS CIRÚRGICAS",E.inter],carga:"SEM CARGA ATÉ MELHORA DE PARTES MOLES",curativo:"CURATIVO DIÁRIO",ret:{amb:"CURATIVO",dia:"4",fins:["REAV","CUR"]}})},
  {id:"tenotomia",r:"pe",ped:true,n:"Tenotomia do calcâneo (pé torto)",t:"Pediatria",d:T({proc:"TENOTOMIA DO TENDÃO CALCÂNEO",lado:"B",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA",analg:"",imob:"GESSO POR 3 SEMANAS (DISCUTIR COM ASSISTENTE COLOCAÇÃO DE ÓRTESE EM 2 SEMANAS)",esp:["ORIENTO RETORNO PRECOCE SE NECESSÁRIO"],sinais:false,ciente:"MÃE",ret:{amb:"PÉ TORTO CONGÊNITO",apos:false,dia:"",em:"7",fins:["REAV","DISC"]}})},
  {id:"vulpius",r:"pe",ped:true,n:"Alongamento do calcâneo (Vulpius)",t:"Pediatria",d:T({proc:"ALONGAMENTO DO TENDÃO CALCÂNEO (VULPIUS)",alta:"ALTA APÓS RPA",rx:false,analg:"",imob:"GESSO SUROPODÁLICO EM DORSIFLEXÃO MÁXIMA POR 6 SEMANAS",carga:"SEM CARGA POR 6 SEMANAS",ret:{amb:"GESSO",apos:false,dia:"1",fins:["REAV"]}})},
  // geral
  {id:"limpeza",r:"geral",n:"Limpeza cirúrgica + coleta de cultura",t:"Infecção",d:T({proc:"LIMPEZA CIRÚRGICA + COLETA DE CULTURA",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB EMPÍRICO ATÉ RESULTADO DE CULTURA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"ANTICOAGULAÇÃO PROFILÁTICA",analg:"ANALGESIA DE HORÁRIO",esp:[E.cult],curativo:"AVALIAR CURATIVO DIARIAMENTE",ret:{dia:"5",fins:["RX","REAV","CUR"]}})},
  {id:"limpeza-politrauma",r:"geral",n:"Limpeza seriada (politrauma, lesão por pressão)",t:"Infecção",d:T({proc:"LIMPEZA CIRÚRGICA + COLETA DE CULTURA",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB CONFORME CULTURA PRÉVIA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"HEPARINA PROFILÁTICA",esp:["COBRAR RESULTADO DE NOVA CULTURA E DISCUTIR COM CCIH",E.curesp,E.lab],curativo:"TROCA DE CURATIVO DIÁRIO + REGISTRAR E DISCUTIR COM ASSISTENTE",ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
- {id:"partes-moles",r:"geral",n:"Exérese de tumor de partes moles",t:"Oncologia",d:T({proc:"EXÉRESE DE TUMOR DE PARTES MOLES",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA + VO 3 DIAS",curativo:"MANTER CURATIVO FECHADO 72 HORAS, TROCA DIÁRIA APÓS",esp:["COBRAR ANATOMOPATOLÓGICO E DISCUTIR EM RETORNOS"],ps:true,sinais:false,ret:{apos:false,dia:"2",em:"14",fins:["REAV","AP"]}})},
- {id:"hemangioma",r:"geral",n:"Ressecção tumoral com dreno / curativo a vácuo",t:"Oncologia",d:T({proc:"RESSECÇÃO DE HEMANGIOMA",alta:"INTERNADO ATÉ SEGUNDA ORDEM",rx:false,atb:"ATB EV CONFORME PROTOCOLO DA INSTITUIÇÃO",esp:["DISCUTIR COM ASSISTENTE TROCA DE CURATIVO A VÁCUO",E.ap,"CHECAR E QUANTIFICAR DRENO DIARIAMENTE"],orient:false,sinais:false,ciente:"PACIENTE E FAMILIARES",ret:{amb:"",dia:"",fins:[]}})}
+ {id:"partes-moles",r:"geral",n:"Exérese de tumor de partes moles",t:"Oncologia",d:T({proc:"EXÉRESE DE TUMOR DE PARTES MOLES",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA + VO 3 DIAS",curativo:"CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO",esp:["COBRAR ANATOMOPATOLÓGICO E DISCUTIR EM RETORNOS"],ps:true,sinais:false,ret:{apos:false,dia:"2",em:"14",fins:["REAV","AP"]}})},
+ {id:"hemangioma",r:"geral",n:"Ressecção tumoral com dreno / curativo a vácuo",t:"Oncologia",d:T({proc:"RESSECÇÃO DE HEMANGIOMA",alta:"INTERNADO ATÉ SEGUNDA ORDEM",rx:false,atb:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",esp:["DISCUTIR COM ASSISTENTE TROCA DE CURATIVO A VÁCUO",E.ap,"CHECAR E QUANTIFICAR DRENO DIARIAMENTE"],orient:false,sinais:false,ciente:"PACIENTE E FAMILIARES",ret:{amb:"",dia:"",fins:[]}})}
 ];
+
+/* ---------- nov/2026: padrões extraídos das ~290 evoluções de programação (RevRevRev) ---------- */
+// opções que apareceram com frequência nas evoluções reais e ainda não estavam nos chips
+const MAIS={
+ alta:["ALTA APÓS RPA (APÓS RX POI)","ALTA NO 1º PO / APÓS ALTA DA UTI","ALTA NO 2º PO (DISCUTIR COM ASSISTENTE)","DISCUTIR ALTA APÓS RETIRADA DE DRENO COM ASSISTENTE","INTERNADO PARA COMPLETAR DOSE DE ATB (EXPOSTA)","INTERNAÇÃO CONFORME EQUIPE PRESTADORA"],
+ atb:["ATB EV + VO CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB EV ATÉ ALTA + VO 48 HORAS","ATB EV ATÉ ALTA + VO 2 DIAS","ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO","ATB EV DOSE EXPOSTA (GENTAMICINA + CLINDAMICINA) + TRANSICIONAR PARA VO APÓS","ATB EMPÍRICO ATÉ RESULTADO DE CULTURA E DISCUSSÃO COM CCIH","MANTER ATB PRÉVIO CONFORME DISCUSSÃO COM CCIH","ATB VO POR 3 DIAS"],
+ analg:["ANALGESIA VO CONFORME DOR","ANALGESIA VO OTIMIZADA","AINES + ANALGESIA + RELAXANTE MUSCULAR"],
+ tev:["ANTICOAGULAÇÃO PROFILÁTICA 28 DIAS","SEM ANTICOAGULAÇÃO. ESTIMULAR DEAMBULAÇÃO","DISCUTIR ANTICOAGULAÇÃO PROFILÁTICA COM EQUIPE PEDIATRIA"],
+ carga:["CARGA TOTAL CONFORME DOR","SEM CARGA POR 6 SEMANAS","SEM CARGA POR 8 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)","SEM CARGA POR 12 SEMANAS","SEM CARGA POR 90 DIAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)","CARGA CONFORME DOR COM ROBOFOOT","CARGA CONFORME DOR COM SANDÁLIA DE SOLADO RÍGIDO","CARGA PARCIAL COM MULETAS","PERMITIDO DEAMBULAR"],
+ imob:["ROBOFOOT POR 6 SEMANAS","ROBOFOOT ATÉ SEGUNDA ORDEM (DISCUTIR RETIRADA COM ASSISTENTE)","TALA BOTA POR 6 SEMANAS (TROCAR POR ROBOFOOT EM AMBULATÓRIO)","TALA SUROPODÁLICA ATÉ O RETORNO (TROCAR POR ROBOFOOT EM AMBULATÓRIO)","VELPEAU POR 6 SEMANAS","VELPEAU PARA CONFORTO","TALA IP POR 6-8 SEMANAS","TALA IM (BRACE) POR 4 SEMANAS","COLETE JEWETT POR 90-120 DIAS (SOLICITAR)","COLETE JEWETT ATÉ SEGUNDA ORDEM","COLAR PHILADELPHIA POR 90 DIAS","TRAVA DE ABDUÇÃO ATÉ O RETORNO","GESSO PONSETI POR 21 DIAS","TALA LUVA 90/90 POR 4 SEMANAS","TALA INTRÍNSECO PLUS POR 4 SEMANAS","SANDÁLIA DE SOLADO RÍGIDO (BARUK)","ESPARADRAPAGEM POR 21 DIAS","TALA AP BILATERAL POR 4 SEMANAS"],
+ fk:["FK POR 6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)","FK POR 3-4 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)","FK ATÉ SEGUNDA ORDEM (DISCUTIR RETIRADA COM ASSISTENTE)"],
+ fisio:["FISIOTERAPIA SEM CARGA PRECOCE (INICIAR ANTES DA ALTA)","FISIOTERAPIA APÓS LIBERAÇÃO DE CARGA","FISIOTERAPIA APÓS RETIRADA DA IMOBILIZAÇÃO","FISIOTERAPIA PENDULAR + ANTIGRAVITACIONAL APÓS RETIRADA DA IMOBILIZAÇÃO","ORIENTAR ADM DE TORNOZELO","ESTIMULAR ADM DE COTOVELO","ESTIMULAR MOVIMENTAÇÃO DE DEDOS","MOBILIDADE PRECOCE"],
+ curativo:["CURATIVO DIÁRIO EM UBS","CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO","CURATIVO ESTÉRIL FECHADO 48H, APÓS CURATIVO DIÁRIO EM UBS","CURATIVO DIÁRIO COM FOTO (MOSTRAR PARA R+)","TROCAR CURATIVO NA ALTA E MOSTRAR PARA R+ OU ASSISTENTE","MANTER CURATIVO ESTÉRIL ATÉ O RETORNO","DISCUTIR TROCA DE CURATIVO COM EQUIPE DE CURATIVOS","TROCA DE CURATIVO NOS RETORNOS"]
+};
+FIELDS.forEach(f=>(MAIS[f.k]||[]).forEach(c=>{if(!f.c.includes(c))f.c.push(c)}));
+FIELDS.forEach(f=>{f.c=[...new Set(f.c)]});
+Object.assign(E,{
+ osteoTto:"INICIAR TRATAMENTO PARA OSTEOPOROSE E MANTER ACOMPANHAMENTO EM UBS",
+ bloco:"MOBILIZAÇÃO EM BLOCO + DDH ATÉ COLOCAÇÃO DE COLETE",
+ testneuro:"TESTAR NEUROLÓGICO E DISCUTIR COM R+ ANTES DA ALTA",
+ perfneuro:"CHECAR PERFUSÃO E NEUROLÓGICO ANTES DA ALTA E INFORMAR R+",
+ sintese:"DISCUTIR SÍNTESE DEFINITIVA COM ASSISTENTE",
+ cross:"INSERIR PACIENTE NA CROSS",
+ preop:"SOLICITAR EXAMES PRÉ-OPERATÓRIOS",
+ edema:"ORIENTAR MEDIDAS ANTIEDEMA",
+ decubito:"MUDANÇA DE DECÚBITO DE 2/2H + PLACA DE HIDROCOLOIDE EM PONTOS DE PRESSÃO",
+ gravidade:"ORIENTO GRAVIDADE DO CASO E RISCO DE AMPUTAÇÃO DO MEMBRO",
+ sangra:"VIGILÂNCIA DE SANGRAMENTOS",
+ drenoEnf:"CONTROLE DE DRENO DE 6/6H PELA ENFERMAGEM",
+ parafuso:"PROGRAMAR RETIRADA DE PARAFUSO DE SINDESMOSE COM 12 SEMANAS (DISCUTIR COM ASSISTENTE)",
+ peso:"ORIENTAR PERDA PONDERAL",
+ rxAss:"MOSTRAR RX POI PARA ASSISTENTE ANTES DA ALTA",
+ cultAp:"COBRAR RESULTADO DE CULTURA E ANATOMOPATOLÓGICO"
+});
+[E.osteoTto,E.testneuro,E.perfneuro,E.bloco,E.sintese,E.rxAss,E.parafuso,E.edema,E.decubito,E.gravidade,E.sangra,E.cross,E.preop,E.peso].forEach(x=>{if(!ESP_LIB.includes(x))ESP_LIB.push(x)});
+FINS.push(["PONTOS","RETIRADA DE PONTOS"],["CULT","DISCUTIR CULTURA COM CCIH"],["CHAMAR","CHAMAR ASSISTENTE"]);
+
+// modelos novos (ou variantes que apareceram de forma consistente nas fotos)
+TEMPLATES.push(
+ // coluna
+ {id:"artrodese-lomb-colete",r:"coluna",n:"Artrodese lombar com colete Jewett",t:"Coluna",d:T({proc:"ARTRODESE DE COLUNA LOMBOSSACRA L4-S1",lado:"",alta:"ALTA NO 2º PO (DISCUTIR COM ASSISTENTE)",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",imob:"COLETE JEWETT POR 90-120 DIAS (SOLICITAR)",tev:"HEPARINA PROFILÁTICA",esp:[E.bloco,E.dreno],ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
+ {id:"microdiscectomia",r:"coluna",n:"Microdiscectomia / hemilaminectomia",t:"Coluna",d:T({proc:"MICRODISCECTOMIA L5-S1",alta:"ALTA NO 2º PO",atb:"ATB EV ATÉ ALTA + VO 3 DIAS",carga:"PERMITIDO DEAMBULAR",tev:"SEM ANTICOAGULAÇÃO. ESTIMULAR DEAMBULAÇÃO",curativo:"CURATIVO DIÁRIO EM UBS",esp:["QUANTIFICAR DRENO, 48H OU < 50 ML (INFORMAR ASSISTENTE)","TESTAR NEUROLÓGICO ANTES DA ALTA"],sinais:false,rx:false,ret:{dia:"1",fins:["CUR","REAV"]}})},
+ {id:"biopsia-vertebral",r:"coluna",n:"Biópsia de corpo vertebral",t:"Oncologia",d:T({proc:"BIÓPSIA DE CORPO VERTEBRAL A NÍVEL DE L4",lado:"",alta:"ALTA NO 1º PO",rx:false,atb:"ATB EV ATÉ ALTA",imob:"COLETE JEWETT ATÉ SEGUNDA ORDEM",tev:"HEPARINA PROFILÁTICA",esp:["COBRAR ANATOMOPATOLÓGICO E IMUNO-HISTOQUÍMICA"],sinais:false,ret:{dia:"1",fins:["AP","REAV","DISC"]}})},
+ // ombro / braço / cotovelo
+ {id:"clavicula-fk",r:"ombro",n:"Clavícula com FK + Velpeau 6 semanas",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE CLAVÍCULA",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 3 DIAS",fk:"FK POR 6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",imob:"VELPEAU POR 6 SEMANAS",analg:"ANALGESIA OTIMIZADA",sinais:true,ret:{apos:false,dia:"5",em:"7",fins:["RX","REAV","CUR"]}})},
+ {id:"artro-ombro",r:"ombro",n:"Artroplastia parcial de ombro",t:"Ombro",d:T({proc:"ARTROPLASTIA PARCIAL DE OMBRO",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 3 DIAS",analg:"ANALGESIA POTENTE",imob:"VELPEAU POR 4 SEMANAS",fisio:"FISIOTERAPIA",ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ {id:"manguito-pend",r:"ombro",n:"Manguito: Velpeau + fisioterapia pendular",t:"Ombro",d:T({proc:"REPARO DE MANGUITO ROTADOR",alta:"ALTA APÓS RPA (APÓS RX POI)",imob:"VELPEAU POR 4 SEMANAS",fisio:"FISIOTERAPIA PENDULAR + ANTIGRAVITACIONAL APÓS RETIRADA DA IMOBILIZAÇÃO",analg:"",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ {id:"umero-diaf-3s",r:"braco",n:"Úmero diafisário: Velpeau 3 semanas + ADM",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE ÚMERO DIAFISÁRIO",alta:"ALTA NO 1º PO",analg:"",imob:"VELPEAU POR 3 SEMANAS",fisio:"FISIOTERAPIA MOTORA APÓS RETIRADA DA IMOBILIZAÇÃO + ESTIMULAR ADM DE COTOVELO",curativo:"CURATIVO ESTÉRIL FECHADO 48H, APÓS CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"2",fins:["REAV","RX"]}})},
+ {id:"umero-distal",r:"cotovelo",n:"Osteossíntese de úmero distal",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE ÚMERO DISTAL",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",analg:"ANALGESIA POTENTE",imob:"VELPEAU POR 1 SEMANA",fisio:"ESTIMULAR ADM DE COTOVELO",esp:[E.testneuro,"ORIENTAR REALIZAÇÃO DE FISIOTERAPIA"],ciente:"PACIENTE E FAMILIARES",sinais:false,ret:{apos:false,dia:"2",em:"7",fins:["RX","REAV"]}})},
+ {id:"lig-cotovelo",r:"cotovelo",n:"Reconstrução ligamentar lateral do cotovelo",t:"Ombro",d:T({proc:"RECONSTRUÇÃO DO COMPLEXO LIGAMENTAR LATERAL DO COTOVELO",alta:"ALTA NO 1º PO",atb:"ATB EV + VO CONFORME PROTOCOLO DA INSTITUIÇÃO",analg:"",imob:"TALA AP POR 3 SEMANAS",curativo:"CURATIVO DIÁRIO",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ // antebraço / mão
+ {id:"radio-fk-luva",r:"antebraco",n:"Rádio distal: FK 6 semanas + tala luva 4",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO DISTAL",alta:"ALTA NO 1º PO",analg:"ANALGESIA DE HORÁRIO",fk:"FK POR 6 SEMANAS",imob:"TALA LUVA POR 4 SEMANAS",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"5",fins:["RX","REAV"]}})},
+ {id:"antebraco-diaf",r:"antebraco",n:"Rádio e ulna diafisários",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE RÁDIO E ULNA DIAFISÁRIOS",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",imob:"TALA AP POR 10 DIAS",esp:[E.perfneuro],sinais:false,ret:{apos:false,dia:"5",fins:["RX","REAV"]}})},
+ {id:"tunel-carpo",r:"mao",n:"Descompressão do túnel do carpo",t:"Mão / nervo",d:T({proc:"DESCOMPRESSÃO DO TÚNEL DO CARPO",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA",analg:"",curativo:"CURATIVO DIÁRIO",sinais:false,ret:{apos:false,dia:"2",em:"7",fins:["REAV","CUR"]}})},
+ {id:"metacarpo",r:"mao",n:"Osteossíntese de metacarpo (FK)",t:"Mão / nervo",d:T({proc:"OSTEOSSÍNTESE DE 5º METACARPO",alta:"ALTA APÓS RPA",atb:"ATB VO POR 3 DIAS",analg:"ANALGESIA VO CONFORME DOR",imob:"TALA LUVA 90/90 POR 4 SEMANAS",fk:"FK POR 4-6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ {id:"tenorrafia-flexor",r:"mao",n:"Tenorrafia de flexor / extensor",t:"Mão / nervo",d:T({proc:"TENORRAFIA DO TENDÃO FLEXOR PROFUNDO DO 4º QD",alta:"ALTA APÓS RPA",imob:"TALA ANTEBRAQUIDIGITAL DORSAL POR 4 SEMANAS, COM LIBERAÇÃO PROGRESSIVA DO ENFAIXAMENTO",fisio:"FISIOTERAPIA APÓS RETIRADA DA IMOBILIZAÇÃO",sinais:true,ret:{apos:false,dia:"2",em:"7",fins:["CUR","REAV","DISC"]}})},
+ {id:"artrodese-punho",r:"mao",n:"Artrodese total de punho",t:"Mão / nervo",d:T({proc:"ARTRODESE TOTAL DE PUNHO",alta:"ALTA APÓS RPA",atb:"ATB VO POR 3 DIAS",analg:"ANALGESIA VO CONFORME DOR",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ {id:"tumor-mao",r:"mao",n:"Exérese de tumoração em mão / falange",t:"Oncologia",d:T({proc:"RETIRADA DE TUMORAÇÃO DE FALANGE PROXIMAL DE 3º QDD",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA + VO 2 DIAS",analg:"",curativo:"CURATIVO DIÁRIO",esp:[E.ap],ret:{apos:false,dia:"2",em:"7",fins:["REAV","AP"]}})},
+ // bacia / acetábulo
+ {id:"acetabulo",r:"bacia",n:"Osteossíntese de acetábulo",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE ACETÁBULO - VIA ANTERIOR",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB EV ATÉ ALTA + VO 7 DIAS",carga:"SEM CARGA POR 90 DIAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",tev:"HEPARINA PROFILÁTICA",esp:[E.sedestar,E.rxAss],curativo:"CURATIVO DIÁRIO EM UBS",ret:{dia:"4",fins:["RX","CUR","REAV"]}})},
+ // quadril
+ {id:"bipolar-osteo",r:"quadril",n:"Parcial de quadril + tratamento de osteoporose",t:"Quadril",d:T({proc:"ARTROPLASTIA PARCIAL DE QUADRIL",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB EV ATÉ ALTA + VO 7 DIAS",tev:"HEPARINA PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",curativo:"CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO",esp:[E.ap,E.lux,E.osteoTto],ret:{dia:"3",em:"7",fins:["RX","REAV"]}})},
+ {id:"femur-prox-osteo",r:"quadril",n:"Fêmur proximal (protocolo atual)",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR PROXIMAL",alta:"ALTA NO 1º PO / APÓS ALTA DA UTI",atb:"ATB EV + VO CONFORME PROTOCOLO DA INSTITUIÇÃO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"CARGA CONFORME DOR COM ANDADOR",curativo:"CURATIVO DIÁRIO EM UBS",esp:[E.osteoTto],ret:{dia:"3",em:"7",fins:["RX","REAV"]}})},
+ {id:"fix-prof-femur",r:"quadril",n:"Fixação profilática de fêmur (metástase)",t:"Oncologia",d:T({proc:"FIXAÇÃO PROFILÁTICA DE FÊMUR PROXIMAL",alta:"ALTA NO 2º PO",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",carga:"CARGA CONFORME DOR",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",tev:"HEPARINA PROFILÁTICA",curativo:"CURATIVO DIÁRIO",esp:[E.sangra,E.ap],ret:{dia:"4",fins:["RX","REAV"]}})},
+ {id:"epifisiolise",r:"quadril",ped:true,n:"Fixação in situ (epifisiólise)",t:"Pediatria",d:T({proc:"FIXAÇÃO IN SITU DE FÊMUR PROXIMAL",lado:"B",alta:"ALTA NO 1º PO",carga:"SEM CARGA POR 6 SEMANAS",tev:"DISCUTIR ANTICOAGULAÇÃO PROFILÁTICA COM EQUIPE PEDIATRIA",esp:["ENCAMINHAR AO AMBULATÓRIO DE ENDOCRINOLOGIA PEDIÁTRICA"],analg:"",ciente:"RESPONSÁVEL",sinais:false,ret:{dia:"1",fins:["RX","CUR"]}})},
+ {id:"adutores",r:"quadril",ped:true,n:"Tenotomia de adutores + trava de abdução",t:"Pediatria",d:T({proc:"TENOTOMIA DE ADUTORES",alta:"ALTA APÓS ALTA DA UTI",analg:"ANALGESIA POTENTE",imob:"TRAVA DE ABDUÇÃO ATÉ O RETORNO",esp:[E.ap],ciente:"RESPONSÁVEL",sinais:false,ret:{amb:"ORTOPEDIA",apos:false,dia:"1",fins:["REAV"],obs:"TRANSICIONAR TRAVA DE ABDUÇÃO PARA GESSO PELVIPODÁLICO"}})},
+ // coxa / joelho
+ {id:"femur-distal-6s",r:"coxa",n:"Fêmur distal: sem carga 6 semanas + fisio",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE FÊMUR DISTAL",alta:"ALTA NO 2º PO",atb:"ATB EV ATÉ ALTA + VO 48 HORAS",tev:"ANTICOAGULAÇÃO PROFILÁTICA 28 DIAS",carga:"SEM CARGA POR 6 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",fisio:"FISIOTERAPIA SEM CARGA PRECOCE (INICIAR ANTES DA ALTA)",curativo:"CURATIVO DIÁRIO",sinais:false,ret:{dia:"5",fins:["RX","REAV"]}})},
+ {id:"patela",r:"joelho",n:"Osteossíntese de patela",t:"Joelho",d:T({proc:"OSTEOSSÍNTESE DE PATELA",alta:"ALTA NO 1º PO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",imob:"TALA IM (BRACE) POR 4 SEMANAS",carga:"CARGA CONFORME DOR",sinais:false,ret:{apos:false,dia:"4",fins:["RX","CUR"]}})},
+ {id:"lca-precoce",r:"joelho",n:"LCA com fisioterapia precoce (equipe joelho)",t:"Joelho",d:T({proc:"RECONSTRUÇÃO DE LCA",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 3 DIAS",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",carga:"CARGA PARCIAL COM MULETAS",tev:"HEPARINA PROFILÁTICA",sinais:false,ret:{dia:"4",fins:["RX","REAV"],obs:"CHAMAR EQUIPE JOELHO PARA MANIPULAÇÃO"}})},
+ {id:"rev-atj",r:"joelho",n:"Revisão de ATJ / endoprótese de joelho",t:"Joelho",d:T({proc:"REVISÃO DE ARTROPLASTIA TOTAL DE JOELHO",alta:"ALTA NO 2º PO / APÓS ALTA DA UTI",atb:"ATB EV + VO POR UM TOTAL DE 72 HORAS",tev:"HEPARINA PROFILÁTICA",curativo:"CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO",carga:"SEM CARGA ATÉ MELHORA DE PARTES MOLES",fisio:"FISIOTERAPIA SEM CARGA PRECOCE (INICIAR ANTES DA ALTA)",esp:[E.ap],ciente:"PACIENTE E ACOMPANHANTES",sinais:false,ret:{apos:false,dia:"4",fins:["RX","REAV"]}})},
+ {id:"espacador-joelho",r:"joelho",n:"Retirada de prótese + espaçador (joelho)",t:"Infecção",d:T({proc:"RETIRADA DE MATERIAL DE ARTROPLASTIA DE JOELHO + LIMPEZA CIRÚRGICA + COLETA DE CULTURA + ESPAÇADOR DE CIMENTO",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"ATB EV EMPÍRICO ATÉ DISCUSSÃO COM CCIH",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",imob:"TALA IP ATÉ SEGUNDA ORDEM",tev:"HEPARINA PROFILÁTICA",esp:[E.cult],sinais:false,orient:false,ret:{dia:"4",fins:["REAV","RX","CULT"]}})},
+ // perna
+ {id:"tibia-diaf",r:"perna",n:"Osteossíntese de tíbia diafisária",t:"Trauma",d:T({proc:"OSTEOSSÍNTESE DE TÍBIA DIAFISÁRIA",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",carga:"SEM CARGA POR 6-8 SEMANAS",imob:"TALA IP POR 6-8 SEMANAS",tev:"HEPARINA PROFILÁTICA",esp:[E.testneuro],sinais:false,ret:{dia:"4",fins:["RX","REAV"]}})},
+ {id:"fixador-linear",r:"perna",n:"Limpeza + fixador linear (alta com fixador)",t:"Trauma",d:T({proc:"LIMPEZA CIRÚRGICA + FIXADOR EXTERNO LINEAR DE PERNA",alta:"ALTA NO 1º PO",tev:"ANTICOAGULAÇÃO PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",curativo:"CURATIVO DIÁRIO EM UBS",esp:["DISCUTIR COM ASSISTENTE TEMPO DE FIXADOR EXTERNO / SÍNTESE DEFINITIVA"],ps:true,ret:{apos:false,dia:"4",fins:["RX","REAV","DISC"]}})},
+ // tornozelo / pé
+ {id:"calcaneo",r:"pe",n:"Osteossíntese de calcâneo",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE CALCÂNEO",alta:"ALTA NO 1º PO",atb:"ATB EV ATÉ ALTA + VO 3 DIAS",imob:"ROBOFOOT POR 12 SEMANAS",carga:"SEM CARGA POR 8 SEMANAS (DISCUTIR LIBERAÇÃO COM ASSISTENTE)",tev:"HEPARINA PROFILÁTICA",analg:"",sinais:false,ret:{dia:"1",em:"7",fins:["RX","REAV"]}})},
+ {id:"subtalar",r:"pe",n:"RMS de calcâneo + artrodese subtalar",t:"Pé e tornozelo",d:T({proc:"RETIRADA DE MATERIAL DE SÍNTESE DE CALCÂNEO + ARTRODESE SUBTALAR",alta:"ALTA NO 1º PO",carga:"SEM CARGA POR 6 SEMANAS",imob:"TALA BOTA POR 6 SEMANAS (TROCAR POR ROBOFOOT EM AMBULATÓRIO)",tev:"HEPARINA PROFILÁTICA",analg:"",esp:["TESTAR NEUROLÓGICO"],sinais:false,ret:{dia:"1",fins:["CUR","RX","REAV"]}})},
+ {id:"tenorrafia-calc",r:"tornozelo",n:"Tenorrafia do tendão calcâneo (protocolo)",t:"Pé e tornozelo",d:T({proc:"TENORRAFIA DO TENDÃO CALCÂNEO",alta:"ALTA APÓS RPA",rx:false,atb:"ATB EV ATÉ ALTA",analg:"",imob:"TALA BOTA EM EQUINO CONFORME PROTOCOLO DR FERNANDO PARA TENORRAFIA",esp:["SEGUIR PROTOCOLO DE TENORRAFIA DO TENDÃO CALCÂNEO (CARGA APÓS 2-3 SEMANAS; ROBOFOOT COM SALTO ATÉ 7 SEMANAS; ROBOFOOT SEM SALTO DE 7 A 10 SEMANAS; ALONGAMENTO DO TRÍCEPS SURAL APENAS APÓS 12 SEMANAS)","ORIENTO PACIENTE A TRAZER ROBOFOOT COM SALTO NO RETORNO"],ciente:"PACIENTE E ACOMPANHANTE",sinais:false,ret:{apos:false,dia:"1",fins:["CUR","REAV","DISC"]}})},
+ {id:"sindesmose-paraf",r:"tornozelo",n:"Sindesmose (retirada de parafuso 12 sem)",t:"Pé e tornozelo",d:T({proc:"FECHAMENTO DE SINDESMOSE DE TORNOZELO",alta:"ALTA APÓS RPA (APÓS RX POI)",atb:"ATB EV ATÉ ALTA",analg:"",tev:"HEPARINA PROFILÁTICA",carga:"SEM CARGA POR 6 SEMANAS",imob:"ROBOFOOT POR 6 SEMANAS",fisio:"FISIOTERAPIA PRECOCE (INICIAR ANTES DA ALTA)",curativo:"CURATIVO ESTÉRIL FECHADO 72H, APÓS CURATIVO DIÁRIO",esp:[E.parafuso],sinais:false,ret:{apos:false,dia:"2",fins:["RX","REAV"]}})},
+ {id:"maleolo-robo4",r:"tornozelo",n:"Maléolo lateral: robofoot + UBS (protocolo atual)",t:"Pé e tornozelo",d:T({proc:"OSTEOSSÍNTESE DE MALEOLO LATERAL",alta:"ALTA NO 1º PO",analg:"ANALGESIA DE HORÁRIO",carga:"SEM CARGA POR 6 SEMANAS",imob:"ROBOFOOT POR 4 SEMANAS",curativo:"CURATIVO DIÁRIO EM UBS",sinais:false,ret:{amb:"ORTOPEDIA",apos:false,dia:"1",fins:["RX","REAV"]}})},
+ {id:"hallux-valgo",r:"pe",n:"Correção de hálux valgo",t:"Pé e tornozelo",d:T({proc:"CORREÇÃO CIRÚRGICA DE HÁLUX VALGO",alta:"ALTA APÓS RPA (APÓS RX POI)",atb:"ATB EV ATÉ ALTA + VO 2 DIAS",analg:"",carga:"CARGA CONFORME DOR COM SANDÁLIA DE SOLADO RÍGIDO",fk:"FK POR 4-6 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",tev:"HEPARINA PROFILÁTICA",esp:["NÃO LIBERADA CARGA SEM SANDÁLIA"],sinais:false,ret:{apos:false,dia:"1",fins:["RX","REAV"]}})},
+ {id:"metatarso",r:"pe",n:"Fixação de 5º metatarso",t:"Pé e tornozelo",d:T({proc:"REDUÇÃO ABERTA + FIXAÇÃO INTERNA DE 5º METATARSO",alta:"ALTA APÓS RPA",analg:"",imob:"ESPARADRAPAGEM POR 21 DIAS",fk:"FK POR 3-4 SEMANAS (DISCUTIR RETIRADA COM ASSISTENTE)",carga:"CARGA CONFORME DOR COM SANDÁLIA DE SOLADO RÍGIDO",sinais:false,ret:{apos:false,dia:"1",fins:["RX","REAV"]}})},
+ {id:"transf-tibial",r:"pe",ped:true,n:"Transferência do tibial anterior",t:"Pediatria",d:T({proc:"TRANSFERÊNCIA DO TIBIAL ANTERIOR PARA FIBULAR CURTO",alta:"ALTA APÓS RPA",rx:false,atb:"",analg:"ANALGESIA DE HORÁRIO",imob:"TALA SUROPODÁLICA ATÉ O RETORNO - TRANSICIONAR PARA GESSO POR 6 SEMANAS (CHAMAR ASSISTENTE)",ciente:"RESPONSÁVEL",ret:{apos:false,dia:"1",fins:["REAV"]}})},
+ // geral
+ {id:"rms",r:"geral",n:"Retirada de material de síntese",t:"Trauma",d:T({proc:"RETIRADA DE MATERIAL DE SÍNTESE",alta:"ALTA APÓS RPA",analg:"ANALGESIA CONFORME DOR",curativo:"CURATIVO DIÁRIO EM UBS",sinais:true,ret:{em:"7",dia:"",fins:["REAV","CUR"]}})},
+ {id:"amputacao",r:"geral",n:"Amputação (transfemoral / transtibial)",t:"Infecção",d:T({proc:"AMPUTAÇÃO TRANSFEMORAL",alta:"INTERNADO ATÉ SEGUNDA ORDEM",atb:"MANTER ATB PRÉVIO CONFORME DISCUSSÃO COM CCIH",tev:"HEPARINA PROFILÁTICA",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",curativo:"CURATIVO ESTÉRIL FECHADO 72H OU ATÉ SATURAR, APÓS CURATIVO DIÁRIO",esp:["COLETAR NOVA CULTURA E DISCUTIR COM CCIH",E.ap,"INTRODUZIR GABAPENTINA 300 MG DE 8/8H","INTRODUZIR AMITRIPTILINA 25 MG ANTES DE DORMIR"],sinais:false,ret:{dia:"5",fins:["REAV"]}})},
+ {id:"exposta-cross",r:"geral",n:"Limpeza + fixador (exposta, aguardar CROSS)",t:"Trauma",d:T({proc:"LIMPEZA CIRÚRGICA + FIXADOR EXTERNO",alta:"INTERNADO PARA COMPLETAR DOSE DE ATB (EXPOSTA)",atb:"ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO",carga:"SEM CARGA ATÉ SEGUNDA ORDEM",tev:"HEPARINA PROFILÁTICA",curativo:"CURATIVO DIÁRIO",esp:[E.cross,E.sintese],analg:"",ret:{amb:"",dia:"",fins:[]}})}
+);
+
+/* ---------- escala dos assistentes (mesma do Solicitador de Retornos) ---------- */
+// d = dia da semana (1=seg … 5=sex) · r = regiões do boneco que costumam ser dele · s = como assina nas evoluções
+const ESCALA=[
+ {id:"fernando",s:"FERNANDO SALGADO",p:"DR",e:"Pé e tornozelo",d:1,r:["tornozelo","pe"]},
+ {id:"marcondes",s:"JOSÉ MARCONDES",p:"DR",e:"Coluna",d:1,r:["cervical","coluna"]},
+ {id:"emilio",s:"EMÍLIO MURADE",p:"DR",e:"Coluna",d:1,r:["cervical","coluna"]},
+ {id:"amilton",s:"AMILTON",p:"DR",e:"Pediátrica",d:1,r:[],ped:1},
+ {id:"maysa",s:"MAYSA",p:"DRA",e:"Pediátrica",d:1,r:[],ped:1},
+ {id:"eqped",s:"EQUIPE PEDIÁTRICA",p:"",e:"Pediátrica",d:1,r:[],ped:1,eq:1},
+ {id:"eduardo",s:"EDUARDO JACOB",p:"DR",e:"Mão",d:2,r:["mao","antebraco"]},
+ {id:"marcosv",s:"MARCOS VINICIUS",p:"DR",e:"Ombro e cotovelo",d:2,r:["ombro","braco","cotovelo"]},
+ {id:"antoniassi",s:"R ANTONIASSI",p:"DR",e:"Quadril",d:3,r:["quadril","bacia","coxa"]},
+ {id:"adriano",s:"ADRIANO GARCIA",p:"DR",e:"Quadril",d:3,r:["quadril","coxa"]},
+ {id:"silveira",s:"MARCOS SILVEIRA",p:"DR",e:"Quadril",d:3,r:["quadril"]},
+ {id:"eqquadril",s:"EQUIPE QUADRIL",p:"",e:"Quadril",d:3,r:["quadril"],eq:1},
+ {id:"laraya",s:"LARAYA",p:"DRA",e:"Joelho",d:4,r:["joelho"]},
+ {id:"ewerton",s:"EWERTON",p:"DR",e:"Joelho",d:4,r:["joelho","perna","coxa"]},
+ {id:"eqjoelho",s:"EQUIPE JOELHO",p:"",e:"Joelho",d:4,r:["joelho"],eq:1},
+ {id:"toma",s:"R TOMA",p:"DR",e:"Tumor",d:4,r:["bacia"],tumor:1},
+ {id:"edersonT",s:"EDERSON",p:"DR",e:"Tumor",d:4,r:[],tumor:1},
+ {id:"eqtumor",s:"EQUIPE TUMOR",p:"",e:"Tumor",d:4,r:[],tumor:1,eq:1},
+ {id:"gustavo",s:"GUSTAVO REINAS",p:"DR",e:"Coluna / trauma",d:5,r:["coluna"]},
+ {id:"rogerio",s:"ROGÉRIO DE FREITAS",p:"DR",e:"Trauma",d:5,r:["coxa","perna","braco","antebraco"]},
+ {id:"edersonTr",s:"EDERSON",p:"DR",e:"Trauma",d:5,r:["coxa","perna"]}
+];
+const DIA_NOME=["","SEG","TER","QUA","QUI","SEX"];
+let ASST=[];
+
 
 /* ---------- estado ---------- */
 let S=T({});
@@ -463,12 +627,13 @@ function renderTemplates(){
 }
 $("tplSearch").addEventListener("input",renderTemplates);
 function applyTpl(t){
-  activeTpl=t.id;const sig={pre:S.sigPre,name:S.sigName};
+  atbCls=null;activeTpl=t.id;const sig={pre:S.sigPre,name:S.sigName};
   S=JSON.parse(JSON.stringify(t.d));S.ret=Object.assign({},BASE.ret,S.ret);
   if(t.d.lado!=null&&t.d.lado!==undefined){setSide(t.d.lado)}
   else if(REGIONS[t.r]&&REGIONS[t.r].mid){setSide("")}
   else if(side===""){setSide("D")}
   if(t.r!=="geral"&&t.r!==region){region=t.r;renderRegions();$("regionLabel").textContent=REGIONS[t.r].n;if(window.BODY3D)window.BODY3D.select(t.r,REGIONS[t.r].mid?null:side)}
+  if(ASST.length&&S.ret.dia)S.ret.dia=String(asstDay());
   manual=false;fillForm();renderTemplates();update();
 }
 $("saveTpl").onclick=()=>{
@@ -484,24 +649,65 @@ function renderFields(){
   const rx=document.createElement("div");rx.className="row";rx.innerHTML='<span class="lbl">Radiografia</span><div class="rowbody"><label class="chk"><input type="checkbox" id="f-rx"> Cobrar RX POI</label></div>';box.appendChild(rx);
   FIELDS.forEach(f=>{
     const row=document.createElement("div");row.className="row";
-    row.innerHTML='<span class="lbl"></span><div class="rowbody"><div class="chips"></div><div class="inline"><input type="text" id="f-'+f.k+'" placeholder="(não incluir)"><button type="button" class="mini" data-step="-1" aria-label="Diminuir duração">−</button><button type="button" class="mini" data-step="1" aria-label="Aumentar duração">+</button><button type="button" class="mini" data-clear aria-label="Limpar">×</button></div></div>';
+    row.innerHTML='<span class="lbl"></span><div class="rowbody"><div class="bld" id="bld-'+f.k+'"></div><div class="chips"></div><div class="inline"><input type="text" id="f-'+f.k+'" placeholder="(não incluir)"><button type="button" class="mini" data-step="-1" aria-label="Diminuir duração">−</button><button type="button" class="mini" data-step="1" aria-label="Aumentar duração">+</button><button type="button" class="mini" data-clear aria-label="Limpar">×</button></div></div>';
     row.querySelector(".lbl").textContent=f.l;
     const chips=row.querySelector(".chips");
-    f.c.forEach(c=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=c;b.dataset.v=c;b.onclick=()=>{const inp=$("f-"+f.k);inp.value=(inp.value===c)?"":c;onEdit()};chips.appendChild(b)});
+    f.c.forEach((c,i)=>{const b=document.createElement("button");b.type="button";b.className="chip"+(i>=8?" extra":"");b.textContent=c;b.dataset.v=c;b.onclick=()=>{const inp=$("f-"+f.k);inp.value=(inp.value===c)?"":c;onEdit()};chips.appendChild(b)});
+    if(f.c.length>8){chips.classList.add("collapsed");const mb=document.createElement("button");mb.type="button";mb.className="chip more";mb.textContent="+"+(f.c.length-8)+" opções";
+      mb.onclick=()=>{const c=chips.classList.toggle("collapsed");mb.textContent=c?"+"+(f.c.length-8)+" opções":"menos";};chips.appendChild(mb)}
+    if(BLD[f.k]){chips.hidden=true;const tb=document.createElement("button");tb.type="button";tb.className="mini wide phr-t";tb.textContent="Frases prontas ("+f.c.length+")";tb.title="Frases já usadas no serviço";
+      tb.onclick=()=>{chips.hidden=!chips.hidden;tb.setAttribute("aria-pressed",String(!chips.hidden))};row.querySelector(".inline").appendChild(tb)}
     row.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{const inp=$("f-"+f.k);const st=Number(b.dataset.step);
       inp.value=inp.value.replace(/(\d+)(?=\s*(?:-\s*\d+\s*)?(?:DIAS?|SEMANAS?|SEM\b|MESES|M[EÊ]S))/i,(m)=>String(Math.max(1,Number(m)+st)));onEdit()});
     row.querySelector("[data-clear]").onclick=()=>{$("f-"+f.k).value="";onEdit()};
     box.appendChild(row);
   });
+  {const ab=document.createElement("div");ab.className="atb-box";ab.id="atbBox";$("f-atb").closest(".rowbody").appendChild(ab)}
   // finalidades retorno
   const fb=$("retFins");fb.innerHTML="";
   FINS.forEach(([k,txt])=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=txt;b.dataset.k=k;b.onclick=()=>{readForm();const i=S.ret.fins.indexOf(k);if(i>=0)S.ret.fins.splice(i,1);else S.ret.fins.push(k);fillForm();update()};fb.appendChild(b)});
 }
 function renderEsp(){
   const box=$("esp");box.innerHTML="";
-  const lib=ESP_LIB.slice();S.esp.forEach(e=>{if(!lib.includes(e))lib.push(e)});
-  lib.forEach(e=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=e;b.setAttribute("aria-pressed",String(S.esp.includes(e)));
-    b.onclick=()=>{readForm();const i=S.esp.indexOf(e);if(i>=0)S.esp.splice(i,1);else S.esp.push(e);renderEsp();update()};box.appendChild(b)});
+  // 1) itens já incluídos (na ordem em que vão para o texto)
+  const sel=document.createElement("div");sel.className="esp-sel";
+  if(!S.esp.length){const e=document.createElement("span");e.className="hint";e.textContent="Nenhum item específico. Monte abaixo ou escreva um item próprio.";sel.appendChild(e)}
+  S.esp.forEach((e,i)=>{const t=document.createElement("span");t.className="esp-tag";const x=document.createElement("button");x.type="button";x.textContent="×";x.title="Tirar";x.setAttribute("aria-label","Tirar item");
+    x.onclick=()=>{readForm();S.esp.splice(i,1);renderEsp();update()};
+    const up=document.createElement("button");up.type="button";up.textContent="↑";up.title="Subir";up.hidden=i===0;up.onclick=()=>{readForm();[S.esp[i-1],S.esp[i]]=[S.esp[i],S.esp[i-1]];renderEsp();update()};
+    t.appendChild(document.createTextNode(e+" "));t.appendChild(up);t.appendChild(x);sel.appendChild(t)});
+  box.appendChild(sel);
+  // 2) grupos
+  const tpl=TEMPLATES.concat(MINE).find(t=>t.id===activeTpl)||{};
+  ESP_G.forEach(g=>{
+    const d=document.createElement("details");d.className="esp-g";
+    const n=S.esp.filter(e=>g.match&&g.match.test(U(e))).length;
+    if(ESP_OPEN.has(g.id))d.open=true;
+    d.ontoggle=()=>{if(d.open)ESP_OPEN.add(g.id);else ESP_OPEN.delete(g.id)};
+    const sm=document.createElement("summary");sm.innerHTML='<span></span><small></small>';sm.querySelector("span").textContent=g.n;sm.querySelector("small").textContent=(n?n+" incluído"+(n>1?"s":"")+" · ":"")+g.h;d.appendChild(sm);
+    const body=document.createElement("div");body.className="esp-body";
+    if(g.fixed){const ch=document.createElement("div");ch.className="chips";
+      g.fixed.forEach(f=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=f;b.setAttribute("aria-pressed",String(S.esp.includes(f)));
+        b.onclick=()=>{readForm();const i=S.esp.indexOf(f);if(i>=0)S.esp.splice(i,1);else S.esp.push(f);renderEsp();update()};ch.appendChild(b)});body.appendChild(ch)}
+    if(g.parts){const st=ESP_ST[g.id]||(ESP_ST[g.id]=Object.assign({},g.init||{}));
+      const row=document.createElement("div");row.className="bld";
+      g.parts.forEach(p=>{
+        if(p.kind==="multi"||p.kind==="seg"){const w=document.createElement("div");w.className="bseg";if(p.label){const l=document.createElement("span");l.className="bseg-l";l.textContent=p.label;w.appendChild(l)}
+          p.opts.forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;
+            const on=p.kind==="multi"?(st[p.key]||[]).includes(v):(st[p.key]||"")===v;b.setAttribute("aria-pressed",String(on));
+            b.onclick=()=>{if(p.kind==="multi"){const a=st[p.key]=(st[p.key]||[]).slice();const i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v)}else st[p.key]=v;renderEsp()};w.appendChild(b)});row.appendChild(w)}
+        else if(p.kind==="txt"||p.kind==="num"){const i=document.createElement("input");i.type="text";i.className=p.kind==="num"?"bnum-i":"btxt";i.placeholder=p.label;i.value=st[p.key]||"";
+          i.oninput=()=>{st[p.key]=i.value;const pv=box.querySelector('[data-prev="'+g.id+'"]');if(pv)pv.textContent=g.compose(st)||"—"};row.appendChild(i)}
+        else if(p.kind==="chk"){const l=document.createElement("label");l.className="chk bchk";const i=document.createElement("input");i.type="checkbox";i.checked=!!st[p.key];i.onchange=()=>{st[p.key]=i.checked;renderEsp()};l.appendChild(i);l.appendChild(document.createTextNode(" "+p.label));row.appendChild(l)}
+      });
+      body.appendChild(row);
+      const act=document.createElement("div");act.className="inline";
+      const pv=document.createElement("code");pv.className="esp-prev";pv.dataset.prev=g.id;pv.textContent=g.compose(st)||"—";act.appendChild(pv);
+      const add=document.createElement("button");add.type="button";add.className="btn ghost sm";add.textContent="+ incluir";
+      add.onclick=()=>{const v=g.compose(ESP_ST[g.id]);if(!v){toast("Escolha as peças primeiro");return}readForm();if(!S.esp.includes(v))S.esp.push(v);ESP_ST[g.id]=Object.assign({},g.init||{});renderEsp();update()};
+      act.appendChild(add);body.appendChild(act)}
+    d.appendChild(body);box.appendChild(d);
+  });
 }
 function addEsp(){const v=$("espNew").value.trim().toUpperCase();if(!v)return;readForm();if(!S.esp.includes(v))S.esp.push(v);$("espNew").value="";renderEsp();update()}
 $("espAdd").onclick=addEsp;$("espNew").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addEsp()}});
@@ -526,6 +732,7 @@ function syncChips(){
   FIELDS.forEach(f=>{const v=($("f-"+f.k).value||"").toUpperCase();const row=$("f-"+f.k).closest(".row");
     row.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));
     const hasN=!!durDays(v);row.querySelectorAll("[data-step]").forEach(b=>b.hidden=!hasN);row.querySelector("[data-clear]").hidden=!v});
+  syncBuilders();
 }
 function onEdit(){readForm();syncChips();update()}
 
@@ -545,7 +752,7 @@ function retornoLine(base){
   const fins=FINS.filter(([k])=>r.fins.includes(k)).map(x=>x[1]);
   if(fins.length)s+=" PARA "+fins.join(" + ");
   if(r.data&&base){const fr=firstReturn(base);if(fr.date)s+=" (1º RETORNO "+fmt(fr.date)+")"}
-  if(r.obs)s+=". "+r.obs.toUpperCase();
+  if(r.obs)s+=(/^\(/.test(r.obs.trim())?" ":". ")+r.obs.trim().toUpperCase();
   return s;
 }
 function withDate(txt,base){
@@ -556,6 +763,7 @@ function build(){
   const base=parseISO($("dt").value);const L=[];const H=$("oHyphen").checked?"- ":"";
   if($("oSot").checked)L.push("#SOT#");(S.hist||"").split("\n").map(x=>x.trim()).filter(Boolean).forEach(x=>L.push(x.toUpperCase()));
   const proc=(S.proc||"").trim().toUpperCase()||"[PROCEDIMENTO]";const lado=ladoTxt();
+  if($("oHead").value.startsWith("#"))L.push("# CC");
   L.push("POI DE "+proc+(lado?" "+lado:"")+(base?" ("+fmt(base)+")":""));
   L.push("---");L.push($("oHead").value);
   const items=[];
@@ -597,6 +805,7 @@ function update(){
   if(!$("out"))return;
   if(!manual)$("out").value=build();
   timeline();
+  renderAsst();asstWarn();renderAtb();
   const fr=firstReturn(parseISO($("dt").value)||new Date());
   $("retHint").innerHTML=fr.date?"1º retorno possível: <b>"+fmt(fr.date)+"</b> ("+DIAS_CURTO[fr.date.getDay()]+")":"Escolha o dia da semana ou o prazo em dias.";
   const r=REGIONS[region];$("procHint").textContent=r?"Região: "+r.n+(ladoTxt()?" · "+ladoTxt().toLowerCase():""):"";
@@ -619,10 +828,330 @@ $("copy").onclick=()=>{const t=$("out").value;
   try{navigator.clipboard.writeText(t).then(()=>toast("Copiado para a área de transferência"),fb)}catch(e){fb()}};
 let tt;function toast(m){const el=$("toast");el.textContent=m;el.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>el.classList.remove("on"),1800)}
 
+
+/* ---------- escala dos assistentes: assinatura + dia do retorno ---------- */
+function asstFirst(){return ESCALA.find(x=>x.id===ASST[0])||null}
+function asstDay(){const a=asstFirst();return a?a.d:0}
+function applyAsstSig(){
+  if(!ASST.length)return;
+  const L=ASST.map(id=>ESCALA.find(x=>x.id===id)).filter(Boolean);
+  const pref=$("sigPre").value.startsWith("ASSISTENTE")?"ASSISTENTE:":"ASS";
+  const a=L[0];
+  $("sigPre").value=a.eq?"ASS":(pref+" "+a.p);
+  $("sigName").value=[a.s].concat(L.slice(1).map(x=>(x.p?x.p+" ":"")+x.s)).join(" + ");
+}
+function renderAsst(){
+  const box=$("asst");if(!box)return;box.innerHTML="";
+  const tpl=TEMPLATES.concat(MINE).find(t=>t.id===activeTpl)||{};
+  for(let d=1;d<=5;d++){
+    const row=document.createElement("div");row.className="asst-day";
+    const lb=document.createElement("b");lb.textContent=DIA_NOME[d];row.appendChild(lb);
+    ESCALA.filter(x=>x.d===d).forEach(x=>{
+      const b=document.createElement("button");b.type="button";b.className="chip";
+      const sug=(region&&x.r.includes(region))||(tpl.ped&&x.ped)||(tpl.t==="Oncologia"&&x.tumor);
+      if(sug)b.classList.add("sug");
+      b.setAttribute("aria-pressed",String(ASST.includes(x.id)));
+      b.title=x.e+" · "+DIAS[d].toLowerCase();
+      b.textContent=(x.eq?"":(x.p==="DRA"?"Dra. ":"Dr. "))+x.s.charAt(0)+x.s.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>" "+c.toUpperCase()).replace(/ De /g," de ")+(x.id==="edersonT"?" (tumor)":x.id==="edersonTr"?" (trauma)":"");
+      b.onclick=()=>pickAsst(x.id);
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+  }
+  const a=asstFirst();
+  $("asstHint").textContent=a?("Retorno pautado na escala: "+DIAS[a.d].toLowerCase()+" ("+a.e.toLowerCase()+"). Toque em outro assistente para acrescentar (+), ou no mesmo para tirar."):"Toque no assistente: preenche a assinatura e põe o retorno no dia dele. Tracejado = sugerido pela região/modelo.";
+}
+function pickAsst(id){
+  readForm();
+  const i=ASST.indexOf(id);
+  if(i>=0)ASST.splice(i,1);else ASST.push(id);
+  // mesmo nome em dois dias (ex.: Ederson tumor/trauma): não duplica
+  const a=ESCALA.find(x=>x.id===id);
+  if(i<0)ASST=ASST.filter(o=>o===id||ESCALA.find(x=>x.id===o).s!==a.s);
+  store.set("pos-op-asst",ASST);
+  if(ASST.length){
+    applyAsstSig();
+    const d=asstDay();
+    if(i<0&&ASST[0]===id&&String(d)!==String(S.ret.dia)){S.ret.dia=String(d);$("retDia").value=String(d);toast("Retorno ajustado para "+DIAS[d].toLowerCase()+" (dia de "+a.s+")")}
+  }
+  readForm();renderAsst();update();
+}
+function asstWarn(){
+  const a=asstFirst();const el=$("asstWarn");if(!el)return;
+  if(!a||!S.ret.dia||String(a.d)===String(S.ret.dia)){el.hidden=true;return}
+  el.hidden=false;
+  el.innerHTML='<span>Dia do retorno ('+DIAS[Number(S.ret.dia)].toLowerCase()+') fora da escala de '+a.s+' ('+DIAS[a.d].toLowerCase()+').</span>';
+  const b1=document.createElement("button");b1.type="button";b1.textContent="Usar "+DIA_NOME[a.d];
+  b1.onclick=()=>{$("retDia").value=String(a.d);onEdit()};
+  const b2=document.createElement("button");b2.type="button";b2.className="ghost";b2.textContent="Manter + “(FORA DO DIA DO ASS)”";
+  b2.onclick=()=>{const o=$("retObs");if(!/FORA DO DIA/i.test(o.value))o.value=(o.value?o.value+" ":"")+"(FORA DO DIA DO ASSISTENTE)";onEdit()};
+  el.appendChild(b1);el.appendChild(b2);
+}
+$("sigName").addEventListener("input",()=>{if(ASST.length){ASST=[];store.set("pos-op-asst",ASST);renderAsst()}});
+
+
+/* ---------- antibiótico: protocolo HCF-CAD-PO-1 (HCFAMEMA, out/2025) + costume de cada assistente ---------- */
+const CEFAZ="Cefazolina na indução (<70 kg: 1 g · 70–120 kg: 2 g · >120 kg: 3 g), repique 1 g 4/4h durante a cirurgia";
+const ATB_P={
+ osteo:{n:"Osteossíntese",txt:"ATB PROFILÁTICO CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 1 G 8/8H POR 24H)",det:CEFAZ+"; PO 1 g 8/8h por 24h."},
+ outros:{n:"Mão, RMS, tumor, ligamentar, PTC",txt:"ATB PROFILÁTICO CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 1 G 8/8H POR 24H)",det:CEFAZ+"; PO 1 g 8/8h por 24h. Vale para artrotomia, ligamentares, mão/punho, cirurgias musculares, retirada de síntese, ressecção de tumor ósseo, polidactilia, pé torto e retirada de enxerto."},
+ scopia:{n:"Artroscopia",txt:"ATB PROFILÁTICO EM DOSE ÚNICA NA INDUÇÃO (CONFORME PROTOCOLO DA INSTITUIÇÃO)",det:"Cefazolina só na indução (repique 4/4h se prolongar). Protocolo: PO não indicado."},
+ artro:{n:"Artroplastia primária (quadril/joelho)",txt:"ATB PROFILÁTICO CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 1 G 8/8H POR 48H)",det:CEFAZ+"; PO 1 g 8/8h por 48h."},
+ rev:{n:"Revisão de artroplastia",txt:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 48H) + COBRAR CULTURAS INTRAOPERATÓRIAS E DISCUTIR COM CCIH",det:CEFAZ+"; PO 1 g 8/8h por 48h. Coletar culturas intra-op; tempo e esquema conforme resultado."},
+ coluna:{n:"Coluna (artrodese e outros)",txt:"ATB PROFILÁTICO CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 1 G 8/8H POR 48H)",det:CEFAZ+"; PO 1 g 8/8h por 48h."},
+ g1:{n:"Exposta Gustilo I",txt:"ATB DOSE EXPOSTA GUSTILO I CONFORME PROTOCOLO DA INSTITUIÇÃO (CEFAZOLINA 1 G 8/8H POR 48H)",det:CEFAZ+"; PO 1 g 8/8h por 48h."},
+ g23:{n:"Exposta Gustilo II/III",txt:"ATB DOSE EXPOSTA GUSTILO II/III CONFORME PROTOCOLO DA INSTITUIÇÃO (CLINDAMICINA + GENTAMICINA POR 7-14 DIAS)",det:"Indução: clindamicina 600 mg + gentamicina 5 mg/kg; repique clinda 600 mg 6/6h. PO: clindamicina 600 mg 6/6h + gentamicina 5 mg/kg 1x/dia, 7–14 dias."},
+ infec:{n:"Infectada (limpeza, osteomielite, prótese infectada, artrite séptica)",txt:"ATB TERAPÊUTICO EMPÍRICO (CLINDAMICINA + CIPROFLOXACINO) ATÉ RESULTADO DE CULTURAS E DISCUSSÃO COM CCIH",det:"Indução: clindamicina 600 mg + gentamicina 5 mg/kg. PO: clindamicina 600 mg 6/6h + ciprofloxacino 400 mg 12/12h. Uso terapêutico: ajustar pelas culturas intra-op; tempo conforme evolução."},
+ alerg:{n:"Alergia a cefalosporina",txt:"ATB PROFILÁTICO COM CLINDAMICINA (ALERGIA A CEFALOSPORINA) CONFORME PROTOCOLO DA INSTITUIÇÃO",det:"Clindamicina 900 mg IV ou vancomicina 1 g (15 mg/kg) na indução. Se precisar cobrir Gram-negativo: ciprofloxacino 400 mg IV. Vancomicina não é rotina."}
+};
+const ATB_ORD=["osteo","outros","scopia","artro","rev","coluna","g1","g23","infec","alerg"];
+function atbClass(t){
+  const id=(t&&t.id)||"";
+  if(/^(menisco|lesao-menisco)$/.test(id))return"scopia";
+  if(/^(rev-atq|rev-atq-trava|rev-atj)$/.test(id))return"rev";
+  if(/^(atq|atq-riva|atj|bipolar|bipolar-osteo)$/.test(id))return"artro";
+  if(/^(fixador|delta|exposta-cross|pinca|dedo-fk|limpeza-mao|fixador-mie|fixador-linear|fixador-joelho|punho)$/.test(id))return"g23";
+  if(t&&t.t==="Infecção")return"infec";
+  if(t&&t.r&&(t.r==="coluna"||t.r==="cervical"))return"coluna";
+  if(t&&(t.t==="Oncologia"||t.t==="Mão / nervo"||t.t==="Pediatria"||t.r==="mao"))return"outros";
+  if(/^(lca|lca-menisco|lca-precoce|manguito|manguito-pend|acromio|lig-cotovelo|rms|tenorrafia-calc|tenotomia|vulpius|transf-tibial)$/.test(id))return"outros";
+  return"osteo";
+}
+// costume observado nas programações de mar–abr/2026 (antes de a equipe migrar para "conforme protocolo")
+const ATB_PREF={
+ fernando:"ATB EV ATÉ ALTA + VO 2 DIAS",marcondes:"ATB EV ATÉ ALTA + VO 3 DIAS",emilio:"ATB EV ATÉ ALTA + VO 2 DIAS",amilton:"ATB EV ATÉ ALTA",
+ eduardo:"ATB EV ATÉ ALTA + VO 2 DIAS",marcosv:"ATB EV ATÉ ALTA + VO 3 DIAS",antoniassi:"ATB EV ATÉ ALTA + VO 7 DIAS",adriano:"ATB EV ATÉ ALTA + VO 7 DIAS",
+ eqquadril:"ATB EV ATÉ ALTA + VO 7 DIAS",ewerton:"ATB EV ATÉ ALTA + VO 3 DIAS",eqjoelho:"ATB EV ATÉ ALTA + VO 3 DIAS",toma:"ATB EV ATÉ ALTA + VO 48 HORAS",
+ edersonT:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",edersonTr:"ATB EV ATÉ ALTA + VO 48 HORAS",gustavo:"ATB EV ATÉ ALTA",rogerio:"ATB EV ATÉ ALTA + VO 3 DIAS"
+};
+const ATB_PREF_CLASS={ewerton:{artro:"ATB EV + VO POR UM TOTAL DE 72 HORAS"},marcondes:{coluna:"ATB EV ATÉ ALTA + VO 3 DIAS"},toma:{osteo:"ATB EV ATÉ ALTA + VO 7 DIAS"}};
+let atbCls=null;
+function renderAtb(){
+  const box=$("atbBox");if(!box)return;
+  const tpl=TEMPLATES.concat(MINE).find(t=>t.id===activeTpl)||null;
+  const auto=atbClass(tpl);const k=atbCls||auto;const P=ATB_P[k];
+  box.innerHTML="";
+  const h=document.createElement("div");h.className="atb-h";h.innerHTML='<b>Protocolo HCF-CAD-PO-1</b> <span></span>';
+  h.querySelector("span").textContent="· sugerido p/ este modelo: "+ATB_P[auto].n.toLowerCase();box.appendChild(h);
+  const ch=document.createElement("div");ch.className="chips";
+  ATB_ORD.forEach(c=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=ATB_P[c].n;b.setAttribute("aria-pressed",String(c===k));
+    b.onclick=()=>{atbCls=c;$("f-atb").value=ATB_P[c].txt;onEdit()};ch.appendChild(b)});
+  box.appendChild(ch);
+  const det=document.createElement("p");det.className="atb-det";det.textContent=P.det;box.appendChild(det);
+  const act=document.createElement("div");act.className="inline";
+  const b1=document.createElement("button");b1.type="button";b1.className="mini wide";b1.textContent="Usar protocolo";b1.onclick=()=>{atbCls=k;$("f-atb").value=P.txt;onEdit()};act.appendChild(b1);
+  const a=asstFirst();
+  if(a){const pref=(ATB_PREF_CLASS[a.id]&&ATB_PREF_CLASS[a.id][k])||ATB_PREF[a.id];
+    if(pref){const b2=document.createElement("button");b2.type="button";b2.className="mini wide";b2.textContent="Costume de "+a.s.toLowerCase().replace(/(^| )(\w)/g,(m,s,c)=>s+c.toUpperCase())+": "+pref.toLowerCase();
+      b2.title="Como ele costumava prescrever nas evoluções de mar–abr/2026";b2.onclick=()=>{$("f-atb").value=pref;onEdit()};act.appendChild(b2)}}
+  box.appendChild(act);
+  // alerta: prolongamento além do protocolo
+  const v=($("f-atb").value||"").toUpperCase();const w=document.createElement("p");w.className="atb-warn";
+  if(/\+\s*VO\s*\d|VO\s*\d+\s*DIAS|VO POR \d/.test(v)&&!/EXPOSTA|CULTURA|CCIH|EMPÍRICO|EMPIRICO|TERAPÊUTICO/.test(v)&&!/^(g23|infec)$/.test(k)){
+    w.textContent="O protocolo da instituição não prevê ATB VO após a alta nesta classe ("+(k==="scopia"?"dose única":/48H/.test(P.txt)?"48h":"24h")+"). Mantenha só se for a conduta do assistente para este caso.";box.appendChild(w)}
+}
+
+
+/* ---------- montadores: escolhe as peças, o app escreve a frase sempre do mesmo jeito ---------- */
+const U=s=>(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const DUR_SEL=[["n","Por tempo"],["ret","Até o retorno"],["2o","Até 2ª ordem"],["pontos","Até retirada de pontos"],["pm","Até melhora de partes moles"],["conf","Para conforto"]];
+function durTxt(st,unitDef){
+  const n=(st.n||"").trim();const u=st.u||unitDef||"SEMANAS";
+  if(st.d==="n"&&n){const one=/^1$/.test(n);return " POR "+n+" "+(one?u.replace(/S$/,""):u)}
+  return {ret:" ATÉ O RETORNO","2o":" ATÉ SEGUNDA ORDEM",pontos:" ATÉ RETIRADA DE PONTOS",pm:" ATÉ MELHORA DE PARTES MOLES",conf:" PARA CONFORTO"}[st.d]||"";
+}
+function durParse(t,st){
+  const m=/(\d+(?:\s*-\s*\d+)?)\s*(SEMANAS?|DIAS?|MESES|MES)/.exec(t);
+  if(m){st.d="n";st.n=m[1].replace(/\s/g,"");st.u=/^D/.test(m[2])?"DIAS":/^M/.test(m[2])?"MESES":"SEMANAS"}
+  else if(/SEGUNDA ORDEM|2[ªAº]? ORDEM/.test(t))st.d="2o";else if(/ATE (O )?RETORNO/.test(t))st.d="ret";else if(/PONTOS/.test(t))st.d="pontos";else if(/PARTES MOLES/.test(t))st.d="pm";else if(/CONFORTO/.test(t))st.d="conf";
+}
+const paren=a=>a.length?" ("+a.join(", ")+")":"";
+const BLD={
+ alta:{parts:[
+   {kind:"seg",key:"t",opts:[["rpa","Após RPA"],["po","No __º PO"],["uti","Após alta da UTI"],["int","Internado até 2ª ordem"],["cult","Após culturas / CCIH"],["dose","Completar dose de ATB"],["prest","A critério da prestadora"]]},
+   {kind:"num",key:"n",label:"º PO",show:s=>s.t==="po"},
+   {kind:"chk",key:"ou",label:"/ após alta da UTI",show:s=>s.t==="po"},
+   {kind:"chk",key:"rx",label:"após RX POI",show:s=>s.t==="rpa"||s.t==="po"},
+   {kind:"chk",key:"atb",label:"após dose de ATB",show:s=>s.t==="po"},
+   {kind:"chk",key:"dreno",label:"após retirada de dreno",show:s=>s.t==="po"||s.t==="uti"},
+   {kind:"chk",key:"disc",label:"discutir com assistente",show:s=>s.t&&!/prest|cult|dose/.test(s.t)}],
+  compose(s){if(!s.t)return"";const p=[];if(s.rx&&(s.t==="rpa"||s.t==="po"))p.push("APÓS RX POI");if(s.atb&&s.t==="po")p.push("APÓS DOSE DE ATB");if(s.dreno&&s.t!=="rpa")p.push("APÓS RETIRADA DE DRENO");if(s.disc)p.push("DISCUTIR COM ASSISTENTE");
+   const b={rpa:"ALTA APÓS RPA",po:"ALTA NO "+(s.n||1)+"º PO"+(s.ou?" / APÓS ALTA DA UTI":""),uti:"ALTA APÓS ALTA DA UTI",int:"INTERNADO ATÉ SEGUNDA ORDEM",cult:"DISCUTIR ALTA APÓS RESULTADOS DE CULTURAS E DISCUSSÃO COM CCIH",dose:"INTERNADO PARA COMPLETAR DOSE DE ATB (EXPOSTA)",prest:"ALTA DA EQUIPE ORTOPEDIA (ALTA HOSPITALAR A CRITÉRIO DA EQUIPE PRESTADORA)"}[s.t];return b+(/prest|cult|dose/.test(s.t)?"":paren(p))},
+  parse(t){const s={};if(/PRESTADORA/.test(t))s.t="prest";else if(/CULTURA|CCIH/.test(t))s.t="cult";else if(/COMPLETAR DOSE/.test(t))s.t="dose";else if(/SEGUNDA ORDEM|INTERNAD/.test(t))s.t="int";else{const m=/(\d)\s*[ºO°]?\s*PO\b/.exec(t);if(m){s.t="po";s.n=m[1];s.ou=/\bUTI\b/.test(t)}else if(/RPA/.test(t))s.t="rpa";else if(/\bUTI\b/.test(t))s.t="uti";else return {}}
+   s.rx=/RX|RADIOGRAFIA/.test(t);s.atb=/DOSE DE ATB/.test(t);s.dreno=/DRENO/.test(t);s.disc=/DISCUTIR|ASSISTENTE/.test(t);return s}},
+ atb:{parts:[
+   {kind:"seg",key:"t",opts:[["prot","Conforme protocolo"],["ev","EV até alta"],["evvo","EV até alta + VO"],["tot","EV + VO, total de"],["vo","Só VO"],["exp","Dose exposta"],["emp","Empírico até cultura"],["cult","Guiado por cultura"],["prev","Manter ATB prévio"]]},
+   {kind:"chk",key:"det",label:"detalhar droga e tempo (protocolo)",show:s=>s.t==="prot"},
+   {kind:"chk",key:"ccih",label:"até discussão com CCIH",show:s=>s.t==="prot"},
+   {kind:"chk",key:"tvo",label:"+ transicionar para VO",show:s=>s.t==="exp"},
+   {kind:"num",key:"n",label:"",show:s=>/evvo|vo|tot/.test(s.t||"")},
+   {kind:"seg",key:"u",opts:[["DIAS","dias"],["HORAS","horas"]],show:s=>/evvo|vo|tot/.test(s.t||"")},
+   {kind:"seg",key:"g",opts:[["","Gustilo ?"],["I","Gustilo I"],["II","II"],["III","III"]],show:s=>s.t==="exp"}],
+  compose(s){const n=(s.n||"").trim(),u=s.u||"DIAS";
+   switch(s.t){case"prot":{const cc=s.ccih?" ATÉ DISCUSSÃO COM CCIH":"";if(s.det){const tpl=TEMPLATES.concat(MINE).find(t=>t.id===activeTpl)||null;return ATB_P[atbCls||atbClass(tpl)].txt+cc}return"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO"+cc}
+    case"tot":return"ATB EV + VO"+(n?" POR UM TOTAL DE "+n+" "+u:"");
+    case"ev":return"ATB EV ATÉ ALTA";case"evvo":return"ATB EV ATÉ ALTA + VO"+(n?" "+n+" "+u:"");case"vo":return"ATB VO"+(n?" POR "+n+" "+u:"");
+    case"exp":return"ATB DOSE EXPOSTA CONFORME PROTOCOLO DA INSTITUIÇÃO"+(s.g?" (GUSTILO "+s.g+")":"")+(s.tvo?" + TRANSICIONAR PARA VO APÓS":"");case"emp":return"ATB EMPÍRICO ATÉ RESULTADO DE CULTURA E DISCUSSÃO COM CCIH";
+    case"cult":return"ATB GUIADO POR CULTURA (CONFORME DISCUSSÃO COM CCIH)";case"prev":return"MANTER ATB PRÉVIO CONFORME DISCUSSÃO COM CCIH"}return""},
+  parse(t){const s={};const m=/VO\s*(?:POR\s*)?(?:UM TOTAL DE\s*)?(\d+)\s*(DIAS?|H(?:ORAS|RS)?\b|H\b)/.exec(t)||/\+\s*(\d+)\s*(DIAS?)\s*VO/.exec(t);s.tvo=/TRANSICIONAR/.test(t);s.ccih=/CCIH/.test(t);if(m){s.n=m[1];s.u=/^D/.test(m[2])?"DIAS":"HORAS"}
+   if(/EXPOSTA/.test(t)){s.t="exp";const g=/GUSTILO\s*(III|II|I|3|2|1)/.exec(t);if(g)s.g={"3":"III","2":"II","1":"I"}[g[1]]||g[1]}
+   else if(/PREVIO|PRÉVIO/.test(t))s.t="prev";else if(/EMPIRIC|ATE RESULTADO|ATE SAIDA/.test(t))s.t="emp";else if(/CULTURA/.test(t))s.t="cult";
+   else if(/PROTOCOLO/.test(t)){s.t="prot";s.det=/CEFAZOLINA|CLINDAMICINA|DOSE UNICA/.test(t)}else if(/TOTAL DE/.test(t))s.t="tot";else if(/EV/.test(t)&&/VO/.test(t))s.t="evvo";else if(/EV/.test(t))s.t="ev";else if(/VO/.test(t))s.t="vo";return s}},
+ analg:{parts:[
+   {kind:"seg",key:"t",opts:[["dor","Conforme dor"],["hor","De horário"],["otim","Otimizada"],["pot","Potente"],["sn","Se necessário"]]},
+   {kind:"chk",key:"vo",label:"VO"},{kind:"chk",key:"aine",label:"+ AINE"},{kind:"chk",key:"rel",label:"+ relaxante muscular"}],
+  compose(s){if(!s.t)return"";return"ANALGESIA "+(s.vo?"VO ":"")+{dor:"CONFORME DOR",hor:"DE HORÁRIO",otim:"OTIMIZADA",pot:"POTENTE",sn:"SE NECESSÁRIO"}[s.t]+(s.aine?" + AINE":"")+(s.rel?" + RELAXANTE MUSCULAR":"")},
+  parse(t){const s={};s.t=/HORARIO/.test(t)?"hor":/OTIMIZ/.test(t)?"otim":/POTENTE/.test(t)?"pot":/SE NECESS/.test(t)?"sn":/ANALG/.test(t)?"dor":"";s.vo=/\bVO\b/.test(t);s.aine=/AINE|CETOROL|MELOXI/.test(t);s.rel=/RELAXANTE/.test(t);return s}},
+ tev:{parts:[
+   {kind:"seg",key:"t",opts:[["hep","Heparina profilática"],["antic","Anticoagulação profilática"],["riva","Rivaroxabana"],["prev","Retornar anticoag. prévia"],["sem","Sem anticoagulação"],["ped","Discutir c/ pediatria"]]},
+   {kind:"seg",key:"d",opts:[["","Durante internação"],["28","28 dias"],["n","Outro tempo"]],show:s=>/hep|antic|riva/.test(s.t||"")},
+   {kind:"num",key:"n",label:"dias",show:s=>s.d==="n"&&/hep|antic|riva/.test(s.t||"")},
+   {kind:"chk",key:"h24",label:"iniciar após 24h",show:s=>/hep|antic/.test(s.t||"")}],
+  compose(s){const base={hep:"HEPARINA PROFILÁTICA",antic:"ANTICOAGULAÇÃO PROFILÁTICA",riva:"RIVAROXABANA",prev:"RETORNAR ANTICOAGULAÇÃO PRÉVIA",sem:"SEM ANTICOAGULAÇÃO. ESTIMULAR DEAMBULAÇÃO",ped:"DISCUTIR ANTICOAGULAÇÃO PROFILÁTICA COM EQUIPE PEDIATRIA"}[s.t];if(!base)return"";
+   if(!/hep|antic|riva/.test(s.t))return base;const d=s.d==="28"?" POR 28 DIAS":s.d==="n"&&s.n?" POR "+s.n+" DIAS":"";return base+d+(s.h24?" (INICIAR APÓS 24 HORAS)":"")},
+  parse(t){const s={};s.t=/RIVARO/.test(t)?"riva":/RETORNAR/.test(t)?"prev":/SEM ANTICO/.test(t)?"sem":/PEDIATR/.test(t)?"ped":/HEPARINA/.test(t)?"hep":/ANTICOAG|ANTITROMB/.test(t)?"antic":"";
+   const m=/(\d+)\s*DIAS/.exec(t);if(m){if(m[1]==="28")s.d="28";else{s.d="n";s.n=m[1]}}else{const w=/(\d+)\s*SEMANAS/.exec(t);if(w){s.d="n";s.n=String(7*w[1])}}s.h24=/24\s*H/.test(t);return s}},
+ carga:{parts:[
+   {kind:"seg",key:"t",opts:[["sem","Sem carga"],["parcial","Carga parcial"],["dor","Carga conforme dor"],["total","Carga total"],["deamb","Permitido deambular"]]},
+   {kind:"seg",key:"m",opts:[["","—"],["ANDADOR","c/ andador"],["MULETAS","c/ muletas"],["ROBOFOOT","c/ robofoot"],["SANDÁLIA DE SOLADO RÍGIDO","c/ sandália rígida"]],show:s=>/parcial|dor|total/.test(s.t||"")},
+   {kind:"seg",key:"d",opts:[["","—"]].concat(DUR_SEL.filter(x=>x[0]!=="conf")),show:s=>/sem|parcial/.test(s.t||"")},
+   {kind:"num",key:"n",label:"",show:s=>s.d==="n"&&/sem|parcial/.test(s.t||"")},
+   {kind:"seg",key:"u",opts:[["SEMANAS","semanas"],["DIAS","dias"]],show:s=>s.d==="n"&&/sem|parcial/.test(s.t||"")},
+   {kind:"chk",key:"disc",label:"discutir liberação com assistente",show:s=>/sem|parcial/.test(s.t||"")}],
+  compose(s){const b={sem:"SEM CARGA",parcial:"CARGA PARCIAL",dor:"CARGA CONFORME DOR",total:"CARGA TOTAL CONFORME DOR",deamb:"PERMITIDO DEAMBULAR"}[s.t];if(!b)return"";
+   let r=b+(s.m&&/parcial|dor|total/.test(s.t)?" COM "+s.m:"");if(/sem|parcial/.test(s.t))r+=durTxt(s,"SEMANAS")+(s.disc?" (DISCUTIR LIBERAÇÃO COM ASSISTENTE)":"");return r},
+  parse(t){const s={};s.t=/SEM CARGA/.test(t)?"sem":/PARCIAL/.test(t)?"parcial":/TOTAL/.test(t)?"total":/DEAMBUL/.test(t)?"deamb":/CARGA/.test(t)?"dor":"";
+   s.m=/ANDADOR/.test(t)?"ANDADOR":/MULETA/.test(t)?"MULETAS":/ROBOFOOT/.test(t)?"ROBOFOOT":/SANDALIA/.test(t)?"SANDÁLIA DE SOLADO RÍGIDO":"";durParse(t,s);s.disc=/DISCUTIR|ASSISTENTE/.test(t);return s}},
+ imob:{parts:[
+   {kind:"sel",key:"dv",label:"Dispositivo",opts:[["","—"],["TALA","Tala"],["GESSO","Gesso"],["VELPEAU","Velpeau"],["ROBOFOOT","Robofoot"],["COLETE JEWETT","Colete Jewett"],["COLETE DE PUTTI","Colete de Putti"],["COLAR PHILADELPHIA","Colar Philadelphia"],["COLAR CERVICAL","Colar cervical"],["TRAVA DE ABDUÇÃO","Trava de abdução"],["SANDÁLIA DE SOLADO RÍGIDO (BARUK)","Sandália Baruk"],["ESPARADRAPAGEM","Esparadrapagem"],["BRACE","Brace"],["FIXADOR EXTERNO","Fixador externo"],["SUSPENSÓRIO DE PAVLIK","Pavlik"]]},
+   {kind:"sel",key:"tp",label:"Tipo",opts:[["","tipo…"],["AP","AP / antebraquiopalmar"],["AXILOPALMAR","Axilopalmar"],["LUVA","Luva"],["LUVA 90/90","Luva 90/90"],["ANTEBRAQUIDIGITAL DORSAL","Antebraquidigital dorsal"],["INTRÍNSECO PLUS","Intrínseco plus"],["PARA ESCAFOIDE","Escafoide"],["IP","IP (inguinopodálica)"],["IM (BRACE)","IM (brace)"],["INGUINOMALEOLAR","Inguinomaleolar"],["SUROPODÁLICA","Suropodálica"],["BOTA","Bota"],["BOTA EM EQUINO","Bota em equino"],["PONSETI","Ponseti (gesso)"],["PELVIPODÁLICO","Pelvipodálico (gesso)"]],show:s=>s.dv==="TALA"||s.dv==="GESSO"},
+   {kind:"seg",key:"d",opts:DUR_SEL,show:s=>!!s.dv},
+   {kind:"num",key:"n",label:"",show:s=>s.dv&&s.d==="n"},
+   {kind:"seg",key:"u",opts:[["SEMANAS","semanas"],["DIAS","dias"]],show:s=>s.dv&&s.d==="n"},
+   {kind:"sel",key:"tr",label:"Depois",opts:[["","sem transição"],["ROBOFOOT","→ trocar por robofoot"],["GESSO","→ trocar por gesso"],["TALA LUVA","→ trocar por tala luva"],["ÓRTESE","→ trocar por órtese"]],show:s=>!!s.dv},
+   {kind:"chk",key:"disc",label:"discutir retirada com assistente",show:s=>!!s.dv},
+   {kind:"txt",key:"x",label:"complemento (ex.: com liberação progressiva do enfaixamento)",show:s=>!!s.dv}],
+  compose(s){if(!s.dv)return"";let b=s.dv;if((s.dv==="TALA"||s.dv==="GESSO")&&s.tp)b+=" "+(s.dv==="GESSO"&&/SUROPODALICA/.test(U(s.tp))?"SUROPODÁLICO":s.tp);
+   const p=[];if(s.x)p.push(U(s.x).trim());if(s.tr)p.push("TROCAR POR "+s.tr+" EM AMBULATÓRIO");if(s.disc)p.push("DISCUTIR RETIRADA COM ASSISTENTE");return b+durTxt(s,"SEMANAS")+paren(p)},
+  parse(t){const s={};const dv=[["ROBOFOOT"],["VELPEAU","VELPAU"],["COLETE JEWETT","JEWETT"],["COLETE DE PUTTI","PUTTI"],["COLAR PHILADELPHIA","PHILADELPHIA"],["COLAR CERVICAL","COLAR"],["TRAVA DE ABDUÇÃO","TRAVA"],["SANDÁLIA DE SOLADO RÍGIDO (BARUK)","SANDALIA","BARUK"],["ESPARADRAPAGEM","ESPARADRAP"],["SUSPENSÓRIO DE PAVLIK","PAVLIK"],["FIXADOR EXTERNO","FIXADOR"],["GESSO"],["TALA"],["BRACE"]];
+   const first=t.replace(/\((?:TROCAR|TRANSICIONAR|DISCUTIR|SOLICITAR|CHAMAR)[^)]*\)/g,"").split(/ - |TRANSICIONAR|\(TROCAR/)[0];
+   for(const a of dv){const keys=a.map(U);if(keys.some(k=>first.includes(U(k)))){s.dv=a[0];break}}
+   if(s.dv==="TALA"||s.dv==="GESSO"){const tps=[["LUVA 90/90","LUVA 90"],["LUVA"],["AXILOPALMAR","AXILO"],["ANTEBRAQUIDIGITAL DORSAL","ANTEBRAQUIDIGITAL"],["INTRÍNSECO PLUS","INTRINSEC"],["PARA ESCAFOIDE","ESCAFOIDE"],["INGUINOMALEOLAR"],["IM (BRACE)"," IM"],["IP"," IP","INGUINOPODALICA"],["BOTA EM EQUINO","EQUINO"],["BOTA"],["SUROPODÁLICA","SUROPODALIC","SURO-PODALIC"],["PONSETI"],["PELVIPODÁLICO","PELVIPODALIC"],["AP"," AP","ANTEBRAQUIOPALMAR"]];
+     for(const a of tps){const keys=a.length>1?a.slice(1):[a[0]];if(keys.some(k=>(" "+first+" ").includes(U(k)+(k.startsWith(" ")?" ":"")))){s.tp=a[0];break}}}
+   durParse(first,s);const tr=/(?:TROCAR|TRANSICIONAR)\s*(?:PARA|POR)\s*(ROBOFOOT|GESSO|TALA LUVA|LUVA|ORTESE)/.exec(t);if(tr)s.tr={LUVA:"TALA LUVA",ORTESE:"ÓRTESE"}[tr[1]]||tr[1];s.disc=/DISCUTIR/.test(t);return s}},
+ fk:{parts:[
+   {kind:"seg",key:"d",opts:[["n","Por tempo"],["2o","Até 2ª ordem"],["ret","Até o retorno"]]},
+   {kind:"num",key:"n",label:"semanas (aceita 4-6)",show:s=>s.d==="n"},
+   {kind:"chk",key:"disc",label:"discutir retirada com assistente"}],
+  compose(s){if(!s.d)return"";const st=Object.assign({u:"SEMANAS"},s);const d=durTxt(st,"SEMANAS");if(!d)return"";return"FK"+d+(s.disc?" (DISCUTIR RETIRADA COM ASSISTENTE)":"")},
+  parse(t){const s={};if(!/FK|FIO/.test(t))return s;durParse(t,s);s.disc=/DISCUTIR/.test(t);return s}},
+ fisio:{parts:[
+   {kind:"seg",key:"q",opts:[["livre","Fisioterapia"],["imed","Imediata"],["prec","Precoce (antes da alta)"],["alta","Após alta"],["pontos","Após retirada de pontos"],["imob","Após retirada da imobilização"],["carga","Após liberação de carga"]]},
+   {kind:"sel",key:"tp",label:"Tipo",opts:[["","tipo…"],["MOTORA","Motora"],["SEM CARGA","Sem carga"],["PENDULAR + ANTIGRAVITACIONAL","Pendular + antigravitacional"],["PARA GANHO DE ADM","Ganho de ADM"],["MOTORA PARA MMII","Motora de MMII"]]},
+   {kind:"sel",key:"adm",label:"Estimular",opts:[["","estimular…"],["ADM DE DEDOS","ADM de dedos"],["ADM DE PUNHO","ADM de punho"],["ADM DE COTOVELO","ADM de cotovelo"],["ADM DE OMBRO","ADM de ombro"],["ADM DE JOELHO","ADM de joelho"],["ADM DE TORNOZELO","ADM de tornozelo"],["DEAMBULAÇÃO","Deambulação"],["MOBILIDADE PRECOCE","Mobilidade precoce"]]},
+   {kind:"txt",key:"x",label:"orientação específica"}],
+  compose(s){if(!s.q&&!s.tp&&!s.adm)return"";const q={livre:"",imed:"IMEDIATA",prec:"PRECOCE (INICIAR ANTES DA ALTA)",alta:"APÓS ALTA HOSPITALAR",pontos:"APÓS RETIRADA DE PONTOS DE SUTURA",imob:"APÓS RETIRADA DA IMOBILIZAÇÃO",carga:"APÓS LIBERAÇÃO DE CARGA"}[s.q]||"";
+   let r=(s.q||s.tp)?["FISIOTERAPIA",s.tp,q].filter(Boolean).join(" "):"";if(s.x)r+=(r?" ":"")+"("+U(s.x).trim()+")";if(s.adm)r+=(r?" + ":"")+"ESTIMULAR "+s.adm;return r},
+  parse(t){const s={};s.q=/IMEDIATA/.test(t)?"imed":/FISIOTERAPIA (SEM CARGA )?PRECOCE|ANTES DA ALTA/.test(t)?"prec":/PONTOS/.test(t)?"pontos":/IMOBILIZ|VELPEAU|TALA|RETIRAR A/.test(t)?"imob":/CARGA/.test(t)&&/LIBERA/.test(t)?"carga":/APOS ALTA/.test(t)?"alta":"";
+   s.tp=/PENDULAR/.test(t)?"PENDULAR + ANTIGRAVITACIONAL":/SEM CARGA/.test(t)?"SEM CARGA":/MMII/.test(t)?"MOTORA PARA MMII":/MOTORA/.test(t)?"MOTORA":/GANHO DE ADM|AMPLITUDE/.test(t)?"PARA GANHO DE ADM":"";
+   const a=/(?:ADM|MOBILIZACAO PRECOCE) DE (DEDOS|PUNHO|COTOVELO|OMBRO|JOELHO|TORNOZELO)|MOVIMENTACAO DE DEDOS|QUIRODACTILOS/.exec(t);s.adm=a?(a[1]?"ADM DE "+a[1]:"ADM DE DEDOS"):/(^|[^I])MOBILI/.test(t)?"MOBILIDADE PRECOCE":/DEAMBUL/.test(t)?"DEAMBULAÇÃO":"";if(!s.q&&!s.tp&&/FISIO/.test(t))s.q="livre";return s}},
+ curativo:{parts:[
+   {kind:"seg",key:"t",opts:[["diario","Diário"],["fech","Estéril fechado __h, depois diário"],["48","A cada 48h"],["ret","Estéril até o retorno"],["checar","Checar até a alta"],["rets","Troca nos retornos"]]},
+   {kind:"seg",key:"h",opts:[["24","24h"],["48","48h"],["72","72h"]],show:s=>s.t==="fech"},
+   {kind:"chk",key:"ubs",label:"em UBS",show:s=>/diario|fech|48/.test(s.t||"")},
+   {kind:"chk",key:"foto",label:"com foto (mostrar para R+)"},
+   {kind:"chk",key:"alta",label:"trocar na alta e mostrar para R+"},
+   {kind:"chk",key:"eq",label:"discutir com equipe de curativos"},
+   {kind:"txt",key:"x",label:"orientação específica (ex.: não aplicar dersani)"}],
+  compose(s){const b={diario:"CURATIVO DIÁRIO",fech:"CURATIVO ESTÉRIL FECHADO "+(s.h||"72")+"H, APÓS CURATIVO DIÁRIO",48:"CURATIVO A CADA 48 HORAS",ret:"MANTER CURATIVO ESTÉRIL ATÉ O RETORNO",checar:"CHECAR CURATIVO ATÉ A ALTA",rets:"TROCA DE CURATIVO NOS RETORNOS"}[s.t]||"";
+   let r=b+(b&&s.ubs&&/diario|fech|48/.test(s.t)?" EM UBS":"");const p=[];if(s.foto)p.push("COM FOTO, MOSTRAR PARA R+");if(s.alta)p.push("TROCAR NA ALTA E MOSTRAR PARA R+");if(s.eq)p.push("DISCUTIR COM EQUIPE DE CURATIVOS");if(s.x)p.push(U(s.x).trim());
+   if(!r&&p.length)return p.join("; ");return r+paren(p)},
+  parse(t){const s={};const h=/(24|48|72)\s*H/.exec(t);if(/FECHADO|OCLUSIVO|ESTERIL/.test(t)&&/APOS/.test(t)){s.t="fech";s.h=h?h[1]:"72"}else if(/ATE (O )?RETORNO/.test(t))s.t="ret";else if(/EM RETORNOS|NOS RETORNOS/.test(t))s.t="rets";else if(/48/.test(t))s.t="48";else if(/CHECAR|AVALIAR/.test(t))s.t="checar";else if(/DIARI/.test(t))s.t="diario";
+   s.ubs=/UBS|UNIDADE BASICA/.test(t);s.foto=/FOTO/.test(t);s.alta=/NA ALTA/.test(t);s.eq=/EQUIPE DE CURATIVO/.test(t);return s}}
+};
+const BST={},BLAST={};
+function renderBuilder(k){
+  const box=$("bld-"+k);if(!box)return;const B=BLD[k];const s=BST[k]||(BST[k]={});box.innerHTML="";
+  B.parts.forEach(p=>{
+    if(p.show&&!p.show(s))return;
+    if(p.kind==="seg"){const g=document.createElement("div");g.className="bseg";
+      p.opts.forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;const on=(s[p.key]||"")===v&&!(v===""&&p.key==="t");b.setAttribute("aria-pressed",String(on));
+        b.onclick=()=>{s[p.key]=v;
+          if(k==="alta"&&p.key==="t"&&v==="po"&&!s.n)s.n="1";
+          if((p.key==="d"&&v==="n")&&!s.u)s.u=(k==="tev"?"DIAS":"SEMANAS");
+          if(k==="atb"&&(v==="evvo"||v==="vo")&&!s.u)s.u="DIAS";
+          bChanged(k)};g.appendChild(b)});box.appendChild(g)}
+    else if(p.kind==="chk"){const l=document.createElement("label");l.className="chk bchk";const i=document.createElement("input");i.type="checkbox";i.checked=!!s[p.key];i.onchange=()=>{s[p.key]=i.checked;bChanged(k)};l.appendChild(i);l.appendChild(document.createTextNode(" "+p.label));box.appendChild(l)}
+    else if(p.kind==="num"){const l=document.createElement("label");l.className="bnum";const i=document.createElement("input");i.type="text";i.inputMode="numeric";i.value=s[p.key]||"";i.placeholder="nº";i.dataset.b="1";
+      i.oninput=()=>{s[p.key]=i.value.replace(/[^\d-]/g,"");bChanged(k,true)};l.appendChild(i);if(p.label)l.appendChild(document.createTextNode(" "+p.label));box.appendChild(l)}
+    else if(p.kind==="txt"){const i=document.createElement("input");i.type="text";i.className="btxt";i.placeholder=p.label;i.value=s[p.key]||"";i.dataset.b="1";
+      i.oninput=()=>{s[p.key]=i.value;bChanged(k,true)};box.appendChild(i)}
+    else if(p.kind==="sel"){const sel=document.createElement("select");sel.className="bsel";sel.dataset.b="1";p.opts.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;sel.appendChild(o)});sel.value=s[p.key]||"";
+      sel.onchange=()=>{s[p.key]=sel.value;if(k==="imob"&&p.key==="dv"&&sel.value&&!s.d){s.d="n";s.u="SEMANAS"}bChanged(k)};box.appendChild(sel)}
+  });
+}
+function bChanged(k,keepFocus){
+  const txt=BLD[k].compose(BST[k]);BLAST[k]=txt;$("f-"+k).value=txt;
+  if(!keepFocus)renderBuilder(k);else{/* não redesenha enquanto digita o número */}
+  onEdit();
+}
+function syncBuilders(){
+  Object.keys(BLD).forEach(k=>{const inp=$("f-"+k);if(!inp)return;const v=inp.value||"";
+    if(v===BLAST[k])return;BLAST[k]=v;BST[k]=v?BLD[k].parse(U(v)):{};renderBuilder(k);
+    const c=v?BLD[k].compose(BST[k]):"";const box=$("bld-"+k);
+    const nz=x=>U(x).replace(/\b(POR|O|A|AS|DE|DA|DO|NO|EM|E|COM|APENAS)\b/g,"").replace(/\W/g,"");
+    if(v&&nz(c)!==nz(v)){const n=document.createElement("span");n.className="bnote";n.textContent=c?"Linha atual tem detalhe próprio: mexer no montador reescreve a linha.":"Linha escrita à mão: o montador não reconheceu; ela vai como está.";box.appendChild(n)}});
+}
+
+
+/* ---------- itens específicos: grupos com montador ---------- */
+const ESP_ST={},ESP_OPEN=new Set(["cobrar","alta"]);
+const joinE=a=>a.join(" + ");
+const ESP_G=[
+ {id:"cobrar",n:"Cobrar resultado",h:"AP, cultura, imuno… e com quem discutir",match:/^COBRAR|^CHECAR CULTURA|RESULTADO DE/,
+  init:{o:[],c:"ASSISTENTE",q:""},
+  parts:[{kind:"multi",key:"o",label:"O quê",opts:[["ANATOMOPATOLÓGICO","AP"],["CULTURA","Cultura"],["IMUNO-HISTOQUÍMICA","Imuno-histoquímica"],["BAAR","BAAR"],["QUIMIOCITOLÓGICO","Quimiocitológico"],["ANÁLISE DO LÍQUIDO DE PUNÇÃO","Líquido de punção"]]},
+         {kind:"seg",key:"c",label:"Discutir com",opts:[["ASSISTENTE","Assistente"],["CCIH","CCIH"],["ASSISTENTE E CCIH","Ambos"],["","Ninguém"]]},
+         {kind:"seg",key:"q",label:"Quando",opts:[["","—"],["ANTES DA ALTA","antes da alta"],["EM AMBULATÓRIO","no retorno"]]}],
+  compose(s){if(!s.o||!s.o.length)return"";return"COBRAR "+joinE(s.o.map(x=>x==="CULTURA"?"CULTURAS":x))+(s.c?" E DISCUTIR COM "+s.c:"")+(s.q?" "+s.q:"")}},
+ {id:"alta",n:"Checar antes da alta",h:"neurológico, perfusão, pulsos, RX…",match:/ANTES DA ALTA|ANTES DE ALTA/,
+  init:{o:[],i:"R+"},
+  parts:[{kind:"multi",key:"o",label:"Checar",opts:[["NEUROLÓGICO","Neurológico"],["PERFUSÃO","Perfusão"],["PULSOS DISTAIS","Pulsos"],["CURATIVO","Curativo"],["SINAIS DE SÍNDROME COMPARTIMENTAL","Compartimental"]]},
+         {kind:"seg",key:"i",label:"Informar",opts:[["R+","R+"],["ASSISTENTE","Assistente"],["","—"]]}],
+  compose(s){if(!s.o||!s.o.length)return"";return"CHECAR "+joinE(s.o)+" ANTES DA ALTA"+(s.i?" E INFORMAR "+s.i:"")},
+  fixed:["MOSTRAR RX POI PARA ASSISTENTE ANTES DA ALTA","ALTA SOMENTE APÓS RX POI"]},
+ {id:"dreno",n:"Dreno",h:"critério de retirada e controle",match:/DRENO/,
+  init:{c:"48",ctrl:"",inf:true},
+  parts:[{kind:"seg",key:"c",label:"Retirar",opts:[["48","48h ou débito < 50 mL/24h"],["24","em 24h"],["50","quando débito < 50 mL/24h"],["ass","só após discutir com assistente"]]},
+         {kind:"seg",key:"ctrl",label:"Controle",opts:[["","—"],["6/6","6/6h"],["12/12","12/12h"]]},
+         {kind:"chk",key:"inf",label:"informar assistente"}],
+  compose(s){const c={"48":"RETIRAR DRENO EM 48H OU SE DÉBITO < 50 ML EM 24H","24":"RETIRAR DRENO EM 24H","50":"RETIRAR DRENO QUANDO DÉBITO < 50 ML EM 24H",ass:"DISCUTIR RETIRADA DE DRENO COM ASSISTENTE"}[s.c]||"";if(!c)return"";
+   return c+(s.inf&&s.c!=="ass"?" (INFORMAR ASSISTENTE)":"")+(s.ctrl?"; CONTROLE DE DÉBITO "+s.ctrl+"H PELA ENFERMAGEM":"")}},
+ {id:"solic",n:"Solicitar",h:"TC, RNM, pré-operatórios, avaliações",match:/^SOLICITAR|AVALIACAO D|ENCAMINHAR/,
+  init:{o:"",seg:"",d:true},
+  parts:[{kind:"seg",key:"o",label:"O quê",opts:[["TC","TC"],["RNM","RNM"],["EXAMES PRÉ-OPERATÓRIOS","Pré-operatórios"],["AVALIAÇÃO DA CIRURGIA VASCULAR","Vascular"],["AVALIAÇÃO DA CIRURGIA PLÁSTICA","Plástica"],["AVALIAÇÃO DA CLÍNICA MÉDICA","Clínica médica"],["AVALIAÇÃO CARDIOLÓGICA","Cardiologia"],["AVALIAÇÃO ANESTÉSICA","Anestesia"]]},
+         {kind:"txt",key:"seg",label:"de… (ex.: tornozelo esquerdo)"},
+         {kind:"chk",key:"d",label:"e discutir com assistente"}],
+  compose(s){if(!s.o)return"";const sg=U(s.seg||"").trim();return"SOLICITAR "+s.o+(sg?(/^(TC|RNM)$/.test(s.o)?" DE ":" ")+sg:"")+(s.d?" E DISCUTIR COM ASSISTENTE":"")}},
+ {id:"disc",n:"Discutir com assistente",h:"síntese definitiva, carga, retirada de material…",match:/^DISCUTIR|^PROGRAMAR/,
+  init:{o:"",n:""},
+  parts:[{kind:"seg",key:"o",label:"O quê",opts:[["sint","Síntese definitiva"],["carga","Liberação de carga"],["abord","Nova abordagem"],["paraf","Retirada de parafuso/material"],["contra","Conduta do lado contralateral"],["alta","Data da alta"]]},
+         {kind:"num",key:"n",label:"em __ (semanas/dias, opcional)"}],
+  compose(s){const n=(s.n||"").trim().toUpperCase();const em=n?" EM "+(/\D/.test(n)?n:n+" SEMANAS"):"";
+   return{sint:"DISCUTIR SÍNTESE DEFINITIVA COM ASSISTENTE",carga:"DISCUTIR LIBERAÇÃO DE CARGA COM ASSISTENTE"+em,abord:"DISCUTIR NOVA ABORDAGEM COM ASSISTENTE",paraf:"PROGRAMAR RETIRADA DE PARAFUSO/MATERIAL"+em+" (DISCUTIR COM ASSISTENTE)",contra:"DISCUTIR CONDUTA DO LADO CONTRALATERAL COM ASSISTENTE",alta:"DISCUTIR DATA DA ALTA COM ASSISTENTE"}[s.o]||""}},
+ {id:"leito",n:"No leito",h:"mobilização, decúbito, sedestação",match:/BLOCO|SEDESTA|REPOUSO|DECUBITO|ULCERAS|CABECEIRA|DEAMBUL/,
+  fixed:["MOBILIZAÇÃO EM BLOCO + DDH ATÉ COLOCAÇÃO DE COLETE","PERMITIDO SEDESTAR","PERMITIDO ELEVAR CABECEIRA COM USO DE COLAR CERVICAL","REPOUSO RELATIVO","ESTIMULAR DEAMBULAÇÃO PRECOCE","MUDANÇA DE DECÚBITO DE 2/2H + PLACA DE HIDROCOLOIDE EM PONTOS DE PRESSÃO"]},
+ {id:"orient",n:"Orientações",h:"antiluxação, osteoporose, edema…",match:/ORIENT|OSTEOPOROSE|LUXA|PONDERAL|EDEMA|GRAVIDADE/,
+  fixed:["ORIENTO MEDIDAS ANTILUXAÇÃO DE PRÓTESE","INICIAR TRATAMENTO PARA OSTEOPOROSE E MANTER ACOMPANHAMENTO EM UBS","CARTA PARA UBS REALIZAR INVESTIGAÇÃO E POSSÍVEL TRATAMENTO PARA OSTEOPOROSE","ORIENTAR MEDIDAS ANTIEDEMA","ORIENTAR PERDA PONDERAL","ORIENTO GRAVIDADE DO CASO E RISCO DE AMPUTAÇÃO DO MEMBRO","VIGILÂNCIA DE SANGRAMENTOS"]},
+ {id:"fluxo",n:"Fluxo e equipe",h:"CROSS, interconsulta, labs seriados",match:/CROSS|INTERCONSULTA|LABORATORIA|CURATIVOS ESPECIAIS/,
+  fixed:["INSERIR PACIENTE NA CROSS","EQUIPE SOT EM CARÁTER DE INTERCONSULTA","INTERCONSULTA COM EQUIPE DE CURATIVOS ESPECIAIS","EXAMES LABORATORIAIS A CADA 48H"]}
+];
+
 /* ---------- início ---------- */
 $("dt").value=todayISO();
 const sig=store.get("pos-op-sig",null);if(sig){$("sigPre").value=sig.pre||"ASS DR";$("sigName").value=sig.name||""}
 const op=store.get("pos-op-opts",null);if(op){$("oHyphen").checked=!!op.h;$("oDates").checked=!!op.d;$("oAscii").checked=!!op.a;$("oSot").checked=!!op.s;if(op.t)$("oHead").value=op.t}
+ASST=store.get("pos-op-asst",[]).filter(id=>ESCALA.some(x=>x.id===id));if(ASST.length)applyAsstSig();
 renderFields();renderRegions();
 side="E";document.querySelectorAll("#side button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===side)));
 applyTpl(TEMPLATES.find(t=>t.id==="atq")); // exemplo inicial: ATQ esquerda
