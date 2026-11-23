@@ -599,6 +599,14 @@ var SYNC = (function () {
       });
     }).then(function () { return mudou; });
   }
+  // mapa das caixinhas de cada folha de visita impressa (para ler a foto em qualquer aparelho)
+  function folhaArquivo(id) {
+    return sub('folhas').then(function (pid) {
+      return req(API + '/files?q=' + q("name='folha-" + id + ".json' and trashed=false") + '&fields=files(id,modifiedTime)&pageSize=5').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq['folha' + id] ? { id: idsArq['folha' + id] } : null) }; });
+    });
+  }
+  function folhaSalvar(id, obj) { return salvarPorNome('folha' + id, null, 'folha-' + id + '.json', obj, function () { return folhaArquivo(id); }); }
+  function folhaBaixar(id) { return folhaArquivo(id).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
   function ambArquivo(reg) {
     return ambPasta().then(function (pid) {   // procura em todo o Drive: acha a ficha mesmo que esteja numa pasta duplicada antiga
       return req(API + '/files?q=' + q("name='amb-" + reg + ".json' and trashed=false") + '&fields=files(id,modifiedTime)&pageSize=20').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq['amb' + reg] ? { id: idsArq['amb' + reg] } : null) }; });
@@ -607,7 +615,7 @@ var SYNC = (function () {
   function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
   function ambSalvar(reg, obj) { return salvarPorNome('amb' + reg, null, 'amb-' + reg + '.json', obj, function () { return ambArquivo(reg); }); }
   function mapaSalvar(iso, obj) { return salvarPorNome('mapa' + iso, null, 'mapa-' + iso + '.json', obj, function () { return mapaArquivo(iso); }); }
-  return { igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { folhaSalvar: folhaSalvar, folhaBaixar: folhaBaixar, igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 
@@ -630,7 +638,7 @@ var FOTO = {
       var p = S.pacientes.find(function (x) { return x.id === pid; }) || {};
       var agora = new Date(), lid = 'f' + agora.getTime() + Math.random().toString(36).slice(2, 6);
       var carimbo = S.hoje + '_' + ('0' + agora.getHours()).slice(-2) + ('0' + agora.getMinutes()).slice(-2);
-      var nome = [(p.leito || p.lugar || 'sem-leito'), (p.registro || ''), ({ rx: 'RX', rxpoi: 'RX-POI', pele: 'PELE', laudo: 'LAUDO' }[tipo] || 'FOTO'), carimbo, (legenda || '').replace(/[^\wÀ-ÿ -]/g, '').trim()].filter(Boolean).join('_').replace(/\s+/g, '-') + '.jpg';
+      var nome = [(p.leito || p.lugar || 'sem-leito'), (p.registro || ''), ({ rx: 'RX', rxpoi: 'RX-POI', pele: 'PELE', laudo: 'LAUDO', nota: 'NOTA' }[tipo] || 'FOTO'), carimbo, (legenda || '').replace(/[^\wÀ-ÿ -]/g, '').trim()].filter(Boolean).join('_').replace(/\s+/g, '-') + '.jpg';
       if (nomeArq) nome = (nomeArq + '_' + carimbo).replace(/[^\wÀ-ÿ -]/g, '').trim().replace(/\s+/g, '-') + '.jpg';
       return FDB.put(lid, blob).then(function () {
         S.fotos = S.fotos || {}; (S.fotos[pid] = S.fotos[pid] || []).push({ lid: lid, tipo: tipo, data: S.hoje, hora: carimbo.slice(-4), legenda: legenda || '', nome: nome, by: S.eu || '', at: Date.now() });

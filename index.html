@@ -467,6 +467,82 @@ kbd{min-width:64px;text-align:center;font:600 12.5px/1 ui-monospace,Menlo,monosp
 @media (max-width:480px){.top [data-temaciclo]{display:none}}
 .sh-top .hb2,.sh-top .syncmini{display:grid;place-items:center;position:relative}
 .sh-top .hb2 .ico,.sh-top .syncmini .ico{width:19px;height:19px}
+
+/* ======================= folha de visita impressa ======================= */
+@font-face{font-family:'PlexC';font-weight:400;font-display:block;src:url(hub/fonts/plex-cond-400.woff2) format('woff2')}
+@font-face{font-family:'PlexC';font-weight:600 700;font-display:block;src:url(hub/fonts/plex-cond-600.woff2) format('woff2')}
+#folhaPrint{display:none}
+#folhaPrint.medindo{display:block;position:absolute;left:-5000mm;top:0;visibility:hidden}
+.fpg{width:297mm;height:210mm;position:relative;background:#fff;color:#111;overflow:hidden;font-family:'Plex',sans-serif;box-sizing:border-box}
+.fpg *{box-sizing:border-box}
+.fmk{position:absolute;width:8mm;height:8mm;background:#000}
+.fmk.a{top:7mm;left:7mm}.fmk.b{top:7mm;left:282mm}.fmk.c{top:195mm;left:282mm}.fmk.d{top:195mm;left:7mm}
+.fcab{position:absolute;top:7mm;left:18mm;width:261mm;height:8mm;display:flex;align-items:center;gap:3mm;font-size:8.5pt;white-space:nowrap}
+.fcab b{font-size:10.5pt}.fsp{flex:1}
+.fcod{position:absolute;top:9mm;left:150mm;display:flex}
+.fcod i{display:block;width:2.6mm;height:4mm}.fcod i.p{background:#000}
+.frod{position:absolute;top:195mm;left:18mm;width:261mm;height:8mm;display:flex;align-items:center;justify-content:space-between;font-size:6.8pt;color:#444;white-space:nowrap}
+.fct{position:absolute;top:17mm;left:18mm;width:261mm;height:176mm;display:flex;flex-direction:column;gap:1.8mm}
+#fMed{height:auto}
+.fbk{flex:none;border:.35mm solid #111;border-radius:1.5mm;overflow:hidden}
+.fbh{display:flex;align-items:center;gap:2.6mm;background:#ececec;border-bottom:.35mm solid #111;padding:.5mm 2.5mm;font-size:8.6pt;white-space:nowrap;overflow:hidden}
+.fbh .fl{font:700 13pt 'Plex',sans-serif;min-width:14mm}.fbh .fn{font-weight:700;font-size:10pt}.fbh .fi{overflow:hidden;text-overflow:ellipsis}
+.ft{border:.3mm solid #111;border-radius:1mm;padding:0 1.4mm;font-weight:700;font-size:7.2pt}.ft.n{background:#111;color:#fff}
+.fig{display:grid;grid-template-columns:10% 11% 21% 19% 21% 18%;border-bottom:.3mm solid #111;font-family:'PlexC',sans-serif;line-height:1.22}
+.fcol{display:flex;flex-direction:column;padding:.8mm 1.5mm;border-left:.2mm solid #999;min-width:0}.fcol:first-child{border-left:0}
+.fcol h6{margin:0 0 .3mm;font:600 5.4pt 'Plex',sans-serif;letter-spacing:.25mm;color:#555;text-transform:uppercase}
+.ftx{white-space:pre-wrap;word-break:break-word}
+.fesp{flex:1;min-height:var(--esp,10mm);margin-top:.8mm;border-top:.2mm dotted #aaa}
+.fvs{display:flex;flex-wrap:wrap;column-gap:3.2mm;row-gap:.35mm;padding:1mm 2.5mm;font-size:6.6pt}
+.fg{display:flex;align-items:center;gap:1.1mm;min-height:4.4mm;white-space:nowrap}
+.fg>b{font:600 5.6pt 'Plex',sans-serif;text-transform:uppercase;letter-spacing:.1mm;color:#333;margin-right:.4mm}
+.fx{display:inline-flex;align-items:center;gap:.6mm;white-space:nowrap}
+.fx i{display:inline-grid;place-items:center;flex:none;font-style:normal}
+.fx i.fq{width:3.7mm;height:3.7mm;border:.3mm solid #111;border-radius:.6mm}
+.fx i.fc{width:3.7mm;height:3.7mm;border:.3mm solid #111;border-radius:50%;margin-right:.3mm}
+.fx i.fc em{font:500 5.2pt 'Plex',sans-serif;font-style:normal;color:#b4b4b4}
+.fv{font-weight:700;font-size:8.6pt}.fv i.fq{width:4.2mm;height:4.2mm}
+.fpre{flex:1 1 100%;border:.35mm dashed #111;border-radius:1mm;padding:.5mm 2mm;background:#f6f6f6}
+.fneu{flex:1 1 100%;margin-top:.4mm}
+.fneu table{border-collapse:collapse;width:100%}
+.fneu td{padding:.2mm .3mm;text-align:center;white-space:nowrap;border-left:.2mm solid #ccc}
+.fneu td.ff{font:600 5.6pt 'Plex',sans-serif;text-align:left;width:13mm;border-left:0}
+.fneu td.fn2{font:700 6.6pt 'Plex',sans-serif}
+.fneu .fx i.fc{width:3.3mm;height:3.3mm;margin:0 .1mm}
+.folharow{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.folharow .btn{flex:1 1 auto;width:auto}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  html,body{background:#fff!important;overflow:visible!important;height:auto!important;margin:0!important;padding:0!important}
+  body>*:not(#folhaPrint){display:none!important}
+  #folhaPrint{display:block!important;position:static!important;visibility:visible!important}
+  .fpg{break-after:page;page-break-after:always}
+  .fpg:last-child{break-after:auto;page-break-after:auto}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+/* tela de revisão da foto */
+#folhaRev{z-index:40}
+.frpag .frinfo{font-size:13.5px}
+.frmini{width:100%;border-radius:10px;margin-top:8px;border:1px solid var(--line)}
+.fraviso{background:var(--warn2);color:var(--warnt);border:1px solid var(--warnb);border-radius:10px;padding:8px 10px;font-size:13px;margin:8px 0}
+.frerro{border-color:var(--bad);color:var(--bad)}
+.frh{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.frh .ml{font-weight:700;color:var(--acc);background:var(--acc2);border-radius:9px;padding:4px 8px}
+.frh b{flex:1;min-width:0}
+.frvis{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600}
+.frvis input,.frnota input[type=checkbox]{width:20px;height:20px;accent-color:var(--acc)}
+.frg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}
+.frl{font-size:11.5px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;min-width:84px}
+.frc{border:1px solid var(--line);background:var(--bg2);border-radius:999px;padding:6px 12px;font-size:13.5px;min-height:34px}
+.frc.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.frc.duv:not(.on),.frc.conf:not(.on){background:var(--warn2);border:1px dashed var(--warn);color:var(--warnt)}
+.frdica{font-size:12px;color:var(--warn);font-weight:600}
+.frnota{border-top:1px solid var(--line);padding-top:8px;margin-top:6px}
+.frnota img{width:100%;border-radius:8px;border:1px solid var(--line);margin:4px 0;background:#fff}
+.frnota label{display:flex;gap:8px;align-items:center;font-size:13px;margin:4px 0}
+.frtx{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:var(--bg2);color:var(--ink)}
+.frvazio{font-size:12.5px;color:var(--mut);padding:4px 6px}
+html.escuro .frc.on{color:#06110e}
 </style>
 </head>
 <body>
@@ -521,7 +597,7 @@ kbd{min-width:64px;text-align:center;font:600 12.5px/1 ui-monospace,Menlo,monosp
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v51</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v52</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -1950,12 +2026,14 @@ function resumoVisita(v) {
   if (d.tem) e.push('dreno' + ([['D', d.d], ['E', d.e], ['', d.u]].filter(function (x) { return x[1]; }).map(function (x) { return ' ' + (x[0] ? x[0] + ' ' : '') + x[1] + ' mL'; }).join(' /')) + drenoTaxaTxt(d) + ((d.asp || []).length ? ' (' + d.asp.join(', ').toLowerCase() + ')' : ''));
   if (v.imob) e.push('imobilização ' + v.imob.toLowerCase());
   if (v.nv) e.push('neurovascular ' + v.nv.toLowerCase() + (v.nv_x ? ': ' + v.nv_x : ''));
+  if (v.adm) e.push('amplitude de movimento ' + v.adm.toLowerCase());
   if (v.neuro && v.neuro.sem) e.push('exame neurológico sem alterações');
   if (v.neuro && v.neuro.alt) {
     var g = Object.keys(v.neuro.g || {}).map(function (k) { return k.slice(0, -1) + ' ' + k.slice(-1) + ' força ' + v.neuro.g[k]; });
     var sn = Object.keys(v.neuro.s || {}).map(function (k) { return k.slice(0, -1) + ' ' + k.slice(-1) + ' sens ' + v.neuro.s[k]; });
     e.push('neuro alterado' + (g.length || sn.length ? ': ' + g.concat(sn).join(', ') : ''));
   }
+  if (v.esf) e.push('esfíncteres: ' + v.esf.toLowerCase());
   var X = v.exf || {};
   if (X.edema) e.push('edema: ' + X.edema.toLowerCase());
   if ((X.chips || []).length) e.push(X.chips.join(', ').toLowerCase());
@@ -2093,7 +2171,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '51';
+var VERSAO = '52';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2255,9 +2333,11 @@ var CAMPOS = [
   { k: 'decub', lb: 'Decúbito / mobilização', o: ['Dorsal', 'Dorsal elevado', 'Lateral D', 'Lateral E', 'Sedestação', 'Deambulando c/ auxílio', 'Deambulando'] },
   { k: 'fo', lb: 'FO / curativo', multi: true, when: function (t) { return t.operado; }, o: ['Limpa e seca', 'Secreção serosa', 'Secreção sanguinolenta', 'Secreção purulenta', 'Hiperemia', 'Deiscência', 'Curativo oclusivo'], alert: ['Secreção purulenta', 'Hiperemia', 'Deiscência'] },
   { k: 'dreno', lb: 'Dreno', tipo: 'dreno', when: function (t) { return t.operado; } },
-  { k: 'imob', lb: 'Imobilização (tala / gesso / colar / colete / fixador)', when: function (t) { return t.imob; }, o: ['Bem posicionada', 'Reposicionada', 'Frouxa / danificada'], alert: ['Frouxa / danificada'] },
+  { k: 'imob', lb: 'Imobilização / tração (tala, gesso, colar, colete, fixador, tração)', when: function (t) { return t.imob; }, o: ['Bem posicionada', 'Reposicionada', 'Frouxa / danificada'], alert: ['Frouxa / danificada'] },
   { k: 'neuro', lb: 'Exame neurológico (coluna)', tipo: 'neuro', when: function (t) { return t.coluna; } },
+  { k: 'esf', lb: 'Esfíncteres', when: function (t) { return t.coluna; }, o: ['Controle preservado', 'Retenção / incontinência'], alert: ['Retenção / incontinência'] },
   { k: 'nv', lb: 'Extremidade / neurovascular', when: function (t) { return !t.coluna || t.membro; }, o: ['Preservado', 'Alterado'], alert: ['Alterado'], extra: { quando: 'Alterado', tipo: 'txt', ph: 'o que está alterado?' } },
+  { k: 'adm', lb: 'Amplitude de movimento', when: function (t) { return t.membro || t.operado; }, o: ['Preservada', 'Limitada por dor', 'Limitada (imobilizado)'] },
   { k: 'exf', lb: 'Exame físico — alterações rápidas', tipo: 'exf' },
   { k: 'lpp', lb: 'Lesão por pressão', tipo: 'lpp' },
   { k: 'alerta', lb: '🚩 Sinais de alerta', multi: true, o: ['Dispneia súbita', 'Dor torácica', 'Taquicardia', 'Hipotensão', 'Sangramento ativo', 'Confusão / delirium', 'Dor em panturrilha', 'Retenção urinária', 'Incontinência nova', 'Perda de força nova', 'Parestesia nova', 'Anestesia em sela', 'Vômitos persistentes', 'Queda do leito'], alert: 'all' }
@@ -2445,6 +2525,7 @@ function aplicarBusca() {
 function vLeitos() {
   var g = grupos(); if (g.indexOf(S.filtro) < 0) S.filtro = 'Todos';
   var h = bannerContagem() + bannerSumidos() + ferramentas('leitos', 'Buscar nome, leito, registro ou diagnóstico');
+  h += '<div class="folharow"><button class="btn sec sm" data-folhaimp title="Imprime o internograma com as caixinhas da visita (do filtro escolhido)">🖨 Imprimir folha de visita</button><label class="btn sec sm">📷 Ler foto da folha<input type="file" accept="image/*" multiple data-folhafoto hidden></label></div>';
   h += '<div class="chips">' + g.map(function (x) { var n = x === 'Todos' ? ativos().length : ativos().filter(function (p) { return p.grupo === x; }).length; return '<button class="chip' + (x === S.filtro ? ' on' : '') + '" data-f="' + esc(x) + '">' + esc(x) + ' · ' + n + '</button>'; }).join('') + '</div>';
   var lista = ativos().filter(function (p) { return S.filtro === 'Todos' || p.grupo === S.filtro; });
   if (!lista.length) return h + '<div class="empty">Nenhum paciente neste filtro.</div>';
@@ -2607,7 +2688,7 @@ function desenharFicha() {
   var L = S.pend[p.id] || [];
   h += '<div class="q"><div class="lb">Pendências deste paciente</div>' + (L.length ? L.map(function (x, i) { return linhaPend(p.id, x, i); }).join('') : '<div class="hint">Nenhuma.</div>') +
     '<div class="add"><input id="newp" placeholder="Ex.: pedir RX controle, ver cultura…"><button data-padd>+</button></div></div>';
-  h += blocoFotos(p, 'rx') + blocoFotos(p, 'rxpoi') + blocoFotos(p, 'pele') + blocoFotos(p, 'laudo') + blocoLaudos(p) + blocoHistorico(p) + botaoApagar(p);
+  h += (((S.fotos || {})[p.id] || []).some(function (f) { return f.tipo === 'nota' && !f.del; }) ? blocoFotos(p, 'nota') : '') + blocoFotos(p, 'rx') + blocoFotos(p, 'rxpoi') + blocoFotos(p, 'pele') + blocoFotos(p, 'laudo') + blocoLaudos(p) + blocoHistorico(p) + botaoApagar(p);
   h += blocoEvo(p);
   h += '</div><div class="foot"><button class="btn evos" data-evo="' + esc(p.id) + '" style="flex:1">' + (evoluido(p) ? 'Refazer evolução' : 'Evoluir') + '</button><button class="btn" data-proximo style="flex:1.4">' + (v._ok ? 'Próximo leito →' : '✓ Visitado · próximo') + '</button></div>';
   $('#sheet').innerHTML = h;
@@ -3037,6 +3118,7 @@ function blocoPreOp(p) {
     h += it('hep', 'Heparina / anticoagulante suspenso (checado)', ac.length ? '⚠ Em uso: ' + esc(ac.join(', ')) + ' — conferir prazo de suspensão com a anestesia' : 'Nenhum anticoagulante encontrado no MUC/condutas — confirmar na prescrição');
     h += it('hb', 'Hb > 10 / reserva de sangue', hb ? 'Último Hb: ' + esc(hb.txt) + (hb.v <= 10 ? ' ⚠ abaixo de 10' : '') : 'Sem Hb no internograma');
     h += it('aval', 'Avaliações pré-operatórias (anestésica / cardiológica)');
+    h += it('lado', 'Lado marcado / termo de consentimento');
     h += '</div>';
   }
   h += '<div class="row" style="margin:0 0 12px"><button class="btn sec sm" data-aval="' + esc(p.id) + '" style="width:100%">📝 Solicitar avaliação (anestésica / cardiológica)</button></div>';
@@ -3656,7 +3738,7 @@ function textoSegurar(p) {
 }
 function tagSegurar(p) { var t = textoSegurar(p); return t ? '<span class="tag segura" title="' + esc(t) + '">✋ SEGURAR ALTA</span>' : ''; }
 
-var FT_TIT = { rx: '🩻 Radiografias (pré)', rxpoi: '🩻 Radiografia POI', pele: '📷 Pele / ferida', laudo: '📄 Laudos (foto)' };
+var FT_TIT = { rx: '🩻 Radiografias (pré)', rxpoi: '🩻 Radiografia POI', pele: '📷 Pele / ferida', laudo: '📄 Laudos (foto)', nota: '✍ Anotações à mão (folha de visita)' };
 var FT_NOME = { rx: 'Radiografia', rxpoi: 'Radiografia POI', pele: 'Pele', laudo: 'Laudo', mapa: 'Ficha usada no mapa' };
 var LAUDO_LENDO = {};
 function carregarOCR() {
@@ -4170,7 +4252,7 @@ function ajudaAtalhos() {
 }
 
 // ===================== fotos (Radiografias / Pele) =====================
-var LEG = { rx: ['AP', 'Perfil', 'Oblíqua', 'Axial', 'Panorâmica', 'Escanometria', 'Tela do PACS'], pele: ['FO', 'LPP', 'Flictenas', 'Fixador', 'Pinos/fios', 'Edema', 'Lesão'] };
+var LEG = { nota: ['Folha de visita'], rx: ['AP', 'Perfil', 'Oblíqua', 'Axial', 'Panorâmica', 'Escanometria', 'Tela do PACS'], pele: ['FO', 'LPP', 'Flictenas', 'Fixador', 'Pinos/fios', 'Edema', 'Lesão'] };
 function blocoFotos(p, tipo) {
   if (!LEG.rxpoi) { LEG.rxpoi = LEG.rx.slice(); LEG.laudo = ['RX', 'TC', 'RM', 'USG', 'Anatomopatológico', 'ENMG', 'Densitometria', 'Eco/ECG', 'Outro']; }
   var F = ((S.fotos || {})[p.id] || []).filter(function (f) { return f.tipo === tipo && !f.del; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
@@ -4278,6 +4360,488 @@ document.addEventListener('click', function (ev) {
     if (dh && compacto) window.scrollBy(0, dh);
   }
   window.addEventListener('scroll', function () { if (!pend) { pend = true; requestAnimationFrame(ver); } }, { passive: true });
+})();
+
+/* ===================== FOLHA DE VISITA IMPRESSA =====================
+   1) imprimir: o internograma de cada paciente (texto original, 6 colunas) + caixinhas da visita.
+      O app mede onde ficou cada caixinha e guarda esse "mapa" (no aparelho e no Drive).
+   2) ler foto: acha os 4 quadrados pretos, endireita a folha, lê o código da folha (tracinhos do topo),
+      vê quais caixinhas foram marcadas e recorta o que foi escrito à mão em cada coluna.
+   3) revisão: nada é gravado sem conferir na tela; marca fraca ou duas opções no mesmo item = amarelo. */
+var FOLHA = (function () {
+  'use strict';
+  // ---------- geometria fixa da folha (mm, A4 deitada) ----------
+  var PW = 297, PH = 210, MK = 8, MKP = 7;                          // quadrados pretos de 8 mm a 7 mm da borda
+  var CENTROS = [[MKP + MK / 2, MKP + MK / 2], [PW - MKP - MK / 2, MKP + MK / 2], [PW - MKP - MK / 2, PH - MKP - MK / 2], [MKP + MK / 2, PH - MKP - MK / 2]];
+  var COD = { x: 150, y: 9, w: 2.6, h: 4, n: 30 };                  // 30 tracinhos: 16 bits de id, 8 de página, 6 de conferência
+  var AREA = { x: 18, y: 17, w: 261, h: 176 };
+  var LIM_MARCA = 0.17, LIM_DUVIDA = 0.06;   // calibrado: vazia ≤ 0,04 · pontinho 0,08–0,14 · X, ✓ ou rabisco ≥ 0,20                          // fração de tinta dentro da caixinha (descontado o impresso)
+
+  // ---------- o que cada grupo de caixinhas grava na visita ----------
+  // t: 's' = uma opção só · 'm' = várias · tipo do valor em "ap"
+  var G = {
+    visit: { lb: 'Visitado', t: 's', o: [['VISITADO', true]], ap: function (v, x) { v._ok = true; } },
+    eva: { lb: 'Dor (EVA)', t: 's', o: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return [String(n), n]; }), ap: function (v, x) { v.eva = x; }, circ: true },
+    queixa: { lb: 'Queixa', t: 'm', o: [['Nenhuma', 'Sem queixas'], ['Dor contr.', 'Dor controlada'], ['Dor não contr.', 'Dor não controlada'], ['Náusea', 'Náuseas/vômitos'], ['Parestesia', 'Parestesia']], ap: function (v, L) { v.queixa = uniq((v.queixa || []).concat(L)); } },
+    consc: { lb: 'Consc.', t: 's', o: [['Lúcido', 'Lúcido e orientado'], ['Sonolento', 'Sonolento'], ['Confuso', 'Confuso / desorientado']], ap: function (v, x) { v.consc = x; } },
+    acomp: { lb: 'Acomp.', t: 's', o: [['Sim', 'Acompanhado'], ['Não', 'Sem acompanhante']], ap: function (v, x) { v.acomp = x; } },
+    dieta: { lb: 'Dieta', t: 's', o: [['Boa', 'Boa aceitação'], ['Baixa', 'Baixa aceitação'], ['Jejum', 'Jejum']], ap: function (v, x) { v.dieta = x; } },
+    diurese: { lb: 'Diurese', t: 's', o: [['Espont.', 'Espontânea'], ['SVD', 'SVD'], ['Fralda', 'Fralda'], ['Ausente', 'Ausente / retenção']], ap: function (v, x) { v.diurese = x; } },
+    evac: { lb: 'Evac.', t: 's', o: [['Sim', 'Presente'], ['Não', 'Ausente']], ap: function (v, x) { v.evac = x; } },
+    febre: { lb: 'Febre', t: 's', o: [['Afebril', 'Afebril'], ['Febre', 'Febre']], ap: function (v, x) { v.febre = x; } },
+    fo: { lb: 'FO', t: 'm', o: [['Limpa/seca', 'Limpa e seca'], ['Serosa', 'Secreção serosa'], ['Sanguinol.', 'Secreção sanguinolenta'], ['Purulenta', 'Secreção purulenta'], ['Hiperemia', 'Hiperemia'], ['Deiscência', 'Deiscência']], ap: function (v, L) { v.fo = uniq((v.fo || []).concat(L)); } },
+    dreno: { lb: 'Dreno', t: 's', o: [['Sem', 'sem'], ['Com', 'tem']], ap: function (v, x) { var d = Object.assign({}, v.dreno || {}); if (x === 'sem') { d = { sem: true }; } else { delete d.sem; d.tem = true; } v.dreno = d; } },
+    imob: { lb: 'Tala/tração', t: 's', o: [['Ok', 'Bem posicionada'], ['Reposic.', 'Reposicionada'], ['Frouxa', 'Frouxa / danificada']], ap: function (v, x) { v.imob = x; } },
+    nv: { lb: 'Perfusão/NV', t: 's', o: [['Ok', 'Preservado'], ['Alterada', 'Alterado']], ap: function (v, x) { v.nv = x; } },
+    adm: { lb: 'ADM', t: 's', o: [['Ok', 'Preservada'], ['Lim. dor', 'Limitada por dor'], ['Lim. imob.', 'Limitada (imobilizado)']], ap: function (v, x) { v.adm = x; } },
+    edema: { lb: 'Edema', t: 's', o: [['Sem', 'Sem edema'], ['Leve', 'Leve'], ['Mod.', 'Moderado'], ['Import.', 'Importante']], ap: function (v, x) { v.exf = Object.assign({}, v.exf || {}, { edema: x }); } },
+    pant: { lb: 'Panturr.', t: 's', o: [['Livres', 'Panturrilhas livres'], ['Empast.', 'Panturrilha empastada']], ap: function (v, x) { var X = Object.assign({}, v.exf || {}); X.chips = uniq((X.chips || []).filter(function (c) { return c !== 'Panturrilhas livres' && c !== 'Panturrilha empastada'; }).concat([x])); v.exf = X; } },
+    mob: { lb: 'Mobiliz.', t: 's', o: [['DDH', 'Dorsal'], ['Sedest.', 'Sedestação'], ['Deamb. aux.', 'Deambulando c/ auxílio'], ['Deambula', 'Deambulando']], ap: function (v, x) { v.decub = x; } },
+    lpp: { lb: 'LPP', t: 's', o: [['Sem', 'sem'], ['Com', 'com']], ap: function (v, x) { if (x === 'sem') v.lpp = { sem: true }; else { var P = Object.assign({}, v.lpp || {}); delete P.sem; if (!(P.itens || []).length) P.itens = [{}]; v.lpp = P; } } },
+    preop: { lb: 'Pré-op', t: 'm', o: [['Jejum prescrito', 'jejum'], ['Heparina/anticoag. suspensa', 'hep'], ['Hb > 10 / reserva', 'hb'], ['Avaliações ok', 'aval'], ['Lado marcado / termo', 'lado']], ap: function (v, L) { var P = Object.assign({}, v.preop || {}); L.forEach(function (k) { P[k] = true; }); v.preop = P; } },
+    neuro: { lb: 'Neuro', t: 's', o: [['Sem alterações (igual a ontem)', 'sem'], ['Alterado → força abaixo', 'alt']], ap: function (v, x) { var N = Object.assign({}, v.neuro || {}); if (x === 'sem') { N.sem = true; delete N.alt; } else { N.alt = true; delete N.sem; } v.neuro = N; } },
+    esf: { lb: 'Esfíncteres', t: 's', o: [['Preservado', 'Controle preservado'], ['Retenção / incontinência', 'Retenção / incontinência']], ap: function (v, x) { v.esf = x; } }
+  };
+  var NIV = ['C5', 'C6', 'C7', 'C8', 'T1', 'L2', 'L3', 'L4', 'L5', 'S1'];
+  NIV.forEach(function (n) { ['E', 'D'].forEach(function (l) {
+    G['f' + n + l] = { lb: n + ' ' + (l === 'E' ? 'esq.' : 'dir.'), t: 's', circ: true, o: [0, 1, 2, 3, 4, 5].map(function (i) { return [String(i), String(i)]; }), ap: function (v, x) { var N = Object.assign({}, v.neuro || {}); N.g = Object.assign({}, N.g || {}); N.g[n + l] = x; N.alt = true; delete N.sem; v.neuro = N; } };
+  }); });
+  // larguras das 6 colunas: para cada paciente o app escolhe a que deixa o bloco mais baixo
+  var LARG = ['10% 11% 21% 19% 21% 18%', '9% 10% 19% 18% 26% 18%', '9% 10% 19% 26% 18% 18%', '9% 10% 19% 18% 18% 26%', '9% 10% 27% 18% 18% 18%', '9% 15% 19% 19% 20% 18%', '8% 9% 21% 21% 21% 20%'];
+  var COLN = ['Local · mecanismo · DIH · leito', 'Nome · idade · origem · registro', 'Causa · AP · class · ass', 'Orienta', 'Condutas', 'Exames'];
+  function uniq(L) { var o = []; L.forEach(function (x) { if (o.indexOf(x) < 0) o.push(x); }); return o; }
+  function e(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---------- 1) montar a folha ----------
+  function caixas(g, pid, rotulos) {   // rotulos: textos das opções (o padrão é o do grupo)
+    var D = G[g];
+    return D.o.map(function (o, i) { return '<span class="fx"><i class="' + (D.circ ? 'fc' : 'fq') + '" data-fb="' + e(pid) + '|' + g + '|' + i + '">' + (D.circ ? '<em>' + e(o[0]) + '</em>' : '') + '</i>' + (D.circ ? '' : e((rotulos || [])[i] || o[0])) + '</span>'; }).join('');
+  }
+  function grupo(g, pid, cls) { return '<div class="fg' + (cls ? ' ' + cls : '') + '"><b>' + e(G[g].lb) + '</b>' + caixas(g, pid) + '</div>'; }
+  function tipoFolha(p) {
+    var t = tipoDe(p), c = typeof proximaCx === 'function' ? proximaCx(p) : null, prop = typeof propostaCx === 'function' && propostaCx(p);
+    return { op: t.operado, col: t.coluna, imob: t.imob, cx: c && c.dias >= 0 ? c : null, prop: !!prop };
+  }
+  function bloco(p, fs, esp, cols) {
+    var t = tipoFolha(p), al = alergiaInfo(p), pid = p.id, h = '';
+    var info = [p.idade && p.idade + (/meses/.test(p.idade) ? '' : ' a'), p.registro && 'Reg ' + p.registro, p.grupo || p.lugar, p.dih != null && 'DIH ' + p.dih, p.po && p.po.label].filter(Boolean).map(e).join(' · ');
+    var tags = '';
+    if (al.tem) tags += '<span class="ft n">ALERGIA: ' + e(String(al.txt || '').toUpperCase().slice(0, 28)) + '</span>';
+    if (t.cx) tags += '<span class="ft n">CIRURGIA ' + (t.cx.dias === 0 ? 'HOJE' : t.cx.dias === 1 ? 'AMANHÃ' : e(t.cx.data ? ('0' + t.cx.data.getDate()).slice(-2) + '/' + ('0' + (t.cx.data.getMonth() + 1)).slice(-2) : 'em ' + t.cx.dias + ' d')) + '</span>';
+    if (t.col) tags += '<span class="ft">COLUNA</span>';
+    h += '<div class="fbk" data-fpid="' + e(pid) + '"><div class="fbh"><span class="fl">' + e(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '</span><span class="fn">' + e(String(p.nome || '').toUpperCase()) + '</span><span class="fi">' + info + '</span><span class="fsp"></span>' + tags + '<span class="fx fv"><i class="fq" data-fb="' + e(pid) + '|visit|0"></i>VISITADO</span></div>';
+    var txt = (p.bruto && p.bruto.length >= 6) ? p.bruto.slice(0, 6) : [[p.local, p.mecanismo, p.dihData, p.leito].filter(Boolean).join('\n'), [p.nome, p.idade, p.origem, p.registro].filter(Boolean).join('\n'), [p.dx, p.ap, p.classif, p.ass].filter(Boolean).join('\n'), (p.orientaLinhas || []).join('\n'), (p.condutasLinhas || []).join('\n'), (p.exames || []).map(function (x) { return x.txt || x; }).join('\n')];
+    h += '<div class="fig" style="--esp:' + esp + 'mm;font-size:' + fs + 'pt;grid-template-columns:' + (cols || LARG[0]) + '">' + txt.map(function (c, i) {
+      return '<div class="fcol" data-fcol="' + e(pid) + '|' + i + '"><h6>' + COLN[i] + '</h6><span class="ftx">' + e(String(c || '').replace(/[\u000b\u000c]/g, '\n')) + '</span><span class="fesp"></span></div>';
+    }).join('') + '</div>';
+    var v = '<div class="fvs">';
+    v += '<div class="fg eva"><b>Dor (EVA)</b>' + caixas('eva', pid) + '</div>';
+    ['queixa', 'consc', 'acomp', 'dieta', 'diurese', 'evac', 'febre'].forEach(function (g) { v += grupo(g, pid); });
+    if (t.op) v += grupo('fo', pid) + grupo('dreno', pid);
+    if (t.imob) v += grupo('imob', pid);
+    v += grupo('nv', pid) + grupo('adm', pid) + grupo('edema', pid) + grupo('pant', pid) + grupo('mob', pid) + grupo('lpp', pid);
+    if (t.cx || t.prop) v += '<div class="fg fpre"><b>Pré-op — ' + (t.cx ? 'cirurgia ' + (t.cx.dias === 0 ? 'hoje' : t.cx.dias === 1 ? 'amanhã' : 'em ' + t.cx.dias + ' dias') : 'data a definir') + '</b>' + caixas('preop', pid) + '</div>';
+    if (t.col) {
+      v += grupo('neuro', pid) + grupo('esf', pid);
+      v += '<div class="fneu"><table><tr><td class="ff">FORÇA</td>' + NIV.map(function (n) { return '<td class="fn2">' + n + '</td>'; }).join('') + '</tr>' +
+        ['E', 'D'].map(function (l) { return '<tr><td class="ff">' + (l === 'E' ? 'Esquerda' : 'Direita') + '</td>' + NIV.map(function (n) { return '<td>' + caixas('f' + n + l, pid) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+    }
+    return h + v + '</div></div>';
+  }
+  function cabecalho(n, tot, id, data) {
+    var bits = codigo(id, n - 1);
+    return '<div class="fmk a"></div><div class="fmk b"></div><div class="fmk c"></div><div class="fmk d"></div>' +
+      '<div class="fcab"><b>SOT · Visita</b><span>' + e(diaSemana(data) + ' ' + br(data)) + (S.dataIG ? ' · internograma ' + e(S.dataIG) : '') + ' · folha nº ' + id + '</span><span class="fsp"></span><b>Folha ' + n + ' de ' + tot + '</b></div>' +
+      '<div class="fcod">' + bits.map(function (b) { return '<i' + (b ? ' class="p"' : '') + '></i>'; }).join('') + '</div>' +
+      '<div class="frod"><span>Escreva no espaço em branco de cada coluna · marque com X dentro da caixinha · para desmarcar, risque a caixinha inteira.</span><span>Fotografe a folha inteira com os 4 quadrados pretos aparecendo · SOT APP</span></div>';
+  }
+  function diaSemana(iso) { return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][isoDate(iso).getDay()]; }
+  function verif(id, pg) { return (id * 7 + pg * 13 + 29) % 64; }
+  function codigo(id, pg) {
+    var b = [], k = verif(id, pg), i;
+    for (i = 0; i < 16; i++) b.push((id >> i) & 1);
+    for (i = 0; i < 8; i++) b.push((pg >> i) & 1);
+    for (i = 0; i < 6; i++) b.push((k >> i) & 1);
+    return b;
+  }
+  function decodificar(b) {
+    var id = 0, pg = 0, k = 0, i;
+    for (i = 0; i < 16; i++) id |= b[i] << i;
+    for (i = 0; i < 8; i++) pg |= b[16 + i] << i;
+    for (i = 0; i < 6; i++) k |= b[24 + i] << i;
+    return id > 0 && verif(id, pg) === k ? { id: id, pg: pg } : null;
+  }
+  function container() {
+    var c = document.getElementById('folhaPrint');
+    if (!c) { c = document.createElement('div'); c.id = 'folhaPrint'; document.body.appendChild(c); }
+    return c;
+  }
+  // monta, mede, pagina e guarda o mapa das caixinhas → devolve o "trabalho" (job)
+  function montar(lista) {
+    var c = container(); c.className = 'medindo'; c.innerHTML = '<div class="fpg"><div class="fct" id="fMed"></div></div>';
+    var med = document.getElementById('fMed'), pgEl = med.parentNode, MM = pgEl.getBoundingClientRect().width / PW, blocos = [];
+    lista.forEach(function (p) {
+      var fs = 6.6, esp = 10, h, melhor = null;
+      LARG.forEach(function (cols) { med.innerHTML = bloco(p, fs, esp, cols); var hh = med.firstChild.getBoundingClientRect().height / MM; if (!melhor || hh < melhor.h - 0.3) melhor = { h: hh, cols: cols, html: med.innerHTML }; });
+      h = melhor.h; var html = melhor.html;
+      while (h > AREA.h && fs > 5.4) {   // não coube numa folha: diminui o espaço em branco e depois a letra
+        if (esp > 6) esp -= 2; else fs = +(fs - 0.3).toFixed(1);
+        med.innerHTML = bloco(p, fs, esp, melhor.cols); h = med.firstChild.getBoundingClientRect().height / MM; html = med.innerHTML;
+      }
+      blocos.push({ p: p, html: html, h: h });
+    });
+    var pags = [], cur = [], uso = 0;
+    blocos.forEach(function (b) {
+      var add = (cur.length ? 1.8 : 0) + b.h;
+      if (cur.length && uso + add > AREA.h) { pags.push(cur); cur = []; uso = 0; add = b.h; }
+      cur.push(b); uso += add;
+    });
+    if (cur.length) pags.push(cur);
+    var usados = S.folhas || {}, id; do { id = 1 + Math.floor(Math.random() * 65534); } while (usados[id]);
+    var job = { id: id, v: 1, data: S.hoje, ig: S.dataIG || '', em: Date.now(), by: S.eu || '', pags: [] };
+    c.innerHTML = pags.map(function (pg, i) { return '<div class="fpg">' + cabecalho(i + 1, pags.length, id, S.hoje) + '<div class="fct">' + pg.map(function (b) { return b.html; }).join('') + '</div></div>'; }).join('');
+    // mede onde ficou cada caixinha (mm a partir do canto da folha)
+    c.querySelectorAll('.fpg').forEach(function (pe, i) {
+      var r0 = pe.getBoundingClientRect(), k = r0.width / PW, R = function (el) { var r = el.getBoundingClientRect(); return [+((r.left - r0.left) / k).toFixed(2), +((r.top - r0.top) / k).toFixed(2), +(r.width / k).toFixed(2), +(r.height / k).toFixed(2)]; };
+      var P = { n: i + 1, pids: [], cx: [], col: [] };
+      pe.querySelectorAll('[data-fpid]').forEach(function (b) { P.pids.push(b.getAttribute('data-fpid')); });
+      pe.querySelectorAll('[data-fb]').forEach(function (el) { var a = el.getAttribute('data-fb').split('|'); P.cx.push([a[0], a[1], +a[2]].concat(R(el))); });
+      pe.querySelectorAll('[data-fcol]').forEach(function (el) { var a = el.getAttribute('data-fcol').split('|'), esp = el.querySelector('.fesp'); P.col.push([a[0], +a[1]].concat(R(el), R(esp))); });
+      job.pags.push(P);
+    });
+    job.alturas = blocos.map(function (b) { return Math.round(b.h); });
+    job.nomes = {}; lista.forEach(function (p) { job.nomes[p.id] = [p.leito || p.lugar || '', p.nome]; });
+    c.className = '';
+    return job;
+  }
+  function guardar(job) {
+    S.folhas = S.folhas || {}; S.folhas[job.id] = job;
+    Object.keys(S.folhas).sort(function (a, b) { return S.folhas[b].em - S.folhas[a].em; }).slice(20).forEach(function (k) { delete S.folhas[k]; });
+    saveLocal();
+    if (window.SYNC && SYNC.folhaSalvar && SYNC.temToken()) SYNC.folhaSalvar(job.id, job).catch(function (er) { if (window.ERR) ERR.log('folha-drive', er); });
+  }
+  function imprimir() {
+    var L = ativos(); if (!L.length) { toast('Sem pacientes no internograma'); return; }
+    if (S.filtro && S.filtro !== 'Todos') L = L.filter(function (p) { return p.grupo === S.filtro; });
+    toast('Montando a folha de visita…');
+    // as letras precisam estar carregadas ANTES de medir (senão o mapa das caixinhas sai errado)
+    var F = ['400 7pt Plex', '600 7pt Plex', '700 7pt Plex', '400 7pt PlexC', '600 7pt PlexC'];
+    Promise.all(F.map(function (f) { return document.fonts && document.fonts.load ? document.fonts.load(f).catch(function () {}) : null; }))
+      .then(function () { return document.fonts && document.fonts.ready; })
+      .then(function () {
+        var job = montar(L); guardar(job);
+        toast(job.pags.length + ' folha(s) · ' + L.length + ' paciente(s)');
+        setTimeout(function () { window.print(); }, 300);
+      });
+  }
+
+  // ---------- 2) leitura da foto ----------
+  function carregarImagem(file) {
+    return new Promise(function (ok, er) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () { URL.revokeObjectURL(u); ok(im); }; im.onerror = function () { URL.revokeObjectURL(u); er(new Error('imagem inválida')); }; im.src = u;
+    });
+  }
+  // tons de cinza usando o MENOR canal (tinta azul fica escura; papel amarelado continua claro)
+  function cinza(im, M) {
+    var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, k = Math.min(1, M / Math.max(w, h));
+    var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+    var x = c.getContext('2d'); x.drawImage(im, 0, 0, c.width, c.height);
+    var d = x.getImageData(0, 0, c.width, c.height).data, g = new Uint8Array(c.width * c.height);
+    for (var i = 0, j = 0; i < g.length; i++, j += 4) g[i] = Math.min(d[j], d[j + 1], d[j + 2]);
+    return { w: c.width, h: c.height, g: g, k: k, canvas: c };
+  }
+  function integral(I) {
+    var w = I.w, h = I.h, S2 = new Float64Array((w + 1) * (h + 1));
+    for (var y = 0; y < h; y++) { var lin = 0; for (var x = 0; x < w; x++) { lin += I.g[y * w + x]; S2[(y + 1) * (w + 1) + x + 1] = S2[y * (w + 1) + x + 1] + lin; } }
+    return S2;
+  }
+  // os 4 quadrados pretos: manchas escuras, cheias, quase quadradas, de tamanho parecido; o maior quadrilátero
+  function acharCantos(I) {
+    var w = I.w, h = I.h, Si = integral(I), r = Math.max(8, Math.round(Math.min(w, h) / 14)), bin = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var x0 = Math.max(0, x - r), y0 = Math.max(0, y - r), x1 = Math.min(w, x + r + 1), y1 = Math.min(h, y + r + 1);
+      var m = (Si[y1 * (w + 1) + x1] - Si[y0 * (w + 1) + x1] - Si[y1 * (w + 1) + x0] + Si[y0 * (w + 1) + x0]) / ((x1 - x0) * (y1 - y0));
+      bin[y * w + x] = I.g[y * w + x] < m * 0.72 && I.g[y * w + x] < 150 ? 1 : 0;
+    }
+    var lab = new Int32Array(w * h), cand = [], pilha = new Int32Array(w * h), n = 0;
+    for (var i = 0; i < w * h; i++) {
+      if (!bin[i] || lab[i]) continue;
+      n++; var sp = 0, area = 0, mx = 1e9, Mx = -1, my = 1e9, My = -1, sx = 0, sy = 0, borda = false;
+      pilha[sp++] = i; lab[i] = n;
+      while (sp) {
+        var q = pilha[--sp], qx = q % w, qy = (q / w) | 0; area++; sx += qx; sy += qy;
+        if (qx < mx) mx = qx; if (qx > Mx) Mx = qx; if (qy < my) my = qy; if (qy > My) My = qy;
+        if (qx === 0 || qy === 0 || qx === w - 1 || qy === h - 1) borda = true;
+        if (qx > 0 && bin[q - 1] && !lab[q - 1]) { lab[q - 1] = n; pilha[sp++] = q - 1; }
+        if (qx < w - 1 && bin[q + 1] && !lab[q + 1]) { lab[q + 1] = n; pilha[sp++] = q + 1; }
+        if (qy > 0 && bin[q - w] && !lab[q - w]) { lab[q - w] = n; pilha[sp++] = q - w; }
+        if (qy < h - 1 && bin[q + w] && !lab[q + w]) { lab[q + w] = n; pilha[sp++] = q + w; }
+      }
+      var bw = Mx - mx + 1, bh = My - my + 1, maxd = Math.max(w, h);
+      if (borda || bw < maxd * 0.008 || bh < maxd * 0.008 || bw > maxd * 0.09 || bh > maxd * 0.09) continue;
+      var asp = bw / bh; if (asp < 0.55 || asp > 1.8) continue;
+      if (area / (bw * bh) < 0.72) continue;
+      cand.push({ x: sx / area, y: sy / area, a: area });
+    }
+    if (cand.length < 4) return null;
+    cand.sort(function (a, b) { return b.a - a.a; }); cand = cand.slice(0, 24);
+    var melhor = null, N = cand.length;
+    for (var a = 0; a < N; a++) for (var b = a + 1; b < N; b++) for (var c2 = b + 1; c2 < N; c2++) for (var d = c2 + 1; d < N; d++) {
+      var Q = [cand[a], cand[b], cand[c2], cand[d]], amin = Math.min(Q[0].a, Q[1].a, Q[2].a, Q[3].a), amax = Math.max(Q[0].a, Q[1].a, Q[2].a, Q[3].a);
+      if (amax > amin * 2.6) continue;
+      var o = ordenar(Q); if (!o) continue;
+      var ar = areaQ(o); if (!melhor || ar > melhor.ar) melhor = { ar: ar, q: o };
+    }
+    if (!melhor || melhor.ar < w * h * 0.12) return null;
+    return melhor.q.map(function (p) { return [p.x / I.k, p.y / I.k]; });   // de volta à escala da imagem original
+  }
+  function ordenar(Q) {   // sentido horário a partir do mais perto do canto superior esquerdo; exige quadrilátero convexo
+    var cx = 0, cy = 0; Q.forEach(function (p) { cx += p.x / 4; cy += p.y / 4; });
+    var L = Q.slice().sort(function (p, q) { return Math.atan2(p.y - cy, p.x - cx) - Math.atan2(q.y - cy, q.x - cx); });
+    var i0 = 0; L.forEach(function (p, i) { if (p.x + p.y < L[i0].x + L[i0].y) i0 = i; });
+    L = L.slice(i0).concat(L.slice(0, i0));
+    for (var i = 0; i < 4; i++) { var A = L[i], B = L[(i + 1) % 4], C = L[(i + 2) % 4]; if ((B.x - A.x) * (C.y - B.y) - (B.y - A.y) * (C.x - B.x) <= 0) return null; }
+    return L;
+  }
+  function areaQ(L) { var s = 0; for (var i = 0; i < 4; i++) { var A = L[i], B = L[(i + 1) % 4]; s += A.x * B.y - B.x * A.y; } return Math.abs(s) / 2; }
+  // homografia: pontos da folha (mm) → pontos da foto (px)
+  function homografia(src, dst) {
+    var A = [], b = [];
+    for (var i = 0; i < 4; i++) {
+      var x = src[i][0], y = src[i][1], u = dst[i][0], v = dst[i][1];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    for (var c = 0; c < 8; c++) {
+      var p = c; for (var r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      var t = A[c]; A[c] = A[p]; A[p] = t; t = b[c]; b[c] = b[p]; b[p] = t;
+      if (Math.abs(A[c][c]) < 1e-12) return null;
+      for (var r2 = 0; r2 < 8; r2++) { if (r2 === c) continue; var f = A[r2][c] / A[c][c]; for (var k = c; k < 8; k++) A[r2][k] -= f * A[c][k]; b[r2] -= f * b[c]; }
+    }
+    var h = []; for (var j = 0; j < 8; j++) h.push(b[j] / A[j][j]); h.push(1);
+    return function (x, y) { var z = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / z, (h[3] * x + h[4] * y + h[5]) / z]; };
+  }
+  // folha endireitada em escala fixa (px/mm) a partir da foto
+  function retificar(I, H, ppm) {
+    var W = Math.round(PW * ppm), Hh = Math.round(PH * ppm), out = new Uint8Array(W * Hh), w = I.w, h = I.h, g = I.g, k = I.k;
+    for (var y = 0; y < Hh; y++) for (var x = 0; x < W; x++) {
+      var p = H((x + 0.5) / ppm, (y + 0.5) / ppm), u = p[0] * k - 0.5, v = p[1] * k - 0.5, x0 = Math.floor(u), y0 = Math.floor(v);
+      if (x0 < 0 || y0 < 0 || x0 >= w - 1 || y0 >= h - 1) { out[y * W + x] = 255; continue; }
+      var fx = u - x0, fy = v - y0, i = y0 * w + x0;
+      out[y * W + x] = (g[i] * (1 - fx) + g[i + 1] * fx) * (1 - fy) + (g[i + w] * (1 - fx) + g[i + w + 1] * fx) * fy;
+    }
+    return { w: W, h: Hh, g: out, ppm: ppm };
+  }
+  // branco do papel ao redor (para comparar com sombra / luz amarela)
+  function branco(R, x, y, w, h) {
+    var p = R.ppm, L = [], d = 1.2;
+    for (var t = 0; t <= 1.0001; t += 0.125) {
+      [[x + w * t, y - d], [x + w * t, y + h + d], [x - d, y + h * t], [x + w + d, y + h * t]].forEach(function (q) {
+        var xx = Math.round(q[0] * p), yy = Math.round(q[1] * p); if (xx >= 0 && yy >= 0 && xx < R.w && yy < R.h) L.push(R.g[yy * R.w + xx]);
+      });
+    }
+    L.sort(function (a, b) { return a - b; });
+    return L.length ? Math.max(60, L[Math.floor(L.length * 0.75)]) : 220;
+  }
+  function tinta(R, x, y, w, h, inset, wref) {
+    var p = R.ppm, x0 = Math.round((x + w * inset) * p), x1 = Math.round((x + w * (1 - inset)) * p), y0 = Math.round((y + h * inset) * p), y1 = Math.round((y + h * (1 - inset)) * p), n = 0, esc2 = 0, lim = wref * 0.64;
+    for (var yy = y0; yy < y1; yy++) for (var xx = x0; xx < x1; xx++) { if (xx < 0 || yy < 0 || xx >= R.w || yy >= R.h) continue; n++; if (R.g[yy * R.w + xx] < lim) esc2++; }
+    return n ? esc2 / n : 0;
+  }
+  function lerCodigo(R) {
+    var b = [];
+    for (var i = 0; i < COD.n; i++) { var x = COD.x + i * COD.w; b.push(tinta(R, x, COD.y, COD.w, COD.h, 0.25, branco(R, COD.x - 2, COD.y, COD.n * COD.w + 4, COD.h)) > 0.5 ? 1 : 0); }
+    return decodificar(b);
+  }
+  function obterJob(id) {
+    if ((S.folhas || {})[id]) return Promise.resolve(S.folhas[id]);
+    if (window.SYNC && SYNC.folhaBaixar && SYNC.temToken()) return SYNC.folhaBaixar(id).then(function (j) { if (j) { S.folhas = S.folhas || {}; S.folhas[id] = j; saveLocal(); } return j; }).catch(function () { return null; });
+    return Promise.resolve(null);
+  }
+  function lerArquivo(file) {
+    return carregarImagem(file).then(function (im) {
+      var P = cinza(im, 1100), cant = acharCantos(P);
+      if (!cant) return { erro: 'Não achei os 4 quadrados pretos dos cantos. Fotografe a folha inteira, de frente e com boa luz.' };
+      var F = cinza(im, 2600);
+      // a folha pode estar girada: tenta as 4 posições e fica com a que tem código válido
+      for (var rot = 0; rot < 4; rot++) {
+        var dst = [0, 1, 2, 3].map(function (i) { return cant[(i + rot) % 4]; }), H = homografia(CENTROS, dst); if (!H) continue;
+        var R = retificar(F, H, 6), cod = lerCodigo(R);
+        if (cod) return obterJob(cod.id).then(function (job) {
+          if (!job) return { erro: 'Folha nº ' + cod.id + ' não encontrada. Ela foi impressa em outro aparelho sem internet? Conecte ao Google e tente de novo.' };
+          var pag = job.pags[cod.pg]; if (!pag) return { erro: 'Página ' + (cod.pg + 1) + ' não existe na folha nº ' + cod.id + '.' };
+          return analisar(job, pag, R);
+        });
+      }
+      return { erro: 'Achei os cantos, mas não consegui ler o código da folha (tracinhos do topo). Fotografe mais de perto, sem reflexo.' };
+    });
+  }
+  function analisar(job, pag, R) {
+    // tinta em cada caixinha, descontando o que é impresso (números dentro das bolinhas)
+    // bolinhas: lê só o miolo (a borda e o número impresso ficam de fora o máximo possível)
+    var L = pag.cx.map(function (c) { var circ = G[c[1]] && G[c[1]].circ, w0 = branco(R, c[3], c[4], c[5], c[6]); return { pid: c[0], g: c[1], i: c[2], circ: circ, f: tinta(R, c[3], c[4], c[5], c[6], circ ? 0.27 : 0.22, w0), r: c.slice(3) }; });
+    // desconta o que já vem impresso: para cada tipo de caixinha (quadrado; bolinha de cada número e tamanho), a mediana da folha
+    var tipoCx = function (x) { return x.circ ? 'c' + Math.round(x.r[2] * 5) + '|' + G[x.g].o[x.i][0] : 'q'; }, grupos = {}, base = {};
+    L.forEach(function (x) { (grupos[tipoCx(x)] = grupos[tipoCx(x)] || []).push(x.f); });
+    Object.keys(grupos).forEach(function (k) { var fs = grupos[k].sort(function (a, b) { return a - b; }); base[k] = fs.length >= 3 ? fs[Math.floor((fs.length - 1) * 0.5)] : Math.min.apply(null, fs.concat([0.06])); });
+    L.forEach(function (x) { x.s = x.f - base[tipoCx(x)]; x.st = x.s >= LIM_MARCA ? 'on' : x.s >= LIM_DUVIDA ? 'duv' : ''; });
+    var pac = {};
+    pag.pids.forEach(function (pid) { pac[pid] = { pid: pid, grupos: {}, notas: [] }; });
+    L.forEach(function (x) {
+      if (!pac[x.pid] || !G[x.g]) return;
+      var gg = pac[x.pid].grupos[x.g] = pac[x.pid].grupos[x.g] || { on: [], duv: [] };
+      if (x.st === 'on') gg.on.push(x.i); else if (x.st === 'duv') gg.duv.push(x.i);
+    });
+    // escrita à mão: tinta no espaço em branco da coluna → recorta a coluna inteira
+    pag.col.forEach(function (c) {
+      var pid = c[0], ci = c[1], esp = c.slice(6, 10), w0 = branco(R, esp[0], esp[1], esp[2], esp[3]);
+      var f = tinta(R, esp[0], esp[1] + 0.6, esp[2], Math.max(0.5, esp[3] - 1.2), 0.04, w0);
+      if (pac[pid] && f > 0.006) pac[pid].notas.push({ col: ci, r: c.slice(2, 6), f: f });
+    });
+    return { job: job, pag: pag, R: R, pac: pac, L: L };
+  }
+  function recorte(R, r) {   // devolve um Blob JPEG da área (mm) da folha endireitada
+    var p = R.ppm, x0 = Math.max(0, Math.floor(r[0] * p)), y0 = Math.max(0, Math.floor(r[1] * p)), w = Math.min(R.w - x0, Math.ceil(r[2] * p)), h = Math.min(R.h - y0, Math.ceil(r[3] * p));
+    var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d'), id = x.createImageData(w, h);
+    for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var v = R.g[(y0 + yy) * R.w + x0 + xx], j = (yy * w + xx) * 4; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+    x.putImageData(id, 0, 0);
+    return new Promise(function (ok) { c.toBlob(function (b) { ok({ blob: b, url: c.toDataURL('image/jpeg', 0.8) }); }, 'image/jpeg', 0.85); });
+  }
+  function miniatura(A) {   // folha endireitada com as marcações coloridas (para conferir a leitura)
+    var R = A.R, k = 0.5, W = Math.round(R.w * k), H = Math.round(R.h * k), c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d'), id = x.createImageData(W, H);
+    for (var yy = 0; yy < H; yy++) for (var xx = 0; xx < W; xx++) { var v = R.g[Math.floor(yy / k) * R.w + Math.floor(xx / k)], j = (yy * W + xx) * 4; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+    x.putImageData(id, 0, 0); x.lineWidth = 2;
+    A.L.forEach(function (b) { if (!b.st) return; x.strokeStyle = b.st === 'on' ? '#16a34a' : '#f59e0b'; x.strokeRect((b.r[0] - 0.6) * R.ppm * k, (b.r[1] - 0.6) * R.ppm * k, (b.r[2] + 1.2) * R.ppm * k, (b.r[3] + 1.2) * R.ppm * k); });
+    return c.toDataURL('image/jpeg', 0.75);
+  }
+
+  // ---------- 3) revisão ----------
+  var REV = null;
+  function abrirRevisao(files) {
+    var tela = document.getElementById('folhaRev');
+    if (!tela) { tela = document.createElement('div'); tela.id = 'folhaRev'; tela.className = 'sheet'; document.body.appendChild(tela); }
+    tela.innerHTML = '<div class="sh-top"><button class="back" data-frfechar>‹</button><div class="t"><b>Ler folha de visita</b><span>lendo ' + files.length + ' foto(s)…</span></div></div><div class="sh-body"><div class="empty">Lendo a foto…</div></div>';
+    tela.classList.add('open'); document.body.classList.add('travado');
+    var res = [];
+    return files.reduce(function (pr, f) { return pr.then(function () { return lerArquivo(f).then(function (r) { r.nome = f.name; res.push(r); }, function (er) { res.push({ erro: 'Erro ao ler ' + f.name + ': ' + (er && er.message || er), nome: f.name }); }); }); }, Promise.resolve())
+      .then(function () {
+        var okR = res.filter(function (r) { return !r.erro; });
+        return Promise.all(okR.map(function (A) {
+          return Promise.all(Object.keys(A.pac).map(function (pid) { return Promise.all(A.pac[pid].notas.map(function (n) { return recorte(A.R, n.r).then(function (o) { n.blob = o.blob; n.url = o.url; }); })); }));
+        })).then(function () { REV = { res: res, sel: {} }; montarSelecao(); desenharRev(); });
+      });
+  }
+  function montarSelecao() {   // estado inicial: marcadas = ligadas; duvidosas e conflitos = desligadas, mas destacadas
+    REV.res.forEach(function (A, ai) {
+      if (A.erro) return;
+      Object.keys(A.pac).forEach(function (pid) {
+        var P = A.pac[pid], K = ai + '|' + pid, st = REV.sel[K] = { g: {}, visit: false, notas: P.notas.map(function () { return { usar: true, txt: '' }; }) };
+        Object.keys(P.grupos).forEach(function (g) {
+          var gg = P.grupos[g], D = G[g], on = gg.on.slice();
+          if (g === 'visit') { st.visit = on.length > 0; return; }
+          var conflito = D.t === 's' && on.length > 1;
+          st.g[g] = { on: conflito ? [] : on, duv: gg.duv.slice(), conflito: conflito ? on : [] };
+        });
+        // "neuro sem alterações" + força marcada = contradição → você escolhe
+        var forca = Object.keys(st.g).some(function (g) { return /^f[CTLS]\d/.test(g) && st.g[g].on.length; });
+        if (forca && st.g.neuro && st.g.neuro.on.indexOf(0) > -1) { st.g.neuro.conflito = uniq(st.g.neuro.conflito.concat(st.g.neuro.on)); st.g.neuro.on = []; st.g.neuro.dica = 'força marcada abaixo — confirme'; }
+        if (!st.visit && Object.keys(st.g).some(function (g) { return st.g[g].on.length; })) st.visit = true;
+      });
+    });
+  }
+  function nomeDe(A, pid) { var p = S.pacientes.find(function (x) { return x.id === pid; }), n = (A.job.nomes || {})[pid] || []; return { leito: p ? (p.leito || p.lugar || '') : n[0] || '', nome: p ? p.nome : n[1] || pid, existe: !!p }; }
+  function desenharRev() {
+    var tela = document.getElementById('folhaRev'), h = '', tot = 0, duv = 0;
+    REV.res.forEach(function (A, ai) {
+      if (A.erro) { h += '<div class="card frerro"><b>⚠ ' + e(A.nome || 'foto') + '</b><div>' + e(A.erro) + '</div></div>'; return; }
+      var outroDia = A.job.data !== S.hoje;
+      h += '<div class="card frpag"><div class="frinfo"><b>Folha ' + A.pag.n + ' de ' + A.job.pags.length + '</b> · nº ' + A.job.id + ' · impressa ' + e(br(A.job.data)) + (A.job.by ? ' por ' + e(A.job.by) : '') + '</div>' +
+        (outroDia ? '<div class="fraviso">⚠ Esta folha é de ' + e(br(A.job.data)) + ' — as marcações vão para a visita DESSE dia.</div>' : '') +
+        '<details><summary>Ver como o app leu a folha (verde = marcado, amarelo = em dúvida)</summary><img class="frmini" src="' + miniatura(A) + '" alt=""></details></div>';
+      A.pag.pids.forEach(function (pid) {
+        var K = ai + '|' + pid, st = REV.sel[K], P = A.pac[pid], nm = nomeDe(A, pid), gs = '';
+        Object.keys(G).forEach(function (g) {
+          var x = st.g[g]; if (!x) return;
+          var opts = uniq(x.on.concat(x.duv, x.conflito)); if (!opts.length) return;
+          gs += '<div class="frg"><span class="frl">' + e(G[g].lb) + '</span>' + opts.map(function (i) {
+            var on = x.on.indexOf(i) > -1, d = x.duv.indexOf(i) > -1, c = x.conflito.indexOf(i) > -1;
+            if (d || c) duv++;
+            return '<button class="frc' + (on ? ' on' : '') + (d ? ' duv' : '') + (c ? ' conf' : '') + '" data-frk="' + e(K) + '" data-frg="' + g + '" data-fri="' + i + '">' + (d && !on ? '? ' : '') + e(G[g].o[i][0]) + '</button>';
+          }).join('') + (x.conflito.length && !x.on.length ? '<span class="frdica">' + (x.dica || 'duas marcadas — escolha uma') + '</span>' : '') + '</div>';
+        });
+        var nt = P.notas.map(function (n, j) {
+          var s = st.notas[j];
+          return '<div class="frnota"><div class="frl">' + e(COLN[n.col]) + ' — escrito à mão</div><img src="' + n.url + '" alt=""><label><input type="checkbox" data-frnota="' + e(K) + '|' + j + '"' + (s.usar ? ' checked' : '') + '> guardar como foto no paciente</label><input class="frtx" data-frtx="' + e(K) + '|' + j + '" placeholder="Digite aqui se quiser que vire texto (vai para Observações)" value="' + e(s.txt) + '"></div>';
+        }).join('');
+        if (!gs && !nt && !st.visit) { h += '<div class="frvazio">' + e(nm.leito) + ' · ' + e(nm.nome) + ' — nada marcado</div>'; return; }
+        tot++;
+        h += '<div class="card frpac"><div class="frh"><span class="ml">' + e(nm.leito || '—') + '</span><b>' + e(nm.nome) + '</b>' + (nm.existe ? '' : '<span class="tag red">fora do internograma atual</span>') +
+          '<label class="frvis"><input type="checkbox" data-frvis="' + e(K) + '"' + (st.visit ? ' checked' : '') + '> visitado</label></div>' + (gs || '<div class="hint">Nenhuma caixinha marcada.</div>') + nt + '</div>';
+      });
+    });
+    tela.innerHTML = '<div class="sh-top"><button class="back" data-frfechar>‹</button><div class="t"><b>Revisar folha de visita</b><span>' + tot + ' paciente(s) com marcações' + (duv ? ' · ' + duv + ' item(ns) em amarelo para conferir' : '') + '</span></div></div>' +
+      '<div class="sh-body">' + (duv ? '<div class="fraviso">Itens em <b>amarelo</b> estão em dúvida (marca fraca ou duas opções no mesmo item) e só entram se você tocar neles.</div>' : '') + h + '</div>' +
+      '<div class="foot"><button class="btn sec" data-frfechar style="flex:1">Cancelar</button><button class="btn" data-frsalvar style="flex:1.6"' + (tot ? '' : ' disabled') + '>Salvar nas visitas (' + tot + ')</button></div>';
+  }
+  function alternar(K, g, i) {
+    var x = REV.sel[K].g[g], D = G[g], k = x.on.indexOf(i);
+    if (k > -1) x.on.splice(k, 1);
+    else { if (D.t === 's') x.on = [i]; else x.on.push(i); }
+    desenharRev();
+  }
+  function salvar() {
+    var n = 0, fotos = [];
+    REV.res.forEach(function (A, ai) {
+      if (A.erro) return;
+      var d = A.job.data; S.vis[d] = S.vis[d] || {};
+      A.pag.pids.forEach(function (pid) {
+        var K = ai + '|' + pid, st = REV.sel[K], P = A.pac[pid];
+        var temAlgo = st.visit || Object.keys(st.g).some(function (g) { return st.g[g].on.length; }) || st.notas.some(function (s) { return (s.usar) || s.txt.trim(); });
+        if (!temAlgo) return;
+        visSnap(d, pid);
+        var v = S.vis[d][pid] = S.vis[d][pid] || {};
+        Object.keys(st.g).forEach(function (g) {
+          var x = st.g[g], D = G[g]; if (!x.on.length) return;
+          var vals = x.on.map(function (i) { return D.o[i][1]; });
+          D.ap(v, D.t === 'm' ? vals : vals[0]);
+        });
+        if (st.visit) v._ok = true;
+        var txt = st.notas.map(function (s, j) { return s.txt.trim() ? COLN[P.notas[j].col].split(' ·')[0] + ': ' + s.txt.trim() : ''; }).filter(Boolean).join('\n');
+        if (txt) v.obs = (v.obs ? v.obs.trim() + '\n' : '') + txt;
+        carimbarV(d, pid); v._at = relogio(); v._by = S.eu || '';
+        st.notas.forEach(function (s, j) { if (s.usar && P.notas[j].blob) fotos.push([pid, P.notas[j]]); });
+        n++;
+      });
+    });
+    save();
+    return fotos.reduce(function (pr, f) { return pr.then(function () { return FOTO.adicionar(f[0], 'nota', f[1].blob, 'Folha · ' + COLN[f[1].col].split(' ·')[0]).catch(function () {}); }); }, Promise.resolve())
+      .then(function () { fecharRev(); render(); toast('Visita gravada em ' + n + ' paciente(s)' + (fotos.length ? ' · ' + fotos.length + ' anotação(ões) guardada(s) como foto' : '')); });
+  }
+  function fecharRev() { var t = document.getElementById('folhaRev'); if (t) { t.classList.remove('open'); t.innerHTML = ''; } REV = null; if (typeof travar === 'function') travar(); }
+
+  // ---------- eventos ----------
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-folhaimp],[data-frfechar],[data-frsalvar],[data-frk]'); if (!t) return;
+    if ('folhaimp' in t.dataset) { imprimir(); return; }
+    if ('frfechar' in t.dataset) { fecharRev(); return; }
+    if ('frsalvar' in t.dataset) { t.disabled = true; salvar(); return; }
+    if (t.dataset.frk) { alternar(t.dataset.frk, t.dataset.frg, +t.dataset.fri); }
+  });
+  document.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.matches && t.matches('input[data-folhafoto]')) { var fs = [].slice.call(t.files || []); t.value = ''; if (fs.length) abrirRevisao(fs); return; }
+    if (!REV) return;
+    if (t.dataset && t.dataset.frvis) { REV.sel[t.dataset.frvis].visit = t.checked; return; }
+    if (t.dataset && t.dataset.frnota) { var a = t.dataset.frnota.split('|'); REV.sel[a[0] + '|' + a[1]].notas[+a[2]].usar = t.checked; }
+  });
+  document.addEventListener('input', function (ev) {
+    var t = ev.target; if (!REV || !t.dataset || !t.dataset.frtx) return;
+    var a = t.dataset.frtx.split('|'); REV.sel[a[0] + '|' + a[1]].notas[+a[2]].txt = t.value;
+  });
+  window.addEventListener('afterprint', function () { var c = document.getElementById('folhaPrint'); if (c) c.innerHTML = ''; });
+  return { imprimir: imprimir, montar: montar, guardar: guardar, ler: lerArquivo, abrirRevisao: abrirRevisao, G: G, _codigo: codigo, _decodificar: decodificar, CENTROS: CENTROS, COD: COD };
 })();
 
 // ===================== init =====================

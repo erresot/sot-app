@@ -1755,6 +1755,11 @@ function visitWants(V){
   if(V.imob==="Frouxa / danificada") add("Imobilização frouxa / danificada",{"Imobilização (estado)":["imobilização frouxa","imobilização danificada"]},{ins:["e","imobilização frouxa, necessita troca/reforço"]});
   if(V.nv==="Preservado") add("Neurovascular preservado",{"Neurovascular":["sem déficits neurovasculares","sem déficit neurovascular"],"Neurovascular (curto)":["neurovascular preservado"],"Perfusão":["perfusão periférica preservada"],"Sensibilidade":["sensibilidade preservada"],"Motricidade":["motricidade preservada"],"TEC":["TEC < 3 segundos"]},{ins:["e","extremidade perfundida, neurovascular preservado"]});
   if(V.nv==="Alterado") add("Alteração neurovascular"+(V.nv_x?": "+V.nv_x:""),{"Neurovascular":["com déficit neurovascular"],"Neurovascular (curto)":["neurovascular alterado"]},{confirm:true,ins:["e","alteração neurovascular"+(V.nv_x?": "+V.nv_x:"")]});
+  if(V.adm==="Preservada") add("Amplitude de movimento preservada",{},{ins:["e","amplitude de movimento preservada"]});
+  if(V.adm==="Limitada por dor") add("Amplitude de movimento limitada por dor",{},{ins:["e","amplitude de movimento limitada pela dor"]});
+  if(V.adm==="Limitada (imobilizado)") add("Amplitude de movimento limitada (imobilizado)",{},{ins:["e","amplitude de movimento não avaliada (membro imobilizado)"]});
+  if(V.esf==="Controle preservado") add("Controle esfincteriano preservado",{},{ins:["e","controle esfincteriano preservado"]});
+  if(V.esf==="Retenção / incontinência") add("Alteração esfincteriana",{},{confirm:true,ins:["e","alteração esfincteriana (retenção/incontinência)"]});
   // exame físico rápido
   const X=V.exf||{};
   if(X.edema){ const E={"Sem edema":"sem edema","Leve":"edema leve","Moderado":"edema moderado","Importante":"edema importante","Em regressão":"edema em regressão","Em piora":"edema em piora"}[X.edema]; if(E) add("Edema: "+X.edema.toLowerCase(),{"Edema":[E]},{ins:["e",E]}); }
