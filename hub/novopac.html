@@ -289,6 +289,7 @@ const SETORES=[
 const STATUS=['','Solicitar','Solicitado','Checar','OK','No Opera'];
 // assistentes e equipes: vêm do motor único ../sot-escala.js (formato "Dr Nome Sobrenome")
 const ASSIST=(window.SOTESCALA?window.SOTESCALA.pessoas():[]).map(p=>p.n.replace(/^(Dra?)\./,'$1'));
+if(!window.SOTESCALA) console.warn('sot-escala.js não carregou: lista de assistentes vazia (o campo continua livre)');
 const MECS=[
  [/QUEDA D[AE] (?:SUA )?PROPRIA(?:\s+ALTURA)?|\bQPA\b/,'Queda Da Própria Altura'],
  [/QUEDA DE (\d+(?:[.,]\d+)?)\s*(?:M\b|METROS?)/,m=>'Queda De '+m[1]+' Metros'],

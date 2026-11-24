@@ -123,6 +123,10 @@ input:focus-visible,.chip:focus-visible,.doc:focus-visible,button:focus-visible{
 const $=id=>document.getElementById(id);
 // Escala do ambulatório: vem do motor único ../sot-escala.js (1=seg … 5=sex)
 const ESC=window.SOTESCALA;
+if(!ESC){   // sem o motor da escala não há como calcular o dia: avisa em vez de abrir em branco
+  document.getElementById('days').outerHTML='<div class="exc-aviso" role="alert"><b>A escala do ambulatório não carregou</b><span>Falta o arquivo sot-escala.js. Feche e abra o app; se continuar, avise quem atualiza o app.</span></div>';
+  throw new Error('sot-escala.js não carregou');
+}
 const CURTO=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
 const PLURAL=['','SEGUNDAS-FEIRAS','TERÇAS-FEIRAS','QUARTAS-FEIRAS','QUINTAS-FEIRAS','SEXTAS-FEIRAS',''];
 const DIAS=['DOMINGO','SEGUNDA-FEIRA','TERÇA-FEIRA','QUARTA-FEIRA','QUINTA-FEIRA','SEXTA-FEIRA','SÁBADO'];

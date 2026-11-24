@@ -834,6 +834,7 @@ function applyAsstSig(){
 }
 function renderAsst(){
   const box=$("asst");if(!box)return;box.innerHTML="";
+  if(!ESCALA.length){box.innerHTML='<p style="color:#b45309;margin:4px 0">A escala dos assistentes não carregou (arquivo sot-escala.js). Feche e abra o app; se continuar, avise quem atualiza o app.</p>';return;}
   const tpl=TEMPLATES.concat(MINE).find(t=>t.id===activeTpl)||{};
   for(let d=1;d<=5;d++){
     const row=document.createElement("div");row.className="asst-day";
