@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atualizador de Internograma · SOT</title>
+<style>
+:root{--bg:#edf1f6;--card:#fff;--ink:#17233a;--mut:#5f6f86;--line:#d9e0ea;--acc:#1f6fce;--navy:#13365c;--ok:#1d8a5b;--ok2:#e4f4ec;--warn:#b7791f;--warn2:#fdf3e0;--bad:#c93636;--bad2:#fcebeb;--mono:ui-monospace,"SF Mono",Consolas,"Roboto Mono",monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:14px 12px 60px}
+h1{font-size:19px;margin:0 0 4px}h2{font-size:15px;margin:18px 2px 8px;color:var(--navy)}
+.hint{color:var(--mut);font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}label{font-size:13px;color:var(--mut)}
+select,input[type=date]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+button{font:600 13px/1 inherit;padding:8px 12px;border-radius:8px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+button.sec{background:var(--card);color:var(--acc)}button.sm{padding:5px 9px;font-size:12px}
+.pac{border-left:4px solid var(--acc)}.pac h3{margin:0 0 6px;font-size:15px}.pac h3 small{color:var(--mut);font-weight:500}
+.mud{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;padding:7px 0;border-top:1px dashed var(--line)}
+.mud:first-of-type{border-top:0}.mud .de{font-family:var(--mono);font-size:12.5px;color:var(--mut);text-decoration:line-through}
+.mud .para{font-family:var(--mono);font-size:13px;font-weight:600}.mud .por{font-size:12px;color:var(--mut)}
+.mud.duv .para{color:var(--warn)}.mud.feito{opacity:.45}.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--warn2);color:var(--warn);margin-left:4px}
+.tag.ok{background:var(--ok2);color:var(--ok)}.tag.bad{background:var(--bad2);color:var(--bad)}
+.cab{font-family:var(--mono);font-size:14px;font-weight:600;background:var(--ok2);padding:8px 10px;border-radius:8px}
+ul.lst{margin:6px 0 0;padding-left:18px}ul.lst li{margin:4px 0}.vazio{padding:20px;text-align:center;color:var(--mut)}
+.resumo{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut)}.resumo b{color:var(--ink)}
+html[data-theme="dark"]{--bg:#0f1517;--card:#182024;--ink:#e3ebe7;--mut:#93a39d;--line:#2a3539;--acc:#5aa2ff;--navy:#9cc3ff;--ok2:#163323;--ok:#5fd08f;--warn2:#33261a;--warn:#f0a35a;--bad2:#3b1d1a;--bad:#ff7b6e}
+</style>
+<link rel="stylesheet" href="sot-tema.css">
+</head>
+<body>
+<h1>🔄 Atualizador de Internograma <span class="tag">protótipo</span></h1>
+<div class="hint">Lê o internograma que o app já importou e mostra <b>só os números</b> que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) e o cabeçalho já contado. Nada é alterado no Google Docs: você confere e corrige lá.</div>
+
+<div class="card">
+  <div class="row">
+    <label>Atualizar para <input type="date" id="alvo"></label>
+    <label>Os números do internograma estão em dia até
+      <select id="ref"><option value="-1">ontem (antes da atualização de hoje)</option><option value="0">hoje (já atualizado)</option><option value="-2">anteontem</option></select></label>
+    <button class="sec sm" id="recalc">Recalcular</button>
+  </div>
+  <div class="hint" id="fonte" style="margin-top:6px"></div>
+</div>
+
+<div id="saida"></div>
+
+<script>
+(function(){
+'use strict';
+var A = window.parent !== window ? window.parent : null;
+try { if (A && A.document.documentElement.classList.contains('escuro')) document.documentElement.setAttribute('data-theme','dark'); } catch(e){}
+var $ = function(s){ return document.querySelector(s); };
+var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+var FEITO = {}; try { FEITO = JSON.parse(sessionStorage.getItem('atualizador.feito') || '{}'); } catch(e){}
+function salvaFeito(){ try { sessionStorage.setItem('atualizador.feito', JSON.stringify(FEITO)); } catch(e){} }
+function iso(d){ return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function dm(d){ return ('0'+d.getDate()).slice(-2) + '/' + ('0'+(d.getMonth()+1)).slice(-2); }
+function dmy(d){ return dm(d) + '/' + d.getFullYear(); }
+function addD(d,n){ var x = new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+
+if (!A || !A.S || !A.SOTCONT) { $('#saida').innerHTML = '<div class="card vazio">Abra este programa pelo OrthoHub do SOT APP (ele usa o internograma importado no app).</div>'; return; }
+var C = A.SOTCONT, S = A.S;
+$('#alvo').value = S.hoje || iso(new Date());
+
+function linhasDe(t){ return String(t || '').split(/\n|\s+\/\s+/); }   // Doc: quebra de linha · PDF: " / "
+// DIH: "Dih 12", "Di: 8", "DIH 1" na coluna do nome (linha própria)
+var RX_DIH = /^(\s*(?:Dih|DIH|Di|DI|dih)\s*:?\s*)(\d{1,3})(\s*)$/;
+
+function calcular(){
+  var alvo = new Date($('#alvo').value + 'T00:00:00'), ref = addD(alvo, +$('#ref').value);
+  var P = (S.pacientes || []).filter(function(p){ return !p.manual; });
+  if (!P.length) { $('#saida').innerHTML = '<div class="card vazio">Nenhum internograma importado no app. Importe o de hoje em Ajustes e volte aqui.</div>'; return; }
+  $('#fonte').textContent = 'Internograma importado no app' + (S.dataIG ? ' (cabeçalho diz ' + S.dataIG + ')' : '') + ' · ' + P.length + ' pacientes.';
+  var lista = [], fazer = [], nMud = 0, nDuv = 0;
+  P.forEach(function(p){
+    var col = p.bruto || [], muds = [], quem = (p.leito || p.section || '—') + ' · ' + p.nome;
+    // 1) DIH
+    linhasDe(col[1]).forEach(function(l){
+      var m = l.match(RX_DIH); if (!m) return;
+      var n0 = +m[2], n, por, duv = false, dInt = null;
+      if (p.dihData) dInt = A.parseData(p.dihData, alvo);
+      else if (p.dihFonte === 'data' && p.dataSolta) dInt = A.parseData(p.dataSolta, alvo);
+      if (dInt) { n = C.dias(dInt, alvo); por = 'pela data de internação (' + dm(dInt) + ')'; }
+      else { n = n0 + C.dias(ref, alvo); por = 'sem data de internação: +' + C.dias(ref, alvo) + ' dia(s)'; duv = true; }
+      if (n !== n0 && n >= 0) muds.push({ campo: 'DIH', de: l.trim(), para: (m[1] + n + m[3]).trim(), por: por, duv: duv });
+    });
+    // 2) Causa: contadores no começo de cada linha
+    var LC = linhasDe(col[2]);
+    LC.forEach(function(l, i){
+      if (!l.trim()) return;
+      var c0 = C.ler(l, ref); if (!c0) return;
+      var comb = l;   // a data pode ter quebrado para a(s) linha(s) de baixo (PDF / célula estreita)
+      if (!c0.d) for (var j = i + 1; j <= i + 2 && j < LC.length; j++) { if (C.ler(LC[j], ref)) break; comb += ' ' + LC[j]; }
+      var r = C.atualizarTexto(comb, ref, alvo); if (!r.mudou.length) return;
+      var x = r.mudou[0], para = x.para.slice(0, x.para.length - (comb.length - l.length)), c = C.ler(comb, ref) || {};
+      muds.push({ campo: 'Causa', de: l.trim(), para: para.trim(), duv: !x.pelaData,
+        por: x.pelaData ? 'pela data (' + (c.d ? dm(c.d) : '') + ')' : 'sem data na linha: +' + C.dias(ref, alvo) + ' dia(s) — confira' });
+    });
+    muds.forEach(function(x){ x.k = p.id + '|' + x.de; nMud++; if (x.duv) nDuv++; });
+    // 3) coisas que só a pessoa resolve
+    var txt0 = String(col[0] || '');
+    if (/\d\s*Arquivo\b|^\s*Arquivo\s*$/m.test(txt0)) fazer.push({ q: quem, t: 'Chip “Arquivo” esquecido na coluna 1 — pode tirar.' });
+    if (p.alta) fazer.push({ q: quem, t: 'Está na seção ALTAS (lista do plantonista da noite) — já saiu? Retirar do internograma.' });
+    try { var po = A.progPosOp(p, alvo); if (po.alta && po.alta.dias === 0 && !p.alta) fazer.push({ q: quem, t: 'Programação: alta prevista hoje — passar para ALTAS quando liberada.' }); } catch(e){}
+    try { var ex = A.pedidoExames(p, alvo); ex.pend.concat(ex.avisos).forEach(function(t){ fazer.push({ q: quem, t: '🧪 ' + t }); }); } catch(e){}
+    lista.push({ p: p, quem: quem, muds: muds });
+  });
+  // cabeçalho
+  var k = A.contagem ? A.contagem() : null, cab = '';
+  if (k && k.c) cab = '(' + dmy(alvo) + ' - ' + k.c.hc + ' Hc / ' + k.c.ic + ' Ic / ' + k.c.hm + ' Hm' + (k.c.alta ? ' / ' + k.c.alta + ' Altas' : '') + ')';
+  var h = '<div class="card"><div class="resumo"><span><b>' + nMud + '</b> números a mudar</span><span><b>' + nDuv + '</b> para conferir (sem data)</span><span><b>' + fazer.length + '</b> itens para você</span></div>' +
+    '<div class="row" style="margin-top:8px"><button class="sm" id="copiaTudo">Copiar lista de correções</button><button class="sec sm" id="limpa">Desmarcar “feito”</button></div></div>';
+  if (cab) h += '<h2>Cabeçalho</h2><div class="card"><div class="cab" id="cabTxt">' + esc(cab) + '</div><div class="row" style="margin-top:8px"><button class="sm" data-copia="' + esc(cab) + '">Copiar</button>' +
+    (S.dataIG && S.dataIG.indexOf(dm(alvo)) < 0 ? '<span class="tag">o cabeçalho atual diz ' + esc(S.dataIG) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
+  if (fazer.length) h += '<h2>Para você resolver</h2><div class="card"><ul class="lst">' + fazer.map(function(x){ return '<li><b>' + esc(x.q) + '</b> — ' + esc(x.t) + '</li>'; }).join('') + '</ul></div>';
+  h += '<h2>Números por paciente</h2>';
+  var com = lista.filter(function(x){ return x.muds.length; });
+  if (!com.length) h += '<div class="card vazio">Nenhum número a mudar ✓</div>';
+  com.forEach(function(x){
+    h += '<div class="card pac"><h3>' + esc(x.quem) + ' <small>' + x.muds.length + ' número(s)</small></h3>' + x.muds.map(function(m){
+      var f = FEITO[m.k];
+      return '<div class="mud' + (m.duv ? ' duv' : '') + (f ? ' feito' : '') + '"><input type="checkbox" data-feito="' + esc(m.k) + '"' + (f ? ' checked' : '') + ' title="Marcar como corrigido no internograma">' +
+        '<div><div class="de">' + esc(m.de) + '</div><div class="para">' + esc(m.para) + (m.duv ? '<span class="tag">confira</span>' : '') + '</div><div class="por">' + m.campo + ' · ' + esc(m.por) + '</div></div>' +
+        '<button class="sec sm" data-copia="' + esc(m.para) + '">Copiar</button></div>';
+    }).join('') + '</div>';
+  });
+  var sem = lista.length - com.length;
+  if (sem) h += '<div class="hint" style="margin:8px 2px">' + sem + ' paciente(s) sem número a mudar.</div>';
+  $('#saida').innerHTML = h;
+  window.__lista = { cab: cab, lista: com, fazer: fazer };
+}
+function copiar(t, btn){
+  var ok = function(){ if (btn) { var o = btn.textContent; btn.textContent = 'Copiado ✓'; setTimeout(function(){ btn.textContent = o; }, 1200); } };
+  try { navigator.clipboard.writeText(t).then(ok, function(){ fallback(); }); } catch(e){ fallback(); }
+  function fallback(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch(e){} ta.remove(); }
+}
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-copia]'); if (b) { copiar(b.getAttribute('data-copia'), b); return; }
+  if (ev.target.id === 'recalc') { calcular(); return; }
+  if (ev.target.id === 'limpa') { FEITO = {}; salvaFeito(); calcular(); return; }
+  if (ev.target.id === 'copiaTudo') {
+    var L = window.__lista || { lista: [], fazer: [] }, t = [];
+    if (L.cab) t.push('CABEÇALHO: ' + L.cab, '');
+    L.lista.forEach(function(x){ t.push(x.quem); x.muds.forEach(function(m){ t.push('  ' + m.de + '  →  ' + m.para + (m.duv ? '  (conferir)' : '')); }); });
+    if (L.fazer.length) { t.push('', 'PARA RESOLVER:'); L.fazer.forEach(function(x){ t.push('  ' + x.q + ' — ' + x.t); }); }
+    copiar(t.join('\n'), ev.target); return;
+  }
+});
+document.addEventListener('change', function(ev){
+  var c = ev.target.closest('[data-feito]'); if (c) { if (c.checked) FEITO[c.getAttribute('data-feito')] = 1; else delete FEITO[c.getAttribute('data-feito')]; salvaFeito(); c.parentNode.classList.toggle('feito', c.checked); return; }
+  if (ev.target.id === 'alvo' || ev.target.id === 'ref') calcular();
+});
+calcular();
+})();
+</script>
+</body>
+</html>
