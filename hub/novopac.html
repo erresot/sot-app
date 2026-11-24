@@ -89,7 +89,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
 .drp{font:12px ui-monospace,monospace;display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
 </style>
 <script src="../campos.js"></script>
-<script src="../sot-datas.js"></script><script src="../sot-linha.js"></script><script src="../sot-exames.js"></script><script src="../sot-med.js"></script><script src="ocr/sot-ocr.js"></script>
+<script src="../sot-datas.js"></script><script src="../sot-linha.js"></script><script src="../sot-exames.js"></script><script src="../sot-escala.js"></script><script src="../sot-med.js"></script><script src="ocr/sot-ocr.js"></script>
 <link rel="stylesheet" href="sot-tema.css">
 </head>
 <body>
@@ -287,7 +287,8 @@ const SETORES=[
  ['CC','Cc','Cc'],['IC','Interconsulta',''],['HM','Hm','Hm'],['ALTA','Altas','']
 ];
 const STATUS=['','Solicitar','Solicitado','Checar','OK','No Opera'];
-const ASSIST=['Dr Fernando Salgado','Dr José Marcondes','Dr Emílio Murade','Dr Amilton Moreira Fernandes','Dra Maysa Romanini','Dr Eduardo Jacob','Dr Marcos Vinicius','Dr Rodrigo Antoniassi','Dr Adriano Garcia','Dr Marcus Silveira','Dr Marcos Laraya','Dr Ewerton Gonzalez','Dr Ricardo Toma','Dr Ederson Kida','Dr Gustavo Reinas','Dr Rogério Freitas','Equipe Quadril','Equipe Joelho','Equipe Mão','Equipe Coluna','Equipe Pediátrica'];
+// assistentes e equipes: vêm do motor único ../sot-escala.js (formato "Dr Nome Sobrenome")
+const ASSIST=(window.SOTESCALA?window.SOTESCALA.pessoas():[]).map(p=>p.n.replace(/^(Dra?)\./,'$1'));
 const MECS=[
  [/QUEDA D[AE] (?:SUA )?PROPRIA(?:\s+ALTURA)?|\bQPA\b/,'Queda Da Própria Altura'],
  [/QUEDA DE (\d+(?:[.,]\d+)?)\s*(?:M\b|METROS?)/,m=>'Queda De '+m[1]+' Metros'],

@@ -312,6 +312,7 @@ footer{margin-top:18px;color:var(--muted);font-size:12px;max-width:80ch}
 <footer>Modelos montados a partir das evoluções de programação do serviço (revisados em nov/2026 com ~290 programações reais). Revise cada item com o assistente antes de registrar; condutas variam por caso. Meus modelos e assinatura ficam salvos só neste navegador.<span class="atualiz">última atualização das condutas pós-op: 23/11/2026</span></footer>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="../sot-escala.js"></script>
 <script>
 (function(){
 "use strict";
@@ -537,29 +538,20 @@ TEMPLATES.push(
 
 /* ---------- escala dos assistentes (mesma do Solicitador de Retornos) ---------- */
 // d = dia da semana (1=seg … 5=sex) · r = regiões do boneco que costumam ser dele · s = como assina nas evoluções
-const ESCALA=[
- {id:"fernando",s:"FERNANDO SALGADO",p:"DR",e:"Pé e tornozelo",d:1,r:["tornozelo","pe"]},
- {id:"marcondes",s:"JOSÉ MARCONDES",p:"DR",e:"Coluna",d:1,r:["cervical","coluna"]},
- {id:"emilio",s:"EMÍLIO MURADE",p:"DR",e:"Coluna",d:1,r:["cervical","coluna"]},
- {id:"amilton",s:"AMILTON MOREIRA FERNANDES",p:"DR",e:"Pediátrica",d:1,r:[],ped:1},
- {id:"maysa",s:"MAYSA ROMANINI",p:"DRA",e:"Pediátrica",d:1,r:[],ped:1},
- {id:"eqped",s:"EQUIPE PEDIÁTRICA",p:"",e:"Pediátrica",d:1,r:[],ped:1,eq:1},
- {id:"eduardo",s:"EDUARDO JACOB",p:"DR",e:"Mão",d:2,r:["mao","antebraco"]},
- {id:"marcosv",s:"MARCOS VINICIUS",p:"DR",e:"Ombro e cotovelo",d:2,r:["ombro","braco","cotovelo"]},
- {id:"antoniassi",s:"RODRIGO ANTONIASSI",p:"DR",e:"Quadril",d:3,r:["quadril","bacia","coxa"]},
- {id:"adriano",s:"ADRIANO GARCIA",p:"DR",e:"Quadril",d:3,r:["quadril","coxa"]},
- {id:"silveira",s:"MARCUS SILVEIRA",p:"DR",e:"Quadril",d:3,r:["quadril"]},
- {id:"eqquadril",s:"EQUIPE QUADRIL",p:"",e:"Quadril",d:3,r:["quadril"],eq:1},
- {id:"laraya",s:"MARCOS LARAYA",p:"DR",e:"Joelho",d:4,r:["joelho"]},
- {id:"ewerton",s:"EWERTON GONZALEZ",p:"DR",e:"Joelho",d:4,r:["joelho","perna","coxa"]},
- {id:"eqjoelho",s:"EQUIPE JOELHO",p:"",e:"Joelho",d:4,r:["joelho"],eq:1},
- {id:"toma",s:"RICARDO TOMA",p:"DR",e:"Tumor",d:4,r:["bacia"],tumor:1},
- {id:"edersonT",s:"EDERSON KIDA",p:"DR",e:"Tumor",d:4,r:[],tumor:1},
- {id:"eqtumor",s:"EQUIPE TUMOR",p:"",e:"Tumor",d:4,r:[],tumor:1,eq:1},
- {id:"gustavo",s:"GUSTAVO REINAS",p:"DR",e:"Coluna / trauma",d:5,r:["coluna"]},
- {id:"rogerio",s:"ROGÉRIO FREITAS",p:"DR",e:"Trauma",d:5,r:["coxa","perna","braco","antebraco"]},
- {id:"edersonTr",s:"EDERSON KIDA",p:"DR",e:"Trauma",d:5,r:["coxa","perna"]}
-];
+// Escala: vem do motor único ../sot-escala.js. Aqui fica só o que é do Pós-Op:
+// regiões do boneco que sugerem cada assistente (por id da pessoa).
+const POS_REG={fernando:["tornozelo","pe"],marcondes:["cervical","coluna"],emilio:["cervical","coluna"],
+ eduardo:["mao","antebraco"],eqmao:["mao","antebraco"],marcosv:["ombro","braco","cotovelo"],antoniassi:["quadril","bacia","coxa"],adriano:["quadril","coxa"],
+ silveira:["quadril"],eqquadril:["quadril"],laraya:["joelho"],ewerton:["joelho","perna","coxa"],eqjoelho:["joelho"],toma:["bacia"],
+ gustavo:["coluna"],rogerio:["coxa","perna","braco","antebraco"],"ederson@5":["coxa","perna"]};
+// uma linha por pessoa × dia; quem tem 2 dias ganha id "pessoa@dia" (ex.: ederson@4 tumor, ederson@5 trauma)
+const ESCALA=(window.SOTESCALA?window.SOTESCALA.pessoas():[]).flatMap(pe=>pe.amb.map(a=>{
+  const id=pe.amb.length>1?pe.id+"@"+a.d:pe.id;
+  return {id,pid:pe.id,s:window.SOTESCALA.nomeSemTitulo(pe.n),p:window.SOTESCALA.titulo(pe.n),e:a.areas.join(" / "),d:a.d,
+    r:POS_REG[id]||POS_REG[pe.id]||[],tumor:a.areas.includes("Tumor")?1:0,ped:a.areas.includes("Pediátrica")?1:0,eq:pe.eq?1:0,multi:pe.amb.length>1};
+}));
+// ids antigos salvos nos aparelhos (antes da escala única)
+const ID_ANTIGO={edersonT:"ederson@4",edersonTr:"ederson@5"};
 const DIA_NOME=["","SEG","TER","QUA","QUI","SEX"];
 let ASST=[];
 
@@ -852,7 +844,7 @@ function renderAsst(){
       if(sug)b.classList.add("sug");
       b.setAttribute("aria-pressed",String(ASST.includes(x.id)));
       b.title=x.e+" · "+DIAS[d].toLowerCase();
-      b.textContent=(x.eq?"":(x.p==="DRA"?"Dra. ":"Dr. "))+x.s.charAt(0)+x.s.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>" "+c.toUpperCase()).replace(/ De /g," de ")+(x.id==="edersonT"?" (tumor)":x.id==="edersonTr"?" (trauma)":"");
+      b.textContent=(x.eq?"":(x.p==="DRA"?"Dra. ":"Dr. "))+x.s.charAt(0)+x.s.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>" "+c.toUpperCase()).replace(/ De /g," de ")+(x.multi?" ("+x.e.toLowerCase()+")":"");
       b.onclick=()=>pickAsst(x.id);
       row.appendChild(b);
     });
@@ -922,7 +914,7 @@ const ATB_PREF={
  fernando:"ATB EV ATÉ ALTA + VO 2 DIAS",marcondes:"ATB EV ATÉ ALTA + VO 3 DIAS",emilio:"ATB EV ATÉ ALTA + VO 2 DIAS",amilton:"ATB EV ATÉ ALTA",
  eduardo:"ATB EV ATÉ ALTA + VO 2 DIAS",marcosv:"ATB EV ATÉ ALTA + VO 3 DIAS",antoniassi:"ATB EV ATÉ ALTA + VO 7 DIAS",adriano:"ATB EV ATÉ ALTA + VO 7 DIAS",
  eqquadril:"ATB EV ATÉ ALTA + VO 7 DIAS",ewerton:"ATB EV ATÉ ALTA + VO 3 DIAS",eqjoelho:"ATB EV ATÉ ALTA + VO 3 DIAS",toma:"ATB EV ATÉ ALTA + VO 48 HORAS",
- edersonT:"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO",edersonTr:"ATB EV ATÉ ALTA + VO 48 HORAS",gustavo:"ATB EV ATÉ ALTA",rogerio:"ATB EV ATÉ ALTA + VO 3 DIAS"
+ "ederson@4":"ATB CONFORME PROTOCOLO DA INSTITUIÇÃO","ederson@5":"ATB EV ATÉ ALTA + VO 48 HORAS",gustavo:"ATB EV ATÉ ALTA",rogerio:"ATB EV ATÉ ALTA + VO 3 DIAS"
 };
 const ATB_PREF_CLASS={ewerton:{artro:"ATB EV + VO POR UM TOTAL DE 72 HORAS"},marcondes:{coluna:"ATB EV ATÉ ALTA + VO 3 DIAS"},toma:{osteo:"ATB EV ATÉ ALTA + VO 7 DIAS"}};
 let atbCls=null;
@@ -1151,7 +1143,7 @@ const ESP_G=[
 $("dt").value=todayISO();
 const sig=store.get("pos-op-sig",null);if(sig){$("sigPre").value=sig.pre||"ASS DR";$("sigName").value=sig.name||""}
 const op=store.get("pos-op-opts",null);if(op){$("oHyphen").checked=!!op.h;$("oDates").checked=!!op.d;$("oAscii").checked=!!op.a;$("oSot").checked=!!op.s;if(op.t)$("oHead").value=op.t}
-ASST=store.get("pos-op-asst",[]).filter(id=>ESCALA.some(x=>x.id===id));if(ASST.length)applyAsstSig();
+ASST=store.get("pos-op-asst",[]).map(id=>ID_ANTIGO[id]||id).filter(id=>ESCALA.some(x=>x.id===id));if(ASST.length)applyAsstSig();
 renderFields();renderRegions();
 side="E";document.querySelectorAll("#side button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===side)));
 applyTpl(TEMPLATES.find(t=>t.id==="atq")); // exemplo inicial: ATQ esquerda

@@ -543,6 +543,16 @@ kbd{min-width:64px;text-align:center;font:600 12.5px/1 ui-monospace,Menlo,monosp
 .frtx{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:var(--bg2);color:var(--ink)}
 .frvazio{font-size:12.5px;color:var(--mut);padding:4px 6px}
 html.escuro .frc.on{color:#06110e}
+
+/* prontuário ao lado do nome: toque copia */
+.regc{display:inline-flex;align-items:center;margin-left:8px;vertical-align:1px;border:1px solid var(--line);background:var(--bg2);color:var(--mut);border-radius:7px;padding:1px 7px;font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.2px;cursor:copy;white-space:nowrap;flex:none}
+.regc::before{content:"Reg";font:600 9.5px/1 'Plex',sans-serif;letter-spacing:.4px;text-transform:uppercase;margin-right:4px;opacity:.75}
+.regc.sm{font-size:11px;padding:0 6px;margin-left:6px}
+.regc:hover{border-color:var(--acc);color:var(--acc)}
+.regc.ok{background:var(--ok2);border-color:var(--ok);color:var(--ok)}
+.mini small.mreg{display:flex;align-items:center;gap:6px;min-width:0}
+.mini small.mreg .regc{margin-left:0}
+.mini small.mreg>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -597,7 +607,7 @@ html.escuro .frc.on{color:#06110e}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v54</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v55</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -2171,7 +2181,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '54';
+var VERSAO = '55';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2534,12 +2544,13 @@ function vLeitos() {
   h += '<div class="lista2' + (c ? ' compacta' : '') + '">' + lista.map(c ? cardPacMini : cardPac).join('') + '</div><div class="empty" id="buscaVazia" hidden>Ninguém encontrado com essa busca.</div>';
   return h;
 }
+function regChip(p, cls) { return p.registro ? '<button type="button" class="regc' + (cls ? ' ' + cls : '') + '" data-copyreg="' + esc(p.registro) + '" title="Copiar o prontuário">' + esc(p.registro) + '</button>' : ''; }
 function cardPac(p) {
   var np = (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).length;
   return '<div class="card pt' + (visitado(p) ? ' done' : '') + (atual && atual.id === p.id ? ' sel' : '') + '" data-open="' + esc(p.id) + '" data-busca="' + esc(txtBusca(p)) + '">' +
     '<div class="leito">' + (visitado(p) ? '<span class="chk">✓</span>' : '') + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small>' +
       (p.alta ? '<span class="lmark alta" title="Alta prevista no internograma">ALTA</span>' : '') + (p.ic ? '<span class="lmark ic" title="Interconsulta (paciente de outra equipe)">IC</span>' : '') + '</div>' +
-    '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + '</div>' +
+    '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + regChip(p) + '</div>' +
     '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div></div></div>';
 }
 // uma linha por paciente: leito · nome · diagnóstico curto · sinais (visitado, pendências, alerta, evolução)
@@ -2549,7 +2560,7 @@ function cardPacMini(p) {
     (hj ? '<i class="s hj" title="Agenda hoje/amanhã">' + ico('agenda') + '</i>' : '') + (np ? '<i class="s pd" title="Pendências abertas">' + np + '</i>' : '') +
     (evoluido(p) ? '<i class="s evo" title="Evoluído">E</i>' : '') + (visitado(p) ? '<i class="s ok" title="Visitado">✓</i>' : '');
   return '<div class="mini' + (visitado(p) ? ' done' : '') + (atual && atual.id === p.id ? ' sel' : '') + '" data-open="' + esc(p.id) + '" data-busca="' + esc(txtBusca(p)) + '">' +
-    '<span class="ml">' + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '</span><span class="mn"><b>' + esc(p.nome) + '</b><small>' + esc((p.po ? p.po.label + ' · ' : '') + (p.dx || '')) + '</small></span><span class="ms">' + sin + '</span></div>';
+    '<span class="ml">' + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '</span><span class="mn"><b>' + esc(p.nome) + '</b><small class="mreg">' + regChip(p, 'sm') + '<span>' + esc((p.po ? p.po.label + ' · ' : '') + (p.dx || '')) + '</span></small></span><span class="ms">' + sin + '</span></div>';
 }
 function vPend() {
   var a = ativos(), h = ferramentas('pend', 'Buscar paciente ou pendência'), ag = [], c = compacto('pend');
@@ -2588,9 +2599,9 @@ function vSaida() {
 }
 function cardEvoMini(p) {
   var hj = evoHoje(p.id), b = evoBase(p.id);
-  var st = hj ? '<small style="color:var(--evo)">✓ salva hoje</small>' : b ? '<small>base de ' + brCurto(b.data) + '</small>' : '<small style="color:var(--warn)">sem evolução anterior</small>';
+  var st = hj ? '<span style="color:var(--evo)">✓ salva hoje</span>' : b ? '<span>base de ' + brCurto(b.data) + '</span>' : '<span style="color:var(--warn)">sem evolução anterior</span>';
   var bt = hj ? '<button class="btn evos sm" data-copyevo="' + esc(p.id) + '">Copiar</button>' : '<button class="btn evo sm" data-evo="' + esc(p.id) + '">Evoluir</button>';
-  return '<div class="mini" data-busca="' + esc(txtBusca(p)) + '"><span class="ml">' + esc(p.leito || p.lugar || '—') + '</span><span class="mn" data-open="' + esc(p.id) + '"><b>' + esc(p.nome) + '</b>' + st + '</span><span class="ms">' + bt + '</span></div>';
+  return '<div class="mini" data-busca="' + esc(txtBusca(p)) + '"><span class="ml">' + esc(p.leito || p.lugar || '—') + '</span><span class="mn" data-open="' + esc(p.id) + '"><b>' + esc(p.nome) + '</b><small class="mreg">' + regChip(p, 'sm') + st + '</small>' + '</span><span class="ms">' + bt + '</span></div>';
 }
 function cardEvo(p) {
   var hj = evoHoje(p.id), b = evoBase(p.id);
@@ -2599,7 +2610,7 @@ function cardEvo(p) {
     : '<b style="color:var(--warn)">Sem evolução anterior</b><span>cole a do sistema ao evoluir</span>';
   var bt = hj ? '<button class="btn evos sm" data-copyevo="' + esc(p.id) + '">Copiar</button><button class="btn ghost sm" data-evo="' + esc(p.id) + '">Refazer</button>'
     : '<button class="btn evo sm" data-evo="' + esc(p.id) + '">Evoluir</button>';
-  return '<div class="card" data-busca="' + esc(txtBusca(p)) + '"><div class="evrow"><div class="leito" style="width:52px;padding:6px 0;font-size:14px">' + esc(p.leito || p.lugar || '—') + '</div><div class="st"><div class="who" data-open="' + esc(p.id) + '" style="font-weight:650;cursor:pointer">' + esc(p.nome) + '</div>' + st + '</div><div style="display:flex;flex-direction:column;gap:5px">' + bt + '</div></div>' +
+  return '<div class="card" data-busca="' + esc(txtBusca(p)) + '"><div class="evrow"><div class="leito" style="width:52px;padding:6px 0;font-size:14px">' + esc(p.leito || p.lugar || '—') + '</div><div class="st"><div class="who" data-open="' + esc(p.id) + '" style="font-weight:650;cursor:pointer">' + esc(p.nome) + regChip(p, 'sm') + '</div>' + st + '</div><div style="display:flex;flex-direction:column;gap:5px">' + bt + '</div></div>' +
     (resumoVisita(S.v[p.id]) ? '<details><summary class="hint" style="cursor:pointer">📝 resumo da visita</summary><div class="out">' + esc(resumoVisita(S.v[p.id])) + '</div></details>' : '') +
     (hj ? '<details><summary class="hint" style="cursor:pointer">ver evolução salva</summary><div class="out">' + esc(hj.txt) + '</div></details>' : '') + '</div>';
 }
@@ -4046,6 +4057,14 @@ window.addEventListener('message', function (ev) {
 });
 
 // ===================== eventos =====================
+// prontuário: toque copia o número (não abre a ficha)
+document.addEventListener('click', function (ev) {
+  var r = ev.target.closest && ev.target.closest('[data-copyreg]'); if (!r) return;
+  ev.preventDefault(); ev.stopPropagation();
+  var n = r.getAttribute('data-copyreg');
+  var ok = function () { toast('Prontuário ' + n + ' copiado'); r.classList.add('ok'); setTimeout(function () { r.classList.remove('ok'); }, 900); };
+  try { navigator.clipboard.writeText(n).then(ok, function () { copiar(n); }); } catch (x) { copiar(n); }
+}, true);
 document.addEventListener('click', function (ev) {
   var t = ev.target.closest('[data-fdel],[data-foto],[data-viewer],button,[data-open],[data-clear],[data-lpprm],label,.flagbox[data-tab]'); if (!t) return;
   var ds = t.dataset;
