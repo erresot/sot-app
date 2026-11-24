@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v60** (23/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v62** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -13,6 +13,10 @@ Agilizar o trabalho diário do **Serviço de Ortopedia e Traumatologia (SOT) do 
 - o **OrthoHub**: programas que geram textos no padrão do serviço para o pronto-socorro, o ambulatório e o centro cirúrgico.
 
 O app **não substitui o prontuário**. Ele monta o texto, que o médico confere e cola no sistema do hospital.
+
+## 1.1 Versão oficial
+- **O SOT APP (fonte em `src/`, mantida na conversa que gera os pacotes) é a única versão oficial.**
+- Artefatos, outras conversas e projetos são **rascunho e teste**. O que vier de lá é revisado criticamente e integrado aqui; nada daqui é substituído automaticamente por uma versão externa.
 
 ## 2. Usuários e contexto
 
@@ -73,7 +77,7 @@ Outros comportamentos:
 | | Exames Updater | `exames.html` | Formata exames laboratoriais em linha |
 | | Realizador de Relatórios | `relatorio.html` (+ `cid10.txt`) | Relatório de ortopedia com busca de CID-10 |
 | Centro cirúrgico | Condutas Pós-Operatórias | `posop.html` | Programação pós-cirúrgica: região no boneco 3D, modelo do serviço, retorno, assinatura |
-| | Descrição Cirúrgica | `desccir.html` | 142 procedimentos com variações e passo a passo; vários procedimentos por cirurgia, OPME, material para exame, explante, neurovascular, controle de danos e verificação de coerência. Fonte: artefato "Descrição Cirúrgica" (editar lá e reintegrar) |
+| | Descrição Cirúrgica | `desccir.html` | 142 procedimentos com variações e passo a passo; vários procedimentos por cirurgia, OPME, material para exame, explante, neurovascular, controle de danos e verificação de coerência. |
 
 O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre pela aba **Agenda**, no dia escolhido.
 
@@ -134,6 +138,11 @@ O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre 
 | 1 · Local/mecanismo/DIH/leito | `Dih 12/11/2026` em linha própria; leito `1250` | data solta (`22/11/26`, `21/11`) = internação **só se bater com o "Dih N"** (±1 dia); senão é data do trauma |
 | 2 · Nome/idade/origem/DIH/registro | nome · `55a` · cidade · `Dih 11` · registro | `Nome, 77A, Cidade` / `Nome, 35, Cidade` na mesma célula (ou quebrado depois da vírgula) |
 
+| 3 · Causa (cirurgias) | `N PO <procedimento> (dd/mm/aaaa)`, uma cirurgia por linha, a mais recente em cima; `POI` no dia | `(23/11)` ou `23/11` no fim da linha (sem ano); `25d Po`, `3 DPO`; parêntese não fechado; `Pot …` = cirurgia antiga |
+
+- PO (v62): calculado pela **data** da cirurgia mais recente; o número escrito só serve para conferir ("internograma escreve 33 PO, pela data é 37º"). PO **sem data** usa o número escrito e avisa "PO sem data". Data sem ano só vale entre parênteses ou no fim da linha (nunca "1/3 distal").
+- Operado (v62): tem PO contável, ou "Pot" com data **desta internação** (Pot sem data legível também conta). "Pot planalto 2021" num paciente internado por outra fratura não abre ferida operatória/dreno na visita.
+- Pré-op (v62): se o PO mais recente é do dia da cirurgia marcada ou depois, o alerta "CX HOJE: checar jejum/heparina" sai e a ficha mostra "✓ Operado — o bloco de pré-op ainda está escrito no internograma".
 - DIH: data escrita → data solta que bate com o "Dih N" → só o "Dih N" (avisa "data de internação não escrita").
 - Conferência (Ajustes): cada paciente lista o que não foi lido com segurança (sem idade, nome com números, registro, DIH/PO divergentes, possível mistura de pacientes).
 

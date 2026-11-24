@@ -13,7 +13,7 @@ App web instalável (PWA) do Serviço de Ortopedia do HCFAMEMA: enfermaria (inte
 - **Não usar dados reais de pacientes** em código, testes, exemplos ou documentação. Só dados fictícios (o repositório é público).
 - **Não mudar o texto gerado** (padrão do serviço) sem combinar; o médico cola esse texto no prontuário.
 - **Não mudar `id`s nem chaves de armazenamento** sem converter o que já está salvo nos aparelhos.
-- **Pacotes completos saem de uma conversa só.** Outra conversa entrega só o arquivo que mudou (ex.: `hub/condutas.html`).
+- **O SOT APP daqui é o oficial.** Artefatos, outras conversas e projetos são rascunho/teste: o que vier de lá é revisado e integrado aqui (nunca substitui sem revisão). Pacotes completos só saem daqui.
 - Responder e documentar em **português**.
 
 ## Padrões técnicos

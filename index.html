@@ -8,12 +8,12 @@ var LOCK = { salt: 'nVN21HlIPqdANXAl+54/Ww==', it: 310000, hash: 'jEYDJLNo4/hKoM
 <style>
 html.trancado body > *:not(#lock){visibility:hidden!important}
 #lock{display:none}
-html.trancado #lock{display:flex;position:fixed;inset:0;z-index:2147483647;align-items:center;justify-content:center;background:#0f3d3a;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-#lock .lbox{width:100%;max-width:360px;background:#fff;color:#172026;border-radius:18px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
-#lock h1{margin:0 0 4px;font-size:22px}#lock p{margin:0 0 18px;color:#5b666c;font-size:14px}
-#lock input{width:100%;box-sizing:border-box;font-size:18px;padding:13px 14px;border:2px solid #cfd6d4;border-radius:12px;outline:none;text-align:center}
-#lock input:focus{border-color:#0f6e6e}
-#lock button{width:100%;margin-top:12px;font:700 17px/1 inherit;padding:14px;border:0;border-radius:12px;background:#0f6e6e;color:#fff;cursor:pointer}
+html.trancado #lock{display:flex;position:fixed;inset:0;z-index:2147483647;align-items:center;justify-content:center;background:#13365c linear-gradient(160deg,#13365c 0%,#0f2b4a 100%);padding:24px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#lock .lbox{width:100%;max-width:360px;background:#fff;color:#12304f;border-radius:18px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
+#lock h1{margin:0 0 4px;font-size:22px}#lock p{margin:0 0 18px;color:#56677d;font-size:14px}
+#lock input{width:100%;box-sizing:border-box;font-size:18px;padding:13px 14px;border:2px solid #d7dfea;border-radius:12px;outline:none;text-align:center}
+#lock input:focus{border-color:#1f6fce}
+#lock button{width:100%;margin-top:12px;font:700 17px/1 inherit;padding:14px;border:0;border-radius:12px;background:#1f6fce;color:#fff;cursor:pointer;box-shadow:0 2px 0 #15529c}
 #lock button:disabled{opacity:.5}
 #lock .lerr{min-height:20px;margin-top:10px;color:#b42318;font-size:14px;font-weight:600}
 #lock .lbox.erro{animation:lshake .35s}
@@ -638,7 +638,7 @@ html.escuro .subtabs button.on{background:var(--acc);color:#07142a;box-shadow:0 
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v60</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v62</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -868,13 +868,30 @@ function dihResolver(p, hj, dataIG) {
   if (p.dihStated != null) { p.dih = p.dihStated + (ig ? Math.max(0, diasEntre(ig, hj)) : 0); p.dihFonte = 'dih'; }
 }
 // PO: POI = dia da cirurgia (0), 1º PO no dia seguinte…  Usa a data escrita ao lado de cada “n Po”.
+// v62: lê cada linha da Causa separadamente (" · "). Aceita "25d Po", "3 DPO", data sem ano — "(23/11)" ou no fim da linha
+// (nunca "1/3 distal" no meio do texto) — e PO sem data ("6 Po Revisão…"): usa o número escrito e marca semData.
 function calcPO(dx, hoje) {
-  var re = /(?:\b(\d+)\s*[º°]?\s*po|\b(poi))\b((?:(?!\b\d+\s*[º°]?\s*po\b|\bpot\b).){0,140}?)\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, m, best = null;
-  while ((m = re.exec(dx))) { var d = parseData(m[4], hoje); if (d && (!best || d > best.d)) best = { d: d, proc: m[3].replace(/[(\s]+$/, '').trim(), stated: m[2] ? 0 : +m[1] }; }
+  var INI = /(?:\b(\d+)\s*d?\s*[º°]?\s*po|\b(poi))\b/gi, PROX = /\b\d+\s*d?\s*[º°]?\s*po\b|\bpoi\b|\bpot\b/i;
+  var best = null, semData = null;
+  String(dx || '').split(/\s+·\s+|\n|\s+\|\s+/).forEach(function (sg) {
+    var m; INI.lastIndex = 0;
+    while ((m = INI.exec(sg))) {
+      var resto = sg.slice(INI.lastIndex), fim = resto.search(PROX); if (fim > -1) resto = resto.slice(0, fim);
+      var stated = m[2] ? 0 : +m[1];
+      var dm = resto.match(/^(.{0,140}?)\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/^(.{0,140}?)\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/^(.{0,140}?)\s(\d{1,2}\/\d{1,2})\s*\)?\s*$/);
+      var d = dm ? parseData(dm[2], hoje) : null;
+      if (d) { if (!best || d > best.d) best = { d: d, proc: dm[1].replace(/[(\s\-–]+$/, '').trim(), stated: stated }; }
+      else if (!dm && !semData) semData = { n: stated, proc: resto.replace(/[(\s\-–]+$/, '').trim() };
+    }
+  });
+  if (semData) {   // PO sem data só vale se for mais recente que os PO datados
+    var aprox = new Date(hoje.getTime()); aprox.setDate(aprox.getDate() - semData.n);
+    if (!best || aprox > best.d) return { n: semData.n, label: semData.n === 0 ? 'POI' : semData.n + 'º PO', proc: semData.proc, stated: semData.n, semData: true, data: aprox };
+  }
   if (!best) return null;
   var n = diasEntre(best.d, hoje);
-  if (n < 0) return { n: null, label: 'cirurgia em ' + fmtD(best.d), proc: best.proc, futuro: true, stated: best.stated };
-  return { n: n, label: n === 0 ? 'POI' : n + 'º PO', proc: best.proc, stated: best.stated };
+  if (n < 0) return { n: null, label: 'cirurgia em ' + fmtD(best.d), proc: best.proc, futuro: true, stated: best.stated, data: best.d };
+  return { n: n, label: n === 0 ? 'POI' : n + 'º PO', proc: best.proc, stated: best.stated, data: best.d };
 }
 function fmtD(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
 var RE_PEND = /(checar|solicitar|pegar|mostrar|discutir|aguard|agendar|pendente|comunicar|colher|pedir|cobrar|ligar|verificar|conferir|repetir|programar|marcar|\?\s*$)/i;
@@ -917,12 +934,26 @@ function extrairAgenda(o, hoje) {
   return out.sort(function (a, b) { return a.dias - b.dias; });
 }
 function curto(t) { return t.replace(/\s*(em|dia)?\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?.*$/i, '').split(/\s+/).slice(0, 4).join(' '); }
+// v62: "operado" = PO contável (POI / N PO) ou "Pot" com data DESTA internação. "Pot planalto 28/09/21" de um paciente
+// internado agora por outra fratura não é pós-operatório. "Pot" sem data legível continua contando (como antes).
+function operadoNaInternacao(p, dxU) {
+  if (p.po && !p.po.futuro) return true;
+  var segs = String(p.dx || '').split(/\s+·\s+|\n|\s+\|\s+/).filter(function (s) { return /\b(POT|DPO)\b/i.test(s); });
+  if (!segs.length) return false;
+  var hj = typeof hojeDate === 'function' ? hojeDate() : new Date(), lim = new Date(hj.getTime());
+  if (p.dih != null && p.dih >= 0) lim.setDate(lim.getDate() - p.dih - 1); else lim.setDate(lim.getDate() - 90);
+  return segs.some(function (s) {
+    var ds = s.match(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/g);
+    if (!ds) return true;
+    return ds.some(function (x) { var d = parseData(x, hj); return d && d >= lim && d <= hj; });
+  });
+}
 // tipo de paciente → quais campos aparecem na visita
 function tipoDe(p) {
   var t = [p.dx, p.ap, p.mecanismo, (p.orienta || []).join(' '), (p.condutas || []).join(' ')].join(' ').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   var dx = (p.dx || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   return {
-    operado: !!(p.po && !p.po.futuro) || /\bPOT?\b|\bPOI\b|\bDPO\b/.test(dx),
+    operado: operadoNaInternacao(p, dx),
     coluna: /COLUNA|VERTEBR|\b[CTL]\d{1,2}\b|CERVIC|LOMB|TORAC|MEDUL|PARESIA|PLEGIA|PERDA DE FORCA|CAUDA EQUINA|ARTRODESE|DESCOMPRESS|COLAR|COLETE|PHILADELPHIA|JEWETT|FRANKEL|ASIA/.test(t),
     membro: /FX|FRATURA|MEMBRO|UMERO|RADIO|ULNA|PUNHO|MAO|FEMUR|TIBIA|PILAO|PATELA|JOELHO|TORNOZELO|QUADRIL|ACETABULO|ILIACO|BACIA|PE\b|METACARP|METATARS|FIXADOR|PTQ|ATQ|ATJ|ARTROPLAST|OSTEOSS/.test(dx),
     imob: /TALA|GESSO|BOTA|COLAR|COLETE|BRACE|VELPEAU|TIPOIA|FIXADOR|IMOBILIZ|PHILADELPHIA|JEWETT|TRACAO|ROBOFOOT|ORTESE/.test(t)
@@ -941,6 +972,7 @@ function verificar(p, hj) {
   if (!p.dihData && p.dihFonte !== 'data') a.push(p.dihStated != null ? 'Data de internação não escrita no internograma (só "DIH ' + p.dihStated + '") — contagem segue o DIH' : 'Sem data de internação');
   if (p.dihFonte === 'escrita' && p.dih != null && p.dih < 0) a.push('Data de internação no futuro (' + p.dihData + ')');
   if (p.dihFonte === 'escrita' && p.dih != null && p.dihStated != null && p.dih !== p.dihStated) a.push('DIH: internograma diz ' + p.dihStated + ', mas pela data (' + p.dihData + ') hoje é DIH ' + p.dih + (p.dihStated === p.dih + 1 ? ' — diferença de 1 dia: convenção de contagem diferente?' : p.dihStated === p.dih - 1 ? ' — internograma não atualizado hoje?' : ''));
+  if (p.po && p.po.semData) a.push('PO sem data no internograma ("' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + ' ' + String(p.po.proc || '').slice(0, 40) + '") — a contagem segue o número escrito; escreva a data da cirurgia');
   if (p.po && p.po.futuro) a.push('Data de cirurgia no futuro: ' + p.po.label);
   else if (p.po && p.po.stated != null && p.po.stated !== p.po.n) a.push('PO: internograma escreve "' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + '", pela data hoje é ' + p.po.label);
   if (p.ass && p.ass.split('|').length > 1 && (p.regs || []).length > 1) a.push('Mais de uma assinatura e registro — conferir se dois pacientes foram juntados');
@@ -2278,7 +2310,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '60';
+var VERSAO = '62';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -3088,6 +3120,7 @@ function labValor(r, txt, mil) {
   return v;
 }
 function propostaCx(p) {
+  if (typeof proximaCx === 'function') { proximaCx(p); if (p._cxFeita) return false; }   // v62: já operou
   var tx = (p.agenda || []).map(function (a) { return a.txt; }).concat(p.condutasLinhas || [], p.orientaLinhas || [], (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).map(function (x) { return x.t; })).join(' \n ').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   var cx = /CIRURG|OSTEOSS|ARTROPLAST|ARTRODES|DESCOMPRESS|FIXAC|\bRAFI\b|\bTTO CIR|AMPUTA|DESBRID|LIMPEZA CIR|REDUCAO|ARTROSCOP|TENORRAF|ENXERT|\bCX\b|AVISO CC|MAPA CIR/;
   var plano = /AVISO|PROGRAM|PROPOST|AGUARD|AGENDAD|MAPA|AMANHA|\bCC\b|SOLIC|PRE[- ]?OP|RESERVA/;
@@ -3213,7 +3246,19 @@ function proximaCx(p) {
     if (!best || a.dias < best.dias) best = { dias: a.dias, txt: a.txt, data: d };
   });
   if (typeof agendaDaCx === 'function') { var a2 = agendaDaCx(p); if (a2 && (!best || a2.dias < best.dias)) best = a2; }
+  if (best && cxJaFeita(p, best)) { p._cxFeita = best; return null; }   // v62: internograma já mostra POI/PO desta cirurgia
+  p._cxFeita = null;
   return best;
+}
+// v62: a cirurgia marcada já aconteceu? (o PO mais recente é do dia marcado ou depois). Bloco de pré-op esquecido no
+// Orienta ("Jejum… Aviso CC… em 24/11") não deve manter o alerta "CX HOJE: checar jejum" em quem já está POI.
+function cxJaFeita(p, c) {
+  if (!p.po || p.po.futuro || !p.po.data || p.po.n == null || p.po.n > 1) return false;
+  var dc = c.data ? new Date(c.data) : null; if (dc && isNaN(dc)) dc = null;
+  if (!dc) { dc = new Date(S.hoje + 'T12:00:00'); dc.setDate(dc.getDate() + (c.dias || 0)); }
+  var pd = new Date(p.po.data); if (isNaN(pd)) return false;
+  var a = new Date(pd.getFullYear(), pd.getMonth(), pd.getDate()), b = new Date(dc.getFullYear(), dc.getMonth(), dc.getDate());
+  return a >= b;
 }
 function vaiOperar(p) { var c = proximaCx(p); if (c && c.dias <= 1) return c; return null; }
 function evoSecoes(p) {
@@ -3247,7 +3292,9 @@ function blocoPreOp(p) {
   var c = proximaCx(p), cx = propostaCx(p);
   var v = S.v[p.id] || {}, po = v.preop || {}, ac = anticoagEmUso(p), hb = ultimoLab(p, 'Hb');
   var h = '';
-  if (c || cx) {
+  if (p._cxFeita) {   // v62
+    h += '<div class="q" style="border-color:var(--ok)"><div class="lb">✓ Operado — internograma já mostra ' + esc(p.po.label) + '</div><div class="hint">O bloco de pré-operatório (' + esc(curto(p._cxFeita.txt)) + ') ainda está escrito no internograma: pode ser apagado ao atualizar.</div></div>';
+  } else if (c || cx) {
     var quando = c ? (c.dias === 0 ? 'HOJE' : c.dias === 1 ? 'AMANHÃ' : 'em ' + c.dias + ' dias') : 'data a definir';
     var forte = c && c.dias <= 1;
     h += '<div class="q" style="border-color:' + (forte ? 'var(--bad,#c0392b)' : 'var(--warn)') + '"><div class="lb">🔪 Vai operar — ' + quando + '</div>' + (c ? '<div class="hint">' + esc(c.txt) + '</div>' : '');

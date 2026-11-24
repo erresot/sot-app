@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **24/11/2026 (v60)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **24/11/2026 (v61)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -29,7 +29,7 @@ Situação em **24/11/2026 (v60)**. Prioridade combinada: **primeiro organizar o
 | 11 | Descrição Cirúrgica — SIGTAP: 35 procedimentos sem código, 63 "a confirmar"; mesmo código em olécrano e cabeça do rádio, e em fixador pélvico e osteossíntese da pelve. | Médio — conferir na tabela oficial |
 | 12 | Descrição Cirúrgica — pontos clínicos a decidir: antibiótico "postergado" em revisões/periprotéticas sem infecção; cefazolina em cirurgia de mão sem implante; procedimentos sem incisão omitem antissepsia e time-out (halo); pseudartrose com tipoia como padrão; lateralidade obrigatória na coluna; kit C1-C2 como "parafuso pedicular". | Médio — aguardando decisão |
 | 13 | Descrição Cirúrgica — rascunhos salvos na versão anterior (`orthohub_descricao_v1`) não aparecem na nova (`_v3`). | Baixo — converter se a equipe usava |
-| 14 | Descrição Cirúrgica — correções feitas só no app ("tornozelo tornozelo"; botões Baixar/Imprimir dentro do app): reaplicar a cada nova versão do artefato, ou levar ao artefato. | Baixo |
+| 14 | ~~Descrição Cirúrgica — correções feitas só no app~~ — o app é o oficial; o artefato é rascunho. Ao trazer novidades de rascunhos, integrar sem desfazer as correções daqui. | Resolvido por regra |
 
 ## 3. Próximas etapas sugeridas (em ordem)
 
@@ -50,6 +50,8 @@ Situação em **24/11/2026 (v60)**. Prioridade combinada: **primeiro organizar o
 - Exames de 48 h: data lida do internograma; alerta "pedir exames hoje / exames hoje / atrasados"; intervalo por paciente (48 h padrão).
 - ✅ v59: Paleta **A** (marinho do serviço) no app e no OrthoHub.
 - ✅ v60: Descrição Cirúrgica nova (artefato, 142 procedimentos) integrada e revisada — pendências 11 a 14.
+- ✅ v62: leitura do pós-operatório no internograma (PO sem ano/sem data, "Pot" antigo, pré-op depois de operado).
+- Ideia (a decidir): usar a programação pós-op escrita no Orienta — "COBRAR RX POI" vira pendência, "ALTA N PO" vira aviso no dia, "SEM CARGA"/"ATB N dias" na ficha.
 
 **Fase C — funções novas**
 7. Encadear Anamnese → Exame Físico → Condutas (o atendimento do PS num fluxo só).
