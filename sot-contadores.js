@@ -9,14 +9,17 @@
 function dia0(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 function dias(a, b) { return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); }
 function data(s, ref) {
-  var m = String(s).match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return null;
+  var m = String(s).match(/(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?/); if (!m) return null;
   var y = m[3] ? +m[3] : ref.getFullYear(); if (y < 100) y += 2000;
   var d = new Date(y, +m[2] - 1, +m[1]); if (d.getMonth() !== +m[2] - 1) return null;
   if (!m[3] && dias(ref, d) > 200) d.setFullYear(y - 1);
   return d;
 }
 // data da linha, pela regra (com ano em qualquer lugar; sem ano só entre parênteses ou no fim)
+// v67: só olha os 90 primeiros caracteres depois do contador (no PDF duas linhas podem vir grudadas); aceita dd-mm-aaaa
 function dataDaLinha(resto, ref) {
+  resto = resto.slice(0, 90);
+  var h = resto.match(/\(?\s*(\d{1,2}-\d{1,2}-\d{4})/); if (h) return data(h[1], ref);
   var m = resto.match(/\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/(?:^|\s|-)(\d{1,2}\/\d{1,2})\s*\)?\s*\.?\s*$/);
   return m ? data(m[1], ref) : null;
 }
@@ -31,9 +34,15 @@ function ler(seg, ref) {
   return { tipo: tipo, n: n, m: m, pre: pre, fim: fim, d: dataDaLinha(seg.slice(fim), ref) };
 }
 // valor do contador no dia-alvo
+// v67: data implausível (longe demais do número escrito) é tratada como "sem data" — evita "672º PO" de data da linha vizinha
 function valor(c, ref, alvo) {
-  if (c.d) { var n = dias(c.d, alvo); return n < 0 ? null : { n: n, pelaData: true }; }
-  return { n: c.n + dias(ref, alvo), pelaData: false };
+  var semData = { n: c.n + dias(ref, alvo), pelaData: false };
+  if (c.d) {
+    var n = dias(c.d, alvo);
+    if (n < 0 || Math.abs(n - semData.n) > 10) return { n: semData.n, pelaData: false, dataEstranha: true };
+    return { n: n, pelaData: true };
+  }
+  return semData;
 }
 function escrever(seg, c, n) {
   var m = c.m;
@@ -63,7 +72,7 @@ function conferir(linhas, ref) {
   (linhas || []).forEach(function (l) {
     String(l).split(SEP).forEach(function (seg, i) {
       if (i % 2) return; var c = ler(seg, ref); if (!c || !c.d) return;
-      var v = valor(c, ref, ref); if (!v || v.n === c.n) return;
+      var v = valor(c, ref, ref); if (!v || !v.pelaData || v.n === c.n) return;
       out.push({ seg: seg.trim(), tipo: c.tipo, escrito: c.tipo === 'poi' ? 'POI' : String(c.n), certo: v.n, data: c.d });
     });
   });
