@@ -1,6 +1,13 @@
 # CHANGELOG — SOT APP
 
-## v66 (atual) — contadores pela data · pedido de exames
+## v67 (atual) — Atualizador de Internograma (protótipo) · correções da v66
+- **Novo no OrthoHub: Atualizador de Internograma (protótipo).** Lê o internograma já importado no app e mostra, paciente por paciente, **só os números** que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) — pela data quando existe; sem data, "+1 dia" marcado para conferir —, o **cabeçalho já contado** e uma lista "para você resolver" (seção Altas, alta prevista hoje, chip "Arquivo" esquecido, exames do dia). Botões "Copiar" e "feito". Não altera o Google Docs.
+- **Contadores (correção da v66):** a data só vale se estiver logo depois do contador e der um número plausível (acabou o "672º PO" vindo da linha vizinha no PDF); aceita "12-11-2026".
+- **Exames (correção da v66):** a data é o **dia da coleta** — "25/11: solicitado" = colhe 25/11. "Solicitado" sem data vira só informação (urgência hoje ou rotina amanhã?).
+- Convenção oficial registrada no SPEC: dia do evento = 0 (DIH 0, 0d, POI).
+- Testes novos `t_atualizador67.py`; `t_cont66.py` atualizado.
+
+## v66 — contadores pela data · pedido de exames
 - **Motor único de contadores** (`sot-contadores.js`): "N PO", "POI", "N d" (fratura, queda, déficit) calculados pela data da própria linha; sem data, soma os dias e marca para conferir.
 - **Conferência do internograma:** novo aviso quando o número escrito à mão não bate com a data (ex.: "51d queda … 27/09" → pela data são 58 dias). No internograma real de 24/11 achou exatamente os contadores errados.
 - **Mapa cirúrgico e linha de dados:** Dx e cirurgias prévias já saem com o número do **dia da cirurgia** (mapa de 25/11: "15 Po … (09/11)" → "16 Po"; "POI" → "1 PO"; "25 D Fx" sem data → "26 D Fx" com "?" para conferir). A etiqueta "· N d / · Nº PO" só aparece quando o texto não tem contador próprio (ex.: ambulatoriais) — nunca dois números.
@@ -8,7 +15,7 @@
 - **Exames** (rotina = colhe amanhã às 6h; urgência = hoje): "26/11 Solicitar" → no dia 25, pendência "Pedir exames na rotina hoje (colhe 26/11 às 6h)"; no dia 26 sem resultado → aviso. "Solicitado 23/11" sem resultado de 24/11 → aviso "resultado não lançado". Ficha mostra o último exame. Sem regra geral de 48 h por enquanto (fica para o Painel da manhã).
 - Teste novo `t_cont66.py` (dados fictícios).
 
-## v65 — programação pós-operatória — programação pós-operatória
+## v65 — programação pós-operatória
 - O app lê a programação escrita no Orienta/Condutas de quem tem cirurgia contável (POI / N PO).
 - **Vira pendência só o que é tarefa:** "Alta prevista hoje" (quando "alta no N PO" ou "alta dia dd/mm" cai hoje) e, quando a programação diz "alta ao sair da UTI" e o paciente saiu da UTI, "Saiu da UTI: alta pela programação — passar para ALTAS". "Cobrar RX POI" continua como antes (regra geral).
 - **Só informação na ficha** (bloco "📋 Programação pós-op"): carga, antibiótico, anticoagulante (com "até ~dd/mm" quando há "N dias"), imobilização, retorno, curativo. Frases de discussão não entram.
@@ -16,12 +23,12 @@
 - **Saiu da UTI:** etiqueta "↪ saiu da UTI" no card por 3 dias (até o paciente ir para a seção ALTAS), com de onde → para onde na ficha.
 - Teste novo `t_posop65.py` (dados fictícios); conferido também no internograma real de 24/11 (só leitura).
 
-## v64 — Relatório sem internet · fonte guardada · testes sem dados reais — Relatório sem internet · fonte guardada · testes sem dados reais
+## v64 — Relatório sem internet · fonte guardada · testes sem dados reais
 - **Relatório (OrthoHub):** passa a ser guardado no celular em segundo plano, como os outros programas; abre sem internet desde a primeira vez (custo: ~870 KB baixados uma vez a cada versão).
 - **Cópia da fonte:** junto com o app vai `sot-fonte-v64.zip` (código, testes, geração) para guardar no Drive.
 - **Testes sem dados reais:** o internograma de 11/11 usado nos testes e os nomes/registros dos testes de identificação, agenda e mapa foram trocados por fictícios. Os testes de leitura de fotos reais continuam só no ambiente de trabalho (decisão do usuário).
 
-## v63 — faixa de tarefas no card — faixa de tarefas no card
+## v63 — faixa de tarefas no card
 - Cada paciente da aba Leitos ganha a faixa **Visita · Evolução · Prescrição**: um toque marca, outro desmarca (vale para o dia; sincroniza entre aparelhos).
 - **Evolução:** marcada sozinha quando a evolução é feita no app; pode ser marcada à mão quando o paciente foi evoluído direto no sistema do hospital. Na aba Evoluções, os marcados à mão aparecem em "Marcados como evoluídos (fora do app)" e saem de "falta evoluir".
 - **Contadores e filtros** na aba Leitos: visitados / evoluídos / prescritos; "Falta visitar", "Falta evoluir", "Falta prescrever". O topo do app passa a mostrar também os prescritos.
@@ -29,14 +36,14 @@
 - A etiqueta "evoluído ✓" sai do card (a faixa já mostra).
 - Teste novo `t_tarefas63.py` (dados fictícios).
 
-## v62 — leitura do pós-operatório no internograma — leitura do pós-operatório no internograma
+## v62 — leitura do pós-operatório no internograma
 - **PO lido em mais formatos:** data sem ano — "1 PO … (23/11)" ou "… 21/11" no fim da linha —, "25d Po", "3 DPO", parêntese não fechado. "1/3 distal" no meio do texto não vira data. Cada linha da Causa é lida separadamente. No internograma de 24/11, 4 dos 15 operados ficavam sem PO; agora todos são lidos.
 - **PO sem data** ("6 Po Revisão De Atq"): usa o número escrito e mostra aviso na conferência pedindo a data da cirurgia.
 - **"Operado" só nesta internação:** "Pot" com data anterior à internação (ex.: cirurgia de 2021) não marca mais o paciente como pós-operatório (ferida operatória e dreno na visita e na folha).
 - **Pré-op não continua depois de operado:** se o internograma já mostra POI/PO da cirurgia marcada, sai o alerta vermelho "CX HOJE: checar jejum e heparina" e a proposta cirúrgica (Hb > 10); a ficha mostra "✓ Operado" e avisa que o bloco de pré-op ainda está escrito.
 - Teste novo `t_po62.py` (dados fictícios).
 
-## v61 — tela de bloqueio na paleta do serviço — tela de bloqueio na paleta do serviço
+## v61 — tela de bloqueio na paleta do serviço
 - A tela da senha (abertura do app) passa para a paleta A: fundo azul-marinho, botão Entrar azul. Funcionamento da senha inalterado (testado: senha errada continua bloqueando).
 
 ## v60 — Descrição Cirúrgica nova (do artefato)
