@@ -24,7 +24,7 @@ html.trancado #lock{display:flex;position:fixed;inset:0;z-index:2147483647;align
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SOT APP</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#13365c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="config.js"></script>
@@ -553,6 +553,37 @@ html.escuro .frc.on{color:#06110e}
 .mini small.mreg{display:flex;align-items:center;gap:6px;min-width:0}
 .mini small.mreg .regc{margin-left:0}
 .mini small.mreg>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===================== v59 · PALETA A — tons do serviço (azul-marinho, azul, ciano) =====================
+   Marinho #13365C (cabeçalho) · azul #1F6FCE (ações) · ciano #2CB5DC (destaques) · fundo #EDF1F6.
+   Verde = visitado, laranja/vermelho = alertas: continuam iguais. Evolução em ciano (não confunde com o azul dos botões). */
+:root{--navy:#13365c;--navy2:#0f2b4a;--ciano:#2cb5dc;
+  --bg:#edf1f6;--bg2:#f5f7fb;--card:#fff;--ink:#12304f;--mut:#56677d;--line:#d7dfea;--tag:#eef2f8;
+  --acc:#1f6fce;--acc2:#e6effb;--evo:#0b7fa3;--evo2:#e1f4fa;--ok:#1d8a5b;--ok2:#e4f4ec;--warn:#b7791f;--warn2:#fdf3e0;--bad:#c93636;--bad2:#fcebeb;
+  --sh1:0 1px 2px rgba(18,48,79,.06),0 1px 1px rgba(18,48,79,.03);--sh2:0 2px 6px rgba(18,48,79,.07),0 12px 28px -12px rgba(18,48,79,.2)}
+html.escuro{--navy:#0a1a30;--navy2:#071426;--bg:#0b1422;--bg2:#0f1a2b;--card:#142136;--ink:#e2e9f3;--mut:#93a3b8;--line:#25354f;--tag:#1a2a42;
+  --acc:#5aa2ff;--acc2:#16294a;--evo:#4cc3e6;--evo2:#12303c;--ok:#5fd08f;--ok2:#163323}
+/* cabeçalho marinho */
+.top,html.escuro .top{background:var(--navy);color:#fff;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+.top .tit h1,.top h1{color:#fff}
+#resumo,.top .sub{color:#c9d6e6}
+.marca{background:#fff;color:var(--navy);box-shadow:none}
+html.escuro .marca{background:#e2e9f3;color:var(--navy)}
+.hb,.top .syncmini.hb{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.22)}
+.hb:hover{background:rgba(255,255,255,.16)}
+.top input[type=date]{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.22);color-scheme:dark}
+.top .prog{background:rgba(255,255,255,.18)}.top .prog>*{background:var(--ciano)}
+.sync,.sync.ok{background:rgba(255,255,255,.08);color:#dce6f2}
+.top .btn.ghost,.top .btn.sec,.top button.sm{color:#fff;border-color:rgba(255,255,255,.3)}
+/* abas: a ativa em azul, com a "sombra de baixo" do botão do serviço */
+.subtabs button.on{background:var(--acc);color:#fff;box-shadow:0 2px 0 #15529c}
+html.escuro .subtabs button.on{background:var(--acc);color:#07142a;box-shadow:0 2px 0 #2f6fc0}
+/* barra dos programas do OrthoHub e do Mapa */
+.hubbar{background:var(--navy)}
+/* cards */
+.leito{background:var(--acc2);color:var(--navy)}html.escuro .leito{color:var(--ink)}
+.pt.done .leito{background:var(--ok2);color:var(--ok)}
+.btn.evo{background:var(--evo);border-color:var(--evo)}
 </style>
 </head>
 <body>
@@ -607,7 +638,7 @@ html.escuro .frc.on{color:#06110e}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v58</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v59</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -2088,6 +2119,7 @@ function resumoVisita(v) {
   if (q.length) s.push(q.join(', ').toLowerCase() + (v.eva != null ? ' (EVA ' + v.eva + ')' : ''));
   else if (v.eva != null) s.push('EVA ' + v.eva);
   ['consc', 'resp', 'acomp'].forEach(function (k) { if (v[k]) s.push(v[k].toLowerCase()); });
+  if (v.hemo) s.push(v.hemo === 'Em uso de DVA' ? 'em uso de DVA' + (v.hemo_x ? ' (' + v.hemo_x + ')' : '') : 'hemodinamicamente estável, sem DVA');
   if (v.dieta) s.push('dieta: ' + v.dieta.toLowerCase());
   if (v.diurese) s.push('diurese: ' + v.diurese.toLowerCase() + (v.urina && v.urina !== 'Clara' ? ' (' + v.urina.toLowerCase() + ')' : ''));
   if (v.evac) s.push('evacuação ' + v.evac.toLowerCase() + (v.evac_x ? ' há ' + v.evac_x + ' dia(s)' : ''));
@@ -2246,7 +2278,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '58';
+var VERSAO = '59';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2398,7 +2430,8 @@ var CAMPOS = [
   { k: 'queixa', lb: 'Queixas', multi: true, o: ['Sem queixas', 'Dor controlada', 'Dor não controlada', 'Náuseas/vômitos', 'Parestesia', 'Insônia'], alert: ['Dor não controlada', 'Parestesia'] },
   { k: 'eva', lb: 'Dor (EVA)', tipo: 'eva' },
   { k: 'consc', lb: 'Consciência', o: ['Lúcido e orientado', 'Sonolento', 'Confuso / desorientado', 'Agitado', 'Rebaixado'], alert: ['Sonolento', 'Confuso / desorientado', 'Agitado', 'Rebaixado'] },
-  { k: 'resp', lb: 'Respiratório', o: ['Eupneico em ar ambiente', 'Dispneia', 'O2 suplementar'], alert: ['Dispneia', 'O2 suplementar'] },
+  { k: 'resp', lb: 'Respiratório', o: ['Eupneico em ar ambiente', 'Dispneia', 'O2 suplementar', 'IOT / ventilação mecânica'], alert: ['Dispneia', 'O2 suplementar', 'IOT / ventilação mecânica'] },
+  { k: 'hemo', lb: 'Hemodinâmica', o: ['Estável, sem DVA', 'Em uso de DVA'], alert: ['Em uso de DVA'], extra: { quando: 'Em uso de DVA', tipo: 'txt', ph: 'qual droga / dose?' } },
   { k: 'acomp', lb: 'Acompanhante', o: ['Acompanhado', 'Sem acompanhante'] },
   { k: 'dieta', lb: 'Dieta', o: ['Boa aceitação', 'Aceitação regular', 'Baixa aceitação', 'Jejum', 'Sonda nasogástrica', 'Sonda nasoenteral', 'Gastrostomia', 'Parenteral'], alert: ['Baixa aceitação'] },
   { k: 'diurese', lb: 'Diurese', o: ['Espontânea', 'SVD', 'Fralda', 'Ausente / retenção'], alert: ['Ausente / retenção'] },
@@ -4488,6 +4521,9 @@ var FOLHA = (function () {
   var CENTROS = [[MKP + MK / 2, MKP + MK / 2], [PW - MKP - MK / 2, MKP + MK / 2], [PW - MKP - MK / 2, PH - MKP - MK / 2], [MKP + MK / 2, PH - MKP - MK / 2]];
   var COD = { x: 150, y: 9, w: 2.6, h: 4, n: 30 };                  // 30 tracinhos: 16 bits de id, 8 de página, 6 de conferência
   var AREA = { x: 18, y: 17, w: 261, h: 176 };
+  // bolinhas (EVA, força) são pequenas: um pingo de caneta no centro chega a ~0,18 de tinta. O que separa é a "coroa":
+  // X, ✓ e rabisco passam por ela (≥ 0,16 nos testes); o pingo não (≤ 0,02). Bolinha só conta com tinta E coroa; senão, dúvida.
+  var LIM_MARCA_C = 0.15, LIM_ANEL = 0.08;
   var LIM_MARCA = 0.17, LIM_DUVIDA = 0.06;   // calibrado: vazia ≤ 0,04 · pontinho 0,08–0,14 · X, ✓ ou rabisco ≥ 0,20                          // fração de tinta dentro da caixinha (descontado o impresso)
 
   // ---------- o que cada grupo de caixinhas grava na visita ----------
@@ -4497,6 +4533,8 @@ var FOLHA = (function () {
     eva: { lb: 'Dor (EVA)', t: 's', o: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return [String(n), n]; }), ap: function (v, x) { v.eva = x; }, circ: true },
     queixa: { lb: 'Queixa', t: 'm', o: [['Nenhuma', 'Sem queixas'], ['Dor contr.', 'Dor controlada'], ['Dor não contr.', 'Dor não controlada'], ['Náusea', 'Náuseas/vômitos'], ['Parestesia', 'Parestesia']], ap: function (v, L) { v.queixa = uniq((v.queixa || []).concat(L)); } },
     consc: { lb: 'Consc.', t: 's', o: [['Lúcido', 'Lúcido e orientado'], ['Sonolento', 'Sonolento'], ['Confuso', 'Confuso / desorientado']], ap: function (v, x) { v.consc = x; } },
+    resp: { lb: 'Respir.', t: 's', o: [['Ar amb.', 'Eupneico em ar ambiente'], ['O2', 'O2 suplementar'], ['IOT', 'IOT / ventilação mecânica'], ['Dispneia', 'Dispneia']], ap: function (v, x) { v.resp = x; } },
+    hemo: { lb: 'Hemodin.', t: 's', o: [['Estável s/ DVA', 'Estável, sem DVA'], ['Com DVA', 'Em uso de DVA']], ap: function (v, x) { v.hemo = x; } },
     acomp: { lb: 'Acomp.', t: 's', o: [['Sim', 'Acompanhado'], ['Não', 'Sem acompanhante']], ap: function (v, x) { v.acomp = x; } },
     dieta: { lb: 'Dieta', t: 's', o: [['Boa', 'Boa aceitação'], ['Baixa', 'Baixa aceitação'], ['Jejum', 'Jejum']], ap: function (v, x) { v.dieta = x; } },
     diurese: { lb: 'Diurese', t: 's', o: [['Espont.', 'Espontânea'], ['SVD', 'SVD'], ['Fralda', 'Fralda'], ['Ausente', 'Ausente / retenção']], ap: function (v, x) { v.diurese = x; } },
@@ -4549,7 +4587,7 @@ var FOLHA = (function () {
     }).join('') + '</div>';
     var v = '<div class="fvs">';
     v += '<div class="fg eva"><b>Dor (EVA)</b>' + caixas('eva', pid) + '</div>';
-    ['queixa', 'consc', 'acomp', 'dieta', 'diurese', 'evac', 'febre'].forEach(function (g) { v += grupo(g, pid); });
+    ['queixa', 'consc', 'resp', 'hemo', 'acomp', 'dieta', 'diurese', 'evac', 'febre'].forEach(function (g) { v += grupo(g, pid); });
     if (t.op) v += grupo('fo', pid) + grupo('dreno', pid);
     if (t.imob) v += grupo('imob', pid);
     v += grupo('nv', pid) + grupo('adm', pid) + grupo('edema', pid) + grupo('pant', pid) + grupo('mob', pid) + grupo('lpp', pid);
@@ -4793,12 +4831,18 @@ var FOLHA = (function () {
   function analisar(job, pag, R) {
     // tinta em cada caixinha, descontando o que é impresso (números dentro das bolinhas)
     // bolinhas: lê só o miolo (a borda e o número impresso ficam de fora o máximo possível)
-    var L = pag.cx.map(function (c) { var circ = G[c[1]] && G[c[1]].circ, w0 = branco(R, c[3], c[4], c[5], c[6]); return { pid: c[0], g: c[1], i: c[2], circ: circ, f: tinta(R, c[3], c[4], c[5], c[6], circ ? 0.27 : 0.22, w0), r: c.slice(3) }; });
+    var L = pag.cx.map(function (c) { var circ = G[c[1]] && G[c[1]].circ, w0 = branco(R, c[3], c[4], c[5], c[6]); var o = { pid: c[0], g: c[1], i: c[2], circ: circ, f: tinta(R, c[3], c[4], c[5], c[6], circ ? 0.27 : 0.22, w0), r: c.slice(3) };
+      // bolinhas: também a "coroa" entre o miolo e a borda — X, ✓ e rabisco passam por ela; um pingo de caneta no centro, não
+      if (circ) { var fA = tinta(R, c[3], c[4], c[5], c[6], 0.12, w0), aA = 0.76 * 0.76, aM = 0.46 * 0.46; o.fr = Math.max(0, (fA * aA - o.f * aM) / (aA - aM)); }
+      return o; });
     // desconta o que já vem impresso: para cada tipo de caixinha (quadrado; bolinha de cada número e tamanho), a mediana da folha
     var tipoCx = function (x) { return x.circ ? 'c' + Math.round(x.r[2] * 5) + '|' + G[x.g].o[x.i][0] : 'q'; }, grupos = {}, base = {};
     L.forEach(function (x) { (grupos[tipoCx(x)] = grupos[tipoCx(x)] || []).push(x.f); });
+    var gruposR = {}, baseR = {};
+    L.forEach(function (x) { if (x.circ) (gruposR[tipoCx(x)] = gruposR[tipoCx(x)] || []).push(x.fr); });
+    Object.keys(gruposR).forEach(function (k) { var fs = gruposR[k].sort(function (a, b) { return a - b; }); baseR[k] = fs[Math.floor((fs.length - 1) * 0.5)]; });
     Object.keys(grupos).forEach(function (k) { var fs = grupos[k].sort(function (a, b) { return a - b; }); base[k] = fs.length >= 3 ? fs[Math.floor((fs.length - 1) * 0.5)] : Math.min.apply(null, fs.concat([0.06])); });
-    L.forEach(function (x) { x.s = x.f - base[tipoCx(x)]; x.st = x.s >= LIM_MARCA ? 'on' : x.s >= LIM_DUVIDA ? 'duv' : ''; });
+    L.forEach(function (x) { x.s = x.f - base[tipoCx(x)]; if (x.circ) x.sr = x.fr - baseR[tipoCx(x)]; x.st = x.circ ? (x.s >= LIM_MARCA_C && x.sr >= LIM_ANEL ? 'on' : x.s >= LIM_DUVIDA ? 'duv' : '') : (x.s >= LIM_MARCA ? 'on' : x.s >= LIM_DUVIDA ? 'duv' : ''); });
     var pac = {};
     pag.pids.forEach(function (pid) { pac[pid] = { pid: pid, grupos: {}, notas: [] }; });
     L.forEach(function (x) {

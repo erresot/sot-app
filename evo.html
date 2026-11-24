@@ -422,10 +422,10 @@ const BUILTIN = [
   ["Consciência (fem.)", ["lúcida e orientada em tempo e espaço","lúcida e desorientada em tempo e espaço","desorientada em tempo e espaço","lúcida e orientada","lúcida e desorientada","confusa","agitada"]],
   ["Delirium", ["sem sinais de delirium","com sinais de delirium","desorientado no período noturno","desorientada no período noturno","agitado no período noturno","agitada no período noturno"]],
   ["Queixas", ["sem queixas agudas no momento","queixando-se de dor leve","queixando-se de dor moderada","queixando-se de dor intensa","queixando-se de náuseas","sem queixas"]],
-  ["Hemodinâmica", ["hemodinamicamente estável","hemodinamicamente estável sem DVA","hemodinamicamente estável com DVA","hemodinamicamente instável","hemodinamicamente instável com DVA"],
+  ["Hemodinâmica", ["hemodinamicamente estável","hemodinamicamente estável sem drogas vasoativas","hemodinamicamente estável sem DVA","hemodinamicamente estável com DVA","hemodinamicamente instável","hemodinamicamente instável com DVA"],
     {tail:"(?:\\s+(?:com|sem)\\s+(?:DVA|droga\\s+vasoativa|drogas\\s+vasoativas))?"}],
   ["Via aérea / ventilação", ["em IOT+VM","em IOT+VM+sedação","em TQT+VM","em TQT em ar ambiente","em ventilação espontânea","extubado","extubada"]],
-  ["Respiratório", ["eupneico em ar ambiente","eupneica em ar ambiente","dispneico","dispneica","em cateter nasal de O2"]],
+  ["Respiratório", ["eupneico em ar ambiente","eupneica em ar ambiente","dispneico","dispneica","em cateter nasal de O2","em uso de O2 suplementar","em IOT","em IOT em ventilação mecânica"]],
   ["Hidratação / coloração", ["corado e hidratado","corada e hidratada","hipocorado","hipocorada","desidratado","desidratada"]],
   ["Febre", ["afebril","febril","nega febre","refere febre"]],
   ["Dor", ["nega queixas álgicas","sem queixas álgicas","nega dor","refere dor leve","refere dor moderada","refere dor intensa"]],
@@ -1685,9 +1685,12 @@ function visitWants(V){
   if(V.resp){
     const R={"Eupneico em ar ambiente":[{"Respiratório":["eupneico em ar ambiente","eupneica em ar ambiente"]},"eupneico em ar ambiente"],
       "Dispneia":[{"Respiratório":["dispneico","dispneica"]},"dispneico"],
-      "O2 suplementar":[{"Respiratório":["em cateter nasal de O2"]},"em uso de O2 suplementar"]}[V.resp];
+      "O2 suplementar":[{"Respiratório":["em uso de O2 suplementar","em cateter nasal de O2"]},"em uso de O2 suplementar"],
+      "IOT / ventilação mecânica":[{"Respiratório":["em IOT","em IOT em ventilação mecânica"]},"em IOT"]}[V.resp];
     if(R) add("Respiratório: "+V.resp.toLowerCase(),R[0],{ins:["s",R[1]]});
   }
+  if(V.hemo==="Estável, sem DVA") add("Hemodinamicamente estável, sem DVA",{"Hemodinâmica":["hemodinamicamente estável sem drogas vasoativas","hemodinamicamente estável sem DVA"]},{ins:["s","hemodinamicamente estável sem drogas vasoativas"]});
+  if(V.hemo==="Em uso de DVA") add("Em uso de DVA"+(V.hemo_x?` (${V.hemo_x})`:""),{"Hemodinâmica":["em uso de DVA"+(V.hemo_x?` (${V.hemo_x})`:"")]},{ins:["s","em uso de DVA"+(V.hemo_x?` (${V.hemo_x})`:"")]});
   if(V.acomp==="Acompanhado") add("Acompanhado(a)",{"Acompanhante (masc.)":["acompanhado"],"Acompanhante (fem.)":["acompanhada"]},{ins:["s","acompanhado"],textOk:/ACOMPANHANTE|ACOMPANHAD/});
   if(V.acomp==="Sem acompanhante") add("Sem acompanhante",{"Acompanhante (masc.)":["desacompanhado"],"Acompanhante (fem.)":["desacompanhada"]},{ins:["s","sem acompanhante"],textConflict:/\bACOMPANHANTE\b(?!S? AUSENTE)|\bACOMPANHAD[OA]\b/});
   const DIETA={"Boa aceitação":[["boa aceitação da dieta","aceitando bem a dieta"],1],"Aceitação regular":[["aceitação regular da dieta","aceitação parcial da dieta"],1],

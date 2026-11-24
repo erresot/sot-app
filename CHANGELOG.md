@@ -1,6 +1,14 @@
 # CHANGELOG — SOT APP
 
-## v58 (atual) — exemplo do Mapa Cirúrgico fictício
+## v59 (atual) — respiração e hemodinâmica na visita · paleta do serviço
+- **Visita:** Respiratório ganha **IOT / ventilação mecânica**; campo novo **Hemodinâmica** (estável, sem DVA · em uso de DVA, com espaço para droga/dose). Os dois entram nos alertas da visita e no resumo.
+- **Folha de visita impressa:** grupos "Respir." (ar amb. · O2 · IOT · dispneia) e "Hemodin." (estável s/ DVA · com DVA); a leitura da foto grava na visita.
+- **Evolução:** "em IOT"; "hemodinamicamente estável sem drogas vasoativas"; "em uso de DVA (droga)" — troca a frase da evolução anterior ou acrescenta quando não existe.
+- **Paleta A (tons do serviço):** cabeçalho azul-marinho #13365C, ações em azul #1F6FCE, destaques em ciano, fundo #EDF1F6; Evolução em ciano; verde/laranja/vermelho mantêm o significado. Modo escuro correspondente. Todos os programas do OrthoHub passam para o mesmo azul (claro e escuro). Barra do celular em marinho.
+- **Leitura da folha — bolinhas (EVA e força):** um pingo de caneta no centro podia valer como marca. Agora a bolinha só conta quando há tinta também na "coroa" (X, ✓ e rabisco passam por ela; o pingo não); senão vira dúvida para confirmar. Testado com 7 sorteios de fotos simuladas, inclusive um caso que falhava antes.
+- Teste novo `t_resp59.py`.
+
+## v58 — exemplo do Mapa Cirúrgico fictício
 - O exemplo embutido no `hub/mapa.html` (aparece fora do app ou em "Restaurar exemplo") tinha dados que pareciam de pacientes reais. Trocado por 10 pacientes fictícios no mesmo formato (nomes, prontuários, leitos e detalhes clínicos identificáveis alterados).
 - Prontuário de exemplo num comentário do `amb/amb.js` trocado por número fictício.
 - Nenhuma mudança de funcionamento.

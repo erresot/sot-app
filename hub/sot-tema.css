@@ -67,3 +67,12 @@
 html:not(.sot-serif) body{font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
 /* modo escuro para programas que não têm o seu: só na tela, nunca na impressão */
 @media screen{html.sot-inverte{filter:invert(.92) hue-rotate(180deg);background:#fff}html.sot-inverte img,html.sot-inverte video,html.sot-inverte canvas,html.sot-inverte .sot-sem-inverter{filter:invert(1) hue-rotate(180deg)}}
+
+/* ===== v59 · PALETA A — cor de destaque do serviço em todos os programas do OrthoHub =====
+   Cada programa tem seu nome de variável (--accent, --acc, --ac, --acento…); aqui todos passam para o azul do serviço.
+   Seletor um pouco mais forte que o :root de cada página. Modo escuro: tom mais claro do mesmo azul. */
+html:root:not([data-theme="dark"]){--accent:#1f6fce;--accent-soft:#e6effb;--accent-ink:#ffffff;--accent-dim:#e6effb;--accent-light:#e6effb;
+  --acc:#1f6fce;--acc2:#e6effb;--ac:#1f6fce;--ac2:#e3edfb;--acento:#1f6fce;--acento-claro:#e6effb}
+@media (prefers-color-scheme:dark){html:root:not([data-theme="light"]):not(.sot-inverte){--accent:#5aa2ff;--accent-soft:#16294a;--accent-ink:#07142a;--acc:#5aa2ff;--acc2:#16294a;--ac:#5aa2ff;--ac2:#16294a}}
+html:root[data-theme="dark"]{--accent:#5aa2ff;--accent-soft:#16294a;--accent-ink:#07142a;--accent-dim:#16294a;--accent-light:#16294a;
+  --acc:#5aa2ff;--acc2:#16294a;--ac:#5aa2ff;--ac2:#16294a;--acento:#5aa2ff;--acento-claro:#16294a}

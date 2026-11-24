@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v58** (23/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v59** (23/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -139,7 +139,7 @@ O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre 
 
 ### 5.5 Visita beira-leito → `js/app/12-visita.js`
 
-Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna…): queixas, dor (EVA), consciência, acompanhante, dieta/jejum, diurese, evacuação, febre, ferida operatória, dreno, imobilização/tração, neurovascular, amplitude de movimento, edema, panturrilha, mobilização, lesão por pressão, pré-op, exame neurológico, esfíncteres, força por nível (coluna).
+Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna…): queixas, dor (EVA), consciência, respiratório (ar ambiente · dispneia · O2 · IOT), hemodinâmica (estável sem DVA · em uso de DVA), acompanhante, dieta/jejum, diurese, evacuação, febre, ferida operatória, dreno, imobilização/tração, neurovascular, amplitude de movimento, edema, panturrilha, mobilização, lesão por pressão, pré-op, exame neurológico, esfíncteres, força por nível (coluna).
 
 ## 6. Fora do escopo
 
@@ -166,6 +166,7 @@ Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna�
 - **Rede:** cada pedido tem tempo-limite (30 s; envio 120 s) e nova tentativa em erro temporário; envios em paralelo e em fila.
 - **Segurança:** senha só como hash; programas do hub só abrem depois da senha; nenhum dado de paciente no código.
 - **Fontes:** IBM Plex (local, `hub/fonts/`). Ícones: SVG próprios (`ico()`).
+- **Cores (paleta A):** marinho #13365C (cabeçalho), azul #1F6FCE (ações), ciano #2CB5DC, fundo #EDF1F6; Evolução em ciano; verde = visitado/normal, laranja/vermelho = alerta. No app: bloco "PALETA A" no fim do `css/app.css`; no OrthoHub: fim do `hub/sot-tema.css` (troca a cor de destaque de todos os programas).
 
 ### 7.1 Código-fonte, geração e testes
 

@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **23/11/2026 (v58)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **24/11/2026 (v59)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -41,10 +41,10 @@ Situação em **23/11/2026 (v58)**. Prioridade combinada: **primeiro organizar o
 
 **Etapas combinadas em 23/11/2026 (nesta ordem, uma por vez)**
 - ✅ v57: leitura do internograma mais tolerante (nome/idade/cidade com vírgula; data de internação solta; cabeçalho sem altas; PDF com as bordas reais das colunas).
-- Respiratório (+ IOT) e hemodinâmica (estável sem DVA / em uso de DVA) na visita, na folha e na evolução.
+- ✅ v59: Respiratório (+ IOT) e hemodinâmica (estável sem DVA / em uso de DVA) na visita, na folha e na evolução.
 - Faixa de tarefas no card (Visita · Evolução · **Prescrição** com um toque), contadores e filtros — protótipo aprovado.
 - Exames de 48 h: data lida do internograma; alerta "pedir exames hoje / exames hoje / atrasados"; intervalo por paciente (48 h padrão).
-- Paleta **A** (marinho do serviço) no app e no OrthoHub — protótipo aprovado.
+- ✅ v59: Paleta **A** (marinho do serviço) no app e no OrthoHub.
 
 **Fase C — funções novas**
 7. Encadear Anamnese → Exame Físico → Condutas (o atendimento do PS num fluxo só).
