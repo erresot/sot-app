@@ -1,6 +1,12 @@
 # CHANGELOG — SOT APP
 
-## v59 (atual) — respiração e hemodinâmica na visita · paleta do serviço
+## v60 (atual) — Descrição Cirúrgica nova (do artefato)
+- `hub/desccir.html` substituído pela versão atualizada no artefato "Descrição Cirúrgica": **142 procedimentos** (eram 61; 81 novos, nenhum removido), vários procedimentos na mesma cirurgia, OPME com catálogo, material para exame, explante, estado neurovascular, controle de danos e verificação de coerência.
+- Ajustes na integração: "tornozelo tornozelo" (tenorrafia do pé) corrigido; botões **Baixar .txt** e **Imprimir** continuam aparecendo dentro do app (o artefato os esconde em qualquer moldura).
+- Rascunhos: a versão nova usa outra chave de armazenamento (`orthohub_descricao_v3`); os rascunhos da versão anterior ficam no aparelho, mas não aparecem na nova.
+- Teste novo `t_desccir60.py`.
+
+## v59 — respiração e hemodinâmica na visita · paleta do serviço
 - **Visita:** Respiratório ganha **IOT / ventilação mecânica**; campo novo **Hemodinâmica** (estável, sem DVA · em uso de DVA, com espaço para droga/dose). Os dois entram nos alertas da visita e no resumo.
 - **Folha de visita impressa:** grupos "Respir." (ar amb. · O2 · IOT · dispneia) e "Hemodin." (estável s/ DVA · com DVA); a leitura da foto grava na visita.
 - **Evolução:** "em IOT"; "hemodinamicamente estável sem drogas vasoativas"; "em uso de DVA (droga)" — troca a frase da evolução anterior ou acrescenta quando não existe.

@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v59** (23/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v60** (23/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -73,7 +73,7 @@ Outros comportamentos:
 | | Exames Updater | `exames.html` | Formata exames laboratoriais em linha |
 | | Realizador de Relatórios | `relatorio.html` (+ `cid10.txt`) | Relatório de ortopedia com busca de CID-10 |
 | Centro cirúrgico | Condutas Pós-Operatórias | `posop.html` | Programação pós-cirúrgica: região no boneco 3D, modelo do serviço, retorno, assinatura |
-| | Descrição Cirúrgica | `desccir.html` | Descrições por procedimento, com variações e passo a passo |
+| | Descrição Cirúrgica | `desccir.html` | 142 procedimentos com variações e passo a passo; vários procedimentos por cirurgia, OPME, material para exame, explante, neurovascular, controle de danos e verificação de coerência. Fonte: artefato "Descrição Cirúrgica" (editar lá e reintegrar) |
 
 O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre pela aba **Agenda**, no dia escolhido.
 
