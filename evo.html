@@ -194,7 +194,7 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
 
 <div class="card" id="amb_cPac">
   <h2>1. Paciente (pelo prontuário)</h2>
-  <div class="row3"><div><label for="amb_reg">Prontuário</label><input id="amb_reg" inputmode="numeric" autocomplete="off" placeholder="ex.: 776768"></div>
+  <div class="row3"><div><label for="amb_reg">Prontuário</label><input id="amb_reg" inputmode="numeric" autocomplete="off" placeholder="ex.: 123456"></div>
     <div><label for="amb_busca">ou nome</label><input id="amb_busca" autocomplete="off" placeholder="parte do nome"></div>
     <div><button class="btn" id="amb_btAg" title="Recarregar a Agenda">↻ Agenda</button></div></div>
   <div id="amb_pacSel"></div>
@@ -2448,7 +2448,7 @@ function temCabecalho(t){ return /(PACIENTE|PRONTU[AÁ]RIO)\s*:?\s*\d{4,9}|NASCI
 function conferirIdentidade(){
   var t=$('ant').value, el=$('idAviso'); el.innerHTML='';
   if(!t.trim()) return;
-  // só o cabeçalho do sistema identifica o paciente ("Paciente 776768 NOME" / "Prontuário 776768"); o texto da evolução não traz nome
+  // só o cabeçalho do sistema identifica o paciente ("Paciente 123456 NOME" / "Prontuário 123456"); o texto da evolução não traz nome
   var U=A(t), mR=U.match(/(?:^|\n)\W*(?:PACIENTE|PRONTUARIO|REGISTRO)\s*:?\s*(\d{4,9})\b/), regT=mR?mR[1]:((FOTO_FICHA&&FOTO_FICHA.prontuario)||'');
   var nomeT='';
   if(mR){ var lin=t.split('\n').find(function(l){ return A(l).indexOf(mR[1])>=0; })||''; var mm=lin.replace(/\s+idade.*$/i,'').match(/\d{4,9}\s+([A-ZÀ-Ý][A-ZÀ-Ý' ]{5,60})\s*$/); if(mm) nomeT=mm[1].trim(); }
