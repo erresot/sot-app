@@ -193,6 +193,7 @@ Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna�
 - `tests/`: testes automatizados com Playwright (Chromium) e Drive simulado (`harness.py`), usando data fixa `SOT_DATA=2026-11-16`.
   - `tests/rodar.py` (v64): sem argumentos roda só os testes ligados ao que mudou desde o último "tudo ok" (funções de cada arquivo alterado; programas do OrthoHub pelo nome) + 2 testes básicos; documentação sozinha não roda teste. `--tudo` = regressão completa em paralelo (~7 min), obrigatória antes de gerar uma versão. `--lista` mostra a escolha e o motivo.
 - **Cópia da fonte (v64):** a cada versão vai também um `sot-fonte-vN.zip` (src, tests, build.py, check.sh, LEIAME) para o usuário guardar no Drive. Os testes da fonte usam só dados fictícios; os 8 testes de leitura de **fotos reais** (OCR do ambulatório e laudos: `t_amb15`, `t_amb48`, `t_ambint`, `t_amb_ocr`, `t_ocr`, `t_pre44`, `t_v36`, `t_v41`) e as fotos ficam só no ambiente de trabalho e não entram no zip.
+- **Publicação (desde 24/11/2026):** o Claude publica direto no repositório (`main`) quando o usuário pede "publica"; antes, o usuário subia o zip. Sempre conferir depois que o GitHub ficou igual ao `dist/`.
 - **Não editar no GitHub:** `index.html`, `evo.html` (gerados) e o número de versão do `sw.js`. **Pode editar direto:** programas do `hub/` e motores `sot-*.js`.
 
 ## 8. Critérios de aceite (para qualquer versão nova)
