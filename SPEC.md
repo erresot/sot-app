@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v66** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v67** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -57,6 +57,7 @@ O app **não substitui o prontuário**. Ele monta o texto, que o médico confere
 | **Ajustes** | Importar internograma (Doc ou PDF), conferência da contagem, quem saiu do internograma (igual em todos os aparelhos), backup em arquivo, exemplo fictício, tema claro/escuro. | Funciona |
 
 Outros comportamentos:
+- **Atualizador de Internograma (v67, `hub/atualizador.html`, protótipo):** lê `S.pacientes[].bruto` do app (Doc: linhas por quebra; PDF: " / "), calcula para o dia escolhido só os números (DIH pela data de internação quando há; contadores da Causa pelo `sot-contadores.js`, procurando a data até 2 linhas abaixo), cabeçalho pela `contagem()`, e lista o que só a pessoa resolve. Referência sem data = "números em dia até ontem/hoje/anteontem" (escolha na tela). Só leitura.
 - **Contadores pela data (v66, `sot-contadores.js`):** um motor para PO/POI/N d. Conferência (aviso "Contador: …"), mapa e linha de dados no dia da cirurgia (`31-mapa.js`), painel da Agenda. Com data → pela data; sem data → +dias desde o internograma e dúvida.
 - **Pedido de exames (v66, `js/app/26-exames-pedido.js`):** "dd/mm Solicitar" (pedir na véspera, rotina) e "Solicitado dd/mm" (coleta no dia seguinte). Pendência só para "pedir na rotina hoje"; o resto é aviso.
 - **Programação pós-op (v65, `js/app/25-posop-prog.js`):** lida do Orienta/Condutas de quem tem PO contável. Pendência automática só para "alta prevista hoje" e "saiu da UTI + alta ao sair da UTI"; carga, ATB, anticoagulante (até ~data), imobilização, retorno e curativo são só informação na ficha. Alta que passou: etiqueta cinza + "não vale mais" (lápide `§alta|…` em `S.pendDel`, sincronizada). Saída da UTI pelo histórico de lugares (`S.idents[id].hist`), por 3 dias.
@@ -147,6 +148,8 @@ O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre 
 - PO (v62): calculado pela **data** da cirurgia mais recente; o número escrito só serve para conferir ("internograma escreve 33 PO, pela data é 37º"). PO **sem data** usa o número escrito e avisa "PO sem data". Data sem ano só vale entre parênteses ou no fim da linha (nunca "1/3 distal").
 - Operado (v62): tem PO contável, ou "Pot" com data **desta internação** (Pot sem data legível também conta). "Pot planalto 2021" num paciente internado por outra fratura não abre ferida operatória/dreno na visita.
 - Pré-op (v62): se o PO mais recente é do dia da cirurgia marcada ou depois, o alerta "CX HOJE: checar jejum/heparina" sai e a ficha mostra "✓ Operado — o bloco de pré-op ainda está escrito no internograma".
+- **Convenção oficial de contagem (definida pelo usuário, 24/11/2026):** o dia do evento é o dia **0**. Internou hoje → **DIH 0** (amanhã DIH 1). Fraturou hoje → **0d** (amanhã 1d). Operou hoje → **POI** (amanhã 1 PO). Ou seja, contador = diferença de datas. "+1" em relação à data é erro de contagem, não outra convenção.
+- **Exames — convenção:** "dd/mm: resultados" = resultado do dia; "dd/mm: solicitado" = pedido para a rotina daquele dia (colhe dd/mm às 5–6h); "dd/mm Solicitar" = deve ser pedido na véspera. A data é sempre o **dia da coleta**. Datas aparecem como dd/mm ou dd/mm/aa(aa).
 - DIH: data escrita → data solta que bate com o "Dih N" → só o "Dih N" (avisa "data de internação não escrita").
 - Conferência (Ajustes): cada paciente lista o que não foi lido com segurança (sem idade, nome com números, registro, DIH/PO divergentes, possível mistura de pacientes).
 
