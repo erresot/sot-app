@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v66</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v67</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -1921,14 +1921,17 @@ G.SOTLINHA = { build, HEAD, PEND, blank, estado, fixAcc, fmtCase, titleTok, KEEP
 function dia0(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 function dias(a, b) { return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); }
 function data(s, ref) {
-  var m = String(s).match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return null;
+  var m = String(s).match(/(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?/); if (!m) return null;
   var y = m[3] ? +m[3] : ref.getFullYear(); if (y < 100) y += 2000;
   var d = new Date(y, +m[2] - 1, +m[1]); if (d.getMonth() !== +m[2] - 1) return null;
   if (!m[3] && dias(ref, d) > 200) d.setFullYear(y - 1);
   return d;
 }
 // data da linha, pela regra (com ano em qualquer lugar; sem ano só entre parênteses ou no fim)
+// v67: só olha os 90 primeiros caracteres depois do contador (no PDF duas linhas podem vir grudadas); aceita dd-mm-aaaa
 function dataDaLinha(resto, ref) {
+  resto = resto.slice(0, 90);
+  var h = resto.match(/\(?\s*(\d{1,2}-\d{1,2}-\d{4})/); if (h) return data(h[1], ref);
   var m = resto.match(/\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/(?:^|\s|-)(\d{1,2}\/\d{1,2})\s*\)?\s*\.?\s*$/);
   return m ? data(m[1], ref) : null;
 }
@@ -1943,9 +1946,15 @@ function ler(seg, ref) {
   return { tipo: tipo, n: n, m: m, pre: pre, fim: fim, d: dataDaLinha(seg.slice(fim), ref) };
 }
 // valor do contador no dia-alvo
+// v67: data implausível (longe demais do número escrito) é tratada como "sem data" — evita "672º PO" de data da linha vizinha
 function valor(c, ref, alvo) {
-  if (c.d) { var n = dias(c.d, alvo); return n < 0 ? null : { n: n, pelaData: true }; }
-  return { n: c.n + dias(ref, alvo), pelaData: false };
+  var semData = { n: c.n + dias(ref, alvo), pelaData: false };
+  if (c.d) {
+    var n = dias(c.d, alvo);
+    if (n < 0 || Math.abs(n - semData.n) > 10) return { n: semData.n, pelaData: false, dataEstranha: true };
+    return { n: n, pelaData: true };
+  }
+  return semData;
 }
 function escrever(seg, c, n) {
   var m = c.m;
@@ -1975,7 +1984,7 @@ function conferir(linhas, ref) {
   (linhas || []).forEach(function (l) {
     String(l).split(SEP).forEach(function (seg, i) {
       if (i % 2) return; var c = ler(seg, ref); if (!c || !c.d) return;
-      var v = valor(c, ref, ref); if (!v || v.n === c.n) return;
+      var v = valor(c, ref, ref); if (!v || !v.pelaData || v.n === c.n) return;
       out.push({ seg: seg.trim(), tipo: c.tipo, escrito: c.tipo === 'poi' ? 'POI' : String(c.n), certo: v.n, data: c.d });
     });
   });
@@ -2407,7 +2416,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '66';
+var VERSAO = '67';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -3101,6 +3110,8 @@ function mostrarBruto() {
   if (!box.hidden) box.innerHTML = (p.bruto || []).map(function (c, i) { return '<div class="igs">' + cab[i] + '</div><div class="out" style="max-height:none">' + esc(c || '—') + '</div>'; }).join('');
 }
 var HUB = [
+  { g: 'ENFERMARIA', itens: [
+    { id: 'atualizador', n: 'Atualizador de Internograma', i: '🔄', d: 'Protótipo: números do dia (DIH, fratura, PO, POI → 1 PO) e cabeçalho já contados, mais o que só você resolve. Não altera o Google Docs.' } ] },
   { g: 'PRONTO SOCORRO', itens: [
     { id: 'anamnese', n: 'Anamnese', i: '🗣', d: 'História do atendimento por toques: chamado, mecanismo, evolução e local da dor no boneco 3D.' },
     { id: 'exame', n: 'Exame Físico', i: '🩺', d: 'Exame ortopédico por segmento: “tudo normal” e marcar só o que está alterado.' },
@@ -3129,7 +3140,7 @@ function vHub() {
   return h + '<div class="hint" style="margin:14px 2px 90px">Textos gerados são modelos: conferir antes de colar no prontuário. Esses programas não usam o Drive — o que é digitado fica só neste aparelho.</div>';
 }
 /* tema dos programas do OrthoHub acompanha o do app (claro/escuro) */
-var HUB_TEMA_PROPRIO = { anamnese: 1, condutas: 1, desccir: 1, exame: 1, posop: 1, retornos: 1 };   // têm modo escuro próprio (data-theme)
+var HUB_TEMA_PROPRIO = { atualizador: 1, anamnese: 1, condutas: 1, desccir: 1, exame: 1, posop: 1, retornos: 1 };   // têm modo escuro próprio (data-theme)
 var HUB_SEGUE_SISTEMA = { avaliacao: 1 };                                                            // escurecem sozinhos pelo sistema
 function temaHub(fr, esc) {
   try {
@@ -3604,34 +3615,40 @@ function blocoPosOp(p) {
   return h + '</div>';
 }
 
-/* ===================== v66: pedido de exames pelo internograma =====================
-   Convenção do serviço: ROTINA = pedido hoje, colhido amanhã às 6h; URGÊNCIA = colhido hoje.
-   Coluna Exames: "24/11: Hb … Cr …" = resultado; "26/11 Solicitar" = pedir no dia 25 na rotina;
-   "Solicitado (novos) 23/11" = já pedido em 23/11 → colhe 24/11.
-   Pendência automática só para "pedir hoje na rotina". O resto é aviso (sem resultado / atrasado). */
+/* ===================== v66/v67: pedido de exames pelo internograma =====================
+   Convenção do serviço (confirmada 24/11): a data é sempre o DIA DA COLETA.
+     "25/11: solicitado"   → pedido para a rotina de 25/11 (colhe 25/11 às 5–6h), pedido na véspera ou no próprio dia
+     "26/11 Solicitar"     → ainda falta pedir: pedir na véspera (25/11) na rotina
+     "Solicitado" sem data → pode ser urgência hoje ou rotina amanhã: só informação
+     "24/11: Hb … Cr …"    → resultado
+   Pendência automática só para "pedir hoje na rotina". O resto é aviso/informação. */
 var RE_LAB = /\b(HB|HT|LEUCO|LEU|PLAQ|CR|UR|NA|K|PCR|VHS|INR|TAP|TTPA|GLIC|MG|CA|FIB|ALB)\b/;
 function pedidoExames(p, hj) {
   hj = SOTCONT.dia0(hj || hojeDate());
-  var L = p.exames || [], res = [], plano = [], pedidos = [];
+  var L = p.exames || [], res = [], afazer = [], pedidos = [], semData = [];
   L.forEach(function (l) {
     var u = String(l).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''), m = u.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/), d = m ? SOTCONT.data(m[1], hj) : null;
-    if (!d) return;
-    if (/SOLICITAD|PEDIDO|COLHID/.test(u) && !RE_LAB.test(u.replace(/SOLICITAD\w*|NOVOS?/g, ''))) pedidos.push({ em: d, txt: String(l).trim() });
-    else if (/SOLICITAR|PEDIR|COLHER/.test(u)) plano.push({ alvo: d, txt: String(l).trim() });
-    else if (RE_LAB.test(u)) res.push(d);
+    var temLab = RE_LAB.test(u.replace(/SOLICIT\w*|NOVOS?|LABS?/g, ''));
+    if (!d) { if (/SOLICITAD/.test(u)) semData.push(String(l).trim()); return; }
+    if (/SOLICITAD|PEDID|COLHID/.test(u) && !temLab) pedidos.push({ coleta: d, txt: String(l).trim() });
+    else if (/SOLICITAR|PEDIR|COLHER/.test(u) && !temLab) afazer.push({ coleta: d, txt: String(l).trim() });
+    else if (temLab) res.push(d);
   });
   var ult = res.length ? new Date(Math.max.apply(null, res)) : null, temRes = function (d) { return res.some(function (r) { return SOTCONT.dias(d, r) >= 0; }); };
-  var o = { ultimo: ult, pend: [], avisos: [] };
-  plano.forEach(function (x) {
-    var falta = SOTCONT.dias(hj, x.alvo);
-    if (falta === 1) o.pend.push('Pedir exames na rotina hoje (colhe ' + ddmm(x.alvo) + ' às 6h)');
-    else if (falta === 0 && !temRes(x.alvo)) o.avisos.push('Exames de hoje (' + ddmm(x.alvo) + ') sem resultado no internograma — foram pedidos? Se não, urgência');
-    else if (falta < 0 && falta > -5 && !temRes(x.alvo)) o.avisos.push('Exames planejados para ' + ddmm(x.alvo) + ' sem resultado lançado');
+  var o = { ultimo: ult, pend: [], avisos: [], info: [] };
+  afazer.forEach(function (x) {
+    var f = SOTCONT.dias(hj, x.coleta);
+    if (f === 1) o.pend.push('Pedir exames na rotina hoje (colhe ' + ddmm(x.coleta) + ' às 6h)');
+    else if (f === 0 && !temRes(x.coleta)) o.avisos.push('Exames para hoje (' + ddmm(x.coleta) + ') ainda marcados como "solicitar" — foram pedidos? Se não, urgência');
+    else if (f < 0 && f > -5 && !temRes(x.coleta)) o.avisos.push('Exames de ' + ddmm(x.coleta) + ' (marcados "solicitar") sem resultado lançado');
   });
   pedidos.forEach(function (x) {
-    var coleta = maisDias(x.em, 1), passou = SOTCONT.dias(coleta, hj);
-    if (passou >= 1 && passou < 5 && !temRes(coleta)) o.avisos.push('Exames pedidos em ' + ddmm(x.em) + ' (colhidos ' + ddmm(coleta) + '): resultado não lançado no internograma');
+    var f = SOTCONT.dias(hj, x.coleta);
+    if (f >= 1) o.info.push('Exames solicitados para ' + ddmm(x.coleta));
+    else if (f === 0 && !temRes(x.coleta)) o.info.push('Exames colhidos hoje (' + ddmm(x.coleta) + ') — resultado ainda não lançado');
+    else if (f < 0 && f > -5 && !temRes(x.coleta)) o.avisos.push('Exames solicitados para ' + ddmm(x.coleta) + ': resultado não lançado no internograma');
   });
+  semData.forEach(function (t) { o.info.push('"' + t.slice(0, 40) + '" sem data — urgência hoje ou rotina amanhã?'); });
   return o;
 }
 function pendExames(p, hj) { try { return pedidoExames(p, hj).pend; } catch (e) { return []; } }
@@ -3641,10 +3658,11 @@ function tagExames(p) {
 }
 function blocoPedidoExames(p) {
   var o; try { o = pedidoExames(p); } catch (e) { return ''; }
-  if (!o.ultimo && !o.pend.length && !o.avisos.length) return '';
+  if (!o.ultimo && !o.pend.length && !o.avisos.length && !o.info.length) return '';
   var h = '<div class="hint" style="margin:-4px 2px 12px">';
   if (o.ultimo) { var n = SOTCONT.dias(o.ultimo, hojeDate()); h += '🧪 Último exame no internograma: <b>' + ddmm(o.ultimo) + '</b> (' + (n === 0 ? 'hoje' : n === 1 ? 'ontem' : 'há ' + n + ' dias') + ')'; }
   o.pend.concat(o.avisos).forEach(function (t) { h += '<br>⚠ ' + esc(t); });
+  o.info.forEach(function (t) { h += '<br>· ' + esc(t); });
   return h + '</div>';
 }
 
