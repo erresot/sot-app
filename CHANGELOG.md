@@ -1,6 +1,19 @@
 # CHANGELOG — SOT APP
 
-## v62 (atual) — leitura do pós-operatório no internograma
+## v64 (atual) — Relatório sem internet · fonte guardada · testes sem dados reais
+- **Relatório (OrthoHub):** passa a ser guardado no celular em segundo plano, como os outros programas; abre sem internet desde a primeira vez (custo: ~870 KB baixados uma vez a cada versão).
+- **Cópia da fonte:** junto com o app vai `sot-fonte-v64.zip` (código, testes, geração) para guardar no Drive.
+- **Testes sem dados reais:** o internograma de 11/11 usado nos testes e os nomes/registros dos testes de identificação, agenda e mapa foram trocados por fictícios. Os testes de leitura de fotos reais continuam só no ambiente de trabalho (decisão do usuário).
+
+## v63 — faixa de tarefas no card — faixa de tarefas no card
+- Cada paciente da aba Leitos ganha a faixa **Visita · Evolução · Prescrição**: um toque marca, outro desmarca (vale para o dia; sincroniza entre aparelhos).
+- **Evolução:** marcada sozinha quando a evolução é feita no app; pode ser marcada à mão quando o paciente foi evoluído direto no sistema do hospital. Na aba Evoluções, os marcados à mão aparecem em "Marcados como evoluídos (fora do app)" e saem de "falta evoluir".
+- **Contadores e filtros** na aba Leitos: visitados / evoluídos / prescritos; "Falta visitar", "Falta evoluir", "Falta prescrever". O topo do app passa a mostrar também os prescritos.
+- **Modo compacto:** quadradinhos V E P no lugar de "✓" e "E".
+- A etiqueta "evoluído ✓" sai do card (a faixa já mostra).
+- Teste novo `t_tarefas63.py` (dados fictícios).
+
+## v62 — leitura do pós-operatório no internograma — leitura do pós-operatório no internograma
 - **PO lido em mais formatos:** data sem ano — "1 PO … (23/11)" ou "… 21/11" no fim da linha —, "25d Po", "3 DPO", parêntese não fechado. "1/3 distal" no meio do texto não vira data. Cada linha da Causa é lida separadamente. No internograma de 24/11, 4 dos 15 operados ficavam sem PO; agora todos são lidos.
 - **PO sem data** ("6 Po Revisão De Atq"): usa o número escrito e mostra aviso na conferência pedindo a data da cirurgia.
 - **"Operado" só nesta internação:** "Pot" com data anterior à internação (ex.: cirurgia de 2021) não marca mais o paciente como pós-operatório (ferida operatória e dreno na visita e na folha).

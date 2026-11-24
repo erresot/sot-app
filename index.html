@@ -584,6 +584,22 @@ html.escuro .subtabs button.on{background:var(--acc);color:#07142a;box-shadow:0 
 .leito{background:var(--acc2);color:var(--navy)}html.escuro .leito{color:var(--ink)}
 .pt.done .leito{background:var(--ok2);color:var(--ok)}
 .btn.evo{background:var(--evo);border-color:var(--evo)}
+
+/* ===================== v63 · faixa de tarefas do card (Visita · Evolução · Prescrição) ===================== */
+:root{--presc:#7a3fc2;--presc2:#f1e8fb}
+html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
+.tarefas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:9px;max-width:460px}
+.tf{display:flex;justify-content:center;align-items:center;gap:6px;white-space:nowrap;height:34px;padding:0 10px;border-radius:999px;font:600 12.5px/1 inherit;border:1.5px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer}
+.tf i{font-style:normal;display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;border:1.5px solid currentColor;font-size:10.5px;flex:none}
+.tf.ok{border-color:transparent}.tf.ok i{background:currentColor}.tf.ok i::after{content:'✓';color:var(--card)}
+.tf.vis.ok{background:var(--ok2);color:var(--ok)}.tf.evo.ok{background:var(--evo2);color:var(--evo)}.tf.pre.ok{background:var(--presc2);color:var(--presc)}
+@media (max-width:480px){.tf{padding:0 4px;gap:5px;font-size:12px;height:36px}.tarefas{gap:5px}}
+.resumo3{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin:2px 0 8px}.resumo3 b{color:var(--ink)}
+.filtros{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+.ftar{padding:6px 11px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;background:var(--card);color:var(--ink);cursor:pointer}
+.ftar.on{background:var(--navy,#13365c);color:#fff;border-color:transparent}
+.mini .tfm{display:inline-flex;gap:3px}.mini .tfm b{width:19px;height:19px;border-radius:6px;display:inline-grid;place-items:center;font-size:10.5px;border:1.5px solid var(--line);color:var(--mut)}
+.mini .tfm b.ok{border-color:transparent;color:#fff}.mini .tfm b.v.ok{background:var(--ok)}.mini .tfm b.e.ok{background:var(--evo)}.mini .tfm b.p.ok{background:var(--presc)}
 </style>
 </head>
 <body>
@@ -638,7 +654,7 @@ html.escuro .subtabs button.on{background:var(--acc);color:#07142a;box-shadow:0 
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v62</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v64</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -2310,7 +2326,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '62';
+var VERSAO = '64';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2606,6 +2622,22 @@ function contagem() {
 // ===================== render =====================
 function ativos() { return S.pacientes.filter(function (p) { return S.mostrarAltas || !p.alta; }); }
 function visitado(p) { return S.v[p.id] && S.v[p.id]._ok; }
+// v63: faixa de tarefas do dia (Visita · Evolução · Prescrição). Marcações por dia em S.v (sincronizam campo a campo).
+function evoFeita(p) { return evoluido(p) || !!(S.v[p.id] && S.v[p.id]._evo); }
+function prescrito(p) { return !!(S.v[p.id] && S.v[p.id]._presc); }
+function faixaTarefas(p) {
+  var b = function (k, cls, ok, txt, tit) { return '<button type="button" class="tf ' + cls + (ok ? ' ok' : '') + '" data-tf="' + k + '|' + esc(p.id) + '" aria-pressed="' + ok + '" title="' + tit + '"><i></i>' + txt + '</button>'; };
+  return '<div class="tarefas">' + b('vis', 'vis', !!visitado(p), 'Visita', 'Marcar / desmarcar visitado hoje') +
+    b('evo', 'evo', evoFeita(p), 'Evolução', evoluido(p) ? 'Evolução feita no app hoje' : 'Marcar / desmarcar evoluído hoje') +
+    b('pre', 'pre', prescrito(p), 'Prescrição', 'Marcar / desmarcar prescrito hoje') + '</div>';
+}
+function faltaTarefa(p, k) { return k === 'vis' ? !visitado(p) : k === 'evo' ? !evoFeita(p) : k === 'pre' ? !prescrito(p) : true; }
+function resumoTarefas(lista) {
+  var n = lista.length, cv = lista.filter(visitado).length, ce = lista.filter(evoFeita).length, cp = lista.filter(prescrito).length, f = S.ftar || '';
+  var ch = function (k, t) { return '<button type="button" class="ftar' + (f === k ? ' on' : '') + '" data-ftar="' + k + '">' + t + '</button>'; };
+  return '<div class="resumo3"><span><b>' + cv + '/' + n + '</b> visitados</span><span><b>' + ce + '/' + n + '</b> evoluídos</span><span><b>' + cp + '/' + n + '</b> prescritos</span></div>' +
+    '<div class="filtros">' + ch('', 'Todos') + ch('vis', 'Falta visitar') + ch('evo', 'Falta evoluir') + ch('pre', 'Falta prescrever') + '</div>';
+}
 function pendAbertas() { var n = 0; ativos().forEach(function (p) { (S.pend[p.id] || []).forEach(function (x) { if (!x.ok) n++; }); }); return n; }
 function alertasVisita(v) {
   if (!v) return [];
@@ -2620,11 +2652,11 @@ function alertasVisita(v) {
 function render() {
   $('#hoje').value = S.hoje; var hb0 = document.querySelector('[data-irhoje]'); if (hb0) hb0.classList.toggle('fora', S.hoje !== hojeISO());
   $('#hoje').classList.toggle('naohoje', S.hoje !== hojeISO()); $('#hoje').title = S.hoje !== hojeISO() ? 'Atenção: esta data NÃO é hoje — contagens de PO/DIH e evoluções usam esta data' : '';
-  var a = ativos(), feitos = a.filter(visitado).length, evs = a.filter(evoluido).length;
-  $('#resumo').textContent = a.length ? feitos + '/' + a.length + ' visitados · ' + evs + '/' + a.length + ' evoluídos' + (S.dataIG ? ' · IG ' + S.dataIG : '') : 'sem internograma';
+  var a = ativos(), feitos = a.filter(visitado).length, evs = a.filter(evoFeita).length, prs = a.filter(prescrito).length;
+  $('#resumo').textContent = a.length ? feitos + '/' + a.length + ' visitados · ' + evs + '/' + a.length + ' evoluídos · ' + prs + '/' + a.length + ' prescritos' + (S.dataIG ? ' · IG ' + S.dataIG : '') : 'sem internograma';
   $('#progbar').style.width = a.length ? (100 * feitos / a.length) + '%' : 0;
   $('#progevo').style.width = a.length ? (100 * evs / a.length) + '%' : 0;
-  var np = pendAbertas(), ne = a.filter(function (p) { return visitado(p) && !evoluido(p); }).length;
+  var np = pendAbertas(), ne = a.filter(function (p) { return visitado(p) && !evoFeita(p); }).length;
   if (S.tab === 'hub') { S.tab = 'leitos'; S.sec = 'hub'; }
   if (!S.sec) S.sec = 'enf';
   var m = $('#main');
@@ -2658,8 +2690,7 @@ function tagsPac(p) {
   t += tagAgenda(p);
   t += tagPreOp(p);
   t += tagHb(p);
-  if (evoluido(p)) t += '<span class="tag evo">evoluído ✓</span>';
-  else if (!evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
+  if (!evoFeita(p) && !evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
   return t;
 }
 function bannerContagem() {
@@ -2698,8 +2729,9 @@ function vLeitos() {
   h += '<div class="chips">' + g.map(function (x) { var n = x === 'Todos' ? ativos().length : ativos().filter(function (p) { return p.grupo === x; }).length; return '<button class="chip' + (x === S.filtro ? ' on' : '') + '" data-f="' + esc(x) + '">' + esc(x) + ' · ' + n + '</button>'; }).join('') + '</div>';
   var lista = ativos().filter(function (p) { return S.filtro === 'Todos' || p.grupo === S.filtro; });
   if (!lista.length) return h + '<div class="empty">Nenhum paciente neste filtro.</div>';
-  var pend = lista.filter(function (p) { return !visitado(p); }), feitos = lista.filter(visitado);
   var c = compacto('leitos');
+  h += resumoTarefas(lista);
+  if (S.ftar) { lista = lista.filter(function (p) { return faltaTarefa(p, S.ftar); }); if (!lista.length) return h + '<div class="empty">Tudo feito neste filtro ✓</div>'; }
   h += '<div class="lista2' + (c ? ' compacta' : '') + '">' + lista.map(c ? cardPacMini : cardPac).join('') + '</div><div class="empty" id="buscaVazia" hidden>Ninguém encontrado com essa busca.</div>';
   return h;
 }
@@ -2710,14 +2742,14 @@ function cardPac(p) {
     '<div class="leito">' + (visitado(p) ? '<span class="chk">✓</span>' : '') + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '<small>' + esc(p.lugar || '') + '</small>' +
       (p.alta ? '<span class="lmark alta" title="Alta prevista no internograma">ALTA</span>' : '') + (p.ic ? '<span class="lmark ic" title="Interconsulta (paciente de outra equipe)">IC</span>' : '') + '</div>' +
     '<div style="flex:1;min-width:0"><div class="nm">' + esc(p.nome) + (visitado(p) ? ' <span style="color:var(--ok)">✓</span>' : '') + regChip(p) + '</div>' +
-    '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div></div></div>';
+    '<div class="dx">' + esc(p.dx) + '</div><div class="tags">' + tagsPac(p) + (np ? '<span class="tag hj">☐ ' + np + ' pend.</span>' : '') + '</div>' + faixaTarefas(p) + '</div></div>';
 }
 // uma linha por paciente: leito · nome · diagnóstico curto · sinais (visitado, pendências, alerta, evolução)
 function cardPacMini(p) {
   var np = (S.pend[p.id] || []).filter(function (x) { return !x.ok; }).length, al = alertasVisita(S.v[p.id]), hj = (p.agenda || []).some(function (a) { return a.dias <= 1; });
   var sin = (al.length || alergiaInfo(p).tem ? '<i class="s red" title="Alerta">!</i>' : '') + ((p.verif || []).length ? '<i class="s warn" title="Verificações">?</i>' : '') +
     (hj ? '<i class="s hj" title="Agenda hoje/amanhã">' + ico('agenda') + '</i>' : '') + (np ? '<i class="s pd" title="Pendências abertas">' + np + '</i>' : '') +
-    (evoluido(p) ? '<i class="s evo" title="Evoluído">E</i>' : '') + (visitado(p) ? '<i class="s ok" title="Visitado">✓</i>' : '');
+    '<span class="tfm"><b class="v' + (visitado(p) ? ' ok' : '') + '" title="Visita">V</b><b class="e' + (evoFeita(p) ? ' ok' : '') + '" title="Evolução">E</b><b class="p' + (prescrito(p) ? ' ok' : '') + '" title="Prescrição">P</b></span>';
   return '<div class="mini' + (visitado(p) ? ' done' : '') + (atual && atual.id === p.id ? ' sel' : '') + '" data-open="' + esc(p.id) + '" data-busca="' + esc(txtBusca(p)) + '">' +
     '<span class="ml">' + esc(p.leito || (p.ps ? 'PS' : p.hm ? 'Hm' : '—')) + '</span><span class="mn"><b>' + esc(p.nome) + '</b><small class="mreg">' + regChip(p, 'sm') + '<span>' + esc((p.po ? p.po.label + ' · ' : '') + (p.dx || '')) + '</span></small></span><span class="ms">' + sin + '</span></div>';
 }
@@ -2751,9 +2783,10 @@ function vSaida() {
   var h = ferramentas('saida', 'Buscar paciente') + (c ? '' : '<div class="hint" style="margin:0 2px 10px">A evolução salva hoje vira a base de amanhã. Mesmo assim, cole por cima a do sistema se alguém editou.</div>');
   if (prontas.length) h += '<button class="btn evo" data-copyall>Copiar todas as evoluções prontas (' + prontas.length + ')</button>';
   var grupo = function (tit, L) { return L.length ? '<h2>' + tit + ' (' + L.length + ')</h2>' + (c ? '<div class="card minilista">' + L.map(cardEvoMini).join('') + '</div>' : L.map(cardEvo).join('')) : ''; };
-  h += grupo('Visitados — falta evoluir', a.filter(function (p) { return visitado(p) && !evoluido(p); }));
+  h += grupo('Visitados — falta evoluir', a.filter(function (p) { return visitado(p) && !evoFeita(p); }));
   h += grupo('Evoluídos hoje', prontas);
-  h += grupo('Ainda não visitados', a.filter(function (p) { return !visitado(p) && !evoluido(p); }));
+  h += grupo('Marcados como evoluídos (fora do app)', a.filter(function (p) { return evoFeita(p) && !evoluido(p); }));
+  h += grupo('Ainda não visitados', a.filter(function (p) { return !visitado(p) && !evoFeita(p); }));
   return h + '<div class="empty" id="buscaVazia" hidden>Ninguém encontrado com essa busca.</div>';
 }
 function cardEvoMini(p) {
@@ -4294,6 +4327,15 @@ document.addEventListener('click', function (ev) {
   if (ds.contok) { S.contOk = {}; S.contOk[S.hoje] = ds.contok; saveLocal(); render(); return; }
   if (ds.evo) { abrirEvo(ds.evo); return; }
   if (ds.copyevo) { var e = evoHoje(ds.copyevo); if (e) copiar(e.txt); return; }
+  if (ds.tf) {   // v63: faixa de tarefas do card
+    var tf = ds.tf.split('|'), tk = tf[0], tid = tf.slice(1).join('|'), tp = S.pacientes.find(function (x) { return x.id === tid; }); if (!tp) return;
+    var tv = S.v[tid] = S.v[tid] || {};
+    if (tk === 'vis') tv._ok = !tv._ok;
+    else if (tk === 'evo') { if (evoluido(tp)) { toast('Evolução feita no app hoje — para refazer, abra a ficha'); return; } tv._evo = !tv._evo; }
+    else if (tk === 'pre') tv._presc = !tv._presc;
+    save(); render(); return;
+  }
+  if (ds.ftar != null) { S.ftar = ds.ftar; saveLocal(); render(); return; }
   if (ds.open) { abrir(ds.open); if (SYNC.temToken()) SYNC.agora(); return; }
   if ('close' in ds) { fechar(); return; }
   if ('pick' in ds) { $('#file').click(); return; }

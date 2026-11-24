@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v62** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v64** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -57,6 +57,7 @@ O app **não substitui o prontuário**. Ele monta o texto, que o médico confere
 | **Ajustes** | Importar internograma (Doc ou PDF), conferência da contagem, quem saiu do internograma (igual em todos os aparelhos), backup em arquivo, exemplo fictício, tema claro/escuro. | Funciona |
 
 Outros comportamentos:
+- **Faixa de tarefas do card (v63):** Visita · Evolução · Prescrição, um toque marca/desmarca no dia (`S.v[id]._ok`, `_evo`, `_presc`; sincroniza campo a campo). Evolução feita no app aparece marcada sozinha e não é desmarcada pela faixa; a marcação à mão serve para quem evoluiu no sistema do hospital. Contadores (visitados/evoluídos/prescritos) e filtros "Falta visitar / evoluir / prescrever" na aba Leitos; no modo compacto, quadradinhos V E P. No dia seguinte tudo começa desmarcado.
 - **Visão em tela larga** (≥ 1100 px): lista e ficha lado a lado.
 - **Atalhos de teclado:** `/` busca · `1–5` abas · `↓/J` `↑/K` navegar · `V` visita · `E` evolução · `Esc` fecha · `?` ajuda.
 - **Sincronização:** tudo é salvo primeiro no aparelho e enviado ao Drive quando há rede. A visita é mesclada **campo a campo** pelo horário de cada marcação (dois residentes podem editar o mesmo paciente).
@@ -184,6 +185,7 @@ Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna�
   - `build.py N` junta tudo em `dist/index.html` e `dist/evo.html` e carimba a versão `N` no `sw.js`.
 - `check.sh`: confere a sintaxe de todos os scripts gerados (node).
 - `tests/`: testes automatizados com Playwright (Chromium) e Drive simulado (`harness.py`), usando data fixa `SOT_DATA=2026-11-16`.
+- **Cópia da fonte (v64):** a cada versão vai também um `sot-fonte-vN.zip` (src, tests, build.py, check.sh, LEIAME) para o usuário guardar no Drive. Os testes da fonte usam só dados fictícios; os 8 testes de leitura de **fotos reais** (OCR do ambulatório e laudos: `t_amb15`, `t_amb48`, `t_ambint`, `t_amb_ocr`, `t_ocr`, `t_pre44`, `t_v36`, `t_v41`) e as fotos ficam só no ambiente de trabalho e não entram no zip.
 - **Não editar no GitHub:** `index.html`, `evo.html` (gerados) e o número de versão do `sw.js`. **Pode editar direto:** programas do `hub/` e motores `sot-*.js`.
 
 ## 8. Critérios de aceite (para qualquer versão nova)

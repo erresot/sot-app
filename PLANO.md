@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **24/11/2026 (v61)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **24/11/2026 (v64)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -16,43 +16,45 @@ Situação em **24/11/2026 (v61)**. Prioridade combinada: **primeiro organizar o
 
 | # | Problema | Impacto |
 |---|---|---|
-| 1 | O código-fonte (`src/`, `build.py`, `tests/`) **não está no GitHub**: lá só existe o app gerado. Se esta área de trabalho se perder, a fonte se perde. | Alto |
+| 1 | ~~Código-fonte só existia aqui~~ — a partir da v64 vai um `sot-fonte-vN.zip` a cada versão, guardado no Drive pelo usuário. Repositório privado: possível no futuro. | Resolvido |
 | 2 | GitHub não está ligado a esta conversa: não é possível publicar nem testar a versão publicada direto no navegador. | Médio |
-| 3 | Folha de visita: **sem teste real** (papel, caneta, câmera, luz do hospital). Os limites de leitura podem precisar de ajuste. | Médio |
+| 3 | ~~Folha de visita sem teste real~~ — testada pessoalmente (preenchimento e leitura ok), 24/11/2026. | Resolvido |
 | 4 | Duas conversas já geraram versões com o mesmo número (v53). | Médio (resolvido por regra; manter) |
-| 5 | `hub/relatorio.html` não está na lista `RESTO` do `sw.js`: só funciona sem internet depois de aberto uma vez com internet. | Baixo |
+| 5 | ~~`hub/relatorio.html` fora da lista offline~~ — incluído na v64. | Resolvido |
 | 6 | ~~Testes desatualizados `t_amb14.py` e `t_jose.py`~~ — movidos para `tests/legado/` (23/11/2026). | Resolvido |
 | 7 | `ESTRUTURA.md` antigo (substituído pelo `SPEC.md`) ainda está no repositório. | Baixo |
 | 8 | Anamnese, Exame Físico e Condutas não se comunicam (cada um gera o texto sozinho). | Planejado |
 | 9 | ~~Importação pelo PDF misturava as colunas (nome junto com diagnóstico)~~ — corrigido na v57: as bordas das colunas são lidas do próprio PDF. | Resolvido |
 | 10 | ~~Exemplo do `hub/mapa.html` com dados que pareciam reais~~ — trocado por exemplo fictício na v58. | Resolvido |
-| 11 | Descrição Cirúrgica — SIGTAP: 35 procedimentos sem código, 63 "a confirmar"; mesmo código em olécrano e cabeça do rádio, e em fixador pélvico e osteossíntese da pelve. | Médio — conferir na tabela oficial |
-| 12 | Descrição Cirúrgica — pontos clínicos a decidir: antibiótico "postergado" em revisões/periprotéticas sem infecção; cefazolina em cirurgia de mão sem implante; procedimentos sem incisão omitem antissepsia e time-out (halo); pseudartrose com tipoia como padrão; lateralidade obrigatória na coluna; kit C1-C2 como "parafuso pedicular". | Médio — aguardando decisão |
-| 13 | Descrição Cirúrgica — rascunhos salvos na versão anterior (`orthohub_descricao_v1`) não aparecem na nova (`_v3`). | Baixo — converter se a equipe usava |
+| 11 | Descrição Cirúrgica — SIGTAP: 35 sem código, 63 "a confirmar", 2 pares com o mesmo código. | Baixo — o serviço **não usa SIGTAP** até o momento |
+| 12 | Descrição Cirúrgica — pontos clínicos a decidir: antibiótico "postergado" em revisões/periprotéticas sem infecção; cefazolina em cirurgia de mão sem implante; procedimentos sem incisão omitem antissepsia e time-out (halo); pseudartrose com tipoia como padrão; lateralidade obrigatória na coluna; kit C1-C2 como "parafuso pedicular". | Médio — aguardar decisões futuras |
+| 13 | ~~Descrição Cirúrgica — rascunhos da versão anterior~~ — rascunhos são trabalhados fora do app oficial e integrados depois. | Resolvido por regra |
 | 14 | ~~Descrição Cirúrgica — correções feitas só no app~~ — o app é o oficial; o artefato é rascunho. Ao trazer novidades de rascunhos, integrar sem desfazer as correções daqui. | Resolvido por regra |
 
 ## 3. Próximas etapas sugeridas (em ordem)
 
 **Fase A — organizar o que foi feito (prioridade atual)**
 1. Revisar e aprovar `SPEC.md`, `CLAUDE.md`, `PLANO.md`, `CHANGELOG.md`; apagar `ESTRUTURA.md` do GitHub.
-2. Guardar a fonte com segurança: decidir onde (pasta `fonte/` no próprio repositório, repositório privado separado, ou zip da fonte a cada versão).
-3. Corrigir o pequeno: `relatorio.html` no `RESTO` do `sw.js`.
-4. Revisão programa a programa do OrthoHub (um por etapa): conferir textos, padrões visuais e bugs relatados no uso diário; registrar no `CHANGELOG.md`.
+2. ~~Guardar a fonte~~ — zip da fonte a cada versão (v64).
+3. ~~`relatorio.html` offline~~ — feito (v64).
+4. Revisão programa a programa do OrthoHub — **aguardar** (virão novos projetos).
 
 **Fase B — validar no mundo real**
-5. Teste real da folha de visita: imprimir, preencher à caneta, fotografar no hospital, ajustar a leitura.
+5. ~~Teste real da folha de visita~~ — feito pessoalmente, leitura ok.
 6. Ligar o GitHub a esta conversa (se possível) para publicar e testar a versão online.
 
 **Etapas combinadas em 23/11/2026 (nesta ordem, uma por vez)**
 - ✅ v57: leitura do internograma mais tolerante (nome/idade/cidade com vírgula; data de internação solta; cabeçalho sem altas; PDF com as bordas reais das colunas).
 - ✅ v59: Respiratório (+ IOT) e hemodinâmica (estável sem DVA / em uso de DVA) na visita, na folha e na evolução.
-- Faixa de tarefas no card (Visita · Evolução · **Prescrição** com um toque), contadores e filtros — protótipo aprovado.
-- Exames de 48 h: data lida do internograma; alerta "pedir exames hoje / exames hoje / atrasados"; intervalo por paciente (48 h padrão).
+- ✅ v63: Faixa de tarefas no card (Visita · Evolução · **Prescrição** com um toque), contadores, filtros e V E P no compacto.
+- Exames: data do último exame lida do internograma; "pedir hoje na rotina / na urgência / atrasado"; intervalo por paciente (24 h, 48 h padrão, 72 h, semanal, **sem exames de rotina**). Em discussão: horário de corte, pacotes (rotina e pré-op), regras fixas, valores que pedem urgência.
 - ✅ v59: Paleta **A** (marinho do serviço) no app e no OrthoHub.
 - ✅ v60: Descrição Cirúrgica nova (artefato, 142 procedimentos) integrada e revisada — pendências 11 a 14.
 - ✅ v62: leitura do pós-operatório no internograma (PO sem ano/sem data, "Pot" antigo, pré-op depois de operado).
-- Ideia (a decidir): usar a programação pós-op escrita no Orienta — "COBRAR RX POI" vira pendência, "ALTA N PO" vira aviso no dia, "SEM CARGA"/"ATB N dias" na ficha.
+- **Aprovado (próxima etapa):** usar a programação pós-op escrita no Orienta — "COBRAR RX POI" vira pendência, "ALTA N PO" vira aviso no dia, "SEM CARGA"/"ATB N dias" na ficha.
 
 **Fase C — funções novas**
-7. Encadear Anamnese → Exame Físico → Condutas (o atendimento do PS num fluxo só).
+7. Encadear Anamnese → Exame Físico → Condutas — **aguardar** decisões futuras.
 8. Outras ideias que surgirem no uso: entram aqui antes de serem feitas.
+9. Fotos de programação POI para treinar as Condutas Pós-Operatórias — **futuro** (o usuário reenvia).
+10. ~~Tirar dados reais dos testes antigos~~ — feito na v64; fotos reais do teste de OCR ficam só no ambiente de trabalho (decisão do usuário).
