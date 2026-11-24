@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v64</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v66</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -989,6 +989,13 @@ function verificar(p, hj) {
   if (p.dihFonte === 'escrita' && p.dih != null && p.dih < 0) a.push('Data de internação no futuro (' + p.dihData + ')');
   if (p.dihFonte === 'escrita' && p.dih != null && p.dihStated != null && p.dih !== p.dihStated) a.push('DIH: internograma diz ' + p.dihStated + ', mas pela data (' + p.dihData + ') hoje é DIH ' + p.dih + (p.dihStated === p.dih + 1 ? ' — diferença de 1 dia: convenção de contagem diferente?' : p.dihStated === p.dih - 1 ? ' — internograma não atualizado hoje?' : ''));
   if (p.po && p.po.semData) a.push('PO sem data no internograma ("' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + ' ' + String(p.po.proc || '').slice(0, 40) + '") — a contagem segue o número escrito; escreva a data da cirurgia');
+  if (typeof SOTCONT !== 'undefined') {   // v66: contadores escritos à mão × data
+    var refIG = (typeof S !== 'undefined' && S.dataIG && parseData(String(S.dataIG), hj)) || hj;
+    SOTCONT.conferir(p.dxL || String(p.dx || '').split(' · '), refIG).forEach(function (c) {
+      if ((c.tipo === 'po' || c.tipo === 'poi') && p.po && p.po.data && SOTCONT.dias(new Date(p.po.data), c.data) === 0) return;
+      a.push('Contador: internograma escreve "' + c.seg.slice(0, 50) + '" — pela data (' + fmtD(c.data) + ') ' + (c.tipo === 'd' ? 'são ' + c.certo + ' dias' : c.certo === 0 ? 'é POI' : 'é ' + c.certo + 'º PO'));
+    });
+  }
   if (p.po && p.po.futuro) a.push('Data de cirurgia no futuro: ' + p.po.label);
   else if (p.po && p.po.stated != null && p.po.stated !== p.po.n) a.push('PO: internograma escreve "' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + '", pela data hoje é ' + p.po.label);
   if (p.ass && p.ass.split('|').length > 1 && (p.regs || []).length > 1) a.push('Mais de uma assinatura e registro — conferir se dois pacientes foram juntados');
@@ -1903,6 +1910,80 @@ function estado(ev, x) {
 G.SOTLINHA = { build, HEAD, PEND, blank, estado, fixAcc, fmtCase, titleTok, KEEP, ACC };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<script>/* SOT — CONTADORES PELA DATA (v66). Um motor só para "N PO", "POI", "N d" (fratura, queda, déficit…), usado em:
+   (1) conferência do internograma (o número escrito à mão bate com a data?),
+   (2) mapa cirúrgico / linha de dados (texto já sai com o número do DIA DA CIRURGIA),
+   (3) painel do internograma na Agenda.
+   Regra: com data na linha → conta pela data. Sem data → soma os dias entre o internograma (ref) e o dia-alvo, e marca dúvida.
+   Data sem ano só vale entre parênteses ou no fim da linha (nunca "1/3 distal"). */
+(function (G) {
+'use strict';
+function dia0(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function dias(a, b) { return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); }
+function data(s, ref) {
+  var m = String(s).match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return null;
+  var y = m[3] ? +m[3] : ref.getFullYear(); if (y < 100) y += 2000;
+  var d = new Date(y, +m[2] - 1, +m[1]); if (d.getMonth() !== +m[2] - 1) return null;
+  if (!m[3] && dias(ref, d) > 200) d.setFullYear(y - 1);
+  return d;
+}
+// data da linha, pela regra (com ano em qualquer lugar; sem ano só entre parênteses ou no fim)
+function dataDaLinha(resto, ref) {
+  var m = resto.match(/\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/(?:^|\s|-)(\d{1,2}\/\d{1,2})\s*\)?\s*\.?\s*$/);
+  return m ? data(m[1], ref) : null;
+}
+var R_PO = /^(\s*[-–•]?\s*)(\d{1,3})(\s*d?\s*[º°]?\s*)(DPO|PO)\b/i, R_POI = /^(\s*[-–•]?\s*)(POI)\b/i, R_D = /^(\s*[-–•]?\s*)(\d{1,3})(\s*)(d)\b/i;
+// lê o contador de UM trecho (linha). Devolve null se o trecho não começa com contador.
+function ler(seg, ref) {
+  var m, tipo, n, pre, fim;
+  if ((m = seg.match(R_PO))) { tipo = 'po'; n = +m[2]; pre = m[1]; fim = m[0].length; }
+  else if ((m = seg.match(R_POI))) { tipo = 'poi'; n = 0; pre = m[1]; fim = m[0].length; }
+  else if ((m = seg.match(R_D))) { tipo = 'd'; n = +m[2]; pre = m[1]; fim = m[0].length; }
+  else return null;
+  return { tipo: tipo, n: n, m: m, pre: pre, fim: fim, d: dataDaLinha(seg.slice(fim), ref) };
+}
+// valor do contador no dia-alvo
+function valor(c, ref, alvo) {
+  if (c.d) { var n = dias(c.d, alvo); return n < 0 ? null : { n: n, pelaData: true }; }
+  return { n: c.n + dias(ref, alvo), pelaData: false };
+}
+function escrever(seg, c, n) {
+  var m = c.m;
+  if (c.tipo === 'poi') { if (n === 0) return seg; return m[1] + n + ' ' + (m[2] === 'POI' ? 'PO' : 'Po') + seg.slice(c.fim); }
+  if (c.tipo === 'po' && n === 0) return m[1] + (m[4] === m[4].toUpperCase() ? 'POI' : 'Poi') + seg.slice(c.fim);
+  return m[1] + n + seg.slice(m[1].length + m[2].length);
+}
+var SEP = /(\s+·\s+|\s+\/\s+|\n|\s+\|\s+)/;
+// reescreve todos os contadores de um texto para o dia-alvo
+function atualizarTexto(txt, ref, alvo) {
+  var out = { txt: String(txt || ''), mudou: [], duvida: false };
+  if (!txt || !ref || !alvo) return out;
+  var partes = String(txt).split(SEP);
+  for (var i = 0; i < partes.length; i += 2) {
+    var seg = partes[i], c = ler(seg, ref); if (!c) continue;
+    var v = valor(c, ref, alvo); if (!v || v.n === c.n && c.tipo !== 'poi') continue;
+    var novo = escrever(seg, c, v.n); if (novo === seg) continue;
+    partes[i] = novo; out.mudou.push({ de: seg, para: novo, pelaData: v.pelaData });
+    if (!v.pelaData) out.duvida = true;
+  }
+  out.txt = partes.join('');
+  return out;
+}
+// conferência: número escrito × número pela data, no dia do internograma (só linhas com data)
+function conferir(linhas, ref) {
+  var out = [];
+  (linhas || []).forEach(function (l) {
+    String(l).split(SEP).forEach(function (seg, i) {
+      if (i % 2) return; var c = ler(seg, ref); if (!c || !c.d) return;
+      var v = valor(c, ref, ref); if (!v || v.n === c.n) return;
+      out.push({ seg: seg.trim(), tipo: c.tipo, escrito: c.tipo === 'poi' ? 'POI' : String(c.n), certo: v.n, data: c.d });
+    });
+  });
+  return out;
+}
+G.SOTCONT = { atualizarTexto: atualizarTexto, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0 };
+})(typeof window !== 'undefined' ? window : this);
+</script>
 <script>/* SOT — identidade do paciente: UMA regra para o app todo (Agenda × internograma, foto × célula do mapa,
    troca de paciente no mesmo horário, reaproveitar dados). Na dúvida, NÃO junta: é melhor um paciente
    aparecer duas vezes do que os dados de um irem para o outro.
@@ -2326,7 +2407,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '64';
+var VERSAO = '66';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2594,7 +2675,7 @@ function aplicarImport(r, nome) {
     p.ordem = i; classificar(p); registrarMovimento(p);
     p.po = calcPO(p.dx, hj);
     dihResolver(p, hj, r.data);
-    p.sugPend = extrairPendencias(p, hj);
+    p.sugPend = extrairPendencias(p, hj).concat(pendPosOp(p, hj), pendExames(p, hj));   // v65: + alta prevista / saiu da UTI
     p.agenda = extrairAgenda(p, hj);
     p.tipo = tipoDe(p);
     p.verif = verificar(p, hj);
@@ -2689,6 +2770,8 @@ function tagsPac(p) {
   if ((p.verif || []).length) t += '<span class="tag warn">⚠ ' + p.verif.length + ' verificação(ões)</span>';
   t += tagAgenda(p);
   t += tagPreOp(p);
+  t += tagPosOp(p);
+  t += tagExames(p);
   t += tagHb(p);
   if (!evoFeita(p) && !evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
   return t;
@@ -2878,8 +2961,10 @@ function desenharFicha() {
   var h = '<div class="sh-top"><button class="back" data-close>‹</button><div class="t"><b>' + esc(p.leito || p.lugar || '') + ' · ' + esc(p.nome) + '</b><span>' + (p.registro ? 'Reg ' + esc(p.registro) + ' · ' : '') + [p.po && p.po.label, p.dih != null && 'DIH ' + p.dih, p.idade && p.idade + ' anos', p.ic && 'INTERCONSULTA', p.alta && 'ALTA', p.ps && 'PS'].filter(Boolean).map(esc).join(' · ') + '</span></div><button class="hb2" data-temaciclo title="Modo noturno / claro">' + ico(document.documentElement.classList.contains('escuro') ? 'sol' : 'lua') + '</button><button class="syncmini" data-sync title="Sincronizar agora">' + iconeSync() + '</button></div><div class="sh-body">';
   h += fichaIG(p);
   h += blocoPreOp(p);
+  h += blocoPosOp(p);
   h += blocoAgendaPac(p);
   h += blocoExames(p);
+  h += blocoPedidoExames(p);
   h += blocoEvoAnterior(p);
   h += blocoEvoAlt(p);
   CAMPOS.forEach(function (c) { if (todos || !c.when || c.when(t)) h += campo(c, v); });
@@ -3420,6 +3505,149 @@ document.addEventListener('click', function (e) {
   if (b.dataset.avaltipo) { AVAL.tipo = b.dataset.avaltipo; desenharAval(); return; }
   var x = b.dataset.avalusa.split('|'); AVAL[x[0]] = (x[1] === 'ig' ? AVAL.ig : AVAL.ev)[x[0]] || ''; desenharAval();
 }, true);
+/* ===================== v65: programação pós-operatória (lida do Orienta / Condutas) =====================
+   Vira PENDÊNCIA só o que é tarefa com fim:
+     - "Cobrar RX POI"            → já era pendência automática (regra geral de pendências)
+     - alta prevista hoje          ("alta no N PO" / "alta dia dd/mm")
+     - saiu da UTI com "alta ao sair da UTI" na programação → alta + passar para ALTAS
+   Só INFORMAÇÃO na ficha: carga, ATB, anticoagulante (com "até" quando há N dias), imobilização, retorno, curativo.
+   Alta que passou do dia: linha discreta "a programação ainda vale?" + botão "não vale mais" (lápide sincronizada). */
+var RE_ALTA_PO = /\bALTA\s*(?:NO\s+|EM\s+|NO\s+DIA\s+|APOS\s+O?\s*)?(\d{1,2})\s*[º°O]?\s*(?:DPO|PO)\b/;
+var RE_ALTA_DIA = /\bALTA\s*(?:PREVISTA\s*)?(?:NO\s+DIA|DIA|EM|PARA)\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/;
+var RE_ALTA_UTI = /\bALTA\b[^.;]{0,40}\b(?:SAIR|SAIDA|ALTA|DEIXAR)\s+(?:DA\s+)?UTI\b|\bAPOS\s+(?:ALTA\s+DA\s+|SAIR\s+DA\s+|SAIDA\s+DA\s+)?UTI\b[^.;]{0,30}\bALTA\b/;
+var INFO_POSOP = [
+  ['carga', 'Carga', /\b(SEM|COM)\s+CARGA\b|\bCARGA\s+(PARCIAL|TOTAL|PROTEGIDA|CONFORME|LIVRE)|\bDESCARGA\b/],
+  ['atb', 'Antibiótico', /\bATB\b|ANTIBIOT|CEFAZOLINA|CEFALEXINA|CLINDAMICINA|CIPROFLOXACINO|AMOXICILINA|VANCOMICINA|SULFAMETOXAZOL/],
+  ['acg', 'Anticoagulante', /RIVAROXABANA|ENOXAPARINA|HEPARINA|ANTICOAGULA|XARELTO|CLEXANE|APIXABANA|DABIGATRANA/],
+  ['imob', 'Imobilização', /\b(TALA|GESSO|TIPOIA|BOTA|BRACE|ORTESE|IMOBILIZ|VELPEAU|COLAR|COLETE)/],
+  ['ret', 'Retorno', /\bRETORNO\b/],
+  ['cur', 'Curativo', /\bCURATIVO/]
+];
+function normPO(t) { return String(t || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function dataPO(p) { if (!p.po || p.po.futuro || !p.po.data) return null; var d = new Date(p.po.data); return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function maisDias(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+function ddmm(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+
+function progPosOp(p, hj) {
+  hj = hj || (typeof hojeDate === 'function' ? hojeDate() : new Date());
+  var linhas = (p.orientaLinhas || []).concat(p.condutasLinhas || []), dcx = dataPO(p), o = { alta: null, info: [] };
+  if (!dcx) return o;                                   // programação pós-op só para quem tem cirurgia contável
+  linhas.forEach(function (l) {
+    var u = normPO(l), m;
+    if (!o.alta && RE_ALTA_UTI.test(u)) { o.alta = { tipo: 'uti', txt: l.trim() }; return; }
+    if (!o.alta && (m = u.match(RE_ALTA_PO))) {
+      var n = +m[1], dia = maisDias(dcx, n);
+      o.alta = { tipo: 'po', n: n, data: dia, txt: l.trim(), chave: 'po' + n + '|' + ddmm(dcx) }; return;
+    }
+    if (!o.alta && (m = u.match(RE_ALTA_DIA))) {
+      var d = parseData(m[1], hj);
+      if (d) { o.alta = { tipo: 'dia', data: new Date(d.getFullYear(), d.getMonth(), d.getDate()), txt: l.trim(), chave: 'dia' + ddmm(d) }; return; }
+    }
+    if (/\bALTA\b/.test(u) || /\bCOBRAR\b/.test(u)) return;           // linhas de alta/cobrar não entram como informação
+    if (l.trim().length > 70 || /SENSIVEL|RESISTENTE|CONSIDERANDO|EM VISTA|POREM|DISCUTID/.test(u)) return;   // frase de discussão, não instrução
+    INFO_POSOP.some(function (k) {
+      if (!k[2].test(u)) return false;
+      var it = { k: k[0], rot: k[1], txt: l.trim().replace(/\s+/g, ' ') };
+      var nd = u.match(/\bPOR\s+(\d{1,3})\s*DIAS?\b|\b(\d{1,3})\s*DIAS?\b/);
+      if (nd && (k[0] === 'atb' || k[0] === 'acg')) { var N = +(nd[1] || nd[2]); if (N > 0 && N < 120) it.ate = maisDias(dcx, N); }
+      if (!o.info.some(function (x) { return x.txt === it.txt; })) o.info.push(it);
+      return true;
+    });
+  });
+  if (o.alta && o.alta.data) o.alta.dias = Math.round((o.alta.data - new Date(hj.getFullYear(), hj.getMonth(), hj.getDate())) / 864e5);   // 0 = hoje, <0 = passou
+  return o;
+}
+function altaIgnorada(p, a) { return !!(a && a.chave && ((S.pendDel || {})[p.id] || []).some(function (d) { return (d.t || d) === '§alta|' + a.chave; })); }
+function ignorarAlta(pid, chave) {
+  S.pendDel = S.pendDel || {}; var L = S.pendDel[pid] = S.pendDel[pid] || [];
+  L.push({ t: '§alta|' + chave, at: (typeof relogio === 'function') ? relogio() : Date.now() });
+}
+// saiu da UTI: histórico de lugares (S.idents) mostra UTI e depois um lugar fora da UTI, nos últimos 3 dias
+function saiuUTI(p) {
+  var h = ((S.idents || {})[p.id] || {}).hist || [];
+  for (var i = h.length - 1; i > 0; i--) {
+    if (/\bUTI\b/i.test(h[i].lugar)) return null;
+    if (/\bUTI\b/i.test(h[i - 1].lugar)) {
+      var dias = Math.round((new Date(S.hoje + 'T12:00:00') - new Date(h[i].data + 'T12:00:00')) / 864e5);
+      return dias <= 3 ? { de: h[i - 1].lugar, para: h[i].lugar, em: h[i].data } : null;
+    }
+  }
+  return null;
+}
+// pendências automáticas da programação (entram junto com as do internograma, no import)
+function pendPosOp(p, hj) {
+  var o = progPosOp(p, hj), out = [], su = saiuUTI(p);
+  if (o.alta && o.alta.dias === 0) out.push(o.alta.tipo === 'po' ? 'Alta prevista hoje (programação: alta no ' + o.alta.n + 'º PO)' : 'Alta prevista hoje (programação: alta em ' + ddmm(o.alta.data) + ')');
+  if (su && o.alta && o.alta.tipo === 'uti' && !p.alta) out.push('Saiu da UTI: alta pela programação — passar para ALTAS no internograma');
+  return out;
+}
+function tagPosOp(p) {
+  var t = '', su = saiuUTI(p), o = progPosOp(p);
+  if (su && !p.alta) t += '<span class="tag ic" title="' + esc(su.de + ' → ' + su.para) + '">↪ saiu da UTI</span>';
+  if (o.alta && o.alta.dias === 0) t += '<span class="tag evo">Alta prevista hoje</span>';
+  else if (o.alta && o.alta.dias < 0 && !altaIgnorada(p, o.alta) && !p.alta) t += '<span class="tag" title="' + esc(o.alta.txt) + '">alta prevista passou?</span>';
+  return t;
+}
+function blocoPosOp(p) {
+  var o = progPosOp(p), su = saiuUTI(p); if (!o.alta && !o.info.length && !su) return '';
+  var h = '<div class="q"><div class="lb">📋 Programação pós-op <span class="hint">(lida do internograma)</span></div>';
+  if (su) h += '<div class="hint" style="margin:4px 0"><b>↪ Saiu da UTI</b> em ' + esc(brCurto(su.em)) + ' (' + esc(su.de) + ' → ' + esc(su.para) + ')' + (p.alta ? '' : ' — se está pronto para alta, passar para a seção <b>ALTAS</b> no internograma') + '.</div>';
+  if (o.alta) {
+    var a = o.alta, s;
+    if (a.tipo === 'uti') s = su ? '<b>Alta ao sair da UTI</b> — saiu: alta liberada pela programação' : 'Alta ao sair da UTI (ainda na UTI)';
+    else if (a.dias === 0) s = '<b style="color:var(--ok)">Alta prevista hoje</b>';
+    else if (a.dias > 0) s = 'Alta prevista em ' + ddmm(a.data) + (a.tipo === 'po' ? ' (' + a.n + 'º PO)' : '');
+    else s = altaIgnorada(p, a) ? '' : '<span style="color:var(--mut)">Alta era prevista em ' + ddmm(a.data) + (a.tipo === 'po' ? ' (' + a.n + 'º PO)' : '') + ' — a programação ainda vale?</span> <button class="btn ghost sm" data-altaign="' + esc(p.id + '§' + a.chave) + '">não vale mais</button>';
+    if (s) h += '<div style="margin:4px 0">' + s + '<div class="hint">' + esc(a.txt) + '</div></div>';
+  }
+  if (o.info.length) h += '<ul class="lin" style="margin:6px 0 0">' + o.info.map(function (x) { return '<li><b>' + esc(x.rot) + ':</b> ' + esc(x.txt) + (x.ate ? ' <span class="tag" title="contando da data da cirurgia">até ~' + ddmm(x.ate) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+  return h + '</div>';
+}
+
+/* ===================== v66: pedido de exames pelo internograma =====================
+   Convenção do serviço: ROTINA = pedido hoje, colhido amanhã às 6h; URGÊNCIA = colhido hoje.
+   Coluna Exames: "24/11: Hb … Cr …" = resultado; "26/11 Solicitar" = pedir no dia 25 na rotina;
+   "Solicitado (novos) 23/11" = já pedido em 23/11 → colhe 24/11.
+   Pendência automática só para "pedir hoje na rotina". O resto é aviso (sem resultado / atrasado). */
+var RE_LAB = /\b(HB|HT|LEUCO|LEU|PLAQ|CR|UR|NA|K|PCR|VHS|INR|TAP|TTPA|GLIC|MG|CA|FIB|ALB)\b/;
+function pedidoExames(p, hj) {
+  hj = SOTCONT.dia0(hj || hojeDate());
+  var L = p.exames || [], res = [], plano = [], pedidos = [];
+  L.forEach(function (l) {
+    var u = String(l).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''), m = u.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/), d = m ? SOTCONT.data(m[1], hj) : null;
+    if (!d) return;
+    if (/SOLICITAD|PEDIDO|COLHID/.test(u) && !RE_LAB.test(u.replace(/SOLICITAD\w*|NOVOS?/g, ''))) pedidos.push({ em: d, txt: String(l).trim() });
+    else if (/SOLICITAR|PEDIR|COLHER/.test(u)) plano.push({ alvo: d, txt: String(l).trim() });
+    else if (RE_LAB.test(u)) res.push(d);
+  });
+  var ult = res.length ? new Date(Math.max.apply(null, res)) : null, temRes = function (d) { return res.some(function (r) { return SOTCONT.dias(d, r) >= 0; }); };
+  var o = { ultimo: ult, pend: [], avisos: [] };
+  plano.forEach(function (x) {
+    var falta = SOTCONT.dias(hj, x.alvo);
+    if (falta === 1) o.pend.push('Pedir exames na rotina hoje (colhe ' + ddmm(x.alvo) + ' às 6h)');
+    else if (falta === 0 && !temRes(x.alvo)) o.avisos.push('Exames de hoje (' + ddmm(x.alvo) + ') sem resultado no internograma — foram pedidos? Se não, urgência');
+    else if (falta < 0 && falta > -5 && !temRes(x.alvo)) o.avisos.push('Exames planejados para ' + ddmm(x.alvo) + ' sem resultado lançado');
+  });
+  pedidos.forEach(function (x) {
+    var coleta = maisDias(x.em, 1), passou = SOTCONT.dias(coleta, hj);
+    if (passou >= 1 && passou < 5 && !temRes(coleta)) o.avisos.push('Exames pedidos em ' + ddmm(x.em) + ' (colhidos ' + ddmm(coleta) + '): resultado não lançado no internograma');
+  });
+  return o;
+}
+function pendExames(p, hj) { try { return pedidoExames(p, hj).pend; } catch (e) { return []; } }
+function tagExames(p) {
+  var o; try { o = pedidoExames(p); } catch (e) { return ''; }
+  return (o.pend.length ? '<span class="tag hj">🧪 pedir exames hoje (rotina)</span>' : '') + (o.avisos.length ? '<span class="tag warn" title="' + esc(o.avisos.join(' · ')) + '">🧪 exames sem resultado</span>' : '');
+}
+function blocoPedidoExames(p) {
+  var o; try { o = pedidoExames(p); } catch (e) { return ''; }
+  if (!o.ultimo && !o.pend.length && !o.avisos.length) return '';
+  var h = '<div class="hint" style="margin:-4px 2px 12px">';
+  if (o.ultimo) { var n = SOTCONT.dias(o.ultimo, hojeDate()); h += '🧪 Último exame no internograma: <b>' + ddmm(o.ultimo) + '</b> (' + (n === 0 ? 'hoje' : n === 1 ? 'ontem' : 'há ' + n + ' dias') + ')'; }
+  o.pend.concat(o.avisos).forEach(function (t) { h += '<br>⚠ ' + esc(t); });
+  return h + '</div>';
+}
+
 /* ===== v17: AGENDA (Google Agenda) — leitura, padrão dos eventos e dupla checagem com o internograma ===== */
 function isoLocal(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
 function nomeNorm(s) { return norm0(s).replace(/[^A-Z ]/g, ' ').replace(/\b(DE|DA|DO|DOS|DAS|E)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -3694,8 +3922,9 @@ function painelIG(p, ev) {
     var lin = function (rot, val) { return val ? '<div class="igl"><span>' + rot + '</span><div>' + val + '</div></div>' : ''; };
     var lista = function (L) { return (L || []).filter(Boolean).map(esc).join('<br>'); };
     var cx = cxIG(p), po = ((S.v || {})[p.id] || {}).preop || {}, ac = typeof anticoagEmUso === 'function' ? anticoagEmUso(p) : [], hb = typeof ultimoLab === 'function' ? ultimoLab(p, 'Hb') : null;
-    var just = (p.dxL || []).map(function (d) { var q = haQuanto(d); return '<div class="dxi">' + maisHtml(d) + (q ? ' <b class="igq">(' + q + ')</b>' : '') + '</div>'; }).join('');
-    var h = '<details class="igpanel"><summary>📋 Dados do internograma — ' + esc(p.nome.split(' ')[0]) + (p.leito ? ' · leito ' + esc(p.leito) : '') + (p.dih != null && p.dih !== '' ? ' · DIH ' + esc(p.dih) : '') + '</summary>';
+    var refA = (S.dataIG && parseData(String(S.dataIG), hojeDate())) || hojeDate(), alvoA = ev.data ? new Date(ev.data + 'T00:00:00') : null, difA = alvoA ? SOTCONT.dias(hojeDate(), alvoA) : 0;   // v66: no dia da cirurgia
+    var just = (p.dxL || []).map(function (d) { if (alvoA && typeof SOTCONT !== 'undefined') d = SOTCONT.atualizarTexto(d, refA, alvoA).txt; var q = haQuanto(d); return '<div class="dxi">' + maisHtml(d) + (q ? ' <b class="igq">(' + q + ')</b>' : '') + '</div>'; }).join('');
+    var h = '<details class="igpanel"><summary>📋 Dados do internograma — ' + esc(p.nome.split(' ')[0]) + (p.leito ? ' · leito ' + esc(p.leito) : '') + (p.dih != null && p.dih !== '' ? ' · DIH ' + esc(p.dih) + (difA > 0 && !isNaN(+p.dih) ? ' (DIH ' + (+p.dih + difA) + ' no dia da cirurgia)' : '') : '') + '</summary>';
     h += lin('CIRURGIA', '<b>Agenda:</b> ' + brCurto(ev.data) + (ev.hora ? ' ' + ev.hora : '') + ' — ' + esc(ev.proc) + '<br><b>Internograma:</b> ' + (cx.length ? cx.map(function (c) { return brCurto(c.data) + ' — ' + esc(c.proc); }).join('<br>') : '<i>sem cirurgia com data</i>'));
     h += lin('DIAGNÓSTICO (HD)', just || esc(p.dx || ''));
     h += lin('AP / CMB', siglas(lista(ap.cmb)) || esc(siglas(evs.cmb || '')));
@@ -3821,6 +4050,10 @@ function celulaMapa0(ev, pFixo) {
     cirPrev: (p.dxL || []).filter(function (l) { return /\b(\d+\s*[º°]?\s*PO|POT?|POI)\b/i.test(l); }).join(' / ')
   };
   o.duv = {}; ['cardio', 'apa', 'rch', 'uti', 'mec', 'cirPrev'].forEach(function (k) { if (o[k]) o.duv[k] = true; });
+  if (typeof SOTCONT !== 'undefined' && ev.data) {   // v66: contadores no dia da cirurgia (não no dia do internograma)
+    var refM = (S.dataIG && parseData(String(S.dataIG), hojeDate())) || hojeDate(), alvoM = new Date(ev.data + 'T00:00:00');
+    ['dx', 'cirPrev'].forEach(function (k) { var r = SOTCONT.atualizarTexto(o[k], refM, alvoM); o[k] = r.txt; if (r.duvida) o.duv[k] = true; });
+  }
   if (!ap.cmb && evs.cmb) o.duv.cmb = true; if (!ap.muc && evs.muc) o.duv.muc = true;
   return o;
 }
@@ -4335,6 +4568,7 @@ document.addEventListener('click', function (ev) {
     else if (tk === 'pre') tv._presc = !tv._presc;
     save(); render(); return;
   }
+  if (ds.altaign) { var ai = ds.altaign.split('§'); ignorarAlta(ai[0], ai[1]); save(); if (atual) redesenhar(); render(); toast('Ok — essa alta prevista não aparece mais'); return; }
   if (ds.ftar != null) { S.ftar = ds.ftar; saveLocal(); render(); return; }
   if (ds.open) { abrir(ds.open); if (SYNC.temToken()) SYNC.agora(); return; }
   if ('close' in ds) { fechar(); return; }

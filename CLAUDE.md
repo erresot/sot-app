@@ -24,9 +24,9 @@ App web instalável (PWA) do Serviço de Ortopedia do HCFAMEMA: enfermaria (inte
 - Arquivo novo na raiz → `ESSENCIAL` do `sw.js`; programa novo do hub → `RESTO` do `sw.js` e `HUB` em `21-orthohub.js`.
 - Tudo salvo primeiro no aparelho; Drive depois. Funcionar sem internet.
 - Interface: tema do app (IBM Plex, ícones SVG `ico()`), alvos de toque ≥ 44 px, claro e escuro.
-- Toda versão nova: número novo no `sw.js` (maior que todos), testes (`tests/`, com `SOT_DATA=2026-11-16`), zip `sot-app-atualizacao-vN.zip`.
+- Toda versão nova: número novo no `sw.js` (maior que todos), testes (`tests/`, com `SOT_DATA=2026-11-16`), zips `sot-app-atualizacao-vN.zip` (GitHub) e `sot-fonte-vN.zip` (Drive).
 
 ## Ao terminar uma etapa
-- Rodar os testes e escrever teste novo para o que mudou.
+- Escrever teste novo para o que mudou; durante o trabalho `python3 tests/rodar.py` (só o que mudou); antes de gerar a versão `python3 tests/rodar.py --tudo`.
 - Atualizar `CHANGELOG.md`, `PLANO.md` e, se mudou comportamento, `SPEC.md`.
 - Dizer ao usuário o que mudou, o que foi testado e o que ficou pendente.

@@ -711,6 +711,8 @@ function anoDatas(s,iso){
   });
 }
 // Dias entre a única data completa do texto e o DIA DA CIRURGIA (data do mapa)
+// v66: o texto que vem do internograma já sai com o número do dia da cirurgia — aí a etiqueta não aparece (nunca dois números)
+function temContador(s){ return /(^|\s[\/·|]\s|\n)\s*[-–•]?\s*(\d{1,3}\s*d?\s*[º°]?\s*(DPO|PO)\b|POI\b|\d{1,3}\s*d\b)/i.test(String(s||"")); }
 function contagem(s,max){
   var re=/(?<![\d\/])(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})(?![\d\/])/g, ms=[], m;
   while((m=re.exec(String(s||"")))) ms.push(m);
@@ -820,7 +822,7 @@ function celHTML(x){
   var pa=pendAuto(x), sg=sugestoes(x);
   var alPos=x.alergia && !neg(x.alergia);
   var nTrav=Object.keys(x.locked).length;
-  var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=contagem(x.dx,366), npo=contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
+  var nOc=Object.keys(x.ocultos||{}).length, mn=menor(x), nd=temContador(x.dx)?null:contagem(x.dx,366), npo=temContador(x.cirPrev)?null:contagem(x.cirPrev,90), nDuv=Object.keys(x.duv||{}).length;
   var h='<div class="cel'+(x.quebra||x.sozinho?' qb':'')+(x.sozinho?' so':'')+'">'+((x.quebra||x.sozinho)?'<div class="qbmark">'+(x.sozinho?'▤ sozinho na folha':'⤓ começa nova folha')+'</div>':'');
   h+='<div class="cab"><span class="hora">'+ed(x,"hora")+'</span><span class="txt">'+ed(x,"cab")+'</span></div>'+reusoHTML(x)+
      (function(){ var D=dupsDe(x); return D.length?'<div class="reuso" style="background:#ffe3e3;border-color:#c62828">⚠ <b>Dados de outro paciente?</b> '+D.map(function(d){return esc(rot(d.f))+' igual ao de '+esc(d.quem);}).join("; ")+'. Conferir e corrigir.</div>':''; })()+

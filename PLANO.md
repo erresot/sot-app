@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **24/11/2026 (v64)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **24/11/2026 (v66)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -56,5 +56,10 @@ Situação em **24/11/2026 (v64)**. Prioridade combinada: **primeiro organizar o
 **Fase C — funções novas**
 7. Encadear Anamnese → Exame Físico → Condutas — **aguardar** decisões futuras.
 8. Outras ideias que surgirem no uso: entram aqui antes de serem feitas.
+- ✅ v66 (parcial): **Regra de exames:** rotina = pedido hoje, colhido amanhã às 6h; urgência = colhido hoje. No internograma, "dd/mm: labs" = resultado; "dd/mm Solicitar" = deve ser pedido na rotina do dia anterior. App: na véspera, "pedir hoje na rotina"; no dia sem resultado, "atrasado: pedir na urgência?". Contadores pela data: conferir e avisar (quem atualiza é humano).
+- ✅ v66: **Motor único de contadores pela data:** PO, POI→1 PO, dias de fratura/queda/déficit, DIH calculados para uma data-alvo. Usado em 3 lugares: (1) conferência do internograma de hoje (avisa quando o número escrito à mão está errado); (2) **mapa cirúrgico e linha de dados: o texto já sai com o número do dia da cirurgia** (ex.: mapa de 25/11 → "16 Po", "26 D Fx"), na tela, na impressão e no "Copiar"; some a etiqueta separada "· Nº PO"; (3) cards da Agenda. Com data → conta pela data; sem data → soma os dias entre o internograma e a data-alvo e marca "?" para conferir.
+- ✅ v65: **Pós-op → pendências** — "alta dia X" e "alta quando sair da UTI"; marcador de transferência (leito/seção mudou de UTI para enfermaria) = pronto para alta e para passar à seção ALTAS.
+- **Leitura do internograma (a fazer, aprovar):** (a) data de internação grudada no chip do Google Docs ("24/11/2026 📄 Arquivo") não é reconhecida; (b) ficha abreviada ("NOME · idade · COLO · SEXTA") juntada com o paciente de cima no PDF; (c) nome, idade e cidade emendados em maiúsculas na seção Altas, no PDF.
+- **Atualização da manhã (ideia):** texto corrigido dos contadores pela data (simulação de 24→25/11 achou 3 contadores já errados), conferência de leitos, avisos de "alta no N PO" vencida e de pacientes da seção Altas.
 9. Fotos de programação POI para treinar as Condutas Pós-Operatórias — **futuro** (o usuário reenvia).
 10. ~~Tirar dados reais dos testes antigos~~ — feito na v64; fotos reais do teste de OCR ficam só no ambiente de trabalho (decisão do usuário).

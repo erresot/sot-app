@@ -1,6 +1,22 @@
 # CHANGELOG — SOT APP
 
-## v64 (atual) — Relatório sem internet · fonte guardada · testes sem dados reais
+## v66 (atual) — contadores pela data · pedido de exames
+- **Motor único de contadores** (`sot-contadores.js`): "N PO", "POI", "N d" (fratura, queda, déficit) calculados pela data da própria linha; sem data, soma os dias e marca para conferir.
+- **Conferência do internograma:** novo aviso quando o número escrito à mão não bate com a data (ex.: "51d queda … 27/09" → pela data são 58 dias). No internograma real de 24/11 achou exatamente os contadores errados.
+- **Mapa cirúrgico e linha de dados:** Dx e cirurgias prévias já saem com o número do **dia da cirurgia** (mapa de 25/11: "15 Po … (09/11)" → "16 Po"; "POI" → "1 PO"; "25 D Fx" sem data → "26 D Fx" com "?" para conferir). A etiqueta "· N d / · Nº PO" só aparece quando o texto não tem contador próprio (ex.: ambulatoriais) — nunca dois números.
+- **Agenda:** painel "Dados do internograma" mostra os contadores e o DIH no dia da cirurgia.
+- **Exames** (rotina = colhe amanhã às 6h; urgência = hoje): "26/11 Solicitar" → no dia 25, pendência "Pedir exames na rotina hoje (colhe 26/11 às 6h)"; no dia 26 sem resultado → aviso. "Solicitado 23/11" sem resultado de 24/11 → aviso "resultado não lançado". Ficha mostra o último exame. Sem regra geral de 48 h por enquanto (fica para o Painel da manhã).
+- Teste novo `t_cont66.py` (dados fictícios).
+
+## v65 — programação pós-operatória — programação pós-operatória
+- O app lê a programação escrita no Orienta/Condutas de quem tem cirurgia contável (POI / N PO).
+- **Vira pendência só o que é tarefa:** "Alta prevista hoje" (quando "alta no N PO" ou "alta dia dd/mm" cai hoje) e, quando a programação diz "alta ao sair da UTI" e o paciente saiu da UTI, "Saiu da UTI: alta pela programação — passar para ALTAS". "Cobrar RX POI" continua como antes (regra geral).
+- **Só informação na ficha** (bloco "📋 Programação pós-op"): carga, antibiótico, anticoagulante (com "até ~dd/mm" quando há "N dias"), imobilização, retorno, curativo. Frases de discussão não entram.
+- **Alta que passou do dia:** sem alerta; etiqueta cinza "alta prevista passou?" e, na ficha, "a programação ainda vale?" com o botão **não vale mais** (some para aquele paciente, em todos os aparelhos).
+- **Saiu da UTI:** etiqueta "↪ saiu da UTI" no card por 3 dias (até o paciente ir para a seção ALTAS), com de onde → para onde na ficha.
+- Teste novo `t_posop65.py` (dados fictícios); conferido também no internograma real de 24/11 (só leitura).
+
+## v64 — Relatório sem internet · fonte guardada · testes sem dados reais — Relatório sem internet · fonte guardada · testes sem dados reais
 - **Relatório (OrthoHub):** passa a ser guardado no celular em segundo plano, como os outros programas; abre sem internet desde a primeira vez (custo: ~870 KB baixados uma vez a cada versão).
 - **Cópia da fonte:** junto com o app vai `sot-fonte-v64.zip` (código, testes, geração) para guardar no Drive.
 - **Testes sem dados reais:** o internograma de 11/11 usado nos testes e os nomes/registros dos testes de identificação, agenda e mapa foram trocados por fictícios. Os testes de leitura de fotos reais continuam só no ambiente de trabalho (decisão do usuário).
