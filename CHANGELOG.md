@@ -1,6 +1,12 @@
 # CHANGELOG — SOT APP
 
-## v70 (atual) — Atualizador: paciente repetido · seção sempre visível
+## v71 (atual) — Leitura refinada (vale para a enfermaria e o Atualizador)
+- **Data de internação com qualquer rótulo:** "DI 23/10", "Di", "D.I.", "Data de internação:", "Internação", "Internou em" (antes só "Dih dd/mm"). Ex.: leito com "DI 23/10" passa a contar o DIH pela data.
+- **Data no fim de linha longa:** "34 Po Rms … Quadril Esquerdo (21/10/2026)" agora conta pela data (antes só olhava 90 caracteres). A trava de ±10 dias continua.
+- **Atualizador:** avisa quando há uma data solta na 1ª coluna que não bate com o "Dih N" escrito ("essa data é a da internação?").
+- Teste novo `t_leitura71.py`.
+
+## v70 — Atualizador: paciente repetido · seção visível — Atualizador: paciente repetido · seção sempre visível
 - **Mesmo paciente em 2 lugares** (ex.: na ala e em ALTAS, mesmo registro): os números são trocados em **todas** as linhas dele (nunca a mesma troca duas vezes) e aparece o aviso em "Para você resolver" com as seções. Ala + ALTAS é o normal até a alta ser certa (aí sai da ala). **O Atualizador não tira nem move pacientes: só atualiza números.**
 - Cada paciente aparece como **leito · seção · nome** (a seção vem do leitor do app).
 - Mensagem de erro corrigida: o ensaio não dizia mais "a cópia foi criada" quando nenhuma cópia foi criada.

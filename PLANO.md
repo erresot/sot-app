@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **24/11/2026 (v70)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **24/11/2026 (v71)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -60,6 +60,7 @@ Situação em **24/11/2026 (v70)**. Prioridade combinada: **primeiro organizar o
 - ✅ v66: **Motor único de contadores pela data:** PO, POI→1 PO, dias de fratura/queda/déficit, DIH calculados para uma data-alvo. Usado em 3 lugares: (1) conferência do internograma de hoje (avisa quando o número escrito à mão está errado); (2) **mapa cirúrgico e linha de dados: o texto já sai com o número do dia da cirurgia** (ex.: mapa de 25/11 → "16 Po", "26 D Fx"), na tela, na impressão e no "Copiar"; some a etiqueta separada "· Nº PO"; (3) cards da Agenda. Com data → conta pela data; sem data → soma os dias entre o internograma e a data-alvo e marca "?" para conferir.
 - ✅ v65: **Pós-op → pendências** — "alta dia X" e "alta quando sair da UTI"; marcador de transferência (leito/seção mudou de UTI para enfermaria) = pronto para alta e para passar à seção ALTAS.
 - **Leitura do internograma (a fazer, aprovar):** (a) data de internação grudada no chip do Google Docs ("24/11/2026 📄 Arquivo") não é reconhecida; (b) ficha abreviada ("NOME · idade · COLO · SEXTA") juntada com o paciente de cima no PDF; (c) nome, idade e cidade emendados em maiúsculas na seção Altas, no PDF.
+- ✅ v71: leitura refinada — rótulos da data de internação (DI…), data no fim de linha longa, aviso de data solta × DIH. **A fazer:** levar para o motor comum as 2 peças que ainda são só do Atualizador (reescrever "Dih N" e juntar a data que caiu na linha de baixo).
 - ✅ v70: paciente repetido (ala + ALTAS) atualizado nas duas linhas + aviso; seção visível. Docs API ligada (24/11); ensaio no Doc real: 52 trocas, 6 à mão (todas do repetido). Costume (24/11): o paciente fica na ala **e** em ALTAS até a alta ser certa; aí sai da ala. O Atualizador só atualiza números.
 - ✅ v69: Atualizador lê o Doc direto, compara os 2 documentos de verdade, cabeçalho só números, referência pelo cabeçalho, ensaio só leitura. **Testar no uso real** (1º uso: talvez ligar a Google Docs API).
 - ✅ v68: Atualizador cria **cópia atualizada** (só números, pintados) e **compara lado a lado**. "Aplicar no oficial": a conta do app só lê o internograma (não tem edição) — só se um dia ganhar permissão; decisão do usuário.

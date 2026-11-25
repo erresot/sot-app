@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v70</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v71</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -686,6 +686,10 @@ var COL_EDGES = [39, 142, 221, 356, 516, 669, 802];
 // cabeçalho "(23/11/2026 - 19 Hc / 4 Ic / 1 Hm / 3 Altas)" — a parte das altas às vezes não vem escrita
 var RE_CAB = /\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm(?:\s*\/\s*(\d+)\s*altas?)?/i;
 function cabDe(m) { return { hc: +m[2], ic: +m[3], hm: +m[4], alta: m[5] != null ? +m[5] : null }; }
+// v71: data de internação com qualquer rótulo usado no serviço: "Dih 23/10", "DI 23/10", "D.I. 23/10", "Data de internação: 23/10", "Internação 23/10", "Internou em 23/10"
+var RX_ROT_DIH = '(?:dih|d\\.?\\s?i\\.?|data\\s+(?:de\\s+)?interna[cç][aã]o|interna[cç][aã]o|internou(?:\\s+em)?)';
+var RE_DIH_DATA = new RegExp('(?:^|\\s)' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)', 'i');
+var RE_DIH_DATA_LINHA = new RegExp('^' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)$', 'i');
 var COLS = ['local', 'nome', 'causa', 'orienta', 'condutas', 'exames'];
 // início de um paciente na coluna "Local": ala, sala, UTI, CC, PS, Hm, arquivo…
 var RE_START = /^(ala|sala|uti|enf|enfermaria|apto|box|semi|cti|cc|centro|rpa|ps|pronto|hm|hd|arquivo|isolamento|leito)\b/i;
@@ -791,7 +795,7 @@ function extrairCampos(p) {
     var m;
     if (!o.leito && (m = t.match(/^\d{3,4}[a-z]?$/i))) o.leito = t;
     else if ((m = t.match(/^\d{3,4}[a-z]?$/i))) { o.avisos.push('Mais de um leito na mesma ficha (' + o.leito + ' e ' + t + ') — possível mistura de pacientes'); }
-    else if ((m = t.match(/dih:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/i))) o.dihData = m[1];
+    else if ((m = t.match(RE_DIH_DATA))) o.dihData = m[1];
     else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) o.dihStated = +m[1];
     else if ((m = t.match(/^\(?(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)?$/))) { if (!o.dataSolta) o.dataSolta = m[1]; resto.push(t); }
     else if (/^(p|e|c|p\s*\+\s*e|c\s*\+\s*e)$/i.test(t)) o.flag = t.toUpperCase().replace(/\s/g, '');
@@ -819,7 +823,7 @@ function extrairCampos(p) {
     if (/^[\s,.;:-]*$/.test(t)) return;   // só pontuação (",")
     if ((m = t.match(/^(?:r|p|reg|gmr)?\s*:?\s*(\d{5,8})$/i)) || (m = t.match(/\b(?:r|p|reg)\s*:\s*(\d{5,8})\b/i))) o.regs.push(m[1]);
     else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) { if (o.dihStated == null) o.dihStated = +m[1]; }
-    else if ((m = t.match(/dih:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/i))) { if (!o.dihData) o.dihData = m[1]; }
+    else if ((m = t.match(RE_DIH_DATA))) { if (!o.dihData) o.dihData = m[1]; }
     else if (!o.origem && !/^ao\b|^\-+$|classificar/i.test(t)) o.origem = t;
     else after.push(t);
   });
@@ -1929,11 +1933,13 @@ function data(s, ref) {
 }
 // data da linha, pela regra (com ano em qualquer lugar; sem ano só entre parênteses ou no fim)
 // v67: só olha os 90 primeiros caracteres depois do contador (no PDF duas linhas podem vir grudadas); aceita dd-mm-aaaa
+// v71: e, se não achou, a data entre parênteses no FIM da linha (descrições longas: "34 Po Rms … Quadril Esquerdo (21/10/2026)")
 function dataDaLinha(resto, ref) {
+  var fimL = String(resto).match(/\(\s*(\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?)\s*\)\s*\.?\s*$/);
   resto = resto.slice(0, 90);
   var h = resto.match(/\(?\s*(\d{1,2}-\d{1,2}-\d{4})/); if (h) return data(h[1], ref);
   var m = resto.match(/\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/(?:^|\s|-)(\d{1,2}\/\d{1,2})\s*\)?\s*\.?\s*$/);
-  return m ? data(m[1], ref) : null;
+  return m ? data(m[1], ref) : (fimL ? data(fimL[1], ref) : null);
 }
 var R_PO = /^(\s*[-–•]?\s*)(\d{1,3})(\s*d?\s*[º°]?\s*)(DPO|PO)\b/i, R_POI = /^(\s*[-–•]?\s*)(POI)\b/i, R_D = /^(\s*[-–•]?\s*)(\d{1,3})(\s*)(d)\b/i;
 // lê o contador de UM trecho (linha). Devolve null se o trecho não começa com contador.
@@ -2081,7 +2087,7 @@ function extrairDoc(cels, section) {
     if (!s) return;
     if ((m = s.match(/^\d{3,4}[a-z]?$/i))) { if (!o.leito) o.leito = s; else o.avisos.push('Dois leitos na mesma linha (' + o.leito + ' e ' + s + ')'); }
     else if (s === '?') o.leitoDuvida = true;
-    else if ((m = s.match(/^dih\s*:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)$/i))) o.dihData = m[1];
+    else if ((m = s.match(RE_DIH_DATA_LINHA))) o.dihData = m[1];
     else if ((m = s.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) o.dihStated = +m[1];
     else if ((m = s.match(/^(?:em\s+)?\(?(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)?(?:\s*\([^()\d]{1,15}\))?$/i))) { o.dataTrauma = m[1]; if (!/^em\s/i.test(s) && !o.dataSolta) o.dataSolta = m[1]; }
     else if (/^(p\s*\+\s*e|c\s*\+\s*e|p|e|c|gmr|sor|cme|arquivo|vrsa|kpc|orsa|mrsa)$/i.test(s)) o.flags.push(s.toUpperCase().replace(/\s/g, ''));
@@ -2108,7 +2114,7 @@ function extrairDoc(cels, section) {
     if (!o.idade && (m = s.match(/^(\d{1,3})\s*(a|anos|a\.|m|meses)\.?$/i))) { o.idade = m[1] + (/^m/i.test(m[2]) ? ' meses' : ''); return; }
     if ((m = s.match(/^(?:p|r|reg|gmr|registro)?\s*[:.]?\s*(\d{5,8})$/i))) { o.regs.push(m[1]); return; }
     if ((m = s.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) { if (o.dihStated == null) o.dihStated = +m[1]; return; }
-    if ((m = s.match(/^dih\s*:?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)$/i))) { if (!o.dihData) o.dihData = m[1]; return; }
+    if ((m = s.match(RE_DIH_DATA_LINHA))) { if (!o.dihData) o.dihData = m[1]; return; }
     if (RX_CLASSIF.test(s) || /\bao\s*\d/i.test(s) || /\?{2,}$/.test(s) && o.origem) { o.classifL.push(s); return; }
     if (!o.origem && !/\d{3,}/.test(s)) { o.origem = s; return; }
     o.classifL.push(s);
@@ -2416,7 +2422,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '70';
+var VERSAO = '71';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }

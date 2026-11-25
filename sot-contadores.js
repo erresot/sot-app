@@ -17,11 +17,13 @@ function data(s, ref) {
 }
 // data da linha, pela regra (com ano em qualquer lugar; sem ano só entre parênteses ou no fim)
 // v67: só olha os 90 primeiros caracteres depois do contador (no PDF duas linhas podem vir grudadas); aceita dd-mm-aaaa
+// v71: e, se não achou, a data entre parênteses no FIM da linha (descrições longas: "34 Po Rms … Quadril Esquerdo (21/10/2026)")
 function dataDaLinha(resto, ref) {
+  var fimL = String(resto).match(/\(\s*(\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?)\s*\)\s*\.?\s*$/);
   resto = resto.slice(0, 90);
   var h = resto.match(/\(?\s*(\d{1,2}-\d{1,2}-\d{4})/); if (h) return data(h[1], ref);
   var m = resto.match(/\(?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/) || resto.match(/\(\s*(\d{1,2}\/\d{1,2})\s*(?:\)|$)/) || resto.match(/(?:^|\s|-)(\d{1,2}\/\d{1,2})\s*\)?\s*\.?\s*$/);
-  return m ? data(m[1], ref) : null;
+  return m ? data(m[1], ref) : (fimL ? data(fimL[1], ref) : null);
 }
 var R_PO = /^(\s*[-–•]?\s*)(\d{1,3})(\s*d?\s*[º°]?\s*)(DPO|PO)\b/i, R_POI = /^(\s*[-–•]?\s*)(POI)\b/i, R_D = /^(\s*[-–•]?\s*)(\d{1,3})(\s*)(d)\b/i;
 // lê o contador de UM trecho (linha). Devolve null se o trecho não começa com contador.

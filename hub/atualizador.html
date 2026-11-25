@@ -145,6 +145,8 @@ function calcular(){
     muds.forEach(function(x){ x.k = (p.registro || p.id || p.nome) + '|' + x.de; nMud++; if (x.duv) nDuv++; });
     // 3) coisas que só a pessoa resolve
     var txt0 = String(col[0] || '');
+    if (!p.dihData && p.dihFonte !== 'data' && p.dataSolta && p.dihStated != null) { var ds = A.parseData(p.dataSolta, alvo);   // v71
+      if (ds) { var nRef = C.dias(ds, ref); fazer.push({ q: quem, t: '⚠ DIH escrito ' + p.dihStated + ', mas a data ' + p.dataSolta + ' da 1ª coluna daria DIH ' + nRef + ' em ' + dm(ref) + ' — essa data é a da internação? Se for, escreva "Dih ' + p.dataSolta + '" que o app passa a contar por ela.' }); } }
     if (/\d\s*Arquivo\b|^\s*Arquivo\s*$/m.test(txt0)) fazer.push({ q: quem, t: 'Chip “Arquivo” esquecido na coluna 1 — pode tirar.' });
     if (p.alta) fazer.push({ q: quem, t: 'Está na seção ALTAS (lista do plantonista da noite) — já saiu? Retirar do internograma.' });
     try { var po = A.progPosOp(p, alvo); if (po.alta && po.alta.dias === 0 && !p.alta) fazer.push({ q: quem, t: 'Programação: alta prevista hoje — passar para ALTAS quando liberada.' }); } catch(e){}
