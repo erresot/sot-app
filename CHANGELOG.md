@@ -1,6 +1,16 @@
 # CHANGELOG — SOT APP
 
-## v71 (atual) — Leitura refinada (vale para a enfermaria e o Atualizador)
+## v72 (atual) — Leitura por bloco (motor comum: enfermaria, Atualizador, Agenda, mapa)
+- **O contador sem data procura a data no seu bloco**: as linhas de baixo até linha vazia, "-", outro contador, rótulo (Ap:, Muc:, Ass…) ou "Pot/Po/Pós-op" (outro item). Ex.: "25 D Fx Acetábulo… / Fx Púbico… 30/10/2026", "33 D Fratura Luxação Cervical / … / Acidente Automobilístico 22/10/2026", lista longa de fraturas terminando em "Queda… (24/09)".
+- O bloco é uma coisa só: a data do bloco vale como a da própria linha (trava ±10) e o app **avisa quando o número escrito está atrasado** ("escrito 19, pela data seria 20").
+- **PO nunca pega a data de trauma/fratura** (a data da cirurgia é outra).
+- **"N d" sem data no bloco usa a data do trauma da 1ª coluna**, com trava estrita: ±1 se a data está na linha do trauma; **exata** se a data está sozinha na linha de baixo (pode ser a de internação). A data de internação ("Dih/DI…") nunca entra.
+- "Pó" (com acento) é PO; "Qda"/"Qpa" contam como trauma.
+- Conferência da enfermaria e Agenda usam a mesma leitura; o rótulo da data de internação passou a morar no motor (um lugar só). O Atualizador não tem mais peça própria de juntar linhas.
+- **Validação local nos internogramas reais de 16–23/11 (fora do repositório):** contadores pela data 178 → 235 de 258, nenhum perdido; 3 casos em que a equipe corrigiu no dia seguinte exatamente para a data do bloco. No Doc de 24/11: 28 → 31 de 33.
+- Testes novos: `t_bloco72.py` (31 casos), `t_atualizador72.py` (sistema).
+
+## v71 — Leitura refinada (vale para a enfermaria e o Atualizador) — Leitura refinada (vale para a enfermaria e o Atualizador)
 - **Data de internação com qualquer rótulo:** "DI 23/10", "Di", "D.I.", "Data de internação:", "Internação", "Internou em" (antes só "Dih dd/mm"). Ex.: leito com "DI 23/10" passa a contar o DIH pela data.
 - **Data no fim de linha longa:** "34 Po Rms … Quadril Esquerdo (21/10/2026)" agora conta pela data (antes só olhava 90 caracteres). A trava de ±10 dias continua.
 - **Atualizador:** avisa quando há uma data solta na 1ª coluna que não bate com o "Dih N" escrito ("essa data é a da internação?").

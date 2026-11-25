@@ -131,16 +131,14 @@ function calcular(){
       if (n !== n0 && n >= 0) muds.push({ campo: 'DIH', de: l.trim(), para: (m[1] + n + m[3]).trim(), por: por, duv: duv });
     });
     // 2) Causa: contadores no começo de cada linha
-    var LC = linhasDe(col[2]);
-    LC.forEach(function(l, i){
-      if (!l.trim()) return;
-      var c0 = C.ler(l, ref); if (!c0) return;
-      var comb = l;   // a data pode ter quebrado para a(s) linha(s) de baixo (PDF / célula estreita)
-      if (!c0.d) for (var j = i + 1; j <= i + 2 && j < LC.length; j++) { if (C.ler(LC[j], ref)) break; comb += ' ' + LC[j]; }
-      var r = C.atualizarTexto(comb, ref, alvo); if (!r.mudou.length) return;
-      var x = r.mudou[0], para = x.para.slice(0, x.para.length - (comb.length - l.length)), c = C.ler(comb, ref) || {};
-      muds.push({ campo: 'Causa', de: l.trim(), para: para.trim(), duv: !x.pelaData,
-        por: x.pelaData ? 'pela data (' + (c.d ? dm(c.d) : '') + ')' : 'sem data na linha: +' + C.dias(ref, alvo) + ' dia(s) — confira' });
+    // v72: o motor lê a célula por bloco (data na linha de baixo; "N d" pela data do trauma da 1ª coluna), com a trava de ±1
+    var LC = linhasDe(col[2]), opc = { mecanismo: linhasDe(col[0]) }, An = {};
+    C.analisar(LC, ref, opc).forEach(function(c){ An[c.i] = c; });
+    C.atualizarLinhas(LC, ref, alvo, opc).forEach(function(x){
+      var c = An[x.i];
+      var onde = { linha: '', bloco: ', na linha de baixo', mecanismo: ', data do trauma' }[c.fonte] || '';
+      muds.push({ campo: 'Causa', de: x.de.trim(), para: x.para.trim(), duv: !x.pelaData,
+        por: (x.pelaData ? 'pela data (' + dm(c.d) + onde + ')' : 'sem data: +' + C.dias(ref, alvo) + ' dia(s) — confira') + (c.nota ? ' · ' + c.nota : '') });
     });
     muds.forEach(function(x){ x.k = (p.registro || p.id || p.nome) + '|' + x.de; nMud++; if (x.duv) nDuv++; });
     // 3) coisas que só a pessoa resolve
