@@ -21,6 +21,8 @@ button.sec{background:var(--card);color:var(--acc)}button.sm{padding:5px 9px;fon
 .tag.ok{background:var(--ok2);color:var(--ok)}.tag.bad{background:var(--bad2);color:var(--bad)}
 .cab{font-family:var(--mono);font-size:14px;font-weight:600;background:var(--ok2);padding:8px 10px;border-radius:8px}
 ul.lst{margin:6px 0 0;padding-left:18px}ul.lst li{margin:4px 0}.vazio{padding:20px;text-align:center;color:var(--mut)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}.cmp>div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.cmp .tit{font-family:inherit;font-weight:700;font-size:11.5px;color:var(--mut);background:none;border:0;padding:2px 2px 0}.cmp del{background:var(--bad2);color:var(--bad)}.cmp ins{text-decoration:none;background:#fff176;color:#111;font-weight:700}.cmp ins.duv{background:#ffcc80}
 .resumo{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut)}.resumo b{color:var(--ink)}
 html[data-theme="dark"]{--bg:#0f1517;--card:#182024;--ink:#e3ebe7;--mut:#93a39d;--line:#2a3539;--acc:#5aa2ff;--navy:#9cc3ff;--ok2:#163323;--ok:#5fd08f;--warn2:#33261a;--warn:#f0a35a;--bad2:#3b1d1a;--bad:#ff7b6e}
 </style>
@@ -107,7 +109,8 @@ function calcular(){
   var k = A.contagem ? A.contagem() : null, cab = '';
   if (k && k.c) cab = '(' + dmy(alvo) + ' - ' + k.c.hc + ' Hc / ' + k.c.ic + ' Ic / ' + k.c.hm + ' Hm' + (k.c.alta ? ' / ' + k.c.alta + ' Altas' : '') + ')';
   var h = '<div class="card"><div class="resumo"><span><b>' + nMud + '</b> números a mudar</span><span><b>' + nDuv + '</b> para conferir (sem data)</span><span><b>' + fazer.length + '</b> itens para você</span></div>' +
-    '<div class="row" style="margin-top:8px"><button class="sm" id="copiaTudo">Copiar lista de correções</button><button class="sec sm" id="limpa">Desmarcar “feito”</button></div></div>';
+    '<div class="row" style="margin-top:8px"><button class="sm" id="copiaTudo">Copiar lista de correções</button><button class="sec sm" id="limpa">Desmarcar “feito”</button></div>' +
+    '<div class="row" style="margin-top:10px"><button id="criaCopia">📄 Criar cópia atualizada no Drive</button><button class="sec" id="comparar">↔ Comparar lado a lado</button></div><div id="cmpBox"></div><div class="hint" id="copiaSt" style="margin-top:6px">Faz uma cópia idêntica do internograma e troca só os números na cópia (amarelo = pela data · laranja = confira). O internograma oficial não é alterado.</div></div>';
   if (cab) h += '<h2>Cabeçalho</h2><div class="card"><div class="cab" id="cabTxt">' + esc(cab) + '</div><div class="row" style="margin-top:8px"><button class="sm" data-copia="' + esc(cab) + '">Copiar</button>' +
     (S.dataIG && S.dataIG.indexOf(dm(alvo)) < 0 ? '<span class="tag">o cabeçalho atual diz ' + esc(S.dataIG) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
   if (fazer.length) h += '<h2>Para você resolver</h2><div class="card"><ul class="lst">' + fazer.map(function(x){ return '<li><b>' + esc(x.q) + '</b> — ' + esc(x.t) + '</li>'; }).join('') + '</ul></div>';
@@ -127,6 +130,97 @@ function calcular(){
   $('#saida').innerHTML = h;
   window.__lista = { cab: cab, lista: com, fazer: fazer };
 }
+/* ---------- v68: comparar lado a lado (original × atualizado) ---------- */
+function marca(de, para, duv){
+  var k = 0; while (k < de.length && k < para.length && de[k] === para[k]) k++;
+  var s = 0; while (s < de.length - k && s < para.length - k && de[de.length - 1 - s] === para[para.length - 1 - s]) s++;
+  var a = esc(de.slice(0, k)), z = esc(de.slice(de.length - s));
+  return { orig: a + '<del>' + esc(de.slice(k, de.length - s)) + '</del>' + z, novo: a + '<ins' + (duv ? ' class="duv"' : '') + '>' + esc(para.slice(k, para.length - s)) + '</ins>' + esc(para.slice(para.length - s)) };
+}
+function comparar(){
+  var L = window.__lista, box = $('#cmpBox'); if (!L) return;
+  if (box.innerHTML) { box.innerHTML = ''; return; }
+  var CF = A.SOT_CONFIG || A.CFG || {}, docO = CF.DOC_ID ? 'https://docs.google.com/document/d/' + CF.DOC_ID + '/edit' : '', c = window.__copia;
+  var h = '<div class="hint" style="margin-top:10px">Esquerda: internograma como está (<del style="background:var(--bad2);color:var(--bad)">número antigo</del>) · Direita: atualizado (<ins style="text-decoration:none;background:#fff176;color:#111">pela data</ins> · <ins style="text-decoration:none;background:#ffcc80;color:#111">confira</ins>).' +
+    (docO ? ' <a href="' + esc(docO) + '" target="_blank" rel="noopener">Abrir o original</a>' : '') + (c ? ' · <a href="https://docs.google.com/document/d/' + esc(c.id) + '/edit" target="_blank" rel="noopener">Abrir a cópia atualizada</a>' : '') + '</div>';
+  if (L.cab) h += '<div class="cmp"><div class="tit">Cabeçalho — original</div><div class="tit">Atualizado</div><div>' + esc(A.S.dataIG ? '(' + A.S.dataIG + ' …)' : '—') + '</div><div><ins>' + esc(L.cab) + '</ins></div></div>';
+  L.lista.forEach(function(x){
+    var o = [], n = [];
+    x.muds.forEach(function(m){ var r = marca(m.de, m.para, m.duv); o.push(m.campo + ': ' + r.orig); n.push(m.campo + ': ' + r.novo); });
+    h += '<div class="cmp"><div class="tit">' + esc(x.quem) + ' — original</div><div class="tit">Atualizado</div><div>' + o.join('\n') + '</div><div>' + n.join('\n') + '</div></div>';
+  });
+  box.innerHTML = h;
+}
+/* ---------- v68: cópia atualizada no Drive (Google Docs) ---------- */
+var AMARELO = { red: 1, green: 0.95, blue: 0.46 }, LARANJA = { red: 1, green: 0.8, blue: 0.5 };
+function paragrafos(conteudo, out, cel){   // todos os parágrafos, com o índice de cada caractere no documento
+  (conteudo || []).forEach(function(se){
+    if (se.paragraph) { var t = '', idx = []; (se.paragraph.elements || []).forEach(function(e){ var s = e.textRun ? e.textRun.content : new Array(Math.max(1, (e.endIndex - e.startIndex)) + 1).join('\uFFFC'); for (var i = 0; i < s.length; i++) idx.push(e.startIndex + i); t += s; }); out.push({ t: t, idx: idx, cel: cel }); }
+    if (se.table) (se.table.tableRows || []).forEach(function(row, ri){ (row.tableCells || []).forEach(function(c, ci){ paragrafos(c.content, out, { tab: se.startIndex, r: ri, c: ci }); }); });
+  });
+  return out;
+}
+function edicao(P, de, para, cor){
+  var off = P.t.indexOf(de); if (off < 0) return null;
+  var k = 0; while (k < de.length && k < para.length && de[k] === para[k]) k++;
+  var s = 0; while (s < de.length - k && s < para.length - k && de[de.length - 1 - s] === para[para.length - 1 - s]) s++;
+  var velho = de.slice(k, de.length - s), novo = para.slice(k, para.length - s), ini = P.idx[off + k];
+  if (ini == null) return null;
+  return { ini: ini, velho: velho, novo: novo, cor: cor };
+}
+function montarPedidos(doc, L, cab){
+  var Ps = paragrafos(doc.body && doc.body.content, [], null), eds = [], falta = [];
+  var linhas = {};   // parágrafos por linha da tabela
+  Ps.forEach(function(P){ if (P.cel) { var k = P.cel.tab + ':' + P.cel.r; (linhas[k] = linhas[k] || []).push(P); } });
+  var linhaDe = function(p){
+    var reg = String(p.registro || '').replace(/\D/g, ''), nome = String(p.nome || '').split(' ').slice(0, 2).join(' ').toUpperCase();
+    var ks = Object.keys(linhas).filter(function(k){ var t1 = linhas[k].filter(function(P){ return P.cel.c === 1; }).map(function(P){ return P.t; }).join(' ');
+      return reg.length >= 4 ? t1.replace(/\D+/g, ' ').split(' ').indexOf(reg) > -1 : (nome && t1.toUpperCase().replace(/\s+/g, ' ').indexOf(nome) > -1); });
+    return ks.length === 1 ? linhas[ks[0]] : null;   // achou exatamente uma linha (nunca chuta entre duas)
+  };
+  L.lista.forEach(function(x){
+    var row = linhaDe(x.p);
+    x.muds.forEach(function(m){
+      var col = m.campo === 'DIH' ? 1 : 2, e = null;
+      if (row) { var cands = row.filter(function(P){ return P.cel.c === col && P.t.indexOf(m.de) > -1; }); if (cands.length === 1) e = edicao(cands[0], m.de, m.para, m.duv ? LARANJA : AMARELO); }
+      if (e) eds.push(e); else falta.push(x.quem + ': ' + m.de + ' → ' + m.para);
+    });
+  });
+  if (cab) { var Pc = Ps.filter(function(P){ return /\(\s*\d{1,2}\/?\d{1,2}\/\d{4}\s*-\s*\d+\s*hc\b[^)]*\)/i.test(P.t); })[0];
+    if (Pc) { var mc = Pc.t.match(/\(\s*\d{1,2}\/?\d{1,2}\/\d{4}\s*-\s*\d+\s*hc\b[^)]*\)/i)[0]; var ec = edicao(Pc, mc, cab, AMARELO); if (ec) eds.push(ec); } else falta.push('Cabeçalho não encontrado: ' + cab); }
+  eds.sort(function(a, b){ return b.ini - a.ini; });
+  var req = [];
+  eds.forEach(function(e){
+    if (e.velho.length) req.push({ deleteContentRange: { range: { startIndex: e.ini, endIndex: e.ini + e.velho.length } } });
+    if (e.novo.length) { req.push({ insertText: { location: { index: e.ini }, text: e.novo } });
+      req.push({ updateTextStyle: { range: { startIndex: e.ini, endIndex: e.ini + e.novo.length }, textStyle: { backgroundColor: { color: { rgbColor: e.cor } } }, fields: 'backgroundColor' } }); }
+  });
+  return { req: req, n: eds.length, falta: falta };
+}
+function msgErro(e){
+  var t = (e && (e.msg || e.message)) || String(e);
+  if (/docs\.googleapis|Docs API has not been used|SERVICE_DISABLED|accessNotConfigured/i.test(t)) return 'A “Google Docs API” não está ligada no projeto do Google do app. É uma configuração única no console do Google (peça ao Claude o passo a passo). A cópia foi criada, mas os números não foram trocados.';
+  if (e && e.auth) return 'O login do Google expirou: toque no ícone da nuvem no app, entre de novo e tente outra vez.';
+  return 'Não deu certo: ' + t;
+}
+function criarCopia(btn){
+  var L = window.__lista, st = $('#copiaSt'), Y = A.SYNC;
+  if (!L) return;
+  if (!Y || !Y.temToken()) { st.innerHTML = '<b>Entre no Google primeiro</b> (ícone da nuvem no topo do app) e toque de novo.'; return; }
+  var alvo = new Date($('#alvo').value + 'T00:00:00'), nome = 'Internograma HCI — atualizado ' + dmy(alvo) + ' (cópia do app)', copia = null;
+  btn.disabled = true; st.textContent = '1/3 Copiando o internograma…';
+  Y.copiarInternograma(nome).then(function(f){ copia = f; st.textContent = '2/3 Lendo a cópia…'; return Y.docLer(f.id); })
+   .then(function(doc){ var P = montarPedidos(doc, L, L.cab); st.textContent = '3/3 Trocando ' + P.n + ' números…';
+      return (P.req.length ? Y.docAlterar(copia.id, P.req, doc.revisionId) : Promise.resolve()).then(function(){ return P; }); })
+   .then(function(P){
+      var link = copia.webViewLink || ('https://docs.google.com/document/d/' + copia.id + '/edit');
+      st.innerHTML = '✅ <b>Cópia pronta:</b> <a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(nome) + '</a><br>' + P.n + ' número(s) trocado(s) e marcado(s) na cópia.' +
+        (P.falta.length ? '<br>⚠ ' + P.falta.length + ' não encontrado(s) na cópia — troque à mão:<ul class="lst">' + P.falta.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '');
+      window.__copia = { id: copia.id, n: P.n, falta: P.falta };
+   })
+   .catch(function(e){ st.textContent = msgErro(e) + (copia ? ' (cópia: ' + (copia.webViewLink || copia.id) + ')' : ''); })
+   .then(function(){ btn.disabled = false; });
+}
 function copiar(t, btn){
   var ok = function(){ if (btn) { var o = btn.textContent; btn.textContent = 'Copiado ✓'; setTimeout(function(){ btn.textContent = o; }, 1200); } };
   try { navigator.clipboard.writeText(t).then(ok, function(){ fallback(); }); } catch(e){ fallback(); }
@@ -135,6 +229,8 @@ function copiar(t, btn){
 document.addEventListener('click', function(ev){
   var b = ev.target.closest('[data-copia]'); if (b) { copiar(b.getAttribute('data-copia'), b); return; }
   if (ev.target.id === 'recalc') { calcular(); return; }
+  if (ev.target.id === 'criaCopia') { criarCopia(ev.target); return; }
+  if (ev.target.id === 'comparar') { comparar(); return; }
   if (ev.target.id === 'limpa') { FEITO = {}; salvaFeito(); calcular(); return; }
   if (ev.target.id === 'copiaTudo') {
     var L = window.__lista || { lista: [], fazer: [] }, t = [];

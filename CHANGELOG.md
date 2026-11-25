@@ -1,6 +1,12 @@
 # CHANGELOG — SOT APP
 
-## v67 (atual) — Atualizador de Internograma (protótipo) · correções da v66
+## v68 (atual) — Atualizador: cópia atualizada no Drive · comparar lado a lado
+- **📄 Criar cópia atualizada no Drive:** o Atualizador faz uma cópia idêntica do internograma (Drive da conta do app) e troca **só os números** na cópia, pintando cada troca (amarelo = pela data · laranja = confira). Mostra o link e o que não achou ("troque à mão"). O app nunca altera o internograma que ele lê (trava no código).
+- **↔ Comparar lado a lado:** para cada paciente, original (número antigo riscado) × atualizado (número novo marcado), com links para abrir o original e a cópia.
+- Pode precisar ligar a "Google Docs API" no projeto do Google do app (configuração única) — o app avisa se for o caso.
+- Teste novo `t_copia68.py` (Google Docs simulado, dados fictícios).
+
+## v67 — Atualizador de Internograma (protótipo) · correções da v66 — Atualizador de Internograma (protótipo) · correções da v66
 - **Novo no OrthoHub: Atualizador de Internograma (protótipo).** Lê o internograma já importado no app e mostra, paciente por paciente, **só os números** que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) — pela data quando existe; sem data, "+1 dia" marcado para conferir —, o **cabeçalho já contado** e uma lista "para você resolver" (seção Altas, alta prevista hoje, chip "Arquivo" esquecido, exames do dia). Botões "Copiar" e "feito". Não altera o Google Docs.
 - **Contadores (correção da v66):** a data só vale se estiver logo depois do contador e der um número plausível (acabou o "672º PO" vindo da linha vizinha no PDF); aceita "12-11-2026".
 - **Exames (correção da v66):** a data é o **dia da coleta** — "25/11: solicitado" = colhe 25/11. "Solicitado" sem data vira só informação (urgência hoje ou rotina amanhã?).

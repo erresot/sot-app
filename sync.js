@@ -164,6 +164,21 @@ var SYNC = (function () {
   function acharFoto(lid) {
     return req(API + '/files?q=' + q("appProperties has { key='lid' and value='" + lid + "' } and trashed=false") + '&fields=files(id)').then(function (r) { return r.json(); }).then(function (j) { return j.files && j.files[0] ? j.files[0].id : null; });
   }
+  /* ---------- v68: cópia atualizada do internograma (Atualizador) ----------
+     Copia o Doc oficial (cópia idêntica, pela API do Drive) e altera SÓ a cópia (API do Google Docs).
+     TRAVA: docAlterar recusa o internograma oficial — nesta etapa o app nunca escreve nele. */
+  var DOCS_API = 'https://docs.googleapis.com/v1/documents/';
+  function copiarInternograma(nome) {
+    if (!CFG.DOC_ID) return Promise.reject({ msg: 'DOC_ID não configurado' });
+    return req(API + '/files/' + CFG.DOC_ID + '/copy?fields=id,name,webViewLink&supportsAllDrives=true', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nome }) })
+      .then(function (r) { return r.json(); });
+  }
+  function docLer(id) { return req(DOCS_API + encodeURIComponent(id)).then(function (r) { return r.json(); }); }
+  function docAlterar(id, pedidos, revisao) {
+    if (!id || id === CFG.DOC_ID) return Promise.reject({ msg: 'Por segurança, o app não altera o internograma oficial.' });
+    var corpo = { requests: pedidos }; if (revisao) corpo.writeControl = { requiredRevisionId: revisao };
+    return req(DOCS_API + encodeURIComponent(id) + ':batchUpdate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) }).then(function (r) { return r.json(); });
+  }
   function exportarDoc() {
     if (!CFG.DOC_ID) return Promise.reject({ msg: 'DOC_ID não configurado' });
     return req(API + '/files/' + CFG.DOC_ID + '/export?mimeType=text/html').then(function (r) { return r.text(); });
@@ -615,7 +630,7 @@ var SYNC = (function () {
   function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
   function ambSalvar(reg, obj) { return salvarPorNome('amb' + reg, null, 'amb-' + reg + '.json', obj, function () { return ambArquivo(reg); }); }
   function mapaSalvar(iso, obj) { return salvarPorNome('mapa' + iso, null, 'mapa-' + iso + '.json', obj, function () { return mapaArquivo(iso); }); }
-  return { folhaSalvar: folhaSalvar, folhaBaixar: folhaBaixar, igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { copiarInternograma: copiarInternograma, docLer: docLer, docAlterar: docAlterar, folhaSalvar: folhaSalvar, folhaBaixar: folhaBaixar, igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 

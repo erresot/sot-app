@@ -1,7 +1,7 @@
 # SOT APP — Especificação (SPEC)
 
 > Documento técnico do app inteiro. Substitui o antigo `ESTRUTURA.md`.
-> Versão descrita: **v67** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
+> Versão descrita: **v68** (24/11/2026). Ao mudar o app, atualize este arquivo, o `PLANO.md` e o `CHANGELOG.md`.
 
 ---
 
@@ -57,7 +57,7 @@ O app **não substitui o prontuário**. Ele monta o texto, que o médico confere
 | **Ajustes** | Importar internograma (Doc ou PDF), conferência da contagem, quem saiu do internograma (igual em todos os aparelhos), backup em arquivo, exemplo fictício, tema claro/escuro. | Funciona |
 
 Outros comportamentos:
-- **Atualizador de Internograma (v67, `hub/atualizador.html`, protótipo):** lê `S.pacientes[].bruto` do app (Doc: linhas por quebra; PDF: " / "), calcula para o dia escolhido só os números (DIH pela data de internação quando há; contadores da Causa pelo `sot-contadores.js`, procurando a data até 2 linhas abaixo), cabeçalho pela `contagem()`, e lista o que só a pessoa resolve. Referência sem data = "números em dia até ontem/hoje/anteontem" (escolha na tela). Só leitura.
+- **Atualizador de Internograma (v67, `hub/atualizador.html`, protótipo):** lê `S.pacientes[].bruto` do app (Doc: linhas por quebra; PDF: " / "), calcula para o dia escolhido só os números (DIH pela data de internação quando há; contadores da Causa pelo `sot-contadores.js`, procurando a data até 2 linhas abaixo), cabeçalho pela `contagem()`, e lista o que só a pessoa resolve. Referência sem data = "números em dia até ontem/hoje/anteontem" (escolha na tela). Só leitura do internograma. **v68:** "Criar cópia atualizada" — `SYNC.copiarInternograma` (Drive files.copy) + `SYNC.docLer`/`docAlterar` (Docs API, writeControl pela revisão lida) trocam só os números na cópia, pintados; `docAlterar` recusa `CFG.DOC_ID`. "Comparar lado a lado" mostra original × atualizado. Usa as permissões que o app já tem (drive.readonly para copiar; drive.file para editar a cópia que ele criou).
 - **Contadores pela data (v66, `sot-contadores.js`):** um motor para PO/POI/N d. Conferência (aviso "Contador: …"), mapa e linha de dados no dia da cirurgia (`31-mapa.js`), painel da Agenda. Com data → pela data; sem data → +dias desde o internograma e dúvida.
 - **Pedido de exames (v66, `js/app/26-exames-pedido.js`):** "dd/mm Solicitar" (pedir na véspera, rotina) e "Solicitado dd/mm" (coleta no dia seguinte). Pendência só para "pedir na rotina hoje"; o resto é aviso.
 - **Programação pós-op (v65, `js/app/25-posop-prog.js`):** lida do Orienta/Condutas de quem tem PO contável. Pendência automática só para "alta prevista hoje" e "saiu da UTI + alta ao sair da UTI"; carga, ATB, anticoagulante (até ~data), imobilização, retorno e curativo são só informação na ficha. Alta que passou: etiqueta cinza + "não vale mais" (lápide `§alta|…` em `S.pendDel`, sincronizada). Saída da UTI pelo histórico de lugares (`S.idents[id].hist`), por 3 dias.
