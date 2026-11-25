@@ -22,7 +22,7 @@ button.sec{background:var(--card);color:var(--acc)}button.sm{padding:5px 9px;fon
 .cab{font-family:var(--mono);font-size:14px;font-weight:600;background:var(--ok2);padding:8px 10px;border-radius:8px}
 ul.lst{margin:6px 0 0;padding-left:18px}ul.lst li{margin:4px 0}.vazio{padding:20px;text-align:center;color:var(--mut)}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}.cmp>div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word}
-.cmp .tit{font-family:inherit;font-weight:700;font-size:11.5px;color:var(--mut);background:none;border:0;padding:2px 2px 0}.cmp del{background:var(--bad2);color:var(--bad)}.cmp ins{text-decoration:none;background:#fff176;color:#111;font-weight:700}.cmp ins.duv{background:#ffcc80}
+.cmp.est>div:not(.tit){border-color:var(--bad)}.cmp .tit{font-family:inherit;font-weight:700;font-size:11.5px;color:var(--mut);background:none;border:0;padding:2px 2px 0}.cmp del{background:var(--bad2);color:var(--bad)}.cmp ins{text-decoration:none;background:#fff176;color:#111;font-weight:700}.cmp ins.duv{background:#ffcc80}
 .resumo{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut)}.resumo b{color:var(--ink)}
 html[data-theme="dark"]{--bg:#0f1517;--card:#182024;--ink:#e3ebe7;--mut:#93a39d;--line:#2a3539;--acc:#5aa2ff;--navy:#9cc3ff;--ok2:#163323;--ok:#5fd08f;--warn2:#33261a;--warn:#f0a35a;--bad2:#3b1d1a;--bad:#ff7b6e}
 </style>
@@ -30,14 +30,14 @@ html[data-theme="dark"]{--bg:#0f1517;--card:#182024;--ink:#e3ebe7;--mut:#93a39d;
 </head>
 <body>
 <h1>🔄 Atualizador de Internograma <span class="tag">protótipo</span></h1>
-<div class="hint">Lê o internograma que o app já importou e mostra <b>só os números</b> que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) e o cabeçalho já contado. Nada é alterado no Google Docs: você confere e corrige lá.</div>
+<div class="hint">Lê o internograma <b>direto do Google Doc</b> (na hora) e mostra <b>só os números</b> que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) e o cabeçalho. O internograma lido nunca é alterado: as trocas vão para uma <b>cópia</b> no Drive, que você compara lado a lado com o original.</div>
 
 <div class="card">
   <div class="row">
     <label>Atualizar para <input type="date" id="alvo"></label>
     <label>Os números do internograma estão em dia até
-      <select id="ref"><option value="-1">ontem (antes da atualização de hoje)</option><option value="0">hoje (já atualizado)</option><option value="-2">anteontem</option></select></label>
-    <button class="sec sm" id="recalc">Recalcular</button>
+      <select id="ref"><option value="cab" id="refCab" hidden>pelo cabeçalho do Doc</option><option value="-1">ontem (antes da atualização de hoje)</option><option value="0">hoje (já atualizado)</option><option value="-2">anteontem</option></select></label>
+    <button class="sec sm" id="recalc">Ler o Doc de novo</button>
   </div>
   <div class="hint" id="fonte" style="margin-top:6px"></div>
 </div>
@@ -62,15 +62,52 @@ if (!A || !A.S || !A.SOTCONT) { $('#saida').innerHTML = '<div class="card vazio"
 var C = A.SOTCONT, S = A.S;
 $('#alvo').value = S.hoje || iso(new Date());
 
+var FONTE = null;   // v69: { P, data, cab, txtCab, doc, txt }
+function dAlvo(){ return new Date($('#alvo').value + 'T00:00:00'); }
+function prepara(P, alvo, data){ P.forEach(function(p){ try { A.classificar(p); } catch(e){} try { p.po = A.calcPO(p.dx, alvo); } catch(e){} try { A.dihResolver(p, alvo, data); } catch(e){} }); return P; }
+function fonteApp(nota){ return { P: (S.pacientes || []).filter(function(p){ return !p.manual; }), data: S.dataIG, cab: S.cab, txtCab: null, doc: false,
+  txt: 'Internograma importado no app' + (S.dataIG ? ' (cabeçalho ' + S.dataIG + ')' : '') + (nota ? ' — ' + nota : '') }; }
+function lerDoc(){
+  var Y = A.SYNC;
+  if (!navigator.onLine) { FONTE = fonteApp('sem internet: pode não bater com o Doc'); calcular(); return; }
+  if (!Y || !Y.temToken()) { FONTE = fonteApp('entre no Google (ícone da nuvem) para ler o Doc direto'); calcular(); return; }
+  $('#fonte').textContent = 'Lendo o internograma do Google Doc…'; $('#saida').innerHTML = '';
+  Y.exportarDoc().then(function(html){
+    var r = A.parseTabelaHTML(html); if (!r.pacientes.length) throw { msg: 'nenhum paciente reconhecido no Doc' };
+    var tx = (new DOMParser().parseFromString(html, 'text/html').body || {}).textContent || '', mc = tx.match(A.RE_CAB); if (mc) { var fim = tx.slice(mc.index + mc[0].length, mc.index + mc[0].length + 6).match(/^[^()\n]*\)/); mc = [tx.substr(mc.index, mc[0].length + (fim ? fim[0].length : 0))]; }
+    FONTE = { P: prepara(r.pacientes, dAlvo(), r.data), data: r.data, cab: r.cab, txtCab: mc ? mc[0] : null, doc: true,
+      txt: 'Lido agora do Google Doc (' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' + (r.data ? ' · cabeçalho ' + r.data : ' · cabeçalho sem data legível') };
+    calcular();
+  }).catch(function(e){ FONTE = fonteApp('não consegui ler o Doc (' + ((e && (e.msg || e.message)) || e) + ')'); calcular(); });
+}
+// v69: no cabeçalho troca SÓ a data e os números (a escrita fica como está: "20hc", "2 Alta"…)
+function trocasCab(t, alvo, c){
+  var out = [], m = t.match(/\(?\s*(\d{1,2}\/?\d{1,2}\/(\d{2,4}))\s*-\s*\d+\s*hc\b[^)]*/i); if (!m) return out;
+  var base = m.index, seg = m[0], dOff = seg.indexOf(m[1]);
+  var nd = dm(alvo) + '/' + (m[2].length === 2 ? String(alvo.getFullYear()).slice(2) : alvo.getFullYear());
+  if (m[1] !== nd) out.push({ off: base + dOff, velho: m[1], novo: nd });
+  var rx = /(\d+)(\s*)(hc|ic|hm|altas?)\b/gi, x;
+  while ((x = rx.exec(seg))) { var k = x[3].toLowerCase().replace(/s$/, ''), v = String(c[k] == null ? x[1] : c[k]);
+    if (v !== x[1]) out.push({ off: base + x.index, velho: x[1], novo: v }); }
+  return out;
+}
+function aplicaTrocas(t, tr){ tr.slice().sort(function(a, b){ return b.off - a.off; }).forEach(function(e){ t = t.slice(0, e.off) + e.novo + t.slice(e.off + e.velho.length); }); return t; }
+function contar(P){ var c = { hc: 0, ic: 0, hm: 0, alta: 0 }; P.forEach(function(p){ if (p.hm) c.hm++; else if (p.alta) c.alta++; else if (p.ic) c.ic++; else c.hc++; }); return c; }
 function linhasDe(t){ return String(t || '').split(/\n|\s+\/\s+/); }   // Doc: quebra de linha · PDF: " / "
 // DIH: "Dih 12", "Di: 8", "DIH 1" na coluna do nome (linha própria)
 var RX_DIH = /^(\s*(?:Dih|DIH|Di|DI|dih)\s*:?\s*)(\d{1,3})(\s*)$/;
 
 function calcular(){
-  var alvo = new Date($('#alvo').value + 'T00:00:00'), ref = addD(alvo, +$('#ref').value);
-  var P = (S.pacientes || []).filter(function(p){ return !p.manual; });
-  if (!P.length) { $('#saida').innerHTML = '<div class="card vazio">Nenhum internograma importado no app. Importe o de hoje em Ajustes e volte aqui.</div>'; return; }
-  $('#fonte').textContent = 'Internograma importado no app' + (S.dataIG ? ' (cabeçalho diz ' + S.dataIG + ')' : '') + ' · ' + P.length + ' pacientes.';
+  if (!FONTE) { lerDoc(); return; }
+  var alvo = dAlvo(), P = FONTE.P;
+  // v69: referência sugerida pela data do cabeçalho do Doc (você confirma ou troca)
+  var dCab = FONTE.data ? A.parseData(String(FONTE.data), alvo) : null, nCab = dCab ? C.dias(dCab, alvo) : null, oc = $('#refCab'), sel = $('#ref');
+  if (dCab && nCab >= 0 && nCab <= 7) { oc.hidden = false; oc.textContent = 'pelo cabeçalho do Doc: em dia até ' + dm(dCab) + (nCab ? ' (soma ' + nCab + ' dia' + (nCab > 1 ? 's' : '') + ')' : ' (já é hoje: nada a somar)');
+    if (!sel.dataset.mexeu) sel.value = 'cab'; }
+  else { oc.hidden = true; if (sel.value === 'cab') sel.value = '-1'; }
+  var ref = sel.value === 'cab' ? dCab : addD(alvo, +sel.value);
+  if (!P.length) { $('#saida').innerHTML = '<div class="card vazio">Nenhum paciente para atualizar. Entre no Google ou importe o internograma em Ajustes.</div>'; return; }
+  $('#fonte').textContent = FONTE.txt + ' · ' + P.length + ' pacientes.' + (dCab && nCab === 0 && sel.value === 'cab' ? ' O cabeçalho já está com a data de hoje — números sem data não andam.' : '') + (FONTE.data && !dCab ? ' Cabeçalho sem data legível: escolha até quando está em dia.' : '');
   var lista = [], fazer = [], nMud = 0, nDuv = 0;
   P.forEach(function(p){
     var col = p.bruto || [], muds = [], quem = (p.leito || p.section || '—') + ' · ' + p.nome;
@@ -96,7 +133,7 @@ function calcular(){
       muds.push({ campo: 'Causa', de: l.trim(), para: para.trim(), duv: !x.pelaData,
         por: x.pelaData ? 'pela data (' + (c.d ? dm(c.d) : '') + ')' : 'sem data na linha: +' + C.dias(ref, alvo) + ' dia(s) — confira' });
     });
-    muds.forEach(function(x){ x.k = p.id + '|' + x.de; nMud++; if (x.duv) nDuv++; });
+    muds.forEach(function(x){ x.k = (p.registro || p.id || p.nome) + '|' + x.de; nMud++; if (x.duv) nDuv++; });
     // 3) coisas que só a pessoa resolve
     var txt0 = String(col[0] || '');
     if (/\d\s*Arquivo\b|^\s*Arquivo\s*$/m.test(txt0)) fazer.push({ q: quem, t: 'Chip “Arquivo” esquecido na coluna 1 — pode tirar.' });
@@ -106,13 +143,14 @@ function calcular(){
     lista.push({ p: p, quem: quem, muds: muds });
   });
   // cabeçalho
-  var k = A.contagem ? A.contagem() : null, cab = '';
-  if (k && k.c) cab = '(' + dmy(alvo) + ' - ' + k.c.hc + ' Hc / ' + k.c.ic + ' Ic / ' + k.c.hm + ' Hm' + (k.c.alta ? ' / ' + k.c.alta + ' Altas' : '') + ')';
+  var cnt = contar(P), cab = '';
+  if (FONTE.txtCab) cab = aplicaTrocas(FONTE.txtCab, trocasCab(FONTE.txtCab, alvo, cnt));
+  else cab = '(' + dmy(alvo) + ' - ' + cnt.hc + ' Hc / ' + cnt.ic + ' Ic / ' + cnt.hm + ' Hm' + (cnt.alta ? ' / ' + cnt.alta + ' Altas' : '') + ')';
   var h = '<div class="card"><div class="resumo"><span><b>' + nMud + '</b> números a mudar</span><span><b>' + nDuv + '</b> para conferir (sem data)</span><span><b>' + fazer.length + '</b> itens para você</span></div>' +
     '<div class="row" style="margin-top:8px"><button class="sm" id="copiaTudo">Copiar lista de correções</button><button class="sec sm" id="limpa">Desmarcar “feito”</button></div>' +
-    '<div class="row" style="margin-top:10px"><button id="criaCopia">📄 Criar cópia atualizada no Drive</button><button class="sec" id="comparar">↔ Comparar lado a lado</button></div><div id="cmpBox"></div><div class="hint" id="copiaSt" style="margin-top:6px">Faz uma cópia idêntica do internograma e troca só os números na cópia (amarelo = pela data · laranja = confira). O internograma oficial não é alterado.</div></div>';
+    '<div class="row" style="margin-top:10px"><button id="criaCopia">📄 Criar cópia atualizada no Drive</button><button class="sec" id="comparar">↔ Comparar lado a lado</button><button class="sec sm" id="ensaio" title="Confere no Doc, sem criar nem mudar nada">🔎 Ensaio (não cria nada)</button></div><div id="cmpBox"></div><div class="hint" id="copiaSt" style="margin-top:6px">Faz uma cópia idêntica do internograma e troca só os números na cópia (amarelo = pela data · laranja = confira). O internograma oficial não é alterado.</div></div>';
   if (cab) h += '<h2>Cabeçalho</h2><div class="card"><div class="cab" id="cabTxt">' + esc(cab) + '</div><div class="row" style="margin-top:8px"><button class="sm" data-copia="' + esc(cab) + '">Copiar</button>' +
-    (S.dataIG && S.dataIG.indexOf(dm(alvo)) < 0 ? '<span class="tag">o cabeçalho atual diz ' + esc(S.dataIG) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
+    (FONTE.txtCab && FONTE.txtCab !== cab ? '<span class="tag">hoje está: ' + esc(FONTE.txtCab) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
   if (fazer.length) h += '<h2>Para você resolver</h2><div class="card"><ul class="lst">' + fazer.map(function(x){ return '<li><b>' + esc(x.q) + '</b> — ' + esc(x.t) + '</li>'; }).join('') + '</ul></div>';
   h += '<h2>Números por paciente</h2>';
   var com = lista.filter(function(x){ return x.muds.length; });
@@ -128,7 +166,7 @@ function calcular(){
   var sem = lista.length - com.length;
   if (sem) h += '<div class="hint" style="margin:8px 2px">' + sem + ' paciente(s) sem número a mudar.</div>';
   $('#saida').innerHTML = h;
-  window.__lista = { cab: cab, lista: com, fazer: fazer };
+  window.__lista = { cab: cab, cnt: cnt, alvo: alvo, lista: com, fazer: fazer, doc: FONTE.doc };
 }
 /* ---------- v68: comparar lado a lado (original × atualizado) ---------- */
 function marca(de, para, duv){
@@ -137,9 +175,8 @@ function marca(de, para, duv){
   var a = esc(de.slice(0, k)), z = esc(de.slice(de.length - s));
   return { orig: a + '<del>' + esc(de.slice(k, de.length - s)) + '</del>' + z, novo: a + '<ins' + (duv ? ' class="duv"' : '') + '>' + esc(para.slice(k, para.length - s)) + '</ins>' + esc(para.slice(para.length - s)) };
 }
-function comparar(){
-  var L = window.__lista, box = $('#cmpBox'); if (!L) return;
-  if (box.innerHTML) { box.innerHTML = ''; return; }
+function previa(box){
+  var L = window.__lista; if (!L) return;
   var CF = A.SOT_CONFIG || A.CFG || {}, docO = CF.DOC_ID ? 'https://docs.google.com/document/d/' + CF.DOC_ID + '/edit' : '', c = window.__copia;
   var h = '<div class="hint" style="margin-top:10px">Esquerda: internograma como está (<del style="background:var(--bad2);color:var(--bad)">número antigo</del>) · Direita: atualizado (<ins style="text-decoration:none;background:#fff176;color:#111">pela data</ins> · <ins style="text-decoration:none;background:#ffcc80;color:#111">confira</ins>).' +
     (docO ? ' <a href="' + esc(docO) + '" target="_blank" rel="noopener">Abrir o original</a>' : '') + (c ? ' · <a href="https://docs.google.com/document/d/' + esc(c.id) + '/edit" target="_blank" rel="noopener">Abrir a cópia atualizada</a>' : '') + '</div>';
@@ -149,7 +186,76 @@ function comparar(){
     x.muds.forEach(function(m){ var r = marca(m.de, m.para, m.duv); o.push(m.campo + ': ' + r.orig); n.push(m.campo + ': ' + r.novo); });
     h += '<div class="cmp"><div class="tit">' + esc(x.quem) + ' — original</div><div class="tit">Atualizado</div><div>' + o.join('\n') + '</div><div>' + n.join('\n') + '</div></div>';
   });
-  box.innerHTML = h;
+  box.innerHTML = '<div class="card"><b>Ainda não há cópia.</b> Toque em “📄 Criar cópia atualizada” para comparar os dois documentos do Google. Abaixo, uma prévia do que vai mudar:</div>' + h;
+}
+/* ---------- v69: comparar os DOIS documentos do Google (original × cópia), lidos agora ---------- */
+var CMP = null, CMP_TUDO = false;
+function blocos(doc){   // em ordem: parágrafo solto = 1 célula; linha de tabela = as células da linha
+  var out = [], txt = function(cont){ return paragrafos(cont, [], null).map(function(P){ return P.t.replace(/\n$/, ''); }).join('\n').replace(/[\u000b\r]/g, '\n'); };
+  ((doc.body && doc.body.content) || []).forEach(function(se){
+    if (se.paragraph) out.push({ cel: [txt([se])] });
+    if (se.table) (se.table.tableRows || []).forEach(function(r){ out.push({ cel: (r.tableCells || []).map(function(c){ return txt(c.content); }), tab: 1 }); });
+  });
+  return out;
+}
+function soNumero(a, b){ return /^[\d\s\/:-]*$/.test(a) && /^[\d\s\/:-]*$/.test(b) || /^(POI|Poi|poi)?$/.test(a) && /^[\d\s]*(PO|Po)?$/.test(b) || /^[\d\s]*(PO|Po)?$/.test(a) && /^(POI|Poi|poi)?$/.test(b); }
+function marcaTok(x, y){   // palavra por palavra: cada número trocado é marcado e conferido sozinho
+  var tx = x.split(/(\s+|\/)/), ty = y.split(/(\s+|\/)/);
+  if (tx.length !== ty.length) { var r = marca(x, y, false), k = 0; while (k < x.length && x[k] === y[k]) k++; var z = 0; while (z < x.length - k && z < y.length - k && x[x.length - 1 - z] === y[y.length - 1 - z]) z++;
+    return { orig: r.orig, novo: r.novo, estranho: !soNumero(x.slice(k, x.length - z), y.slice(k, y.length - z)) }; }
+  var o = '', n = '', est = false;
+  tx.forEach(function(a, i){ var b = ty[i]; if (a === b) { o += esc(a); n += esc(b); return; }
+    var m = marca(a, b, false); o += m.orig; n += m.novo;
+    var k = 0; while (k < a.length && a[k] === b[k]) k++; var z = 0; while (z < a.length - k && z < b.length - k && a[a.length - 1 - z] === b[b.length - 1 - z]) z++;
+    if (!soNumero(a.slice(k, a.length - z), b.slice(k, b.length - z))) est = true; });
+  return { orig: o, novo: n, estranho: est };
+}
+function comparar(){
+  var box = $('#cmpBox'), c = window.__copia, Y = A.SYNC, CF = A.SOT_CONFIG || A.CFG || {};
+  if (box.innerHTML) { box.innerHTML = ''; return; }
+  if (!c) { previa(box); return; }
+  box.innerHTML = '<div class="hint" style="margin-top:8px">Lendo o original e a cópia no Google…</div>';
+  Promise.all([Y.docLer(CF.DOC_ID), Y.docLer(c.id)]).then(function(dd){ CMP = { o: blocos(dd[0]), n: blocos(dd[1]), c: c, docO: CF.DOC_ID }; desenhaCmp(); })
+    .catch(function(e){ box.innerHTML = '<div class="card">' + esc(msgErro(e)) + '</div>'; });
+}
+function desenhaCmp(){
+  var box = $('#cmpBox'); if (!CMP) return;
+  var O = CMP.o, N = CMP.n, rows = [], nDif = 0, nEst = 0, mesmo = O.length === N.length;
+  for (var i = 0; i < Math.max(O.length, N.length); i++) {
+    var a = O[i] || { cel: [] }, b = N[i] || { cel: [] }, cols = [], dif = false, estranho = false;
+    for (var j = 0; j < Math.max(a.cel.length, b.cel.length); j++) {
+      var la = String(a.cel[j] || '').split('\n'), lb = String(b.cel[j] || '').split('\n'), oa = [], ob = [];
+      for (var q = 0; q < Math.max(la.length, lb.length); q++) {
+        var x = la[q] == null ? '' : la[q], y = lb[q] == null ? '' : lb[q];
+        if (x === y) { oa.push(esc(x)); ob.push(esc(y)); continue; }
+        dif = true; var r = marcaTok(x, y); if (r.estranho) estranho = true;
+        oa.push(r.orig); ob.push(r.novo);
+      }
+      cols.push({ a: oa.join('\n'), b: ob.join('\n'), mudou: la.join('\n') !== lb.join('\n') });
+    }
+    if (dif) nDif++; if (estranho) nEst++;
+    if (!dif && !CMP_TUDO) continue;
+    var tit = ((a.cel[0] || '').split('\n')[0] + (a.tab && a.cel[1] ? ' · ' + a.cel[1].split('\n')[0] : '')).slice(0, 60) || '(linha vazia)';
+    var mostra = cols.filter(function(cc, j){ return cc.mudou || (a.tab && j <= 1) || !a.tab; });
+    rows.push('<div class="cmp' + (estranho ? ' est' : '') + '"><div class="tit">' + esc(tit) + (estranho ? ' <span class="tag bad">⚠ mudou algo que não é número</span>' : '') + '</div><div class="tit">Cópia atualizada</div><div>' +
+      mostra.map(function(cc){ return cc.a; }).join('\n─────\n') + '</div><div>' + mostra.map(function(cc){ return cc.b; }).join('\n─────\n') + '</div></div>');
+  }
+  var docO = 'https://docs.google.com/document/d/' + CMP.docO + '/edit', docN = 'https://docs.google.com/document/d/' + CMP.c.id + '/edit';
+  box.innerHTML = '<div class="card" style="margin-top:10px"><div class="resumo"><span><b>' + nDif + '</b> trechos diferentes</span>' + (nEst ? '<span class="tag bad">' + nEst + ' com mudança que não é número — confira</span>' : '<span class="tag ok">só números mudaram ✓</span>') + (mesmo ? '' : '<span class="tag bad">estrutura diferente (alguém mexeu no Doc?)</span>') + '</div>' +
+    '<div class="hint" style="margin-top:6px">Esquerda: <b>original</b> como está no Google (<del style="background:var(--bad2);color:var(--bad)">antigo</del>) · Direita: <b>cópia</b> (<ins style="text-decoration:none;background:#fff176;color:#000">novo</ins>). Lidos agora dos dois documentos.</div>' +
+    '<div class="row" style="margin-top:8px"><a href="' + esc(docO) + '" target="_blank" rel="noopener">Abrir o original</a> · <a href="' + esc(docN) + '" target="_blank" rel="noopener">Abrir a cópia atualizada</a>' +
+    '<button class="sec sm" id="cmpTudo">' + (CMP_TUDO ? 'Mostrar só o que mudou' : 'Mostrar tudo') + '</button></div>' +
+    '<details style="margin-top:8px"><summary class="hint">Comparar pelo próprio Google Docs</summary><div class="hint">Abra a <b>cópia</b> → menu <b>Ferramentas → Comparar documentos</b> → escolha o <b>original</b> → Comparar. O Google cria um terceiro documento com as diferenças marcadas como sugestões.</div></details></div>' +
+    (rows.join('') || '<div class="card vazio">Nenhuma diferença entre os dois documentos.</div>');
+}
+/* ---------- v69: ensaio — confere no Doc, sem criar nem mudar nada ---------- */
+function ensaio(btn){
+  var L = window.__lista, st = $('#copiaSt'), Y = A.SYNC, CF = A.SOT_CONFIG || A.CFG || {};
+  if (!L) return; if (!Y || !Y.temToken()) { st.innerHTML = '<b>Entre no Google primeiro</b> (ícone da nuvem no topo do app).'; return; }
+  btn.disabled = true; st.textContent = 'Ensaio: lendo o internograma (nada é criado nem alterado)…';
+  Y.docLer(CF.DOC_ID).then(function(doc){ var P = montarPedidos(doc, L, L.cab);
+    st.innerHTML = '🔎 <b>Ensaio</b> (nada foi criado nem alterado): na cópia, <b>' + P.n + '</b> troca(s) entrariam sozinhas' + (P.falta.length ? '; <b>' + P.falta.length + '</b> ficariam para trocar à mão:<ul class="lst">' + P.falta.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : ' — e nenhuma ficaria para trás ✓');
+  }).catch(function(e){ st.textContent = msgErro(e); }).then(function(){ btn.disabled = false; });
 }
 /* ---------- v68: cópia atualizada no Drive (Google Docs) ---------- */
 var AMARELO = { red: 1, green: 0.95, blue: 0.46 }, LARANJA = { red: 1, green: 0.8, blue: 0.5 };
@@ -160,13 +266,21 @@ function paragrafos(conteudo, out, cel){   // todos os parágrafos, com o índic
   });
   return out;
 }
+function norm(t){   // texto com espaços juntados + de onde veio cada caractere
+  var o = '', map = [], sp = true;
+  for (var i = 0; i < t.length; i++) { var ch = t[i];
+    if (/[\s \u000b￼]/.test(ch)) { if (!sp) { o += ' '; map.push(i); sp = true; } }
+    else { o += ch; map.push(i); sp = false; } }
+  return { s: o, map: map };
+}
+function ocorre(P, de){ var n = norm(P.t).s, a = n.indexOf(de); return a < 0 ? 0 : (n.indexOf(de, a + 1) < 0 ? 1 : 2); }
 function edicao(P, de, para, cor){
-  var off = P.t.indexOf(de); if (off < 0) return null;
+  var N = norm(P.t), off = N.s.indexOf(de); if (off < 0) return null;
   var k = 0; while (k < de.length && k < para.length && de[k] === para[k]) k++;
   var s = 0; while (s < de.length - k && s < para.length - k && de[de.length - 1 - s] === para[para.length - 1 - s]) s++;
-  var velho = de.slice(k, de.length - s), novo = para.slice(k, para.length - s), ini = P.idx[off + k];
-  if (ini == null) return null;
-  return { ini: ini, velho: velho, novo: novo, cor: cor };
+  var novo = para.slice(k, para.length - s), a = N.map[off + k], z = de.length - s > k ? N.map[off + de.length - s - 1] + 1 : a;
+  if (a == null || P.idx[a] == null) return null;
+  return { ini: P.idx[a], velho: P.t.slice(a, z), novo: novo, cor: cor };
 }
 function montarPedidos(doc, L, cab){
   var Ps = paragrafos(doc.body && doc.body.content, [], null), eds = [], falta = [];
@@ -182,12 +296,14 @@ function montarPedidos(doc, L, cab){
     var row = linhaDe(x.p);
     x.muds.forEach(function(m){
       var col = m.campo === 'DIH' ? 1 : 2, e = null;
-      if (row) { var cands = row.filter(function(P){ return P.cel.c === col && P.t.indexOf(m.de) > -1; }); if (cands.length === 1) e = edicao(cands[0], m.de, m.para, m.duv ? LARANJA : AMARELO); }
+      if (row) { var cands = row.filter(function(P){ return P.cel.c === col && ocorre(P, m.de); });
+        if (cands.length === 1 && ocorre(cands[0], m.de) === 1) e = edicao(cands[0], m.de, m.para, m.duv ? LARANJA : AMARELO); }   // só quando o texto aparece uma única vez
       if (e) eds.push(e); else falta.push(x.quem + ': ' + m.de + ' → ' + m.para);
     });
   });
-  if (cab) { var Pc = Ps.filter(function(P){ return /\(\s*\d{1,2}\/?\d{1,2}\/\d{4}\s*-\s*\d+\s*hc\b[^)]*\)/i.test(P.t); })[0];
-    if (Pc) { var mc = Pc.t.match(/\(\s*\d{1,2}\/?\d{1,2}\/\d{4}\s*-\s*\d+\s*hc\b[^)]*\)/i)[0]; var ec = edicao(Pc, mc, cab, AMARELO); if (ec) eds.push(ec); } else falta.push('Cabeçalho não encontrado: ' + cab); }
+  if (cab) { var Pc = Ps.filter(function(P){ return !P.cel && trocasCab(P.t, L.alvo, L.cnt).length; })[0] || Ps.filter(function(P){ return trocasCab(P.t, L.alvo, L.cnt).length; })[0];
+    if (Pc) trocasCab(Pc.t, L.alvo, L.cnt).forEach(function(x){ if (Pc.idx[x.off] != null) eds.push({ ini: Pc.idx[x.off], velho: x.velho, novo: x.novo, cor: AMARELO }); });   // só a data e cada número
+    else if (!Ps.some(function(P){ return /\d+\s*hc\b/i.test(P.t); })) falta.push('Cabeçalho não encontrado: ' + cab); }
   eds.sort(function(a, b){ return b.ini - a.ini; });
   var req = [];
   eds.forEach(function(e){
@@ -216,7 +332,8 @@ function criarCopia(btn){
       var link = copia.webViewLink || ('https://docs.google.com/document/d/' + copia.id + '/edit');
       st.innerHTML = '✅ <b>Cópia pronta:</b> <a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(nome) + '</a><br>' + P.n + ' número(s) trocado(s) e marcado(s) na cópia.' +
         (P.falta.length ? '<br>⚠ ' + P.falta.length + ' não encontrado(s) na cópia — troque à mão:<ul class="lst">' + P.falta.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '');
-      window.__copia = { id: copia.id, n: P.n, falta: P.falta };
+      window.__copia = { id: copia.id, n: P.n, falta: P.falta }; CMP = null; $('#cmpBox').innerHTML = '';
+      st.innerHTML += '<br>Toque em <b>↔ Comparar lado a lado</b> para ver o original e a cópia.';
    })
    .catch(function(e){ st.textContent = msgErro(e) + (copia ? ' (cópia: ' + (copia.webViewLink || copia.id) + ')' : ''); })
    .then(function(){ btn.disabled = false; });
@@ -228,7 +345,9 @@ function copiar(t, btn){
 }
 document.addEventListener('click', function(ev){
   var b = ev.target.closest('[data-copia]'); if (b) { copiar(b.getAttribute('data-copia'), b); return; }
-  if (ev.target.id === 'recalc') { calcular(); return; }
+  if (ev.target.id === 'recalc') { FONTE = null; window.__copia = null; lerDoc(); return; }
+  if (ev.target.id === 'ensaio') { ensaio(ev.target); return; }
+  if (ev.target.id === 'cmpTudo') { CMP_TUDO = !CMP_TUDO; desenhaCmp(); return; }
   if (ev.target.id === 'criaCopia') { criarCopia(ev.target); return; }
   if (ev.target.id === 'comparar') { comparar(); return; }
   if (ev.target.id === 'limpa') { FEITO = {}; salvaFeito(); calcular(); return; }
@@ -242,6 +361,8 @@ document.addEventListener('click', function(ev){
 });
 document.addEventListener('change', function(ev){
   var c = ev.target.closest('[data-feito]'); if (c) { if (c.checked) FEITO[c.getAttribute('data-feito')] = 1; else delete FEITO[c.getAttribute('data-feito')]; salvaFeito(); c.parentNode.classList.toggle('feito', c.checked); return; }
+  if (ev.target.id === 'ref') ev.target.dataset.mexeu = '1';
+  if (ev.target.id === 'alvo' && FONTE && FONTE.doc) prepara(FONTE.P, dAlvo(), FONTE.data);
   if (ev.target.id === 'alvo' || ev.target.id === 'ref') calcular();
 });
 calcular();

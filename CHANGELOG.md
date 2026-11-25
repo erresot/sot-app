@@ -1,6 +1,15 @@
 # CHANGELOG — SOT APP
 
-## v68 (atual) — Atualizador: cópia atualizada no Drive · comparar lado a lado
+## v69 (atual) — Atualizador lê o Doc direto · compara os dois documentos de verdade
+- **Lê o internograma direto do Google Doc** na hora (o mesmo leitor do app), em vez do importado no app — o que ele calcula e o que ele troca vêm do mesmo lugar. Sem internet/sem login: usa o importado e avisa.
+- **Comparar lado a lado de verdade:** lê o original e a cópia no Google e mostra, trecho por trecho, o que mudou (só o que mudou / tudo). Avisa em vermelho se mudou algo que não é número. Dica do "Ferramentas → Comparar documentos" do Google Docs.
+- **Cabeçalho:** troca só a data e os números; a escrita fica como está ("20hc", "2 Alta").
+- **De onde partir:** sugere "em dia até" pela data do cabeçalho do Doc (você confirma ou troca).
+- **🔎 Ensaio:** confere no Doc quantas trocas entrariam e quais ficariam à mão — sem criar nem mudar nada.
+- Acha os textos mesmo com espaços duplos / Shift+Enter no Doc; só troca quando o texto aparece uma única vez na célula.
+- Testes: `t_atualizador69.py` (novo); Docs simulado agora aplica as trocas na cópia.
+
+## v68 — Atualizador: cópia atualizada no Drive · comparar lado a lado — Atualizador: cópia atualizada no Drive · comparar lado a lado
 - **📄 Criar cópia atualizada no Drive:** o Atualizador faz uma cópia idêntica do internograma (Drive da conta do app) e troca **só os números** na cópia, pintando cada troca (amarelo = pela data · laranja = confira). Mostra o link e o que não achou ("troque à mão"). O app nunca altera o internograma que ele lê (trava no código).
 - **↔ Comparar lado a lado:** para cada paciente, original (número antigo riscado) × atualizado (número novo marcado), com links para abrir o original e a cópia.
 - Pode precisar ligar a "Google Docs API" no projeto do Google do app (configuração única) — o app avisa se for o caso.
