@@ -64,8 +64,13 @@ $('#alvo').value = S.hoje || iso(new Date());
 
 var FONTE = null;   // v69: { P, data, cab, txtCab, doc, txt }
 function dAlvo(){ return new Date($('#alvo').value + 'T00:00:00'); }
-function prepara(P, alvo, data){ P.forEach(function(p){ try { A.classificar(p); } catch(e){} try { p.po = A.calcPO(p.dx, alvo); } catch(e){} try { A.dihResolver(p, alvo, data); } catch(e){} }); return P; }
-function fonteApp(nota){ return { P: (S.pacientes || []).filter(function(p){ return !p.manual; }), data: S.dataIG, cab: S.cab, txtCab: null, doc: false,
+function prepara(P, alvo, data){
+  var refD = (data && A.parseData(String(data), alvo)) || A.hojeDate();
+  P.forEach(function(p){ try { A.classificar(p); } catch(e){} try { p.po = A.calcPO(p.dx, alvo); } catch(e){} try { A.dihResolver(p, alvo, data); } catch(e){}
+    // v73: conferência na data do PRÓPRIO Doc (cópia do paciente, para não misturar com o cálculo do dia-alvo)
+    try { var q = Object.assign({}, p); q.po = A.calcPO(p.dx, refD); A.dihResolver(q, refD, data); p.verif = A.verificar(q, refD, refD); } catch(e){ p.verif = []; } });
+  return P; }
+function fonteApp(nota){ return { P: (S.pacientes || []).filter(function(p){ return !p.manual; }), data: S.dataIG, cab: S.cab, cabAvisos: S.cabAvisos || [], txtCab: null, doc: false,
   txt: 'Internograma importado no app' + (S.dataIG ? ' (cabeçalho ' + S.dataIG + ')' : '') + (nota ? ' — ' + nota : '') }; }
 function lerDoc(){
   var Y = A.SYNC;
@@ -74,21 +79,18 @@ function lerDoc(){
   $('#fonte').textContent = 'Lendo o internograma do Google Doc…'; $('#saida').innerHTML = '';
   Y.exportarDoc().then(function(html){
     var r = A.parseTabelaHTML(html); if (!r.pacientes.length) throw { msg: 'nenhum paciente reconhecido no Doc' };
-    var tx = (new DOMParser().parseFromString(html, 'text/html').body || {}).textContent || '', mc = tx.match(A.RE_CAB); if (mc) { var fim = tx.slice(mc.index + mc[0].length, mc.index + mc[0].length + 6).match(/^[^()\n]*\)/); mc = [tx.substr(mc.index, mc[0].length + (fim ? fim[0].length : 0))]; }
-    FONTE = { P: prepara(r.pacientes, dAlvo(), r.data), data: r.data, cab: r.cab, txtCab: mc ? mc[0] : null, doc: true,
+    var tx = (new DOMParser().parseFromString(html, 'text/html').body || {}).textContent || '', chc = C.cabecalho(tx, dAlvo()), mc = chc ? [chc.txt.trim()] : null;
+    FONTE = { P: prepara(r.pacientes, dAlvo(), r.data), data: r.data, cab: r.cab, cabAvisos: r.cabAvisos || [], txtCab: mc ? mc[0] : null, doc: true,
       txt: 'Lido agora do Google Doc (' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ')' + (r.data ? ' · cabeçalho ' + r.data : ' · cabeçalho sem data legível') };
     calcular();
   }).catch(function(e){ FONTE = fonteApp('não consegui ler o Doc (' + ((e && (e.msg || e.message)) || e) + ')'); calcular(); });
 }
 // v69: no cabeçalho troca SÓ a data e os números (a escrita fica como está: "20hc", "2 Alta"…)
-function trocasCab(t, alvo, c){
-  var out = [], m = t.match(/\(?\s*(\d{1,2}\/?\d{1,2}\/(\d{2,4}))\s*-\s*\d+\s*hc\b[^)]*/i); if (!m) return out;
-  var base = m.index, seg = m[0], dOff = seg.indexOf(m[1]);
-  var nd = dm(alvo) + '/' + (m[2].length === 2 ? String(alvo.getFullYear()).slice(2) : alvo.getFullYear());
-  if (m[1] !== nd) out.push({ off: base + dOff, velho: m[1], novo: nd });
-  var rx = /(\d+)(\s*)(hc|ic|hm|altas?)\b/gi, x;
-  while ((x = rx.exec(seg))) { var k = x[3].toLowerCase().replace(/s$/, ''), v = String(c[k] == null ? x[1] : c[k]);
-    if (v !== x[1]) out.push({ off: base + x.index, velho: x[1], novo: v }); }
+function trocasCab(t, alvo, c){   // v73: o motor lê o cabeçalho (tolerante); aqui só troca a data e cada número
+  var ch = C.cabecalho(t, alvo), out = []; if (!ch) return out;
+  var nd = dm(alvo) + '/' + (/\d{4}$/.test(ch.tokData.replace(/\s/g, '')) ? alvo.getFullYear() : String(alvo.getFullYear()).slice(2));
+  if (ch.tokData !== nd) out.push({ off: ch.offData, velho: ch.tokData, novo: nd });
+  ch.nums.forEach(function(x){ var v = String(c[x.rot] == null ? x.n : c[x.rot]); if (v !== String(x.n)) out.push({ off: x.off, velho: String(x.n), novo: v }); });
   return out;
 }
 function aplicaTrocas(t, tr){ tr.slice().sort(function(a, b){ return b.off - a.off; }).forEach(function(e){ t = t.slice(0, e.off) + e.novo + t.slice(e.off + e.velho.length); }); return t; }
@@ -97,7 +99,6 @@ function secao(p){ return String(p.section || p.local || '—').replace(/\s+/g, 
 function regDe(p){ var r = String(p.registro || '').replace(/\D/g, ''); return r.length >= 4 ? r : ''; }
 function linhasDe(t){ return String(t || '').split(/\n|\s+\/\s+/); }   // Doc: quebra de linha · PDF: " / "
 // DIH: "Dih 12", "Di: 8", "DIH 1" na coluna do nome (linha própria)
-var RX_DIH = /^(\s*(?:Dih|DIH|Di|DI|dih)\s*:?\s*)(\d{1,3})(\s*)$/;
 
 function calcular(){
   if (!FONTE) { lerDoc(); return; }
@@ -122,13 +123,13 @@ function calcular(){
     var col = p.bruto || [], muds = [], quem = (p.leito || '—') + ' · ' + secao(p) + ' · ' + p.nome;
     // 1) DIH
     linhasDe(col[1]).forEach(function(l){
-      var m = l.match(RX_DIH); if (!m) return;
-      var n0 = +m[2], n, por, duv = false, dInt = null;
+      var m = C.lerDih(l); if (!m) return;   // v73: "Dih N" lido pelo motor comum
+      var n0 = m.n, n, por, duv = false, dInt = null;
       if (p.dihData) dInt = A.parseData(p.dihData, alvo);
       else if (p.dihFonte === 'data' && p.dataSolta) dInt = A.parseData(p.dataSolta, alvo);
       if (dInt) { n = C.dias(dInt, alvo); por = 'pela data de internação (' + dm(dInt) + ')'; }
       else { n = n0 + C.dias(ref, alvo); por = 'sem data de internação: +' + C.dias(ref, alvo) + ' dia(s)'; duv = true; }
-      if (n !== n0 && n >= 0) muds.push({ campo: 'DIH', de: l.trim(), para: (m[1] + n + m[3]).trim(), por: por, duv: duv });
+      if (n !== n0 && n >= 0) muds.push({ campo: 'DIH', de: l.trim(), para: C.escreverDih(l, n).trim(), por: por, duv: duv });
     });
     // 2) Causa: contadores no começo de cada linha
     // v72: o motor lê a célula por bloco (data na linha de baixo; "N d" pela data do trauma da 1ª coluna), com a trava de ±1
@@ -160,7 +161,10 @@ function calcular(){
     '<div class="row" style="margin-top:10px"><button id="criaCopia">📄 Criar cópia atualizada no Drive</button><button class="sec" id="comparar">↔ Comparar lado a lado</button><button class="sec sm" id="ensaio" title="Confere no Doc, sem criar nem mudar nada">🔎 Ensaio (não cria nada)</button></div><div id="cmpBox"></div><div class="hint" id="copiaSt" style="margin-top:6px">Faz uma cópia idêntica do internograma e troca só os números na cópia (amarelo = pela data · laranja = confira). O internograma oficial não é alterado.</div></div>';
   if (cab) h += '<h2>Cabeçalho</h2><div class="card"><div class="cab" id="cabTxt">' + esc(cab) + '</div><div class="row" style="margin-top:8px"><button class="sm" data-copia="' + esc(cab) + '">Copiar</button>' +
     (FONTE.txtCab && FONTE.txtCab !== cab ? '<span class="tag">hoje está: ' + esc(FONTE.txtCab) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
+  var cf = A.conferenciaIG({ P: P, dataIG: FONTE.data, cabAvisos: FONTE.cabAvisos, semContagem: true, semRepetido: true, semAtraso: true });   // v73: a mesma conferência da enfermaria
+  window.__conf = cf;
   if (fazer.length) h += '<h2>Para você resolver</h2><div class="card"><ul class="lst">' + fazer.map(function(x){ return '<li><b>' + esc(x.q) + '</b> — ' + esc(x.t) + '</li>'; }).join('') + '</ul></div>';
+  if (cf.total) h += '<h2>Conferência do internograma</h2><div class="card">' + A.htmlConferencia(cf, esc) + '</div>';
   h += '<h2>Números por paciente</h2>';
   var com = lista.filter(function(x){ return x.muds.length; });
   if (!com.length) h += '<div class="card vazio">Nenhum número a mudar ✓</div>';

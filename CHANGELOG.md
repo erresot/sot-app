@@ -1,6 +1,17 @@
 # CHANGELOG — SOT APP
 
-## v72 (atual) — Leitura por bloco (motor comum: enfermaria, Atualizador, Agenda, mapa)
+## v73 (atual) — Leitura do internograma: cabeçalho, formatos, defesas e conferência única
+- **"Dih N" no motor comum** (`SOTCONT.lerDih/escreverDih`): leitor do Doc, do PDF e Atualizador usam a mesma regra ("Dih 12", "Di: 8", "DIH:1", "dih1").
+- **Cabeçalho tolerante** (`SOTCONT.cabecalho`): data sem uma barra ("1711/2026" → 17/11/2026, com aviso; só aceita se houver UMA leitura perto de hoje), ponto/hífen, "20hc"/"HC", "Alta"/"Altas", sem a parte das altas, caracteres invisíveis. No Atualizador, troca só a data e os números. A conferência avisa quando o cabeçalho está com data de ontem ("ainda não atualizado hoje?").
+- **PDF em branco** (salvo como imagem, ex.: "Microsoft Print to PDF"): aviso claro, nada é trocado, e o caminho certo (Google Doc / baixar PDF pelo Docs).
+- **Formatos de identificação** (`lerIdent`, uma regra só para o Doc e o PDF): nome em várias linhas, vírgulas ("Castro, 35,"), idade grudada ("Mira 51 Anos"), tudo numa linha em maiúsculas ("… 45 ANOS MARÍLIA", "… 8A POMPEIA"), "·", cidade depois do Dih/registro, cidade em 2 linhas ("Campos Novos / Paulista"). Corrige: cidade cortada no PDF ("Marili"), classificação lida como cidade ("Rádio").
+- **Ficha abreviada** "NOME / registro / leito" (coluna do nome): registro e leito reconhecidos (avisa "leito escrito na coluna do nome").
+- **Defesas contra mistura de pacientes:** (1) PDF: as **bordas horizontais** da tabela separam as fichas (sublinhado curto não conta); (2) **assinatura de mistura** (2 registros / 2 "Dih" / 2 datas de internação / 2 leitos na mesma ficha) → **avisa, nunca separa no chute**; (3) ficha com poucos dados → avisa (nunca descarta: pode ser paciente real).
+- **Conferência única** (`conferenciaIG`): cabeçalho e contagem, fichas para conferir, paciente em mais de um lugar, contadores, DIH e dados faltando — a mesma lista na faixa da tela de leitos, em Ajustes e no Atualizador (no Atualizador, na data do próprio Doc).
+- **Validação local nos PDFs reais de 15–23/11 (fora do repositório):** 193 → 194 fichas (a ficha abreviada de 22/11 separada pela borda), nenhuma perdida; cabeçalho de 17/11 passou a ser lido; ficha mista de 20/11 avisada; 13 cidades corrigidas; demais campos idênticos.
+- Teste novo `t_v73.py` (16 conferências, PDF fictício gerado por `fixtures/gera_ig73.py`).
+
+## v72 — Leitura por bloco (motor comum: enfermaria, Atualizador, Agenda, mapa) — Leitura por bloco (motor comum: enfermaria, Atualizador, Agenda, mapa)
 - **O contador sem data procura a data no seu bloco**: as linhas de baixo até linha vazia, "-", outro contador, rótulo (Ap:, Muc:, Ass…) ou "Pot/Po/Pós-op" (outro item). Ex.: "25 D Fx Acetábulo… / Fx Púbico… 30/10/2026", "33 D Fratura Luxação Cervical / … / Acidente Automobilístico 22/10/2026", lista longa de fraturas terminando em "Queda… (24/09)".
 - O bloco é uma coisa só: a data do bloco vale como a da própria linha (trava ±10) e o app **avisa quando o número escrito está atrasado** ("escrito 19, pela data seria 20").
 - **PO nunca pega a data de trauma/fratura** (a data da cirurgia é outra).

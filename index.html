@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v72</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v73</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -711,6 +711,31 @@ function dataDaLinha(resto, ref) {
 var RX_ROT_DIH = '(?:dih|d\\.?\\s?i\\.?|data\\s+(?:de\\s+)?interna[cç][aã]o|interna[cç][aã]o|internou(?:\\s+em)?)';
 var RE_DIH_DATA = new RegExp('(?:^|\\s)' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)', 'i');
 var RE_DIH_DATA_LINHA = new RegExp('^' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)$', 'i');
+// v73: "Dih N" em linha própria — "Dih 12", "Di: 8", "DIH:1", "dih1" (um lugar só: leitor, Atualizador)
+var RE_DIH_N = /^(\s*(?:dih|di)\s*:?\s*)(\d{1,3})(\s*)$/i;
+function lerDih(l) { var m = String(l == null ? '' : l).match(RE_DIH_N); return m ? { pre: m[1], n: +m[2], pos: m[3] } : null; }
+function escreverDih(l, n) { var m = String(l).match(RE_DIH_N); return m ? m[1] + n + m[3] : String(l); }
+// v73: cabeçalho "(dd/mm/aaaa - N Hc / N Ic / N Hm / N Altas)" tolerante: data sem uma barra ("1711/2026"), ponto ou hífen,
+// caixa e espaços variados ("20hc", "HC"), "Alta"/"Altas", parte das altas ausente, caracteres invisíveis.
+// Data sem barra só é aceita se houver UMA leitura válida perto da referência (±7 dias); senão fica sem data e avisa.
+var RX_CAB = /\(?\s*(\d{1,2}\s*[\/.\-]?\s*\d{1,2}\s*[\/.\-]\s*\d{2,4}|\d{1,2}\s*[\/.\-]\s*\d{3,6})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm(?:\s*\/\s*(\d+)\s*altas?)?\s*\)?/i;
+function cabecalho(texto, ref) {
+  var t = String(texto || '').replace(/[\u200b\u200c\u200d\ufeff]/g, function (c) { return ' '; }), m = t.match(RX_CAB); if (!m) return null;
+  var o = { txt: m[0], index: m.index, hc: +m[2], ic: +m[3], hm: +m[4], alta: m[5] != null ? +m[5] : null, data: null, d: null, avisos: [], tokData: m[1], offData: m.index + m[0].indexOf(m[1]) };
+  var tok = m[1].replace(/\s+/g, ''), pad = function (n) { return ('0' + n).slice(-2); }, ok = function (d, mm, y) { var x = new Date(y, mm - 1, d); return x.getMonth() === mm - 1 && x.getDate() === d ? x : null; };
+  var n = tok.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+  if (n) { var y = +n[3] < 100 ? 2000 + +n[3] : +n[3], d = ok(+n[1], +n[2], y); if (d) { o.d = d; o.data = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + y; } }
+  if (!o.d) {   // sem uma das barras: "1711/2026", "17/112026", "17.11.2026" com erro…
+    var dig = tok.replace(/\D/g, ''), yy = /20\d\d$/.test(dig) ? dig.slice(-4) : dig.slice(-2), resto = dig.slice(0, dig.length - yy.length), Y = yy.length === 2 ? 2000 + +yy : +yy, cands = [];
+    for (var k = 1; k <= 2; k++) { var dd = +resto.slice(0, k), mm = +resto.slice(k); if (resto.length - k >= 1 && resto.length - k <= 2) { var x = ok(dd, mm, Y); if (x && (!ref || Math.abs(dias(ref, x)) <= 7)) cands.push(x); } }
+    if (cands.length === 1) { o.d = cands[0]; o.data = pad(o.d.getDate()) + '/' + pad(o.d.getMonth() + 1) + '/' + Y; o.avisos.push('Cabeçalho com a data escrita errado ("' + m[1].trim() + '") — entendi ' + o.data + '.'); }
+    else o.avisos.push('Não consegui ler a data do cabeçalho ("' + m[1].trim() + '").');
+  }
+  // números com a posição no texto (para o Atualizador trocar só os números)
+  o.nums = []; var rx = /(\d+)(\s*)(hc|ic|hm|altas?)\b/gi, x2, seg = m[0];
+  while ((x2 = rx.exec(seg))) o.nums.push({ rot: x2[3].toLowerCase().replace(/s$/, ''), n: +x2[1], off: m.index + x2.index, len: x2[1].length });
+  return o;
+}
 // v72: linha de trauma (mecanismo) e fim de bloco
 var RX_TRAUMA = /\b(?:queda|qda|qpa|caiu|acid|acidente|atropel\w*|preens[aã]o|agress\w*|colis[aã]o|ferimento|paf|faf|trauma\w*|capot\w*|mordedura|entorse|tor[cç][aã]o|esmagamento|chute|coice|pisote\w*)\b/i;
 var RX_FX = /^\s*(?:fx|fratura|luxa[cç][aã]o)\b/i;
@@ -830,7 +855,7 @@ function conferir(linhas, ref, opc) {   // v72: lê por bloco (data na linha de 
   return out;
 }
 G.SOTCONT = { atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
-  RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA };
+  RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA, RE_DIH_N: RE_DIH_N, lerDih: lerDih, escreverDih: escreverDih, cabecalho: cabecalho };
 })(typeof window !== 'undefined' ? window : this);
 </script>
 <script>
@@ -839,6 +864,8 @@ var COL_EDGES = [39, 142, 221, 356, 516, 669, 802];
 // cabeçalho "(23/11/2026 - 19 Hc / 4 Ic / 1 Hm / 3 Altas)" — a parte das altas às vezes não vem escrita
 var RE_CAB = /\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm(?:\s*\/\s*(\d+)\s*altas?)?/i;
 function cabDe(m) { return { hc: +m[2], ic: +m[3], hm: +m[4], alta: m[5] != null ? +m[5] : null }; }
+// v73: cabeçalho pelo motor (tolerante a "1711/2026", "20hc", "Alta"…); referência = hoje
+function lerCab(t) { var ch = SOTCONT.cabecalho(t, typeof hojeDate === 'function' ? hojeDate() : new Date()); return ch && { data: ch.data, cab: { hc: ch.hc, ic: ch.ic, hm: ch.hm, alta: ch.alta }, avisos: ch.avisos, txt: ch.txt }; }
 // v72: rótulo da data de internação mora no motor (sot-contadores.js), carregado antes deste arquivo
 var RE_DIH_DATA = SOTCONT.RE_DIH_DATA, RE_DIH_DATA_LINHA = SOTCONT.RE_DIH_DATA_LINHA;
 var COLS = ['local', 'nome', 'causa', 'orienta', 'condutas', 'exames'];
@@ -850,7 +877,7 @@ var RE_SECTION = /^(ala\s*[a-z0-9]{1,2}|sala amarela\s*\/\s*vermelha|uti\s*[a-z0
 function bordasOk(b) { if (!b || b.length !== 7) return false; for (var i = 1; i < 7; i++) if (!(b[i] - b[i - 1] >= 25)) return false; return true; }
 function colOf(xc, pw, bd) { var E = bordasOk(bd) ? bd : COL_EDGES.map(function (e) { return e * pw / 842; }); for (var i = 0; i < 6; i++) if (xc < E[i + 1]) return i; return 5; }
 function parseInternograma(pages) {
-  var rows = [], dataInternograma = null, cab = null, leitosPDF = [];
+  var rows = [], dataInternograma = null, cab = null, leitosPDF = [], cabAvisos = [];
   pages.forEach(function (pg, pi) {
     var its = pg.items.filter(function (i) { return i.str && i.str.trim(); }).sort(function (a, b) { return a.top - b.top || a.x - b.x; });
     var cur = null;
@@ -871,8 +898,8 @@ function parseInternograma(pages) {
   });
   var pacientes = [], cur = null, section = '', soltas = [];
   rows.forEach(function (r) {
-    var m = r.text.match(RE_CAB);
-    if (m) { dataInternograma = m[1]; cab = cabDe(m); return; }
+    var ch = lerCab(r.text), m;
+    if (ch) { dataInternograma = ch.data; cab = ch.cab; cabAvisos = ch.avisos; return; }
     m = r.text.match(/^\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*-\s*\d+\s*hc/i);
     if (m) { dataInternograma = m[1]; return; }
     if (/^Local\b.*\bNome\b/i.test(r.text) || /^(Mecanismo|Dih Origem|Leito Interna|Registro)\b/i.test(r.text)) return;
@@ -883,6 +910,14 @@ function parseInternograma(pages) {
       cur = null; section = r.text.replace(/\s+/g, ' ').trim(); return;
     }
     var local0 = r.cells[0].join(' ');
+    // v73: divisa desenhada (linha horizontal da tabela) entre a linha anterior e esta, na mesma página → começa outra ficha.
+    // Só conta se esta linha tem Local ou Nome (a ficha de baixo começa por eles); sem linhas no PDF, vale a regra antiga.
+    var pgH = pages[r.page].linhasH || [], ant = rows[rows.indexOf(r) - 1];
+    var divisa = cur && ant && ant.page === r.page && (r.cells[0].length || r.cells[1].length) &&
+      pgH.some(function (y) { return y > ant.top + 2 && y < r.top - 4; });
+    if (divisa && !(RE_START.test(local0) && r.cells[1].length && (cur.cols.local.length > 1 || cur.cols.nome.length))) {
+      cur = { section: section, cols: {} }; COLS.forEach(function (k) { cur.cols[k] = []; }); pacientes.push(cur); cur.porDivisa = true;
+    } else
     if (RE_START.test(local0) && r.cells[1].length && (!cur || cur.cols.local.length > 1 || cur.cols.nome.length)) {
       cur = { section: section, cols: {} }; COLS.forEach(function (k) { cur.cols[k] = []; }); pacientes.push(cur);
     } else if (RE_START.test(local0) && !cur) {
@@ -891,7 +926,7 @@ function parseInternograma(pages) {
     if (!cur) { if (r.cells[1].length || r.cells[2].length) soltas.push({ section: section, texto: r.text.slice(0, 120) }); return; }
     COLS.forEach(function (k, i) { if (r.cells[i].length) cur.cols[k].push({ t: r.cells[i].join(' '), top: r.top + r.page * 10000 }); });
   });
-  return { data: dataInternograma, cab: cab, soltas: soltas, leitosPDF: leitosPDF, pacientes: pacientes.map(extrairCampos).filter(function (p) { return p.nome; }) };
+  return { data: dataInternograma, cab: cab, cabAvisos: cabAvisos, soltas: soltas, leitosPDF: leitosPDF, pacientes: pacientes.map(extrairCampos).filter(function (p) { return p.nome; }).map(defesaFicha) };
 }
 
 // ===== leitura direta do Google Doc (exportado em HTML: 1 linha da tabela = 1 paciente) =====
@@ -899,10 +934,10 @@ function parseTabelaHTML(html) {
   var doc = new DOMParser().parseFromString(html, 'text/html');
   var cab = null, data = null;
   var txt = doc.body ? doc.body.textContent : '';
-  var m = txt.match(RE_CAB);
-  if (m) { data = m[1]; cab = cabDe(m); }
+  var ch = lerCab(txt), cabAvisos = [];
+  if (ch) { data = ch.data; cab = ch.cab; cabAvisos = ch.avisos; }
   var tab = Array.prototype.slice.call(doc.querySelectorAll('table')).sort(function (a, b) { return b.rows.length - a.rows.length; })[0];
-  if (!tab) return { data: data, cab: cab, soltas: [], leitosPDF: [], pacientes: [] };
+  if (!tab) return { data: data, cab: cab, cabAvisos: cabAvisos, soltas: [], leitosPDF: [], pacientes: [] };
   var section = '', pacientes = [], soltas = [], top = 0;
   function linhasCel(td) {
     var ps = td.querySelectorAll('p'), out = [];
@@ -921,9 +956,9 @@ function parseTabelaHTML(html) {
     if (tds.length === 1 || cheio === 1 && cels[0].length === 1 && tds.length < 6) { section = cels.map(function (c) { return c.join(' '); }).join(' ').trim(); return; }
     if (/^local\b/i.test((cels[0][0] || '')) && /^nome\b/i.test((cels[1] && cels[1][0]) || '')) return;
     if (!(cels[1] || []).length) { soltas.push({ section: section, texto: cels.map(function (c) { return c.join(' / '); }).join(' | ').slice(0, 120) }); return; }
-    pacientes.push(extrairDoc(cels, section));
+    pacientes.push(defesaFicha(extrairDoc(cels, section)));
   });
-  return { data: data, cab: cab, soltas: soltas, leitosPDF: [], pacientes: pacientes.filter(function (p) { return p.nome; }), fonteTipo: 'doc' };
+  return { data: data, cab: cab, cabAvisos: cabAvisos, soltas: soltas, leitosPDF: [], pacientes: pacientes.filter(function (p) { return p.nome; }), fonteTipo: 'doc' };
 }
 function linhas(arr) { return arr.map(function (l) { return l.t; }); }
 function paragrafos(arr) {
@@ -938,6 +973,58 @@ function nomeVirgula(t) {
   if (!m || +m[2] > 120 || m[1].trim().split(' ').length < 2) return null;
   return { nome: m[1].trim(), idade: String(+m[2]), cidade: (m[3] || '').trim() };
 }
+// v73: identificação (nome, idade, cidade) em QUALQUER formato do serviço — um lugar só (leitor do Doc e do PDF).
+// Acha a idade ("74a", "67 A", "51 Anos", "8A", "35," depois de vírgula, "· 45 ·"); nome = o texto antes dela (pode ocupar
+// várias linhas, sem números); cidade = o resto da linha da idade, senão a 1ª linha seguinte só de palavras.
+// Sem idade reconhecível → null (o leitor faz o que já fazia). Linhas de Dih/registro/classificação nunca entram.
+var RX_IDADE = /(^|[\s,·;])(\d{1,3})\s*(anos|ano|a\.|a|meses|m)?(?=$|[\s,·;])/i;
+function ehLinhaOutra(s) { return SOTCONT.RE_DIH_N.test(s) || RE_DIH_DATA_LINHA.test(s) || /^(?:p|r|reg|gmr|registro|rg)?\s*[:.]?\s*\d{5,8}$/i.test(s) || /^-{2,}$/.test(s) || /\bao\s*\d/i.test(s); }
+function lerIdent(linhas) {
+  var L = (linhas || []).map(function (s) { return String(s || '').replace(/\s+/g, ' ').trim(); });
+  for (var k = 0; k < L.length && k < 5; k++) {
+    var s = L[k]; if (!s || ehLinhaOutra(s)) break;
+    var m = s.match(RX_IDADE); if (!m) continue;
+    var temUnid = !!m[3], antesSep = /[,·;]\s*$/.test(s.slice(0, m.index + m[1].length)) || /[,·;]/.test(m[1]);
+    if (!temUnid && !antesSep && s.replace(/[,.·;\s]/g, '') !== m[2]) continue;   // número solto sem "a/anos" e sem vírgula: não é idade
+    if (/^m/i.test(m[3] || '') ? +m[2] > 24 : +m[2] > 120) continue;
+    var nome = L.slice(0, k).concat(s.slice(0, m.index + m[1].length)).join(' ').replace(/[,·;]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!nome || /\d/.test(nome)) return null;
+    var cid = s.slice(m.index + m[0].length).replace(/^[\s,·;.]+|[\s,·;.]+$/g, '').trim(), iCid = -1;
+    var soPalavras = function (t) { return /^[A-Za-zÀ-ÿ'´`.\- ]+$/.test(t) && t.split(' ').length <= 4 && !(typeof RX_CLASSIF !== 'undefined' && RX_CLASSIF.test(t)); }, iCid2 = -1;
+    // cidade depois da idade: até 4 linhas abaixo, pulando Dih/registro (nunca passa de "--")
+    // (para na classificação — AO/Garden/… — e no "--"; o leitor do Doc apaga os traços, então a classificação é a divisa que sobra)
+    if (!cid) for (var j = k + 1; j < L.length && j <= k + 4; j++) { var t = L[j]; if (!t) continue; if (/^-{2,}$/.test(t) || /\bao\s*\d/i.test(t) || (typeof RX_CLASSIF !== 'undefined' && RX_CLASSIF.test(t))) break; if (ehLinhaOutra(t)) continue;
+      if (soPalavras(t)) { cid = t; iCid = j;
+        // cidade em 2 linhas ("PARAGUAÇU" / "PAULISTA"): só se a de baixo também for só palavras e logo depois vier Dih/registro/fim
+        // e as duas com a mesma escrita (maiúsculas × normal) — o nome do paciente de baixo (ficha juntada) nunca vira cidade
+        var t2 = L[j + 1], t3 = L[j + 2], cx = function (x) { return x === x.toUpperCase(); };
+        if (t2 && soPalavras(t2) && cx(t) === cx(t2) && (t + ' ' + t2).split(' ').length <= 4 && (!t3 || ehLinhaOutra(t3))) { cid = t + ' ' + t2; iCid2 = j + 1; } }
+      break; }
+    if (/\d/.test(cid)) { cid = ''; iCid = -1; iCid2 = -1; }
+    // usadas = linhas do nome/idade (0..k); iCid = linha da cidade (pode vir depois de uma linha de Dih — essa NÃO é consumida)
+    return { nome: nome, idade: String(+m[2]) + (/^m/i.test(m[3] || '') ? ' meses' : ''), cidade: cid, usadas: k + 1, iCid: iCid, iCid2: iCid2 };
+  }
+  return null;
+}
+// v73: DEFESA contra fichas misturadas (dois pacientes numa ficha) e fichas incompletas — leitor do Doc e do PDF.
+// Nunca separa nem descarta sozinho: só AVISA (separar no chute poderia misturar dados de pacientes).
+function defesaFicha(o) {
+  var b = o.bruto || [], c0 = String(b[0] || '').split(/\n|\s+\/\s+/), c1 = String(b[1] || '').split(/\n|\s+\/\s+/);
+  var regs = {}, nDih = 0, dDih = {}, leitos = {}, sinais = [];
+  c1.forEach(function (s) { var m; s = s.trim();
+    if ((m = s.match(/^(?:p|r|reg|gmr|registro)?\s*[:.]?\s*(\d{5,8})$/i))) regs[m[1]] = 1;
+    if (SOTCONT.RE_DIH_N.test(s)) nDih++; });
+  c0.concat(c1).forEach(function (s) { var m = s.trim().match(SOTCONT.RE_DIH_DATA_LINHA); if (m) dDih[m[1]] = 1; });
+  c0.forEach(function (s) { if (/^\s*\d{3,4}[a-z]?\s*$/i.test(s)) leitos[s.trim()] = 1; });
+  if (Object.keys(regs).length > 1) sinais.push(Object.keys(regs).length + ' registros (' + Object.keys(regs).join(' e ') + ')');
+  if (nDih > 1) sinais.push(nDih + ' linhas de "Dih"');
+  if (Object.keys(dDih).length > 1) sinais.push('2 datas de internação (' + Object.keys(dDih).join(' e ') + ')');
+  if (Object.keys(leitos).length > 1) sinais.push('2 leitos (' + Object.keys(leitos).join(' e ') + ')');
+  o.avisos = (o.avisos || []).filter(function (a) { return !/^Dois registros na mesma linha|^Mais de um leito na mesma ficha|^Dois leitos na mesma linha/.test(a); });
+  if (sinais.length) { o.mistura = true; o.avisos.push('Esta ficha parece ter 2 pacientes juntos: ' + sinais.join(', ') + ' — confira no internograma (o app não separa sozinho).'); }
+  if (!o.registro && !o.idade && o.dihStated == null && !o.dihData && !o.leito) o.avisos.push('Ficha com poucos dados (sem registro, idade, DIH e leito) — confira no internograma.');
+  return o;
+}
 function extrairCampos(p) {
   var c = p.cols, o = { id: '', section: p.section, regs: [], avisos: [] };
   var L = linhas(c.local), resto = [];
@@ -947,7 +1034,7 @@ function extrairCampos(p) {
     if (!o.leito && (m = t.match(/^\d{3,4}[a-z]?$/i))) o.leito = t;
     else if ((m = t.match(/^\d{3,4}[a-z]?$/i))) { o.avisos.push('Mais de um leito na mesma ficha (' + o.leito + ' e ' + t + ') — possível mistura de pacientes'); }
     else if ((m = t.match(RE_DIH_DATA))) o.dihData = m[1];
-    else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) o.dihStated = +m[1];
+    else if ((m = t.match(SOTCONT.RE_DIH_N))) o.dihStated = +m[2];
     else if ((m = t.match(/^\(?(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)?$/))) { if (!o.dataSolta) o.dataSolta = m[1]; resto.push(t); }
     else if (/^(p|e|c|p\s*\+\s*e|c\s*\+\s*e)$/i.test(t)) o.flag = t.toUpperCase().replace(/\s/g, '');
     else resto.push(t);
@@ -959,9 +1046,13 @@ function extrairCampos(p) {
     if (m && m[1] && !/^\d/.test(m[1])) { N.push(m[1], m[2]); if (m[3]) m[3].split(/\s+(?=\b(?:p|r|reg|gmr):?\s*\d)|\s+(?=ao\s)/i).forEach(function (x) { N.push(x); }); }
     else N.push(t);
   });
-  for (; i < N.length; i++) { if (/^\d{1,3}\s*(a|anos|a\.)\b/i.test(N[i]) || /^\d{1,3}a$/i.test(N[i])) break; nome.push(N[i]); }
+  // v73: ficha abreviada "NOME / registro / leito": linha só de número encerra o nome (não é idade)
+  var porNum = false;
+  for (; i < N.length; i++) { if (/^\d{1,3}\s*(a|anos|a\.)\b/i.test(N[i]) || /^\d{1,3}a$/i.test(N[i])) break;
+    if (nome.length && /^(?:p|r|reg|gmr|registro)?\s*[:.]?\s*\d{3,8}[a-z]?$/i.test(String(N[i]).trim())) { porNum = true; break; }
+    nome.push(N[i]); }
   o.nome = nome.join(' ').replace(/\s+/g, ' ').trim().replace(/\s+(\d{5,8})$/, function (x, r) { o.regs.push(r); return ''; });
-  o.idade = N[i] ? N[i].replace(/\s*(anos|a)\.?$/i, '').trim() : '';
+  o.idade = (!porNum && N[i]) ? N[i].replace(/\s*(anos|a)\.?$/i, '').trim() : '';
   o.nome = o.nome.replace(/\s*[,;]\s*$/, '');   // "João Exemplo," → sem a vírgula sobrando
   // "52a , Assis" / "54a, Marília": idade e cidade na mesma linha
   var mic = o.idade.match(/^(\d{1,3})\s*(?:a|anos)?\.?\s*,\s*([^\d,]+)$/i);
@@ -969,11 +1060,12 @@ function extrairCampos(p) {
   // formato "Nome, 77A, Cidade" (nome, idade e cidade na mesma célula, separados por vírgula)
   var cv = nomeVirgula(o.nome + (N[i] && !/^\d{1,3}\s*(anos|a)?\.?$/i.test(N[i]) ? ' ' + N[i] : ''));
   if (cv) { o.nome = cv.nome; if (cv.idade) o.idade = cv.idade; if (cv.cidade) o.origemVirgula = cv.cidade; }
-  N.slice(i + 1).forEach(function (t) {
+  N.slice(porNum ? i : i + 1).forEach(function (t) {
     var m;
     if (/^[\s,.;:-]*$/.test(t)) return;   // só pontuação (",")
+    if (!o.leito && /^\d{3,4}[a-z]?$/i.test(String(t).trim()) && +String(t).replace(/\D/g, '') > 120) { o.leito = String(t).trim(); o.avisos.push('Leito escrito na coluna do nome (' + o.leito + ').'); return; }   // v73
     if ((m = t.match(/^(?:r|p|reg|gmr)?\s*:?\s*(\d{5,8})$/i)) || (m = t.match(/\b(?:r|p|reg)\s*:\s*(\d{5,8})\b/i))) o.regs.push(m[1]);
-    else if ((m = t.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) { if (o.dihStated == null) o.dihStated = +m[1]; }
+    else if ((m = t.match(SOTCONT.RE_DIH_N))) { if (o.dihStated == null) o.dihStated = +m[2]; }
     else if ((m = t.match(RE_DIH_DATA))) { if (!o.dihData) o.dihData = m[1]; }
     else if (!o.origem && !/^ao\b|^\-+$|classificar/i.test(t)) o.origem = t;
     else after.push(t);
@@ -999,6 +1091,11 @@ function extrairCampos(p) {
       if (cl) after.push(cl);
     }
   }
+  // v73: a regra única de identificação (a mesma do leitor do Doc) decide nome, idade e cidade quando reconhece a idade.
+  // Validada nos PDFs reais: igual em 176/190; corrige cidade cortada ("Marili"), cidade em 2 linhas e classificação lida como cidade.
+  var idt = lerIdent(linhas(c.nome));
+  if (idt) { var o0 = o.origem || ''; o.nome = idt.nome; o.idade = idt.idade; o.origem = idt.cidade;
+    if (o0 && o0 !== idt.cidade && idt.cidade.indexOf(o0) < 0 && idt.nome.indexOf(o0) < 0) after.unshift(o0); }   // o que antes virou "cidade" por engano volta para a classificação
   o.registro = o.regs[0] || '';
   o.classif = after.join(' ');
   var Cz = linhas(c.causa), dx = [], ap = [], ass = '', mode = 0;
@@ -1131,11 +1228,11 @@ function tipoDe(p) {
   };
 }
 // verificações de qualidade do que foi lido
-function verificar(p, hj) {
+function verificar(p, hj, refDoc) {   // v73: refDoc = data do internograma lido (o Atualizador lê o Doc na hora)
   var a = (p.avisos || []).slice();
   if (!p.leito && !p.ps && !p.hm) a.push('Sem número de leito');
   if (!p.registro) a.push('Sem registro');
-  if ((p.regs || []).length > 1 && p.regs[0] !== p.regs[1]) a.push('Dois registros na mesma ficha (' + p.regs.join(' e ') + ') — possível mistura de pacientes');
+  if (!p.mistura && (p.regs || []).length > 1 && p.regs[0] !== p.regs[1]) a.push('Dois registros na mesma ficha (' + p.regs.join(' e ') + ') — possível mistura de pacientes');
   if (!p.idade) a.push('Sem idade');
   else if (+p.idade > 110) a.push('Idade improvável: ' + p.idade);
   if (!p.dx) a.push('Sem diagnóstico / causa');
@@ -1145,7 +1242,7 @@ function verificar(p, hj) {
   if (p.dihFonte === 'escrita' && p.dih != null && p.dihStated != null && p.dih !== p.dihStated) a.push('DIH: internograma diz ' + p.dihStated + ', mas pela data (' + p.dihData + ') hoje é DIH ' + p.dih + (p.dihStated === p.dih + 1 ? ' — diferença de 1 dia: convenção de contagem diferente?' : p.dihStated === p.dih - 1 ? ' — internograma não atualizado hoje?' : ''));
   if (p.po && p.po.semData) a.push('PO sem data no internograma ("' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + ' ' + String(p.po.proc || '').slice(0, 40) + '") — a contagem segue o número escrito; escreva a data da cirurgia');
   if (typeof SOTCONT !== 'undefined') {   // v66: contadores escritos à mão × data
-    var refIG = (typeof S !== 'undefined' && S.dataIG && parseData(String(S.dataIG), hj)) || hj;
+    var refIG = refDoc || (typeof S !== 'undefined' && S.dataIG && parseData(String(S.dataIG), hj)) || hj;
     SOTCONT.conferir(p.dxL || String(p.dx || '').split(' · '), refIG, { mecanismo: [(p.bruto || [])[0], p.mecanismo] }).forEach(function (c) {
       if ((c.tipo === 'po' || c.tipo === 'poi') && p.po && p.po.data && SOTCONT.dias(new Date(p.po.data), c.data) === 0) return;
       a.push('Contador: internograma escreve "' + c.seg.slice(0, 50) + '" — pela data (' + fmtD(c.data) + ') ' + (c.tipo === 'd' ? 'são ' + c.certo + ' dias' : c.certo === 0 ? 'é POI' : 'é ' + c.certo + 'º PO') + (c.fonte === 'bloco' ? ' (data na linha de baixo)' : c.fonte === 'mecanismo' ? ' (data do trauma)' : ''));
@@ -1153,7 +1250,7 @@ function verificar(p, hj) {
   }
   if (p.po && p.po.futuro) a.push('Data de cirurgia no futuro: ' + p.po.label);
   else if (p.po && p.po.stated != null && p.po.stated !== p.po.n) a.push('PO: internograma escreve "' + (p.po.stated === 0 ? 'POI' : p.po.stated + ' PO') + '", pela data hoje é ' + p.po.label);
-  if (p.ass && p.ass.split('|').length > 1 && (p.regs || []).length > 1) a.push('Mais de uma assinatura e registro — conferir se dois pacientes foram juntados');
+  if (!p.mistura && p.ass && p.ass.split('|').length > 1 && (p.regs || []).length > 1) a.push('Mais de uma assinatura e registro — conferir se dois pacientes foram juntados');
   if (!p.apL && (p.ap.match(/\bap\s*:/gi) || []).length > 1) a.push('Antecedentes aparecem duas vezes — possível mistura com a ficha seguinte');
   return a;
 }
@@ -2154,7 +2251,7 @@ function extrairDoc(cels, section) {
     if ((m = s.match(/^\d{3,4}[a-z]?$/i))) { if (!o.leito) o.leito = s; else o.avisos.push('Dois leitos na mesma linha (' + o.leito + ' e ' + s + ')'); }
     else if (s === '?') o.leitoDuvida = true;
     else if ((m = s.match(RE_DIH_DATA_LINHA))) o.dihData = m[1];
-    else if ((m = s.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) o.dihStated = +m[1];
+    else if ((m = s.match(SOTCONT.RE_DIH_N))) o.dihStated = +m[2];
     else if ((m = s.match(/^(?:em\s+)?\(?(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)?(?:\s*\([^()\d]{1,15}\))?$/i))) { o.dataTrauma = m[1]; if (!/^em\s/i.test(s) && !o.dataSolta) o.dataSolta = m[1]; }
     else if (/^(p\s*\+\s*e|c\s*\+\s*e|p|e|c|gmr|sor|cme|arquivo|vrsa|kpc|orsa|mrsa)$/i.test(s)) o.flags.push(s.toUpperCase().replace(/\s/g, ''));
     else mec.push(s);
@@ -2164,6 +2261,7 @@ function extrairDoc(cels, section) {
   o.flag = o.flags.filter(function (f) { return /^[PEC](\+[PEC])?$/.test(f); }).join(' ');
   // ---- coluna 2: nome / idade / origem / internação / registro / classificações
   var c1 = (cels[1] || []).map(limpa).filter(Boolean), i = 0;
+  var idt = lerIdent(c1);   // v73: formatos variados (nome em várias linhas, vírgula, tudo numa linha, "·")
   var n0 = c1[0] || '', mi = n0.match(/^(.*?)\s+(\d{1,3})\s*(a|anos|a\.)$/i);
   if (mi) { o.nome = mi[1]; o.idade = mi[2]; } else o.nome = n0;
   o.nome = o.nome.replace(/\s*[,;]\s*$/, '');   // "JOSÉ EXEMPLO LIMA , 37 A" → sem a vírgula sobrando
@@ -2172,17 +2270,20 @@ function extrairDoc(cels, section) {
   if (!mi && !cv && /,\s*$/.test(n0) && c1[1]) { cv = nomeVirgula(n0 + ' ' + c1[1]); if (cv) juntou = 1; }
   if (cv) { o.nome = cv.nome; o.idade = cv.idade; if (cv.cidade) o.origem = cv.cidade; }
   var mr = o.nome.match(/^(.*?)\s+(\d{5,8})$/); if (mr) { o.nome = mr[1]; o.regs.push(mr[2]); }
-  c1.slice(1 + juntou).forEach(function (s) {
+  if (idt) { o.nome = idt.nome; o.idade = idt.idade; if (idt.cidade) o.origem = idt.cidade; juntou = idt.usadas - 1; mi = mi || true; }
+  c1.forEach(function (s, ix) {
+    if (ix < 1 + juntou || (idt && (ix === idt.iCid || ix === idt.iCid2))) return;   // linhas já usadas no nome/idade/cidade
     var m;
     if (RX_SEP.test(s)) return;
     if (/^dih\s*:?\s*$/i.test(s)) return;   // "DIH:" sem nada escrito
     if (!o.idade && (m = s.match(/^(\d{1,3})\s*(?:a|anos)\.?\s*,\s*([^\d,][^\d]*)$/i)) && +m[1] <= 120) { o.idade = m[1]; if (!o.origem) o.origem = m[2].trim(); return; }   // "52a , Assis"
     if (!o.idade && (m = s.match(/^(\d{1,3})\s*(a|anos|a\.|m|meses)\.?$/i))) { o.idade = m[1] + (/^m/i.test(m[2]) ? ' meses' : ''); return; }
     if ((m = s.match(/^(?:p|r|reg|gmr|registro)?\s*[:.]?\s*(\d{5,8})$/i))) { o.regs.push(m[1]); return; }
-    if ((m = s.match(/^di[h]?\s*:?\s*(\d{1,3})$/i))) { if (o.dihStated == null) o.dihStated = +m[1]; return; }
+    if (!o.leito && /^\d{3,4}[a-z]?$/i.test(s) && +s.replace(/\D/g, '') > 120) { o.leito = s; o.avisos.push('Leito escrito na coluna do nome (' + s + ').'); return; }   // v73: ficha abreviada
+    if ((m = s.match(SOTCONT.RE_DIH_N))) { if (o.dihStated == null) o.dihStated = +m[2]; return; }
     if ((m = s.match(RE_DIH_DATA_LINHA))) { if (!o.dihData) o.dihData = m[1]; return; }
     if (RX_CLASSIF.test(s) || /\bao\s*\d/i.test(s) || /\?{2,}$/.test(s) && o.origem) { o.classifL.push(s); return; }
-    if (!o.origem && !/\d{3,}/.test(s)) { o.origem = s; return; }
+    if (!idt && !o.origem && !/\d{3,}/.test(s)) { o.origem = s; return; }   // v73: com a regra única, a cidade já foi decidida (vazia = não escrita)
     o.classifL.push(s);
   });
   o.registro = o.regs[0] || '';
@@ -2488,7 +2589,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '72';
+var VERSAO = '73';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2694,9 +2795,11 @@ function carregarPDFJS() {   // só carrega o leitor de PDF quando alguém impor
   return new Promise(function (ok, er) { var s = document.createElement('script'); s.src = PDFJS_URL; s.onload = ok; s.onerror = function () { er(new Error('leitor de PDF não carregou')); }; document.head.appendChild(s); });
 }
 // linhas verticais da tabela desenhadas no PDF → bordas das colunas (x). Qualquer falha → null (usa as posições antigas).
+// v73: também as linhas HORIZONTAIS (y, medido do topo) que atravessam mais da metade da página = divisas entre fichas.
 function bordasTabela(pg) {
   return pg.getOperatorList().then(function (ol) {
-    var O = pdfjsLib.OPS, ctm = [1, 0, 0, 1, 0, 0], pilha = [], xs = {};
+    var O = pdfjsLib.OPS, ctm = [1, 0, 0, 1, 0, 0], pilha = [], xs = {}, ys = {}, W = pg.getViewport({ scale: 1 }).width, H = pg.getViewport({ scale: 1 }).height;
+    function somaH(y, w) { if (w > W * 0.5) { var r = Math.round(H - y); ys[r] = Math.max(ys[r] || 0, w); } }
     function mul(a, b) { return [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]]; }
     function ap(x, y) { return [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]]; }
     function soma(x, h) { var r = Math.round(x); xs[r] = (xs[r] || 0) + h; }
@@ -2710,15 +2813,15 @@ function bordasTabela(pg) {
         for (var j = 0; j < ops.length; j++) {
           var op = ops[j], p, q;
           if (op === O.moveTo) { p = ap(c[k], c[k + 1]); px = p[0]; py = p[1]; k += 2; }
-          else if (op === O.lineTo) { p = ap(c[k], c[k + 1]); k += 2; if (px != null && Math.abs(p[0] - px) < 0.6 && Math.abs(p[1] - py) > 20) soma(p[0], Math.abs(p[1] - py)); px = p[0]; py = p[1]; }
-          else if (op === O.rectangle) { p = ap(c[k], c[k + 1]); q = ap(c[k] + c[k + 2], c[k + 1] + c[k + 3]); k += 4; if (Math.abs(q[0] - p[0]) < 2 && Math.abs(q[1] - p[1]) > 20) soma((p[0] + q[0]) / 2, Math.abs(q[1] - p[1])); }
+          else if (op === O.lineTo) { p = ap(c[k], c[k + 1]); k += 2; if (px != null && Math.abs(p[0] - px) < 0.6 && Math.abs(p[1] - py) > 20) soma(p[0], Math.abs(p[1] - py)); if (px != null && Math.abs(p[1] - py) < 0.6) somaH(p[1], Math.abs(p[0] - px)); px = p[0]; py = p[1]; }
+          else if (op === O.rectangle) { p = ap(c[k], c[k + 1]); q = ap(c[k] + c[k + 2], c[k + 1] + c[k + 3]); k += 4; if (Math.abs(q[0] - p[0]) < 2 && Math.abs(q[1] - p[1]) > 20) soma((p[0] + q[0]) / 2, Math.abs(q[1] - p[1])); if (Math.abs(q[1] - p[1]) < 2) somaH((p[1] + q[1]) / 2, Math.abs(q[0] - p[0])); }
           else if (op === O.curveTo) k += 6; else if (op === O.curveTo2 || op === O.curveTo3) k += 4;
         }
       }
     }
     var b = Object.keys(xs).filter(function (x) { return xs[x] > 40; }).map(Number).sort(function (x, y) { return x - y; });
-    return b.length === 7 ? b : null;
-  }).catch(function () { return null; });
+    return { v: b.length === 7 ? b : null, h: Object.keys(ys).map(Number).sort(function (x, y) { return x - y; }) };
+  }).catch(function () { return { v: null, h: [] }; });
 }
 function importarPDF(f) {
   if (!window.pdfjsLib) { toast('Carregando leitor de PDF…'); carregarPDFJS().then(function () { importarPDF(f); }, function (e) { ERR.log('pdf', e, 'Leitor de PDF não carregou — verifique a internet'); }); return; }
@@ -2728,14 +2831,24 @@ function importarPDF(f) {
     var ps = [];
     for (var i = 1; i <= doc.numPages; i++) ps.push(doc.getPage(i).then(function (pg) {
       var vp = pg.getViewport({ scale: 1 });
-      return Promise.all([pg.getTextContent(), bordasTabela(pg)]).then(function (rr) { var tc = rr[0]; return { width: vp.width, height: vp.height, bordas: rr[1], items: tc.items.map(function (it) { return { str: it.str, x: it.transform[4], top: vp.height - it.transform[5], w: it.width }; }) }; });
+      return Promise.all([pg.getTextContent(), bordasTabela(pg)]).then(function (rr) { var tc = rr[0]; return { width: vp.width, height: vp.height, bordas: rr[1].v, linhasH: rr[1].h, items: tc.items.map(function (it) { return { str: it.str, x: it.transform[4], top: vp.height - it.transform[5], w: it.width }; }) }; });
     }));
     return Promise.all(ps);
   }).then(function (pages) {
+    var nTxt = pages.reduce(function (a, p) { return a + p.items.filter(function (i) { return i.str && i.str.trim(); }).length; }, 0);
+    if (!nTxt) { avisoPDFsemTexto(f.name, pages.length); return; }   // v73: PDF salvo como imagem (acontece) — não troca nada
     var r = parseInternograma(pages);
     if (!r.pacientes.length) { toast('Não reconheci pacientes neste PDF'); return; }
     aplicarImport(r, f.name);
   }).catch(function (err) { console.error(err); toast('Erro ao ler o PDF'); });
+}
+// v73: PDF sem texto (impresso como imagem: "Microsoft Print to PDF", foto, digitalização) — aviso claro, nada é trocado
+function avisoPDFsemTexto(nome, np) {
+  $('#mbox').innerHTML = '<p style="margin:2px 2px 8px;font-size:16px"><b>Este PDF não tem texto</b></p>' +
+    '<p class="hint" style="margin:0 2px 8px">“' + esc(nome) + '” (' + np + ' pág.) foi salvo como <b>imagem</b> — acontece quando o PDF sai de “Imprimir → Microsoft Print to PDF”, de foto ou de digitalização. O app não lê tabela em imagem e <b>não trocou</b> o internograma que já estava aqui.</p>' +
+    '<p class="hint" style="margin:0 2px 10px">Use <b>Atualizar do Google Doc</b> (em Ajustes) ou baixe o PDF pelo próprio Google Docs: <b>Arquivo → Fazer download → Documento PDF</b>.</p>' +
+    '<div class="row"><button class="btn" data-cancel>Entendi</button></div>';
+  $('#modal').classList.add('on');
 }
 function classificar(p) {
   var sec = p.section || '', loc = p.local || '', tudo = (loc + ' ' + p.mecanismo + ' ' + p.origem).toLowerCase();
@@ -2765,7 +2878,7 @@ function aplicarImport(r, nome) {
   });
   lista.sort(function (a, b) { return (a.hm - b.hm) || (a.ordem - b.ordem); });   // Hm sempre por último
   compararInternograma(lista);
-  S.pacientes = lista; S.fonte = nome; S.dataIG = r.data; S.cab = r.cab; S.soltas = r.soltas || []; S.leitosPDF = r.leitosPDF || []; S.conf = {};
+  S.pacientes = lista; S.fonte = nome; S.dataIG = r.data; S.cab = r.cab; S.cabAvisos = r.cabAvisos || []; S.soltas = r.soltas || []; S.leitosPDF = r.leitosPDF || []; S.conf = {};
   save(); S.tab = 'leitos'; render(); compartilharIgHist();
   var c = contagem(); toast(lista.length + ' pacientes lidos' + (c.ok ? '' : ' — confira a contagem') + ((S.sumidos || []).length ? ' · ' + S.sumidos.length + ' saíram desde ontem' : ''));
 }
@@ -2857,15 +2970,13 @@ function tagsPac(p) {
   if (!evoFeita(p) && !evoBase(p.id)) t += '<span class="tag">sem evolução anterior</span>';
   return t;
 }
-function bannerContagem() {
-  var k = contagem(); if (k.ok) return '';
-  var L = [];
-  if (k.totCab != null && k.tot !== k.totCab) L.push('Total: cabeçalho ' + k.totCab + ' × lidos ' + k.tot + '.');
-  if (k.dif.length) L.push('Cabeçalho do internograma: ' + k.cab.hc + ' HC / ' + k.cab.ic + ' IC / ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' / ' + k.cab.alta + ' altas' : '') + ' — o app leu ' + k.c.hc + ' / ' + k.c.ic + ' / ' + k.c.hm + ' / ' + k.c.alta + '.');
-  if (k.faltaLeito.length) L.push('Leitos no PDF sem paciente reconhecido: ' + k.faltaLeito.join(', '));
-  if (k.soltas.length) L.push(k.soltas.length + ' linha(s) do PDF não atribuída(s) a nenhum paciente.');
+function bannerContagem() {   // v73: a faixa mostra a CONFERÊNCIA DO INTERNOGRAMA inteira (todos os avisos, agrupados)
+  if (!(S.pacientes || []).length) return '';
+  var cf = conferenciaIG(); if (!cf.importantes) return '';
+  var L = []; cf.grupos.forEach(function (g) { if (g.tipo !== 'falta') g.itens.forEach(function (x) { L.push(x.onde + ': ' + x.t); }); });
   var ass = L.join('|'); if ((S.contOk || {})[S.hoje] === ass) return '';
-  return '<details class="aviso"><summary>' + ico('alerta') + '<span><b>Confira a contagem</b> — ' + esc(L[0]) + (L.length > 1 ? ' (+' + (L.length - 1) + ')' : '') + '</span></summary><div class="avc">' + L.map(esc).join('<br>') +
+  var prim = cf.grupos.filter(function (g) { return g.tipo !== 'falta'; })[0];
+  return '<details class="aviso"><summary>' + ico('alerta') + '<span><b>Conferência do internograma</b> — ' + cf.importantes + ' item(ns): ' + esc(prim.titulo.toLowerCase()) + (cf.grupos.length > 1 ? ' e mais' : '') + '</span></summary><div class="avc">' + htmlConferencia(cf) +
     '<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sm" data-tab="config">Abrir a conferência</button><button class="btn ghost sm" data-contok="' + esc(ass) + '">Conferido — esconder hoje</button></div></div></details>';
 }
 /* ---------- busca + modo de exibição (normal / compacto), um para cada aba ---------- */
@@ -2982,8 +3093,7 @@ function vConfig() {
     h += '<h2>Conferência nome por nome</h2><div class="card">';
     h += '<div class="hint" style="margin:0 0 6px">' + (k.cab ? 'Cabeçalho: ' + k.cab.hc + ' HC · ' + k.cab.ic + ' IC · ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' · ' + k.cab.alta + ' altas' : ' (altas não informadas)') + '. ' : '') + 'Lidos: ' + k.c.hc + ' HC · ' + k.c.ic + ' IC · ' + k.c.hm + ' Hm · ' + k.c.alta + ' altas. ' +
       (k.totCab != null ? (k.tot === k.totCab ? '<b style="color:var(--ok)">Total ' + k.tot + ' = cabeçalho ✓</b> ' : '<b style="color:var(--bad)">Total ' + k.tot + ' ≠ cabeçalho ' + k.totCab + '</b> ') : '') + (k.dif.length ? '<b style="color:var(--warn)">Distribuição diferente em: ' + k.dif.join(', ').toUpperCase() + '.</b> O cabeçalho costuma estar desatualizado — confira a lista abaixo com o PDF.' : '✓ bate com o cabeçalho.') + '</div>';
-    if (k.faltaLeito.length) h += '<div class="flagbox" style="margin:6px 0">Leitos no PDF sem paciente: ' + esc(k.faltaLeito.join(', ')) + '</div>';
-    if (k.soltas.length) h += '<details style="margin:6px 0"><summary class="hint" style="cursor:pointer;color:var(--warn)">⚠ ' + k.soltas.length + ' linha(s) do PDF não atribuída(s)</summary>' + k.soltas.map(function (s) { return '<div class="hint">[' + esc(s.section) + '] ' + esc(s.texto) + '</div>'; }).join('') + '</details>';
+    h += '<div style="margin:6px 0"><b>Conferência do internograma</b>' + htmlConferencia(conferenciaIG()) + '</div>';   // v73: todos os avisos num lugar só
     var conf = S.pacientes.filter(function (p) { return S.conf[p.id]; }).length;
     h += '<div class="hint" style="margin:6px 0">Marque cada paciente conferido com o internograma impresso: <b>' + conf + '/' + S.pacientes.length + '</b></div>';
     var sec = null;
@@ -3736,6 +3846,66 @@ function blocoPedidoExames(p) {
   o.pend.concat(o.avisos).forEach(function (t) { h += '<br>⚠ ' + esc(t); });
   o.info.forEach(function (t) { h += '<br>· ' + esc(t); });
   return h + '</div>';
+}
+
+// ===================== v73: CONFERÊNCIA DO INTERNOGRAMA — todos os avisos num lugar só =====================
+// Uma função gera a lista; a tela de leitos (faixa), Ajustes e o Atualizador mostram a MESMA lista, agrupada por tipo.
+var CONF_GRUPOS = [
+  ['cab', 'Cabeçalho e contagem'],
+  ['mistura', 'Fichas para conferir (2 pacientes juntos / poucos dados)'],
+  ['repetido', 'Paciente em mais de um lugar'],
+  ['contador', 'Contadores que não batem com a data'],
+  ['dih', 'Data de internação / DIH'],
+  ['falta', 'Dados faltando'],
+  ['outros', 'Outros']
+];
+function tipoAviso(t) {
+  if (/2 pacientes juntos|poucos dados|Leito escrito na coluna|Mais de uma assinatura|Dois registros/i.test(t)) return 'mistura';
+  if (/listado duas vezes/i.test(t)) return 'repetido';
+  if (/^Contador:|^PO:|PO sem data|cirurgia no futuro/i.test(t)) return 'contador';
+  if (/DIH|interna[cç][aã]o/i.test(t)) return 'dih';
+  if (/^Sem |incompleto|Idade improv/i.test(t)) return 'falta';
+  return 'outros';
+}
+// o: { P, dataIG, cabAvisos, hoje, semContagem, semRepetido, semAtraso } — sem P: usa o internograma do app (S)
+function conferenciaIG(o) {
+  o = o || {}; var doApp = !o.P, P = o.P || (S.pacientes || []).filter(function (p) { return !p.manual; }), hj = o.hoje || hojeDate(), G = {};
+  function add(tp, onde, t) { (G[tp] = G[tp] || []).push({ onde: onde, t: t }); }
+  var dataIG = 'dataIG' in o ? o.dataIG : S.dataIG;
+  (o.cabAvisos || (doApp ? S.cabAvisos : null) || []).forEach(function (t) { add('cab', 'Cabeçalho', t); });
+  if (!dataIG) add('cab', 'Cabeçalho', 'Não achei a data no cabeçalho do internograma.');
+  else { var d = parseData(String(dataIG), hj); if (!o.semAtraso && d && diasEntre(d, hj) > 0) add('cab', 'Cabeçalho', 'O cabeçalho está com ' + ddmm(d) + ' (hoje é ' + ddmm(hj) + ') — o internograma ainda não foi atualizado hoje?'); }
+  if (doApp && !o.semContagem && typeof contagem === 'function') {
+    var k = contagem();
+    if (k.totCab != null && k.tot !== k.totCab) add('cab', 'Contagem', 'Total: cabeçalho ' + k.totCab + ' × lidos ' + k.tot + '.');
+    if (k.dif.length) add('cab', 'Contagem', 'Cabeçalho: ' + k.cab.hc + ' HC / ' + k.cab.ic + ' IC / ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' / ' + k.cab.alta + ' altas' : '') + ' — o app leu ' + k.c.hc + ' / ' + k.c.ic + ' / ' + k.c.hm + ' / ' + k.c.alta + '.');
+    if (k.faltaLeito.length) add('cab', 'Contagem', 'Leitos no PDF sem paciente reconhecido: ' + k.faltaLeito.join(', ') + '.');
+    (k.soltas || []).forEach(function (s) { add('mistura', s.section || 'Linha solta', 'Linha do PDF que não entrou em nenhum paciente: "' + String(s.texto || '').slice(0, 80) + '"'); });
+  }
+  var porReg = {};
+  P.forEach(function (p) {
+    var onde = (p.leito || '—') + ' · ' + (p.section || p.grupo || '—') + ' · ' + (p.nome || '?');
+    (p.verif || []).forEach(function (v) { add(tipoAviso(v), onde, v); });
+    var r = String(p.registro || '').replace(/\D/g, ''); if (r.length >= 5) (porReg[r] = porReg[r] || []).push(p);
+  });
+  if (!o.semRepetido) Object.keys(porReg).forEach(function (r) {
+    var g = porReg[r]; if (g.length < 2) return;
+    var emAltas = g.some(function (p) { return p.alta; }) && g.some(function (p) { return !p.alta; });
+    add('repetido', g[0].nome, 'Aparece ' + g.length + ' vezes: ' + g.map(function (p) { return (p.leito ? p.leito + ' ' : '') + (p.section || ''); }).join(' e ') +
+      (emAltas ? ' — na ala e em ALTAS é o normal até a alta ser certa; quando for, tire da ala.' : ' — confira se uma das linhas ficou repetida.'));
+  });
+  var grupos = CONF_GRUPOS.filter(function (g) { return G[g[0]]; }).map(function (g) { return { tipo: g[0], titulo: g[1], itens: G[g[0]] }; });
+  var importantes = grupos.filter(function (g) { return g.tipo !== 'falta'; }).reduce(function (a, g) { return a + g.itens.length; }, 0);
+  return { grupos: grupos, importantes: importantes, total: grupos.reduce(function (a, g) { return a + g.itens.length; }, 0) };
+}
+// HTML da conferência (mesmo visual nos três lugares). "Dados faltando" fica fechado.
+function htmlConferencia(cf, escF) {
+  var E = escF || esc;
+  if (!cf.total) return '<div class="hint">Nada a conferir ✓</div>';
+  return cf.grupos.map(function (g) {
+    return '<details class="confg"' + (g.tipo === 'falta' ? '' : ' open') + '><summary><b>' + E(g.titulo) + '</b> <span class="hint">(' + g.itens.length + ')</span></summary><ul class="lst">' +
+      g.itens.map(function (x) { return '<li><b>' + E(x.onde) + '</b> — ' + E(x.t) + '</li>'; }).join('') + '</ul></details>';
+  }).join('');
 }
 
 /* ===== v17: AGENDA (Google Agenda) — leitura, padrão dos eventos e dupla checagem com o internograma ===== */

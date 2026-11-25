@@ -29,6 +29,31 @@ function dataDaLinha(resto, ref) {
 var RX_ROT_DIH = '(?:dih|d\\.?\\s?i\\.?|data\\s+(?:de\\s+)?interna[cç][aã]o|interna[cç][aã]o|internou(?:\\s+em)?)';
 var RE_DIH_DATA = new RegExp('(?:^|\\s)' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)', 'i');
 var RE_DIH_DATA_LINHA = new RegExp('^' + RX_ROT_DIH + '\\s*:?\\s*(\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)$', 'i');
+// v73: "Dih N" em linha própria — "Dih 12", "Di: 8", "DIH:1", "dih1" (um lugar só: leitor, Atualizador)
+var RE_DIH_N = /^(\s*(?:dih|di)\s*:?\s*)(\d{1,3})(\s*)$/i;
+function lerDih(l) { var m = String(l == null ? '' : l).match(RE_DIH_N); return m ? { pre: m[1], n: +m[2], pos: m[3] } : null; }
+function escreverDih(l, n) { var m = String(l).match(RE_DIH_N); return m ? m[1] + n + m[3] : String(l); }
+// v73: cabeçalho "(dd/mm/aaaa - N Hc / N Ic / N Hm / N Altas)" tolerante: data sem uma barra ("1711/2026"), ponto ou hífen,
+// caixa e espaços variados ("20hc", "HC"), "Alta"/"Altas", parte das altas ausente, caracteres invisíveis.
+// Data sem barra só é aceita se houver UMA leitura válida perto da referência (±7 dias); senão fica sem data e avisa.
+var RX_CAB = /\(?\s*(\d{1,2}\s*[\/.\-]?\s*\d{1,2}\s*[\/.\-]\s*\d{2,4}|\d{1,2}\s*[\/.\-]\s*\d{3,6})\s*-\s*(\d+)\s*hc\s*\/\s*(\d+)\s*ic\s*\/\s*(\d+)\s*hm(?:\s*\/\s*(\d+)\s*altas?)?\s*\)?/i;
+function cabecalho(texto, ref) {
+  var t = String(texto || '').replace(/[\u200b\u200c\u200d\ufeff]/g, function (c) { return ' '; }), m = t.match(RX_CAB); if (!m) return null;
+  var o = { txt: m[0], index: m.index, hc: +m[2], ic: +m[3], hm: +m[4], alta: m[5] != null ? +m[5] : null, data: null, d: null, avisos: [], tokData: m[1], offData: m.index + m[0].indexOf(m[1]) };
+  var tok = m[1].replace(/\s+/g, ''), pad = function (n) { return ('0' + n).slice(-2); }, ok = function (d, mm, y) { var x = new Date(y, mm - 1, d); return x.getMonth() === mm - 1 && x.getDate() === d ? x : null; };
+  var n = tok.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+  if (n) { var y = +n[3] < 100 ? 2000 + +n[3] : +n[3], d = ok(+n[1], +n[2], y); if (d) { o.d = d; o.data = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + y; } }
+  if (!o.d) {   // sem uma das barras: "1711/2026", "17/112026", "17.11.2026" com erro…
+    var dig = tok.replace(/\D/g, ''), yy = /20\d\d$/.test(dig) ? dig.slice(-4) : dig.slice(-2), resto = dig.slice(0, dig.length - yy.length), Y = yy.length === 2 ? 2000 + +yy : +yy, cands = [];
+    for (var k = 1; k <= 2; k++) { var dd = +resto.slice(0, k), mm = +resto.slice(k); if (resto.length - k >= 1 && resto.length - k <= 2) { var x = ok(dd, mm, Y); if (x && (!ref || Math.abs(dias(ref, x)) <= 7)) cands.push(x); } }
+    if (cands.length === 1) { o.d = cands[0]; o.data = pad(o.d.getDate()) + '/' + pad(o.d.getMonth() + 1) + '/' + Y; o.avisos.push('Cabeçalho com a data escrita errado ("' + m[1].trim() + '") — entendi ' + o.data + '.'); }
+    else o.avisos.push('Não consegui ler a data do cabeçalho ("' + m[1].trim() + '").');
+  }
+  // números com a posição no texto (para o Atualizador trocar só os números)
+  o.nums = []; var rx = /(\d+)(\s*)(hc|ic|hm|altas?)\b/gi, x2, seg = m[0];
+  while ((x2 = rx.exec(seg))) o.nums.push({ rot: x2[3].toLowerCase().replace(/s$/, ''), n: +x2[1], off: m.index + x2.index, len: x2[1].length });
+  return o;
+}
 // v72: linha de trauma (mecanismo) e fim de bloco
 var RX_TRAUMA = /\b(?:queda|qda|qpa|caiu|acid|acidente|atropel\w*|preens[aã]o|agress\w*|colis[aã]o|ferimento|paf|faf|trauma\w*|capot\w*|mordedura|entorse|tor[cç][aã]o|esmagamento|chute|coice|pisote\w*)\b/i;
 var RX_FX = /^\s*(?:fx|fratura|luxa[cç][aã]o)\b/i;
@@ -148,5 +173,5 @@ function conferir(linhas, ref, opc) {   // v72: lê por bloco (data na linha de 
   return out;
 }
 G.SOTCONT = { atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
-  RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA };
+  RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA, RE_DIH_N: RE_DIH_N, lerDih: lerDih, escreverDih: escreverDih, cabecalho: cabecalho };
 })(typeof window !== 'undefined' ? window : this);
