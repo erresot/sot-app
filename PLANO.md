@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **25/11/2026 (v73)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **25/11/2026 (v74)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 
@@ -59,6 +59,7 @@ Situação em **25/11/2026 (v73)**. Prioridade combinada: **primeiro organizar o
 - ✅ v66 (parcial): **Regra de exames:** rotina = pedido hoje, colhido amanhã às 6h; urgência = colhido hoje. No internograma, "dd/mm: labs" = resultado; "dd/mm Solicitar" = deve ser pedido na rotina do dia anterior. App: na véspera, "pedir hoje na rotina"; no dia sem resultado, "atrasado: pedir na urgência?". Contadores pela data: conferir e avisar (quem atualiza é humano).
 - ✅ v66: **Motor único de contadores pela data:** PO, POI→1 PO, dias de fratura/queda/déficit, DIH calculados para uma data-alvo. Usado em 3 lugares: (1) conferência do internograma de hoje (avisa quando o número escrito à mão está errado); (2) **mapa cirúrgico e linha de dados: o texto já sai com o número do dia da cirurgia** (ex.: mapa de 25/11 → "16 Po", "26 D Fx"), na tela, na impressão e no "Copiar"; some a etiqueta separada "· Nº PO"; (3) cards da Agenda. Com data → conta pela data; sem data → soma os dias entre o internograma e a data-alvo e marca "?" para conferir.
 - ✅ v65: **Pós-op → pendências** — "alta dia X" e "alta quando sair da UTI"; marcador de transferência (leito/seção mudou de UTI para enfermaria) = pronto para alta e para passar à seção ALTAS.
+- ✅ v74: data solta da 1ª coluna = internação quando nada mais está escrito; data do trauma separada; seção CC; botão "Copiar as N linhas dos ambulatoriais" na Agenda.
 - ✅ v73: leitura do internograma — "Dih N" e cabeçalho no motor, PDF em branco, formatos de identificação, ficha abreviada, bordas/defesas contra mistura, conferência única. Data grudada no chip "Arquivo": **ignorar** (exportação sem querer — decisão do usuário).
 - ✅ v72: leitura por bloco no motor comum (validada em 8 dias reais, localmente). Restam sem data só contadores que não têm data no internograma.
 - ✅ v71: leitura refinada — rótulos da data de internação (DI…), data no fim de linha longa, aviso de data solta × DIH. Juntar linhas → motor comum (v72). "Dih N" no motor (v73).

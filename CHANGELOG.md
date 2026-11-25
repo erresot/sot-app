@@ -1,6 +1,16 @@
 # CHANGELOG — SOT APP
 
-## v73 (atual) — Leitura do internograma: cabeçalho, formatos, defesas e conferência única
+## v74 (atual) — Data de internação solta na 1ª coluna
+- Sem "Dih dd/mm" e sem "Dih N" escritos, a **data sozinha da 1ª coluna é a data de internação** (formato do serviço; ex.: "Sala Amarela / Qpa 17/11 / 24/11 / 1150"). A conferência pede para confirmar ("DIH pela data solta…").
+- **Data do trauma** separada da de internação: "Qpa 17/11" e "Em 04/11/2026" = trauma; com "DI 23/10" escrito, a data sozinha (22/10) é a do trauma. A ficha deixa de mostrar a data de internação como data do mecanismo.
+- Nos PDFs reais de 15–23/11 isso não ocorre (todos tinham "Dih N"); no Doc de 24/11 afeta só o 1150.
+- **Seção CC:** quem está abaixo da faixa CC fica no grupo CC (mesmo com local "UTI?"); linha colada pelo gerador (1ª linha "Dih dd/mm/aaaa", local em branco) é lida certo (DIH 0); "DIH" numa linha e a data na de baixo = internação; marcadores "*VAI OPERAR*", "*AMB INTERNAÇÃO*" reconhecidos.
+- **Agenda → "📋 Copiar as N linhas dos ambulatoriais":** um botão no dia copia as linhas de todos os ambulatoriais do dia (uma tabela com N linhas, na ordem do horário) para colar de uma vez no internograma. Cada linha é a mesma do "Copiar linha" (texto não mudou).
+- **Aviso da Agenda mais claro:** "não está no internograma" (parecia que o paciente tinha sumido) virou "**cirurgia não está escrita no internograma**"; data diferente mostra a data do internograma ("internograma: 24/11 · 27/11 se não possível").
+- "**SE N POSSÍVEL, SEXTA 27/11**" logo abaixo de uma cirurgia = data alternativa dessa cirurgia. A conferência da Agenda considera também datas de até 3 dias atrás ("limpeza em 24/11" agendada para 25/11 = data diferente). Pendências não mudam.
+- Testes novos `t_dih74.py`, `t_ambcopia74.py`, `t_agenda74.py`.
+
+## v73 — Leitura do internograma: cabeçalho, formatos, defesas e conferência única — Leitura do internograma: cabeçalho, formatos, defesas e conferência única
 - **"Dih N" no motor comum** (`SOTCONT.lerDih/escreverDih`): leitor do Doc, do PDF e Atualizador usam a mesma regra ("Dih 12", "Di: 8", "DIH:1", "dih1").
 - **Cabeçalho tolerante** (`SOTCONT.cabecalho`): data sem uma barra ("1711/2026" → 17/11/2026, com aviso; só aceita se houver UMA leitura perto de hoje), ponto/hífen, "20hc"/"HC", "Alta"/"Altas", sem a parte das altas, caracteres invisíveis. No Atualizador, troca só a data e os números. A conferência avisa quando o cabeçalho está com data de ontem ("ainda não atualizado hoje?").
 - **PDF em branco** (salvo como imagem, ex.: "Microsoft Print to PDF"): aviso claro, nada é trocado, e o caminho certo (Google Doc / baixar PDF pelo Docs).
