@@ -1,6 +1,6 @@
 # PLANO — SOT APP
 
-Situação em **25/11/2026 (v74)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
+Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o que já foi feito**, depois seguir com funções novas.
 
 ## 1. O que já está pronto
 

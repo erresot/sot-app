@@ -1,6 +1,10 @@
 # CHANGELOG — SOT APP
 
-## v74 (atual) — Data de internação solta na 1ª coluna
+## v75 (atual) — Siglas de cirurgia na conferência da Agenda
+- A conferência Agenda × internograma reconhece as siglas e terminações do serviço: **ATQ/ATJ/ATO, PTQ/PTJ, PPQ, RMS, manipulação, biópsia, -ectomia (discectomia…), -plastia, -otomia, reconstrução de LCA**. Antes, "ATQ A DIREITA EM 25/11", "RMS DE PTQ…", "MANIPULAÇÃO DE OMBRO…" e "DISCECTOMIA L5-S1 EM 27/11" davam alarme falso ("cirurgia não está escrita no internograma").
+- Conferido no internograma real (só leitura): mudaram exatamente esses 4 alarmes falsos para "confere"; nenhuma outra conferência mudou.
+
+## v74 — Data de internação solta, seção CC, copiar linhas dos ambulatoriais, aviso da Agenda — Data de internação solta na 1ª coluna
 - Sem "Dih dd/mm" e sem "Dih N" escritos, a **data sozinha da 1ª coluna é a data de internação** (formato do serviço; ex.: "Sala Amarela / Qpa 17/11 / 24/11 / 1150"). A conferência pede para confirmar ("DIH pela data solta…").
 - **Data do trauma** separada da de internação: "Qpa 17/11" e "Em 04/11/2026" = trauma; com "DI 23/10" escrito, a data sozinha (22/10) é a do trauma. A ficha deixa de mostrar a data de internação como data do mecanismo.
 - Nos PDFs reais de 15–23/11 isso não ocorre (todos tinham "Dih N"); no Doc de 24/11 afeta só o 1150.
