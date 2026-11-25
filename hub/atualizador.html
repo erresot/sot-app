@@ -30,7 +30,7 @@ html[data-theme="dark"]{--bg:#0f1517;--card:#182024;--ink:#e3ebe7;--mut:#93a39d;
 </head>
 <body>
 <h1>🔄 Atualizador de Internograma <span class="tag">protótipo</span></h1>
-<div class="hint">Lê o internograma <b>direto do Google Doc</b> (na hora) e mostra <b>só os números</b> que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) e o cabeçalho. O internograma lido nunca é alterado: as trocas vão para uma <b>cópia</b> no Drive, que você compara lado a lado com o original.</div>
+<div class="hint">Lê o internograma <b>direto do Google Doc</b> (na hora) e mostra <b>só os números</b> que mudam hoje (DIH, dias de fratura/queda/déficit, PO, POI → 1 PO) e o cabeçalho. O internograma lido nunca é alterado: as trocas vão para uma <b>cópia</b> no Drive, que você compara lado a lado com o original. <b>Não tira nem move pacientes</b>: só atualiza números.</div>
 
 <div class="card">
   <div class="row">
@@ -93,6 +93,8 @@ function trocasCab(t, alvo, c){
 }
 function aplicaTrocas(t, tr){ tr.slice().sort(function(a, b){ return b.off - a.off; }).forEach(function(e){ t = t.slice(0, e.off) + e.novo + t.slice(e.off + e.velho.length); }); return t; }
 function contar(P){ var c = { hc: 0, ic: 0, hm: 0, alta: 0 }; P.forEach(function(p){ if (p.hm) c.hm++; else if (p.alta) c.alta++; else if (p.ic) c.ic++; else c.hc++; }); return c; }
+function secao(p){ return String(p.section || p.local || '—').replace(/\s+/g, ' ').trim(); }
+function regDe(p){ var r = String(p.registro || '').replace(/\D/g, ''); return r.length >= 4 ? r : ''; }
 function linhasDe(t){ return String(t || '').split(/\n|\s+\/\s+/); }   // Doc: quebra de linha · PDF: " / "
 // DIH: "Dih 12", "Di: 8", "DIH 1" na coluna do nome (linha própria)
 var RX_DIH = /^(\s*(?:Dih|DIH|Di|DI|dih)\s*:?\s*)(\d{1,3})(\s*)$/;
@@ -108,9 +110,16 @@ function calcular(){
   var ref = sel.value === 'cab' ? dCab : addD(alvo, +sel.value);
   if (!P.length) { $('#saida').innerHTML = '<div class="card vazio">Nenhum paciente para atualizar. Entre no Google ou importe o internograma em Ajustes.</div>'; return; }
   $('#fonte').textContent = FONTE.txt + ' · ' + P.length + ' pacientes.' + (dCab && nCab === 0 && sel.value === 'cab' ? ' O cabeçalho já está com a data de hoje — números sem data não andam.' : '') + (FONTE.data && !dCab ? ' Cabeçalho sem data legível: escolha até quando está em dia.' : '');
-  var lista = [], fazer = [], nMud = 0, nDuv = 0;
+  var lista = [], fazer = [], nMud = 0, nDuv = 0, visto = {}, grupos = {};
+  P.forEach(function(p){ var r = regDe(p); if (r) (grupos[r] = grupos[r] || []).push(p); });
+  Object.keys(grupos).forEach(function(r){ var g = grupos[r]; if (g.length < 2) return;
+    var onde = g.map(function(p){ return (p.leito ? p.leito + ' ' : '') + secao(p); });
+    var emAltas = g.some(function(p){ return p.alta; }) && g.some(function(p){ return !p.alta; });
+    fazer.push({ q: g[0].nome, t: (emAltas ? 'ℹ️ ' : '⚠ ') + 'Mesmo paciente (registro ' + r + ') aparece ' + g.length + ' vezes: ' + onde.join(' e ') + '. Os números foram atualizados em todas as linhas dele. ' +
+      (emAltas ? 'Na ala e em ALTAS é o normal até a alta ser certa; quando for certa, tire da ala.' : 'Confira se uma das linhas ficou repetida.') + ' (O Atualizador não tira nem move pacientes: só atualiza números.)' }); });
   P.forEach(function(p){
-    var col = p.bruto || [], muds = [], quem = (p.leito || p.section || '—') + ' · ' + p.nome;
+    var rg = regDe(p); if (rg && visto[rg]) return; if (rg) visto[rg] = 1;   // repetido: os números saem uma vez (e são trocados em todas as linhas)
+    var col = p.bruto || [], muds = [], quem = (p.leito || '—') + ' · ' + secao(p) + ' · ' + p.nome;
     // 1) DIH
     linhasDe(col[1]).forEach(function(l){
       var m = l.match(RX_DIH); if (!m) return;
@@ -290,20 +299,22 @@ function montarPedidos(doc, L, cab){
     var reg = String(p.registro || '').replace(/\D/g, ''), nome = String(p.nome || '').split(' ').slice(0, 2).join(' ').toUpperCase();
     var ks = Object.keys(linhas).filter(function(k){ var t1 = linhas[k].filter(function(P){ return P.cel.c === 1; }).map(function(P){ return P.t; }).join(' ');
       return reg.length >= 4 ? t1.replace(/\D+/g, ' ').split(' ').indexOf(reg) > -1 : (nome && t1.toUpperCase().replace(/\s+/g, ' ').indexOf(nome) > -1); });
-    return ks.length === 1 ? linhas[ks[0]] : null;   // achou exatamente uma linha (nunca chuta entre duas)
+    if (reg.length >= 4) return ks.map(function(k){ return linhas[k]; });   // mesmo registro = mesmo paciente: todas as linhas dele
+    return ks.length === 1 ? [linhas[ks[0]]] : [];   // só pelo nome: exatamente uma linha (nunca chuta entre duas)
   };
   L.lista.forEach(function(x){
-    var row = linhaDe(x.p);
+    var rows = linhaDe(x.p);
     x.muds.forEach(function(m){
-      var col = m.campo === 'DIH' ? 1 : 2, e = null;
-      if (row) { var cands = row.filter(function(P){ return P.cel.c === col && ocorre(P, m.de); });
-        if (cands.length === 1 && ocorre(cands[0], m.de) === 1) e = edicao(cands[0], m.de, m.para, m.duv ? LARANJA : AMARELO); }   // só quando o texto aparece uma única vez
-      if (e) eds.push(e); else falta.push(x.quem + ': ' + m.de + ' → ' + m.para);
+      var col = m.campo === 'DIH' ? 1 : 2, feitas = 0;
+      rows.forEach(function(row){ var cands = row.filter(function(P){ return P.cel.c === col && ocorre(P, m.de); });
+        if (cands.length === 1 && ocorre(cands[0], m.de) === 1) { var e = edicao(cands[0], m.de, m.para, m.duv ? LARANJA : AMARELO); if (e) { eds.push(e); feitas++; } } });   // só quando o texto aparece uma única vez na linha
+      if (!feitas) falta.push(x.quem + ': ' + m.de + ' → ' + m.para);
     });
   });
   if (cab) { var Pc = Ps.filter(function(P){ return !P.cel && trocasCab(P.t, L.alvo, L.cnt).length; })[0] || Ps.filter(function(P){ return trocasCab(P.t, L.alvo, L.cnt).length; })[0];
     if (Pc) trocasCab(Pc.t, L.alvo, L.cnt).forEach(function(x){ if (Pc.idx[x.off] != null) eds.push({ ini: Pc.idx[x.off], velho: x.velho, novo: x.novo, cor: AMARELO }); });   // só a data e cada número
     else if (!Ps.some(function(P){ return /\d+\s*hc\b/i.test(P.t); })) falta.push('Cabeçalho não encontrado: ' + cab); }
+  var uni = {}; eds = eds.filter(function(e){ var k = e.ini + '|' + e.velho; if (uni[k]) return false; uni[k] = 1; return true; });   // nunca a mesma troca duas vezes
   eds.sort(function(a, b){ return b.ini - a.ini; });
   var req = [];
   eds.forEach(function(e){
@@ -315,7 +326,7 @@ function montarPedidos(doc, L, cab){
 }
 function msgErro(e){
   var t = (e && (e.msg || e.message)) || String(e);
-  if (/docs\.googleapis|Docs API has not been used|SERVICE_DISABLED|accessNotConfigured/i.test(t)) return 'A “Google Docs API” não está ligada no projeto do Google do app. É uma configuração única no console do Google (peça ao Claude o passo a passo). A cópia foi criada, mas os números não foram trocados.';
+  if (/docs\.googleapis|Docs API has not been used|SERVICE_DISABLED|accessNotConfigured/i.test(t)) return 'A “Google Docs API” não está ligada no projeto do Google do app. É uma configuração única no console do Google (peça ao Claude o passo a passo).';
   if (e && e.auth) return 'O login do Google expirou: toque no ícone da nuvem no app, entre de novo e tente outra vez.';
   return 'Não deu certo: ' + t;
 }
@@ -335,7 +346,7 @@ function criarCopia(btn){
       window.__copia = { id: copia.id, n: P.n, falta: P.falta }; CMP = null; $('#cmpBox').innerHTML = '';
       st.innerHTML += '<br>Toque em <b>↔ Comparar lado a lado</b> para ver o original e a cópia.';
    })
-   .catch(function(e){ st.textContent = msgErro(e) + (copia ? ' (cópia: ' + (copia.webViewLink || copia.id) + ')' : ''); })
+   .catch(function(e){ st.textContent = msgErro(e) + (copia ? ' A cópia foi criada, mas os números não foram trocados (cópia: ' + (copia.webViewLink || copia.id) + ').' : ' Nenhuma cópia foi criada.'); })
    .then(function(){ btn.disabled = false; });
 }
 function copiar(t, btn){

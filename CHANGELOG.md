@@ -1,6 +1,13 @@
 # CHANGELOG — SOT APP
 
-## v69 (atual) — Atualizador lê o Doc direto · compara os dois documentos de verdade
+## v70 (atual) — Atualizador: paciente repetido · seção sempre visível
+- **Mesmo paciente em 2 lugares** (ex.: na ala e em ALTAS, mesmo registro): os números são trocados em **todas** as linhas dele (nunca a mesma troca duas vezes) e aparece o aviso em "Para você resolver" com as seções. Ala + ALTAS é o normal até a alta ser certa (aí sai da ala). **O Atualizador não tira nem move pacientes: só atualiza números.**
+- Cada paciente aparece como **leito · seção · nome** (a seção vem do leitor do app).
+- Mensagem de erro corrigida: o ensaio não dizia mais "a cópia foi criada" quando nenhuma cópia foi criada.
+- CLAUDE.md: regra fixa para conferir o internograma real (só pelo leitor do app, duas vias, dizer a fonte).
+- Teste novo `t_atualizador70.py`.
+
+## v69 — Atualizador lê o Doc direto · compara os dois documentos de verdade — Atualizador lê o Doc direto · compara os dois documentos de verdade
 - **Lê o internograma direto do Google Doc** na hora (o mesmo leitor do app), em vez do importado no app — o que ele calcula e o que ele troca vêm do mesmo lugar. Sem internet/sem login: usa o importado e avisa.
 - **Comparar lado a lado de verdade:** lê o original e a cópia no Google e mostra, trecho por trecho, o que mudou (só o que mudou / tudo). Avisa em vermelho se mudou algo que não é número. Dica do "Ferramentas → Comparar documentos" do Google Docs.
 - **Cabeçalho:** troca só a data e os números; a escrita fica como está ("20hc", "2 Alta").

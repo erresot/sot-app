@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v69</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v70</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -2416,7 +2416,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '69';
+var VERSAO = '70';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
