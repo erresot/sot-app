@@ -66,7 +66,7 @@ th{color:var(--muted);font-weight:500;font-size:13.5px;border-top:0}
 <section id="regiao"><h2>2. Região</h2>
 <ul>
 <li>Toque no boneco 3D (arraste para girar; botões Anterior/Posterior) ou use a seleção manual (região + lado → <span class="k">+</span>). Pode marcar mais de uma.</li>
-<li>A região decide o que aparece: imobilizações, carga, luxações, tração, bloqueio digital e regras de decisão. Membro superior não oferece bota nem carga; coluna não oferece "elevação do membro".</li>
+<li>A região decide o que aparece: imobilizações, carga, luxações, tração e bloqueio digital. Membro superior não oferece bota nem carga; coluna não oferece "elevação do membro".</li>
 <li>Se você trocar a região e algo escolhido deixar de combinar, o app <b>tira e avisa</b> embaixo da tela (ex.: "Removido: bota — não combina com a região").</li>
 <li><b>Paciente pediátrico</b>: muda antibiótico (dose em branco para calcular por peso), desliga a anticoagulação profilática e escreve "PACIENTE E RESPONSÁVEL (FAMILIAR / ACOMPANHANTE) CIENTES…". Libera também as características pediátricas da fratura.</li>
 </ul></section>
@@ -75,11 +75,14 @@ th{color:var(--muted);font-weight:500;font-size:13.5px;border-top:0}
 <p>O app abre <b>sem exame</b> — nem todo atendimento tem imagem. Adicione o que houver:</p>
 <h3>Radiografias</h3>
 <ul>
-<li>Escolha <span class="k">Sem fratura / luxação</span> ou <span class="k">Com achado</span>. Sem escolher, sai lacuna.</li>
+<li>Escolha <span class="k">Sem fratura / luxação</span>, <span class="k">Achado nítido</span>, <span class="k">Traço sugestivo</span> ou <span class="k">Linha sugestiva</span>. Sem escolher, sai lacuna.</li>
 <li>Com achado, marque os achados de cada região. Sai achado + lado:</li>
 </ul>
 <pre>RADIOGRAFIAS COM EVIDÊNCIAS NÍTIDAS DE FRATURA DE RÁDIO DISTAL À ESQUERDA
-RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
+RADIOGRAFIAS COM TRAÇO SUGESTIVO DE FRATURA DE RÁDIO DISTAL À ESQUERDA
+RADIOGRAFIAS COM LINHA SUGESTIVA DE FRATURA DE RÁDIO DISTAL À ESQUERDA
+RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES
+RX EXTERNO 20/11/2026: SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES   (marque "RX externo" e a data)</pre>
 <ul>
 <li>Uma linha de RX junta todos os achados; por isso só dá para adicionar uma radiografia.</li>
 <li><b>Características da fratura</b> (desviada, cominutiva…) ficam recolhidas: geralmente não se escreve. Se usar, elas ficam presas à fratura escolhida e combinações sem sentido se excluem.</li>
@@ -87,19 +90,20 @@ RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
 </ul>
 <h3>Laudos de TC, USG e RM</h3>
 <p>Local, data e o laudo colado:</p>
-<pre>TC DE OMBRO DIREITO 25/11/2026 LAUDO: FRATURA DO TUBÉRCULO MAIOR</pre>
+<pre>TC DE OMBRO DIREITO 25/11/2026 LAUDO: FRATURA DO TUBÉRCULO MAIOR
+TC EXTERNA DE OMBRO DIREITO 20/11/2026 LAUDO: …   (marque "Exame externo")</pre>
 <p>Não existe "aguarda laudo" no resultado: o laudo é escrito quando sai. Enquanto isso, use "Aguardo laudo" na conduta intermediária. RM não aparece para solicitar no PS (só em internados), mas o laudo pode ser colado.</p>
 <h3>Outros</h3>
 <ul>
-<li><b>Quadro clínico</b> (sem achado de imagem): "QUADRO CLÍNICO COMPATÍVEL COM ENTORSE (TORNOZELO DIREITO)". Suspeitas saem como "SUSPEITA CLÍNICA DE FRATURA DE ESCAFOIDE (PUNHO DIREITO)".</li>
-<li><b>Regras de decisão</b> (Ottawa tornozelo/joelho, Canadian C-spine): só aparecem na região certa; Canadian some no pediátrico.</li>
-<li><b>Laboratório</b>: cole do sistema; o app formata em linha (mesmo motor do Exames Updater).</li>
+<li><b>Suspeita clínica</b>: "SUSPEITA CLÍNICA DE FRATURA DE ESCAFOIDE (PUNHO DIREITO)". "Quadro clínico compatível com…" e as regras de decisão (Ottawa, Canadian) não vão mais para o texto.</li>
+<li><b>Ao reavaliar</b>: melhora plena · parcial · nega melhora → "AO REAVALIAR, PACIENTE REFERE MELHORA PLENA DO QUADRO APÓS ANALGESIA", entre os resultados e o REALIZADO.</li>
+<li><b>Laboratório</b>: cole do sistema; o app formata em linha (mesmo motor do Exames Updater). De outro serviço: marque "externos" → "LABS EXTERNOS dd/mm/aaaa: …".</li>
 </ul></section>
 
 <section id="exposta"><h2>4. Fratura exposta e ferimentos</h2>
-<p>Marque <span class="k">Fratura exposta (exame físico)</span> e o Gustilo (provisório). O fluxo do serviço:</p>
+<p>Marque <span class="k">Fratura exposta (exame físico)</span>. O Gustilo (provisório) é só guia de prescrição na tela: não vai para o texto. O fluxo do serviço:</p>
 <ol>
-<li><b>Conduta inicial:</b> RX (± laboratório) + <code>EV EM PS: VAT + ANTIBIÓTICO</code> + curativo oclusivo + <code>JEJUM ATÉ DEFINIÇÃO DE CONDUTA</code>. Ferimento sem exposta: VAT e jejum aparecem desligados para marcar.</li>
+<li><b>Conduta inicial:</b> <code>REALIZADO:</code> curativo oclusivo estéril + tala provisória; <code># CONDUTA</code>: RX (± laboratório) + <code>VAT</code> + <code>ANTIBIOTICOTERAPIA</code> + <code>ORIENTO JEJUM</code> + <code>REAVALIAÇÃO SERIADA</code> + <code>REAVALIAR APÓS</code>. Ferimento sem exposta: VAT e jejum aparecem desligados para marcar.</li>
 <li><b>Em tempo final:</b> RX + o que foi feito (limpeza, fechamento da ferida no PS) + a conduta: retorno com tala, ou internação.</li>
 </ol>
 <p>O antibiótico <b>não se repete</b> no em tempo: ele já foi na conduta inicial (fica desligado na lista, caso ainda não tenha sido prescrito). A sutura também não repete o VAT.</p>
@@ -126,9 +130,9 @@ RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
 <table>
 <tr><th>Situação</th><th>Texto</th></tr>
 <tr><td>Aguardo exames / reavaliação</td><td>SOLICITO … / AGUARDO … / REAVALIAR APÓS. O que foi solicitado não repete como "aguardo" (SOLICITO TC já basta).</td></tr>
-<tr><td>Interconsulta</td><td>SOLICITO AVALIAÇÃO DA EQUIPE DE X (MOTIVO) + <br>"CONDUTA ORTOPÉDICA APÓS ESTABILIZAÇÃO CLÍNICA" (motivo clínico) ou "APÓS AVALIAÇÃO DA EQUIPE DE X" (outra especialidade). O app sugere pela equipe; dá para trocar.</td></tr>
-<tr><td>Reavaliação seriada</td><td>REAVALIAÇÃO SERIADA NO PS (± reavaliar em N horas) + neurovascular seriado + membro elevado</td></tr>
-<tr><td>Vaga via CROSS</td><td>SOLICITADA VAGA VIA CROSS PARA … / PACIENTE AGUARDA REGULAÇÃO NO PS</td></tr>
+<tr><td>Interconsulta</td><td>SOLICITO INTERCONSULTA DA EQUIPE DE X (MOTIVO, opcional)</td></tr>
+<tr><td>Reavaliação seriada</td><td>REAVALIAÇÃO SERIADA (± reavaliar em N horas) + neurovascular seriado + membro elevado</td></tr>
+<tr><td>Vaga via CROSS</td><td>INSIRO PACIENTE NO CROSS (o paciente fica no PS; a ficha fecha na transferência)</td></tr>
 <tr><td>Serviço de origem / UBS</td><td>CONTRARREFERÊNCIA… ou ENCAMINHO À UBS… / AGUARDO ACEITE E TRANSPORTE</td></tr>
 </table>
 <p class="nota">A interconsulta não fecha a ficha: quando a sua parte se resolve, faça o em tempo final.</p>
@@ -137,10 +141,12 @@ RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
 <section id="final"><h2>7. Conduta final</h2>
 <table>
 <tr><th>Desfecho</th><th>O que sai</th></tr>
-<tr><td>Alta</td><td>Analgesia, repouso, crioterapia, imobilização/carga se houver, orientações + sinais de alarme, retornar ao PS se necessário. <b>Sem retorno.</b></td></tr>
-<tr><td>Retorno em ambulatório</td><td>O mesmo + linha de retorno (dia da escala) + texto para o paciente.</td></tr>
-<tr><td>Internação hospitalar</td><td>Formato de sempre: CD discutida e orientada pelo ass., internação, procedimento (urgência ou data), pré-op, RCH, aviso CC, manter imobilização, carga, anticoagulação…</td></tr>
-<tr><td>Internação por outra equipe</td><td>PACIENTE INTERNADO PELA EQUIPE DE X + REAVALIAÇÃO ORTOPÉDICA MEDIANTE NOVA SOLICITAÇÃO DE INTERCONSULTA. Fecha a ficha do PS.</td></tr>
+<tr><td>Alta</td><td>AINES + analgesia, repouso, crioterapia, orientações + sinais de alarme, retornar ao PS se necessário. Sutura: ORIENTO CUIDADOS COM CURATIVO + RETIRADA DE PONTOS EM 10 A 14 DIAS NA UBS. Opcionais (desligados): fisioterapia, seguimento na UBS, "sem urgências ou emergências ortopédicas" (some com achado ou exame pendente). <b>Sem retorno</b>: com imobilização ou fratura aparece "Confira: o desfecho é retorno".</td></tr>
+<tr><td>Retorno em ambulatório</td><td>Imobilização + ORIENTO CUIDADOS COM A IMOBILIZAÇÃO; bota: SOLICITADA BOTA IMOBILIZADORA (PEDIDO EM RECEITA) (+ manter tala suropodálica até a bota, opcional); carga pela lista única; pontos NO RETORNO; "lesão oculta" já marcada com traço/linha sugestiva ou suspeita; linha de retorno (dia da escala) + texto para o paciente.</td></tr>
+<tr><td>Internação hospitalar</td><td>Ordem fixa: DISCUTIDO E ORIENTADO POR (sempre), INTERNAÇÃO HOSPITALAR, o caminho (cirurgia · discutir com equipe · infecção · ressonância), manter imobilização, coluna, sem carga, anticoagulação pelo dia da cirurgia (hoje/amanhã não sai; depois: "; SUSPENDER EM véspera"; fratura de coluna: "APÓS LIBERAÇÃO"), ORIENTO JEJUM (amanhã: A PARTIR DAS 23 HORAS), analgesia, pré-op, avaliações (mais de 45 anos já marcadas; SOLICITAR/SOLICITADA/CHECAR ou a resposta + observação), RCH (SOLICITAR/SOLICITADO/CHECAR), UTI, AVISO CC (FAZER)/OK só com a cirurgia definida, orientações, ciente.</td></tr>
+<tr><td>Outra equipe</td><td>PACIENTE SEGUIRÁ AOS CUIDADOS DA EQUIPE DE X + cuidados ortopédicos + REAVALIAÇÃO ORTOPÉDICA MEDIANTE NOVA SOLICITAÇÃO DE INTERCONSULTA ou SEGUIMENTO ORTOPÉDICO EM REGIME DE INTERCONSULTA. "Nada ortopédico": SEM URGÊNCIA OU EMERGÊNCIA ORTOPÉDICA (+ devolvo para a equipe prestadora, opcional).</td></tr>
+<tr><td>Transferência (CROSS)</td><td>Quando o paciente sai: VAGA LIBERADA VIA CROSS PARA X + PACIENTE AOS CUIDADOS DA EQUIPE DE TRANSFERÊNCIA + cuidados + PACIENTE E FAMILIAR CIENTES DA TRANSFERÊNCIA.</td></tr>
+<tr><td>Cirurgia eletiva (sem internar)</td><td>PROCEDIMENTO CIRÚRGICO (X) AGENDADO PARA dd/mm/aaaa + A) RETORNO EM AMBULATÓRIO DE INTERNAÇÃO na véspera útil (pula fim de semana e feriados nacionais) ou B) RETORNAR NO PS INTERNAÇÃO às 07 horas, em jejum das 23 horas + suspensão da heparina na véspera + ciente do procedimento e da data.</td></tr>
 </table>
 <p>Itens com padrão desligado aparecem em cinza: toque para incluir. "Adicionar linha" escreve qualquer coisa a mais (cada momento tem a sua).</p>
 <p>O que vai para o centro cirúrgico termina aqui em internação; o que vem depois do CC não é deste programa.</p>
@@ -163,9 +169,9 @@ RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
 </ul></section>
 
 <section id="assinatura"><h2>10. Discussão e assinatura</h2>
-<p>Só no em tempo final (e no fim do completo). Com "Incluir Discutido com", a data vem de hoje e pode ser trocada:</p>
-<pre>CD:
-DISCUTIDO COM DR AMILTON EM 24/11/2026
+<p>Só no em tempo final (e no fim do completo). Com "Incluir Discutido com" (na internação, sempre), a data vem de hoje e pode ser trocada:</p>
+<pre># CONDUTA
+DISCUTIDO E ORIENTADO POR DR AMILTON EM 24/11/2026
 - AINES + ANALGESIA VO CONFORME DOR
 - …
 - PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES

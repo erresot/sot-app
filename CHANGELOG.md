@@ -1,6 +1,31 @@
 # CHANGELOG — SOT APP
 
-## v81 (em preparo, não publicada) — Atendimento: Anamnese + Exame + Conduta numa tela
+## v84 (em preparo, não publicada) — Condutas: frases novas, parte 3 (desfechos finais)
+- **Alta**: sutura → `ORIENTO CUIDADOS COM CURATIVO` + `RETIRADA DE PONTOS EM 10 A 14 DIAS NA UBS` (sai "CURATIVO DIÁRIO COM SF 0,9%"); opcionais desligados: `FORNECIDO ENCAMINHAMENTO PARA FISIOTERAPIA`, `ORIENTO SEGUIMENTO EM UNIDADE BÁSICA DE SAÚDE`, `PACIENTE SEM URGÊNCIAS OU EMERGÊNCIAS ORTOPÉDICAS` (some com achado/exame pendente); aviso "Confira: o desfecho é retorno" com imobilização ou fratura.
+- **Retorno**: `ORIENTO CUIDADOS COM A IMOBILIZAÇÃO` (ligado com imobilização; sai "(NÃO MOLHAR, NÃO RETIRAR)"); bota sem nome comercial + `SOLICITADA BOTA IMOBILIZADORA (PEDIDO EM RECEITA)` (+ `MANTER TALA SUROPODÁLICA ATÉ AQUISIÇÃO DA BOTA`, opcional); **carga em lista única** (SEM CARGA ATÉ SEGUNDA ORDEM · PROPRIOCEPTIVA · PARCIAL · CONFORME DOR COM ANDADOR · TOTAL · EM RETROPÉ); pontos `NO RETORNO`; `ORIENTADO QUANTO À POSSIBILIDADE DE LESÃO OCULTA…` (ligado com traço/linha/suspeita), `…MUDANÇA DE CONDUTA, INCLUSIVE TRATAMENTO CIRÚRGICO`, `FISIOTERAPIA (SOLICITADA)`.
+- **Internação** em ordem fixa; **4 caminhos** (cirurgia · discutir com equipe · infecção · ressonância, um ou mais); `ORIENTO JEJUM` / `… A PARTIR DAS 23 HORAS`; heparina: hoje/amanhã não sai, depois `ANTICOAGULAÇÃO PROFILÁTICA; SUSPENDER EM <véspera>`, fratura de coluna `… APÓS LIBERAÇÃO`; `ANALGESIA CONFORME PRESCRIÇÃO` ligada; campo Idade (mais de 45 → avaliações marcadas); avaliações com SOLICITAR/SOLICITADA/CHECAR ou resposta (BAIXO RISCO… OK) + observação; `RCH (SOLICITAR/SOLICITADO/CHECAR)` sempre na cirurgia; `AVISO CC (FAZER)`/`AVISO CC OK` só com a cirurgia definida (sai "NO OPERA").
+- **Outra equipe**: `PACIENTE SEGUIRÁ AOS CUIDADOS DA EQUIPE DE X` + nova solicitação ou `SEGUIMENTO ORTOPÉDICO EM REGIME DE INTERCONSULTA`; "nada ortopédico": `SEM URGÊNCIA OU EMERGÊNCIA ORTOPÉDICA` (+ `DEVOLVO PACIENTE PARA EQUIPE PRESTADORA`).
+- Desfechos novos: **Transferência (CROSS)** e **Cirurgia eletiva** A (AMB Internação na véspera útil, pulando fim de semana e feriados nacionais fixos) / B (PS Internação às 07 h, jejum das 23 h).
+- Guia atualizado. Teste `t_cond84` (22); `t_cir77` atualizado. Suíte: 69/69.
+- Ainda não: suspensão de outros medicamentos pelo `sot-med.js` na cirurgia eletiva; texto para o paciente da cirurgia eletiva; feriados de SP/Marília.
+
+## v83 (em preparo, não publicada) — Condutas: frases novas, parte 2 (resultados + intermediária)
+- **RX em 4 graus**: sem fratura/luxação · achado nítido · **traço sugestivo** (`RADIOGRAFIAS COM TRAÇO SUGESTIVO DE …`) · **linha sugestiva** (`… COM LINHA SUGESTIVA DE …`); traço e linha contam como achado nos avisos.
+- **Exames de fora**: "RX externo" + data → `RX EXTERNO dd/mm/aaaa: …`; TC/USG/RM "Exame externo" → `TC EXTERNA DE … dd/mm/aaaa LAUDO: …`; laboratoriais "externos" → `LABS EXTERNOS dd/mm/aaaa: …`.
+- Saem do texto: **"QUADRO CLÍNICO COMPATÍVEL COM…"** (na tela fica só a suspeita clínica) e as **regras de decisão** (botões escondidos). Fica `SUSPEITA CLÍNICA DE …`.
+- **Ao reavaliar** (no lugar de "PACIENTE REFERE MELHORA DO QUADRO APÓS USO DE ANALGESIA"): melhora plena · parcial · nega melhora → `AO REAVALIAR, PACIENTE REFERE MELHORA PLENA DO QUADRO APÓS ANALGESIA`, em bloco próprio entre os resultados e o REALIZADO. No Atendimento, os botões de "Ao reavaliar" mexem neste mesmo campo (um lugar só).
+- **Intermediária**: `SOLICITO INTERCONSULTA DA EQUIPE DE X` (sem "CONDUTA ORTOPÉDICA APÓS…"); `REAVALIAÇÃO SERIADA` (sem "NO PS"); CROSS = `INSIRO PACIENTE NO CROSS` (sem "para" obrigatório; a ficha fecha na transferência).
+- Guia do Condutas atualizado. Teste `t_cond83` (17). Suíte: 68/68.
+
+## v82 (em preparo, não publicada) — Condutas: frases novas, parte 1 (estrutura + 1º momento)
+- Padrão da ficha (26/11/2026) no próprio Condutas: **`# CONDUTA`** em todas as fases (saem `#CONDUTA` e `CD:`); o que foi feito sai no bloco **`REALIZADO:`** (procedimentos do em tempo; na conduta inicial, curativo oclusivo estéril e tala provisória).
+- Discussão padronizada: **`DISCUTIDO E ORIENTADO POR DR X EM dd/mm/aaaa`**, 1ª linha da conduta final; na internação sempre (sai o item "CD DISCUTIDA E ORIENTADA PELO ASS DR X").
+- Conduta inicial: `ORIENTO JEJUM` (no lugar de "JEJUM ATÉ DEFINIÇÃO DE CONDUTA"); exposta com `VAT` e `ANTIBIOTICOTERAPIA` em linhas separadas, **sem Gustilo no texto** (o Gustilo vira guia de prescrição na tela e deixa de ser "falta preencher"); `REAVALIAÇÃO SERIADA` (ligada na exposta e na coluna); coluna: `DDH + MOVIMENTO EM BLOCO ATÉ SEGUNDA ORDEM`; `REAVALIAR APÓS` por último. No em tempo/final, o antibiótico da exposta também sai só como `ANTIBIOTICOTERAPIA`.
+- Atendimento: exposição óssea no Exame marca a exposta no Condutas; NV alterado liga a seriada.
+- Guia do Condutas atualizado. Testes: `t_cond82` (16) e ajustes em `t_hub77`/`t_atend81`. Suíte: 67/67.
+- Fica para as próximas: resultados e intermediária (RX em 4 graus, sem "quadro clínico", interconsulta, CROSS, reavaliação); desfechos finais (carga, cuidados, internação, transferência, cirurgia eletiva).
+
+## v81 — Atendimento: Anamnese + Exame + Conduta numa tela
 - Programa novo no OrthoHub · Pronto-socorro: **Atendimento** (`hub/atendimento.html`). Cada passo é o programa de hoje, aberto dentro da tela; a ficha é montada ao lado (no celular, embaixo, abre no toque) pelo motor `sot-ficha.js` e copiada com **um** botão (os "Copiar" de dentro dos programas ficam escondidos só aqui).
 - **1º momento** (Anamnese · Exame · Conduta): `# HMA`, `# AP`, `# EF` (no lugar de "EXAME FÍSICO ORTOPÉDICO", sem a frase de Gustilo), `# CONDUTA` (no lugar de `#CONDUTA`/`CD:`), separador `---`; REAVALIAR APÓS fecha a conduta inicial. "Fechar já" (Em tempo final no Condutas) põe a conduta final e o `ASS DR` no próprio 1º momento; "Completo" sai como 1º momento + `# EM TEMPO #`. O Condutas começa pela conduta inicial.
 - **O dado desce:** região e lado marcados na Anamnese vão para o Condutas (pedido de RX "DE PUNHO DIREITO"…) e abrem o segmento no Exame; tirar a região tira na Conduta. Exame com neurovascular alterado → sugere REAVALIAÇÃO SERIADA; exposição óssea → sugere VAT, ANTIBIOTICOTERAPIA, ORIENTO JEJUM e REAVALIAÇÃO SERIADA (uma vez; dá para tirar no Condutas); ferimento → pergunta se há exposição. Avisos no pé da ficha.
@@ -10,7 +35,7 @@
 - Ainda não: frases novas do próprio Condutas (RX em 4 graus, bloco REALIZADO, medicação genérica, desfechos novos…), mini-kanban, molde do evoluidor.
 - `sw.js`: `hub/atendimento.html` no `RESTO`. Testes `t_atend81` (25) e `t_ficha80` (25). Suíte inteira: 66/66.
 
-## v80 (em preparo, não publicada) — Motor da ficha do PS
+## v80 — Motor da ficha do PS
 - **`sot-ficha.js`** (motor novo na raiz, 1ª etapa do plano "Atendimento do PS" de 26/11/2026): escreve e lê a ficha do PS em blocos — `# PS ORTOPEDIA #` / `# INTERCONSULTA ORTOPEDIA #`, `# HMA`, `# AP`, `# EF`, resultados, `REALIZADO:`, `# CONDUTA`, `# EM TEMPO #`, separador `---`, `DISCUTIDO E ORIENTADO POR DR X EM dd/mm/aaaa`, `ASS DR X`.
 - Lê também o formato de hoje (anamnese sem `# HMA`, `EXAME FÍSICO ORTOPÉDICO`, `#CONDUTA`, `CD:`, `DISCUTIDO COM DR X EM …`, `CD DISCUTIDA E ORIENTADA PELO ASS DR X`); linha fora de bloco fica em "outros" (nada se perde).
 - Etiquetas e coluna sugerida do mini-kanban a partir da conduta (`pendencias`, `coluna`).

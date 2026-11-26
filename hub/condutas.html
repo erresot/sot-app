@@ -314,16 +314,18 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
       </div>
       <div class="row" id="expResRow"><label class="item" style="font-size:14px"><input type="checkbox" id="expRes"><span>Fratura exposta (exame físico)</span></label></div>
       <div class="expbox" id="expBox"></div>
-      <div class="grp-l">Quadro clínico (sem achado de imagem)</div>
+      <div class="grp-l" id="clinTit">Suspeita clínica</div>
       <div id="clinList"><p class="note">Marque a região no modelo.</p></div>
-      <div class="grp-l">Regras de decisão (quando não há indicação de imagem)</div>
-      <div class="chips" id="regrasChips"></div>
+      <div class="chips" id="regrasChips" hidden></div><!-- v83: regras de decisão saem do texto (botões guardados, escondidos) -->
       <div class="labrow" id="labBox" hidden><div class="exh"><b>Laboratoriais</b><button class="x" id="labRm" aria-label="Remover laboratoriais">×</button></div>
         <textarea id="labTxt" rows="3" placeholder="Cole o laudo do sistema ou a linha dos exames — sai pelo motor de exames: LABS dd/mm/aaaa: …"></textarea>
         <p class="note" id="labNote"></p>
+        <label class="item" style="font-size:14px"><input type="checkbox" id="labExt"><span>Laboratoriais externos (de outro serviço) → "LABS EXTERNOS dd/mm/aaaa: …"</span></label>
       </div>
       <div class="row">
-        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="melhora"><span>Paciente refere melhora do quadro após analgesia</span></label>
+        <input type="checkbox" id="melhora" hidden>
+        <div style="flex:1 1 100%"><div class="grp-l" style="margin-top:0">Ao reavaliar</div>
+        <div class="seg" id="reavSeg"><button data-v="plena">Melhora plena</button><button data-v="parcial">Melhora parcial</button><button data-v="nega">Nega melhora</button><button data-v="">Não escrever</button></div></div>
       </div>
       <div class="row"><label class="fld w-lg"><span>Complemento</span><input type="text" id="resExtra" placeholder="TEXTO LIVRE APÓS OS RESULTADOS"></label></div>
     </section>
@@ -409,12 +411,14 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
         <button data-v="alta">Alta</button>
         <button data-v="conserv">Retorno em ambulatório</button>
         <button data-v="intern">Internação hospitalar</button>
-        <button data-v="outraEq">Internação por outra equipe</button>
+        <button data-v="outraEq">Outra equipe</button>
+        <button data-v="transf">Transferência (CROSS)</button>
+        <button data-v="eletiva">Cirurgia eletiva (sem internar)</button>
       </div>
 
       <div class="row" id="cargaRow">
         <label class="fld"><span>Carga</span><select id="carga" class="w-md">
-          <option value="">—</option><option>SEM CARGA NO MEMBRO ACOMETIDO</option><option>CARGA PARCIAL COM AUXÍLIO DE MULETAS</option><option>CARGA CONFORME TOLERÂNCIA</option><option>SEM CARGA ATÉ SEGUNDA ORDEM</option></select></label>
+          <option value="">—</option><option>SEM CARGA ATÉ SEGUNDA ORDEM</option><option>CARGA PROPRIOCEPTIVA</option><option>CARGA PARCIAL</option><option>CARGA CONFORME DOR COM ANDADOR</option><option>CARGA TOTAL</option><option>CARGA EM RETROPÉ</option></select></label>
       </div>
       <div class="row" id="internRow">
         <label class="fld w-lg req" id="cirNomeFld"><span>Cirurgia</span><input type="text" id="cirNome" placeholder="Ex.: osteossíntese de fêmur à direita"></label>
@@ -426,6 +430,25 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
       <div class="labrow" id="preopBox" hidden><div class="exh"><b>Laboratoriais do pré-operatório</b></div>
         <textarea id="labTxt2" rows="3" placeholder="Cole o laudo do sistema ou a linha dos exames — sai na conduta: LABS dd/mm/aaaa: …"></textarea>
         <p class="note" id="labNote2"></p></div>
+      <div id="intBox">
+        <div class="row"><div class="fld"><span>Caminho (um ou mais)</span><div class="seg" id="camSeg"><button data-v="cir">Cirurgia</button><button data-v="eq">Discutir com equipe</button><button data-v="inf">Infecção</button><button data-v="rm">Ressonância</button></div></div></div>
+        <div class="row" id="eqProgRow"><label class="fld w-lg req"><span>Equipe para a programação cirúrgica</span><input type="text" id="eqProg" placeholder="Ex.: quadril, joelho"></label></div>
+        <div class="row" id="preparoRow">
+          <label class="fld" style="flex:0 1 120px"><span>Idade</span><span class="un"><input type="number" id="idade" min="0" inputmode="numeric"><i>anos</i></span></label>
+          <div class="fld"><span>RCH</span><div class="seg" id="rchSeg"><button data-v="SOLICITAR">Solicitar</button><button data-v="SOLICITADO">Solicitado</button><button data-v="CHECAR">Checar</button></div></div>
+          <div class="fld" id="ccFld"><span>Aviso CC</span><div class="seg" id="ccSeg"><button data-v="0">Fazer</button><button data-v="1">OK</button></div></div>
+        </div>
+        <div class="row" id="avalRow">
+          <div class="fld"><span>Avaliação cardiológica</span><select id="cardio"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
+          <label class="fld w-md"><span>Observação</span><input type="text" id="cardioObs"></label>
+          <div class="fld"><span>Avaliação anestésica</span><select id="anest"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
+          <label class="fld w-md"><span>Observação</span><input type="text" id="anestObs"></label>
+          <p class="note" style="flex:1 1 100%">Mais de 45 anos: avaliações já vêm marcadas na conduta (dá para desmarcar).</p>
+        </div>
+      </div>
+      <div class="row" id="oeRow"><div class="fld"><span>Fechamento</span><div class="seg" id="oeSeg"><button data-v="nova">Nova solicitação se precisar</button><button data-v="seg">Seguimento em interconsulta</button><button data-v="nada">Nada ortopédico</button></div></div></div>
+      <div class="row" id="trRow"><label class="fld w-lg req"><span>Vaga liberada para</span><input type="text" id="transfPara2" placeholder="Serviço de destino"></label></div>
+      <div class="row" id="elRow"><div class="fld"><span>Caminho</span><div class="seg" id="elSeg"><button data-v="A">A · AMB Internação na véspera útil</button><button data-v="B">B · PS Internação 07 h</button></div></div></div>
       <div class="row" id="eqRow"><label class="fld w-lg req"><span>Equipe que interna</span><input type="text" id="equipe" list="dlEquipes" placeholder="Ex.: cirurgia geral, neurocirurgia"></label></div>
       <datalist id="dlEquipes"><option value="CIRURGIA GERAL"></option><option value="CIRURGIA VASCULAR"></option><option value="CIRURGIA PLÁSTICA"></option><option value="NEUROCIRURGIA"></option><option value="CLÍNICA MÉDICA"></option><option value="UTI"></option><option value="TRAUMA"></option><option value="PEDIATRIA"></option><option value="UROLOGIA"></option></datalist>
 
@@ -458,7 +481,7 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
       <div class="sec-h"><span class="n">5</span><h3>Discussão e assinatura</h3><span class="sub">Só no em tempo final</span></div>
       <div class="row" style="margin-top:0">
         <label class="fld w-lg"><span>Assistente do plantão (ass. Dr.)</span><input type="text" id="ass" list="dlAss" placeholder="NOME DO ASSISTENTE" autocomplete="off"></label>
-        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="discutido"><span>Incluir "Discutido com"</span></label>
+        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="discutido"><span>Incluir "Discutido e orientado por"</span></label>
         <label class="fld" id="discDataFld"><span>Discutido em</span><input type="date" id="discData"></label>
       </div>
       <div class="chips" id="assPick" style="margin-top:6px"></div>
@@ -523,7 +546,7 @@ const REG={
 const CLIN_GEN=['CELULITE','INFECÇÃO DE FERIDA OPERATÓRIA'];
 const IMOB={
  MMSS:['TIPOIA SIMPLES','VELPEAU','TALA AXILOPALMAR','GESSO AXILOPALMAR','TALA ANTEBRAQUIOPALMAR','GESSO ANTEBRAQUIOPALMAR','GESSO PINÇA DE CONFEITEIRO','LUVA GESSADA','TALA GESSADA EM GOTEIRA ULNAR','GESSO COM INCLUSÃO DO POLEGAR (SPICA)','TALA METÁLICA','ESPARADRAPAGEM','TALA INTRINSIC PLUS'],
- MMII:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA GESSADA COM SALTO','TALA INGUINOMALEOLAR','GESSO INGUINOMALEOLAR','GESSO INGUINOPODÁLICO','IMOBILIZADOR DE JOELHO','BOTA IMOBILIZADORA (ROBOFOOT)','ENFAIXAMENTO COMPRESSIVO','ESPARADRAPAGEM'],
+ MMII:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA GESSADA COM SALTO','TALA INGUINOMALEOLAR','GESSO INGUINOMALEOLAR','GESSO INGUINOPODÁLICO','IMOBILIZADOR DE JOELHO','BOTA IMOBILIZADORA','ENFAIXAMENTO COMPRESSIVO','ESPARADRAPAGEM'],
  COLUNA:['COLAR PHILADELPHIA','COLETE TLSO','COLETE DE JEWETT']
 };
 // COMPATIBILIDADE região → o que pode aparecer (tabela do serviço, 25/11/2026). Sem região marcada: tudo, por segmento.
@@ -537,8 +560,8 @@ const IMOB_REG={
  pelve:[], quadril:[], coxa:[],
  joelho:['IMOBILIZADOR DE JOELHO','TALA INGUINOMALEOLAR','GESSO INGUINOMALEOLAR'],
  perna:['TALA INGUINOMALEOLAR','GESSO INGUINOPODÁLICO','TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)'],
- tornozelo:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA GESSADA COM SALTO','BOTA IMOBILIZADORA (ROBOFOOT)','ENFAIXAMENTO COMPRESSIVO'],
- pe:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA IMOBILIZADORA (ROBOFOOT)','ESPARADRAPAGEM','ENFAIXAMENTO COMPRESSIVO'],
+ tornozelo:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA GESSADA COM SALTO','BOTA IMOBILIZADORA','ENFAIXAMENTO COMPRESSIVO'],
+ pe:['TALA SUROPODÁLICA','GESSO SUROPODÁLICO (BOTA GESSADA)','BOTA IMOBILIZADORA','ESPARADRAPAGEM','ENFAIXAMENTO COMPRESSIVO'],
  cervical:['COLAR PHILADELPHIA'], toracica:['COLETE TLSO','COLETE DE JEWETT'], lombar:['COLETE TLSO','COLETE DE JEWETT']
 };
 const REGRA_REG={'REGRA DO TORNOZELO DE OTTAWA NEGATIVA (SEM INDICAÇÃO DE RADIOGRAFIA)':['tornozelo','pe'],
@@ -572,13 +595,14 @@ function blank(){return{
  regs:[], pedi:false, fase:'final',
  ini:{exames:['RADIOGRAFIAS'], med:'ANALGESIA EV CONFORME PRESCRIÇÃO'}, expIni:false,
  exs:[],
- ach:[], clin:[], achLivre:'', regras:[], labTxt:'', labOn:false, melhora:false, resExtra:'',
+ ach:[], clin:[], achLivre:'', regras:[], labTxt:'', labOn:false, labExt:false, melhora:false, reav:'', resExtra:'',
  gust:'', atb12:ATB12, atb3:ATB3,
  procs:{imob:false,reducao:false,sutura:false,drenagem:false,regul:false},
  imobTipo:'', imobSem:'', imobUn:'SEMANAS', imob2:'', imob2Sem:'', imob2Un:'SEMANAS',
  pr:{}, nvPre:'', nvPreTxt:'', nvPos:'', nvPosTxt:'', interc:'', intercTxt:'', prHora:'',
  sol:[], agu:[], aguEq:'',
  discData:'', cirNome:'', preop:'chk', desf:'alta', inter:'', motTipo:'', colRest:'', carga:'', urg:false, cirData:'', equipe:'', motAval:'', obsH:'', transfTipo:'cross', transfPara:'',
+ cam:['cir'], eqProg:'', idade:'', rchSt:'SOLICITAR', cardio:'SOLICITAR', cardioObs:'', anest:'SOLICITAR', anestObs:'', ccOk:false, oeFecho:'nova', eletCam:'A',
  ret:{dias:'7', dia:0, amb:'', para:null, discEq:'', foraOff:false, assIdx:0, donoIdx:0, diaEsc:0},
  chk:{}, extras:[], extrasI:[], extrasIni:[], ass:'', discutido:false, dono:'', hifen:true, sepTraco:true
 };}
@@ -595,7 +619,7 @@ const segs=()=>[...new Set(S.regs.map(r=>REG[r.k].seg))];
 const fmtData=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
 const ehFinal=()=>S.fase==='final'||S.fase==='completo', ehInter=()=>S.fase==='inter', comInicial=()=>S.fase==='inicial'||S.fase==='completo';
 const temExposta=()=>!!S.expIni;   // exposta é do exame físico: um marcador só, na conduta inicial ou no resultado
-const rxAchado=()=>S.exs.some(e=>e.tipo==='RADIOGRAFIAS'&&e.st==='achado');
+const rxAchado=()=>S.exs.some(e=>e.tipo==='RADIOGRAFIAS'&&(e.st==='achado'||e.st==='traco'||e.st==='linha'));
 const temFratura=()=>rxAchado()&&(S.ach.some(a=>/FRATURA|LUXA/.test(a.t))||/FRATURA|LUXA/.test(U(S.achLivre)));
 const temMMII=()=>S.regs.some(r=>REG[r.k].seg==='MMII');
 
@@ -688,6 +712,19 @@ function cirLinha(){
   if(S.urg) return 'PROCEDIMENTO CIRÚRGICO DE URGÊNCIA'+nome+(S.cirData?' EM '+dataBR(S.cirData):'');
   return 'PROCEDIMENTO CIRÚRGICO'+nome+' EM '+(S.cirData?dataBR(S.cirData):'DATA A DEFINIR');
 }
+// v84: avaliações pré-operatórias — SOLICITAR / SOLICITADA / CHECAR, ou a resposta (BAIXO RISCO…, OK) + observação
+function avalTxt(nome,st,obs){
+  st=st||'SOLICITAR';
+  if(/RISCO|^OK$/.test(st)) return nome+': '+st+(U(obs)?' – '+U(obs):'');
+  return nome+' ('+st+')';
+}
+// v84: véspera útil — dia útil anterior à cirurgia (sáb/dom/seg → sexta), pulando feriados nacionais fixos
+const FERIADOS=['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'];
+function vesperaUtil(iso){
+  const d=new Date(iso+'T12:00');
+  do{ d.setDate(d.getDate()-1); }while(d.getDay()===0||d.getDay()===6||FERIADOS.includes(String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')));
+  return fmtData(d);
+}
 function labsPreop(){
   const L=labLinhas();
   return L.length?L:['LABS '+LACUNA+': '+LACUNA];
@@ -721,31 +758,34 @@ function itemsFor(key){
     if(S.ini.exames.includes('EXAMES LABORATORIAIS')) add('lab','SOLICITO EXAMES LABORATORIAIS',true);
     add('med',U(S.ini.med),true);
     const reg=S.fase==='completo'&&pOn('regul');   // amputação/regularização no completo: VAT + ATB já na conduta inicial
-    if(exp) add('atb',atbExposta(),true,alerta); else add('vat','VAT',reg);   // o padrão do ATB já começa com "VAT +"
-    if(reg&&!exp) add('atbreg','ANTIBIOTICOTERAPIA',true);
-    if(exp) add('curexp','CURATIVO OCLUSIVO ESTÉRIL DA FERIDA',true);
-    add('jej','JEJUM ATÉ DEFINIÇÃO DE CONDUTA',exp);
-    add('tala','IMOBILIZAÇÃO PROVISÓRIA COM TALA GESSADA',false);
+    // v82: exposta sem Gustilo no texto (o esquema fica no guia da tela): VAT e ANTIBIOTICOTERAPIA em linhas separadas
+    add('vat','VAT',reg||exp);
+    if(exp||reg) add('atb','ANTIBIOTICOTERAPIA',true,exp?alerta:null);
+    add('jej','ORIENTO JEJUM',exp);
+    if(temColuna()) add('ddh','DDH + MOVIMENTO EM BLOCO ATÉ SEGUNDA ORDEM',true);
+    add('seriada','REAVALIAÇÃO SERIADA',exp||temColuna());
     add('reav','REAVALIAR APÓS',true);
+    // feito já no 1º momento → bloco REALIZADO: (antes saíam como conduta)
+    if(exp) add('curexp','CURATIVO OCLUSIVO ESTÉRIL DA FERIDA',true,{real:true});
+    add('tala','IMOBILIZAÇÃO PROVISÓRIA COM TALA GESSADA',exp,{real:true});
     return L;
   }
   if(key==='inter'){
     // antibiótico uma vez só no PS — no intermediário vem desligado (marque se ainda não foi prescrito)
-    if(exp) add('atb',atbExposta(),false,alerta);
+    if(exp) add('atb','ANTIBIOTICOTERAPIA',false,alerta);
     const R=regsTxt(), si=S.inter, para=U(S.transfPara)||LACUNA;
     if(si==='aval'){
       const eq=U(S.aguEq)||LACUNA;
-      add('isol','SOLICITO AVALIAÇÃO DA EQUIPE DE '+eq+(U(S.motAval)?' ('+U(S.motAval)+')':''),true);
-      add('iapos',motTipo()==='clin'?'CONDUTA ORTOPÉDICA APÓS ESTABILIZAÇÃO CLÍNICA':'CONDUTA ORTOPÉDICA APÓS AVALIAÇÃO DA EQUIPE DE '+eq,true);
+      add('isol','SOLICITO INTERCONSULTA DA EQUIPE DE '+eq+(U(S.motAval)?' ('+U(S.motAval)+')':''),true);   // v83: sem "conduta ortopédica após…"
     }
     if(si==='obs'){
-      add('iobs','REAVALIAÇÃO SERIADA NO PS',true);
+      add('iobs','REAVALIAÇÃO SERIADA',true);
       const h=pos(S.obsH); if(h) add('ih','REAVALIAR EM '+h+(h=='1'?' HORA':' HORAS'),true);
       add('inv','AVALIAÇÃO NEUROVASCULAR SERIADA',true);
       if(temMembro()||!temReg()) add('ielev','MEMBRO ELEVADO',true);
       add('ijej','JEJUM',false);
     }
-    if(si==='cross'){add('itr','SOLICITADA VAGA VIA CROSS PARA '+para,true);add('iag','PACIENTE AGUARDA REGULAÇÃO NO PS',true);}
+    if(si==='cross'){add('itr','INSIRO PACIENTE NO CROSS',true);}   // v83: o paciente fica no PS; a ficha fecha na transferência
     if(si==='origem'){add('itr','CONTRARREFERÊNCIA AO SERVIÇO DE ORIGEM ('+para+')',true);add('iag','AGUARDO ACEITE E TRANSPORTE',true);}
     if(si==='ubs'){add('itr','ENCAMINHO À UBS DE REFERÊNCIA PARA '+para,true);add('iag','AGUARDO ACEITE E TRANSPORTE',true);}
     S.sol.forEach(k=>{const x=SOL.find(s=>s[0]===k);if(x) add('sol'+k,'SOLICITO '+x[1]+(k==='lab'?'':' DE '+R),true);});
@@ -760,16 +800,21 @@ function itemsFor(key){
     return L;
   }
   const comum=()=>{  // ATB uma vez só no PS: vai na conduta inicial; no em tempo final fica desligado; no "Completo" não repete
-    if(exp&&S.fase!=='completo') add('atb',atbExposta(),false,alerta);
+    if(exp&&S.fase!=='completo') add('atb','ANTIBIOTICOTERAPIA',false,alerta);
     // amputação/regularização de coto: VAT + antibioticoterapia no começo da conduta, já marcados (no completo saem na inicial)
     if(pOn('regul')&&!exp&&S.fase!=='completo'){add('vatreg','VAT',true);add('atbreg','ANTIBIOTICOTERAPIA',true);}
   };
   const antic=(def)=>add('antic','ANTICOAGULAÇÃO PROFILÁTICA',def&&!S.pedi,precisaAntic()?alerta:null);
   // o antibiótico da exposta já começa com "VAT +" — se ele sai neste texto, a sutura não repete o VAT
   const atbComVat=()=>exp||(S.fase==='completo'&&isOn({id:'inicial:vat',def:pOn('regul')}));   // VAT já prescrito (com o ATB da exposta ou na conduta inicial)
-  const sut=()=>{if(S.procs.sutura){add('cur','CURATIVO DIÁRIO COM SF 0,9%',true);if(!atbComVat()&&!(pOn('regul')&&S.fase!=='completo')) add('vat','VAT',true);add('pts','RETIRADA DE PONTOS EM 10 A 14 DIAS',false);}};
+  // v84: sutura — cuidados com curativo; pontos na UBS (alta) ou no retorno (retorno em ambulatório)
+  const sut=(onde)=>{if(S.procs.sutura){add('cur','ORIENTO CUIDADOS COM CURATIVO',true);if(!atbComVat()&&!(pOn('regul')&&S.fase!=='completo')) add('vat','VAT',true);add('pts','RETIRADA DE PONTOS EM 10 A 14 DIAS '+(onde||'NA UBS'),true);}
+    else if(S.procs.drenagem||pOn('regul')) add('cur','ORIENTO CUIDADOS COM CURATIVO',true);};
   const saida=()=>{add('orient',sinaisAlarme(),true,fixo);add('ps','RETORNAR AO PS SE NECESSÁRIO',true,fixo);add('ciente',cienteTxt(false),true);};
-  if(key==='alta'){   // alta: sem retorno
+  const cuidImob=()=>{if(S.imobTipo) add('cuidgesso','ORIENTO CUIDADOS COM A IMOBILIZAÇÃO',true);};
+  const bota=()=>{if(/^BOTA IMOBILIZADORA/.test(S.imobTipo)){add('bota','SOLICITADA BOTA IMOBILIZADORA (PEDIDO EM RECEITA)',true);add('botatala','MANTER TALA SUROPODÁLICA ATÉ AQUISIÇÃO DA BOTA',false);}};
+  const pendente=()=>S.exs.some(e=>e.tipo!=='RADIOGRAFIAS'&&!U(e.txt))||S.agu.length>0;
+  if(key==='alta'){   // alta: sem retorno (sem imobilização e sem fratura para seguir — senão o aviso pede "retorno")
     comum();
     add('analg','AINES + ANALGESIA VO CONFORME DOR',true);
     add('rep','REPOUSO RELATIVO',true);
@@ -778,63 +823,116 @@ function itemsFor(key){
     if(imob) add('imob',imob,true);
     if(S.carga) add('carga',S.carga,true);
     colunaItens(add);
-    sut(); antic(precisaAntic());
+    sut('NA UBS'); antic(precisaAntic());
+    add('fisio','FORNECIDO ENCAMINHAMENTO PARA FISIOTERAPIA',false);
+    add('ubs','ORIENTO SEGUIMENTO EM UNIDADE BÁSICA DE SAÚDE',false);
+    if(!rxAchado()&&!pendente()&&!S.clin.length) add('semurg','PACIENTE SEM URGÊNCIAS OU EMERGÊNCIAS ORTOPÉDICAS',false);
     saida();
   }
   if(key==='conserv'){   // retorno em ambulatório
     comum();
     if(imob) add('imob',imob,true);
+    bota(); cuidImob();
     add('analg','ANALGESIA VO CONFORME DOR',true);
     add('rep','REPOUSO RELATIVO',true);
     if(temMembro()||!temReg()) add('elev','ELEVAÇÃO DO MEMBRO ACOMETIDO',false);
     add('crio','CRIOTERAPIA',false);
     if(S.carga) add('carga',S.carga,true);
-    add('cuidgesso','CUIDADOS COM A IMOBILIZAÇÃO (NÃO MOLHAR, NÃO RETIRAR)',false);
     colunaItens(add);
-    sut(); antic(precisaAntic());
+    sut('NO RETORNO'); antic(precisaAntic());
+    const sug=S.exs.some(e=>e.st==='traco'||e.st==='linha')||S.clin.some(c=>/SUSPEITA/.test(c.t));
+    add('oculta','ORIENTADO QUANTO À POSSIBILIDADE DE LESÃO OCULTA E NECESSIDADE DE REAVALIAÇÃO',sug);
+    add('mudanca','ORIENTADO QUANTO À POSSIBILIDADE DE MUDANÇA DE CONDUTA, INCLUSIVE TRATAMENTO CIRÚRGICO',false);
+    add('fisio','FISIOTERAPIA (SOLICITADA)',false);
     add('ret',retLine(),true);
     saida();
   }
-  if(key==='intern'){   // formato da internação mantido; cirurgia, jejum, heparina e RCH pelo dia da cirurgia (26/11/2026)
-    {const a=assNome(S.ass,S.ret.assIdx); add('disc','CD DISCUTIDA E ORIENTADA '+(a.tit==='DRA'?'PELA ASS DRA ':'PELO ASS DR ')+(a.nome||LACUNA),true);}
+  if(key==='intern'){   // v84: ordem fixa do serviço (26/11/2026); 4 caminhos; estados de RCH, avaliações e aviso CC
     add('int','INTERNAÇÃO HOSPITALAR',true);
     comum();
-    const Q=cirQuando(), perto=Q.q==='hoje'||Q.q==='amanha';
-    add('cir',cirLinha(),true);
-    if(Q.q==='hoje') add('jej','MANTER JEJUM',true);
-    else if(Q.q==='amanha') add('jej','JEJUM A PARTIR DAS 23H',true);
-    else add('jej','JEJUM CONFORME PROGRAMAÇÃO CIRÚRGICA',false);
-    if(S.preop==='sol') add('preop','PRÉ-OPERATÓRIOS (SOLICITAR)',true);
-    else if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
-    else add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
-    add('rch','RCH (SOLICITAR)',perto);   // bolsa vence: pede quando opera hoje ou amanhã (cirurgia grande / paciente frágil: marque)
-    add('cardio','AVALIAÇÃO CARDIOLÓGICA (SOLICITAR)',false);
-    add('anest','AVALIAÇÃO ANESTÉSICA (SOLICITAR)',false);
-    add('uti','UTI (SOLICITAR)',false);
-    add('cc','AVISO CC (NO OPERA)',true);
+    const C=S.cam&&S.cam.length?S.cam:['cir'], cir=C.includes('cir'), rm=C.includes('rm');
+    const Q=cirQuando(), definida=cir&&!!U(S.cirNome)&&(!!S.cirData||S.urg);
+    if(cir) add('cir',cirLinha(),true);
+    if(C.includes('eq')) add('caeq','DISCUTIR COM EQUIPE DE '+(U(S.eqProg)||LACUNA)+' PARA PROGRAMAÇÃO CIRÚRGICA',true);
+    if(C.includes('inf')){
+      add('infatb','ANTIBIOTICOTERAPIA ENDOVENOSA',true);
+      add('infccih','DISCUTIR ESQUEMA ANTIBIÓTICO COM CCIH',true);
+      add('infcult','HEMOCULTURAS (COLHER)',false);
+      add('inflab','LABS DE CONTROLE EM 48 HORAS',true);
+      add('infser','REAVALIAÇÃO SERIADA',true);
+      add('infabord','AVALIAR ABORDAGEM CIRÚRGICA CONFORME EVOLUÇÃO',false);
+    }
+    if(rm){
+      add('rmsol','SOLICITO RESSONÂNCIA MAGNÉTICA DE '+regsTxt()+' (AGENDAR)',true);
+      add('rmag','AGUARDANDO REALIZAÇÃO DE RESSONÂNCIA MAGNÉTICA',true);
+    }
     if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);   // nem todo paciente usa tala
-    add('carga','SEM CARGA ATÉ SEGUNDA ORDEM',true);
-    add('analg','ANALGESIA CONFORME PRESCRIÇÃO',false);
     colunaItens(add);
-    {const t=Q.q==='hoje'?'ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA HOJE)':Q.q==='amanha'?'ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA AMANHÃ)':
-       Q.q==='depois'?'ANTICOAGULAÇÃO PROFILÁTICA HOJE; SUSPENDER EM '+Q.vespera+' (VÉSPERA DA CIRURGIA)':'ANTICOAGULAÇÃO PROFILÁTICA';
-     add('antic',t,temMMII()&&!S.pedi,precisaAntic()?{alerta:true}:null);}
-    if(!exp&&!pOn('regul')) add('atbg','ANTIBIOTICOTERAPIA',false);
+    if(!temReg()||temMMII()) add('carga','SEM CARGA ATÉ SEGUNDA ORDEM',true);
+    // heparina pelo dia da cirurgia: hoje/amanhã não passa (não sai); depois → suspender na véspera; fratura de coluna recente → após liberação
+    {const colFx=temColuna()&&temFratura();
+     const t=colFx?'ANTICOAGULAÇÃO PROFILÁTICA APÓS LIBERAÇÃO':(cir&&(Q.q==='hoje'||Q.q==='amanha'))?'':(cir&&Q.q==='depois')?'ANTICOAGULAÇÃO PROFILÁTICA; SUSPENDER EM '+Q.vespera:'ANTICOAGULAÇÃO PROFILÁTICA';
+     add('antic',t,temMMII()&&!S.pedi||colFx,precisaAntic()?{alerta:true}:null);}
+    if(cir&&Q.q==='hoje') add('jej','ORIENTO JEJUM',true);
+    else if(cir&&Q.q==='amanha') add('jej','ORIENTO JEJUM A PARTIR DAS 23 HORAS',true);
+    else add('jej','ORIENTO JEJUM',false);
+    add('analg','ANALGESIA CONFORME PRESCRIÇÃO',true);
+    if(cir){
+      if(S.preop==='sol') add('preop','PRÉ-OPERATÓRIOS (SOLICITAR)',true);
+      else if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
+      else add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
+      const maior=(parseInt(S.idade,10)||0)>45;
+      add('cardio',avalTxt('AVALIAÇÃO CARDIOLÓGICA',S.cardio,S.cardioObs),maior);
+      add('anest',avalTxt('AVALIAÇÃO ANESTÉSICA',S.anest,S.anestObs),maior);
+      add('rch','RCH ('+(S.rchSt||'SOLICITAR')+')',true);   // RCH sempre na cirurgia
+      add('uti','UTI (SOLICITAR)',false);
+      if(definida) add('cc',S.ccOk?'AVISO CC OK':'AVISO CC (FAZER)',true);   // aviso CC só com a cirurgia definida
+    } else if(rm){
+      if(S.preop==='chk') add('rmlab','EXAMES LABORATORIAIS (CHECAR)',false);
+    }
+    if(!exp&&!pOn('regul')&&!C.includes('inf')) add('atbg','ANTIBIOTICOTERAPIA',false);
     add('orient','ORIENTAÇÕES GERAIS',true);
-    add('ciente',cienteTxt(false),true);
-  }
-  if(key==='outraEq'){   // fecha a ficha do PS; nova interconsulta se precisarem
-    add('int','PACIENTE INTERNADO PELA EQUIPE DE '+(U(S.equipe)||LACUNA),true);
-    comum();
-    if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);
-    if(!temReg()||temMMII()) add('carga',S.carga||'SEM CARGA ATÉ SEGUNDA ORDEM',true);
-    let dc='DATA A DEFINIR'; if(S.cirData){const p=S.cirData.split('-');dc=p[2]+'/'+p[1]+'/'+p[0];}
-    add('cir','PROCEDIMENTO CIRÚRGICO ORTOPÉDICO EM '+dc+' (APÓS LIBERAÇÃO DA EQUIPE)',false);
-    add('analg','ANALGESIA CONFORME PRESCRIÇÃO',false);
-    colunaItens(add);
-    antic(false);
-    add('reav','REAVALIAÇÃO ORTOPÉDICA MEDIANTE NOVA SOLICITAÇÃO DE INTERCONSULTA',true);
     add('ciente',cienteTxt(true),true);
+  }
+  if(key==='outraEq'){   // v84: paciente segue com outra equipe; fecha com nova solicitação ou seguimento em interconsulta
+    const nada=S.oeFecho==='nada';
+    if(nada){
+      add('semurg','SEM URGÊNCIA OU EMERGÊNCIA ORTOPÉDICA',true);
+      add('devolvo','DEVOLVO PACIENTE PARA EQUIPE PRESTADORA',false);
+    } else {
+      add('int','PACIENTE SEGUIRÁ AOS CUIDADOS DA EQUIPE DE '+(U(S.equipe)||LACUNA),true);
+      comum();
+      if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);
+      if(!temReg()||temMMII()) add('carga',S.carga||'SEM CARGA ATÉ SEGUNDA ORDEM',true);
+      let dc='DATA A DEFINIR'; if(S.cirData){const p=S.cirData.split('-');dc=p[2]+'/'+p[1]+'/'+p[0];}
+      add('cir','PROCEDIMENTO CIRÚRGICO ORTOPÉDICO EM '+dc+' (APÓS LIBERAÇÃO DA EQUIPE)',false);
+      add('analg','ANALGESIA CONFORME PRESCRIÇÃO',false);
+      colunaItens(add);
+      antic(false);
+      add('reav',S.oeFecho==='seg'?'SEGUIMENTO ORTOPÉDICO EM REGIME DE INTERCONSULTA':'REAVALIAÇÃO ORTOPÉDICA MEDIANTE NOVA SOLICITAÇÃO DE INTERCONSULTA',true);
+    }
+    add('ciente',cienteTxt(true),true);
+  }
+  if(key==='transf'){   // v84: transferência — fecha a ficha quando o paciente sai do hospital
+    add('vaga','VAGA LIBERADA VIA CROSS PARA '+(U(S.transfPara)||LACUNA),true);
+    add('eqtr','PACIENTE AOS CUIDADOS DA EQUIPE DE TRANSFERÊNCIA',true);
+    if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);
+    colunaItens(add);
+    if(!temReg()||temMMII()) add('carga',S.carga||'SEM CARGA ATÉ SEGUNDA ORDEM',true);
+    add('cientetr','PACIENTE E FAMILIAR CIENTES DA TRANSFERÊNCIA',true);
+  }
+  if(key==='eletiva'){   // v84: cirurgia marcada sem internar agora — A) AMB Internação na véspera útil · B) PS Internação às 07 h
+    const dc=S.cirData?dataBR(S.cirData):LACUNA;
+    add('cirag','PROCEDIMENTO CIRÚRGICO ('+(U(S.cirNome)||LACUNA)+') AGENDADO PARA '+dc,true);
+    if(S.eletCam==='B') add('volta','RETORNAR NO PS INTERNAÇÃO EM '+dc+' ÀS 07 HORAS, EM JEJUM A PARTIR DAS 23 HORAS DO DIA ANTERIOR',true);
+    else add('volta','RETORNO EM AMBULATÓRIO DE INTERNAÇÃO EM '+(S.cirData?vesperaUtil(S.cirData):LACUNA)+' PARA CONFIRMAR LABORATORIAIS, CHECAR RADIOGRAFIAS, AVALIAÇÕES, AVISO CC, CONDIÇÕES DE PELE E ORIENTAÇÕES',true);
+    if(imob) add('imob','MANTER '+S.imobTipo,true);
+    if(S.carga) add('carga',S.carga,true);
+    if(S.cirData){const v=new Date(S.cirData+'T12:00'); v.setDate(v.getDate()-1); add('hep','SUSPENSÃO DE HEPARINA PROFILÁTICA EM '+fmtData(v),precisaAntic()||temMMII());}
+    add('analg','ANALGESIA VO CONFORME DOR',true);
+    add('orient',sinaisAlarme(),true);
+    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);
+    add('cienteel','PACIENTE CIENTE DO PROCEDIMENTO E DA DATA',true);
   }
   return L;
 }
@@ -849,35 +947,44 @@ function achadoTxt(){
 }
 const dataBR=iso=>{const p=(iso||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:LACUNA;};
 const hojeISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+// v83: RX em 4 graus (sem achado · achado nítido · traço sugestivo · linha sugestiva); exame de fora: "RX EXTERNO dd/mm/aaaa: …", "TC EXTERNA …"
+const RX_ST=[['normal','Sem fratura / luxação'],['achado','Achado nítido'],['traco','Traço sugestivo'],['linha','Linha sugestiva']];
+const ehAchado=st=>st==='achado'||st==='traco'||st==='linha';
 function exLinha(e){
   if(e.tipo==='RADIOGRAFIAS'){
-    if(U(e.txt)) return 'RADIOGRAFIAS: '+U(e.txt);
-    if(e.st==='normal') return 'RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES';
-    if(e.st==='achado') return 'RADIOGRAFIAS COM EVIDÊNCIAS NÍTIDAS DE '+achadoTxt();
-    return 'RADIOGRAFIAS: '+LACUNA;
+    let r;
+    if(U(e.txt)) r=U(e.txt);
+    else if(e.st==='normal') r='SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES';
+    else if(e.st==='achado') r='COM EVIDÊNCIAS NÍTIDAS DE '+achadoTxt();
+    else if(e.st==='traco') r='COM TRAÇO SUGESTIVO DE '+achadoTxt();
+    else if(e.st==='linha') r='COM LINHA SUGESTIVA DE '+achadoTxt();
+    else r=LACUNA;
+    if(e.ext) return 'RX EXTERNO '+dataBR(e.data)+': '+r;
+    return U(e.txt)||!e.st?'RADIOGRAFIAS: '+r:'RADIOGRAFIAS '+r;
   }
   const r=S.regs.find(q=>regKey(q)===e.reg)||(S.regs.length===1?S.regs[0]:null);
-  return e.tipo+' DE '+(r?nomeReg(r):LACUNA)+' '+dataBR(e.data)+' LAUDO: '+(U(e.txt)||LACUNA);
+  const nome=e.ext?(e.tipo==='USG'?'USG EXTERNA':e.tipo+' EXTERNA'):e.tipo;
+  return nome+' DE '+(r?nomeReg(r):LACUNA)+' '+dataBR(e.data)+' LAUDO: '+(U(e.txt)||LACUNA);
 }
+const LB=()=>S.labExt?'LABS EXTERNOS':'LABS';
 function labLinhas(){
   const t=(S.labTxt||'').trim(); if(!t) return [];
   // v78: sempre o motor de exames pela entrada única (ler) — laudo do sistema ou linha escrita, igual à evolução e ao mapa
   if(EXM){try{const cfg=EXM.cfgSalva();const r=(EXM.ler||EXM.processar)(t,EXM.ler?{cfg}:cfg);const f=EXM.formatar(r.dias,{cfg});
-    if(f) return f.split('\n').filter(Boolean).map(l=>/^\d{2}\/\d{2}[^:]*:/.test(l)?'LABS '+l:'LABS '+LACUNA+': '+l);}catch(e){}}
-  return ['LABS '+LACUNA+': '+U(t).replace(/\s*\n\s*/g,' / ')];
+    if(f) return f.split('\n').filter(Boolean).map(l=>/^\d{2}\/\d{2}[^:]*:/.test(l)?LB()+' '+l:LB()+' '+LACUNA+': '+l);}catch(e){}}
+  return [LB()+' '+LACUNA+': '+U(t).replace(/\s*\n\s*/g,' / ')];
 }
 function resultadoLinhas(){
   const out=[];
   S.exs.forEach(e=>out.push(exLinha(e)));
-  const susp=S.clin.filter(c=>/SUSPEITA/.test(c.t)), qc=S.clin.filter(c=>!/SUSPEITA/.test(c.t));
-  if(qc.length) out.push('QUADRO CLÍNICO COMPATÍVEL COM '+joinE(qc.map(c=>c.t+(c.reg?' ('+c.reg+')':''))));
+  // v83: "QUADRO CLÍNICO COMPATÍVEL COM…" e regras de decisão saem do texto; fica a suspeita clínica
+  const susp=S.clin.filter(c=>/SUSPEITA/.test(c.t));
   susp.forEach(c=>out.push('SUSPEITA CLÍNICA DE '+c.t.replace(/\s*\(SUSPEITA\)/,'').replace(/^SUSPEITA CLÍNICA DE /,'')+(c.reg?' ('+c.reg+')':'')));
-  S.regras.forEach(x=>out.push(x));
   if(S.labOn&&!labsNaConduta()) labLinhas().forEach(l=>out.push(l));
-  if(S.melhora) out.push('PACIENTE REFERE MELHORA DO QUADRO APÓS USO DE ANALGESIA');
   if(U(S.resExtra)) out.push(U(S.resExtra));
   return out;
 }
+const REAV={plena:'AO REAVALIAR, PACIENTE REFERE MELHORA PLENA DO QUADRO APÓS ANALGESIA',parcial:'AO REAVALIAR, PACIENTE REFERE MELHORA PARCIAL DO QUADRO APÓS ANALGESIA',nega:'AO REAVALIAR, PACIENTE NEGA MELHORA DO QUADRO APÓS ANALGESIA'};
 function assNome(txt,idx){
   const R=resolve(txt,idx); const t=U(txt).replace(/^(DRA?\.?\s+)/,'');
   return {nome:t, tit:R.p?ESC.titulo(R.p.n):(/^DRA\b/.test(U(txt))?'DRA':'DR')};
@@ -885,30 +992,34 @@ function assNome(txt,idx){
 function gerar(){
   const b=S.hifen?'- ':'', sep=S.sepTraco?'---':'';
   const out=[];
-  // assinatura sem nome vira lacuna (entra na contagem de "___")
-  // conduta inicial e intermediária não levam assistente; no final: "DISCUTIDO COM DR X EM dd/mm/aaaa" logo abaixo do "CD:",
-  // e a assinatura separada por uma linha em branco
+  // v82 (padrão da ficha, 26/11/2026): "# CONDUTA" em todas as fases (saem "#CONDUTA" e "CD:"); o que foi feito vai no bloco "REALIZADO:";
+  // conduta inicial e intermediária não levam assistente; na final, "DISCUTIDO E ORIENTADO POR DR X EM dd/mm/aaaa" é a 1ª linha da conduta
+  // (na internação, sempre) e a assinatura vem separada por uma linha em branco
   const A=assNome(S.ass,S.ret.assIdx);
   const fecho=()=>{if(!ehFinal())return; out.push(''); out.push('ASS '+A.tit+' '+(A.nome||LACUNA));};
+  const realizado=L=>{if(!L.length)return; out.push('REALIZADO:'); L.forEach(l=>out.push(b+l)); if(sep) out.push(sep);};
   if(comInicial()){
-    out.push('#CONDUTA');
-    itemsFor('inicial').filter(isOn).forEach(i=>out.push(b+i.t));
+    const its=itemsFor('inicial').filter(isOn);
+    realizado(its.filter(i=>i.real).map(i=>i.t));
+    out.push('# CONDUTA');
+    its.filter(i=>!i.real).forEach(i=>out.push(b+i.t));
     // a conduta inicial usa só as linhas dela (antes puxava as da conduta final, que ficam escondidas)
     S.extrasIni.forEach(e=>out.push(b+e));
     if(S.fase==='inicial'){ fecho(); return out.join('\n'); }
     out.push('');
   }
   out.push('# EM TEMPO #');
-  resultadoLinhas().forEach(l=>out.push(l));
-  const pl=procLines();
-  if(pl.length){ if(sep) out.push(sep); pl.forEach(l=>out.push(l)); }
-  if(sep) out.push(sep);
-  out.push('CD:');
+  const res=resultadoLinhas();
+  res.forEach(l=>out.push(l));
+  if(res.length&&sep) out.push(sep);
+  if(REAV[S.reav]){ out.push(REAV[S.reav]); if(sep) out.push(sep); }
+  realizado(procLines());
+  out.push('# CONDUTA');
   if(ehInter()){
     itemsFor('inter').filter(isOn).forEach(i=>out.push(b+i.t));
     S.extrasI.forEach(e=>out.push(b+e));
   } else {
-    if(S.discutido) out.push('DISCUTIDO COM '+A.tit+' '+(A.nome||LACUNA)+' EM '+dataBR(S.discData||hojeISO()));
+    if(S.discutido||S.desf==='intern') out.push('DISCUTIDO E ORIENTADO POR '+A.tit+' '+(A.nome||LACUNA)+' EM '+dataBR(S.discData||hojeISO()));
     itemsFor(S.desf).filter(isOn).forEach(i=>out.push(b+i.t));
     S.extras.forEach(e=>out.push(b+e));
   }
@@ -929,10 +1040,17 @@ const syncInter=segBind('interSeg',()=>S.inter,v=>S.inter=v);
 const syncMot=segBind('motSeg',()=>motTipo(),v=>S.motTipo=v);
 const syncCol=segBind('colSeg',()=>colRest(),v=>S.colRest=v);
 const syncPreop=segBind('preopSeg',()=>S.preop,v=>S.preop=v);
+const syncReav=segBind('reavSeg',()=>S.reav,v=>S.reav=v);
+const syncRch=segBind('rchSeg',()=>S.rchSt,v=>S.rchSt=v);
+const syncCC=segBind('ccSeg',()=>S.ccOk?'1':'0',v=>S.ccOk=v==='1');
+const syncOe=segBind('oeSeg',()=>S.oeFecho,v=>S.oeFecho=v);
+const syncEl=segBind('elSeg',()=>S.eletCam,v=>S.eletCam=v);
+$('camSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;const v=b.dataset.v;S.cam=(S.cam||['cir']).slice();const i=S.cam.indexOf(v);if(i>=0){if(S.cam.length>1)S.cam.splice(i,1);}else S.cam.push(v);update();});
+$('transfPara2').addEventListener('input',e=>{S.transfPara=e.target.value;update();});
 const syncRetDia=segBind('retDiaSeg',()=>S.ret.dia,v=>{S.ret.dia=+v;});
 
-const TXT=['discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','cirNome','equipe','motAval','obsH','transfPara','ass','dono'];
-const CHK=['melhora','discutido','hifen','sepTraco','expIni','urg','pedi'];
+const TXT=['eqProg','idade','cardio','cardioObs','anest','anestObs','discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','cirNome','equipe','motAval','obsH','transfPara','ass','dono'];
+const CHK=['labExt','melhora','discutido','hifen','sepTraco','expIni','urg','pedi'];
 TXT.forEach(id=>{const el=$(id);const h=(ev)=>{ if(ev&&ev.type==='change'&&el.value===el._ult) return; el._ult=el.value; if(id==='iniMed') S.ini.med=el.value; else S[id]=el.value;
   if(id==='imobTipo'&&el.value&&!S.procs.imob){S.procs.imob=true;}
   if(id==='ass'){S.ret.assIdx=0;guardaPlantao();}
@@ -1176,7 +1294,8 @@ function renderRegs(){
     h+='<div class="grp-l">'+nomeReg(r)+'</div><div class="chips">'+R.ach.map(ach).join('')+'</div>'+
       '<details class="more"'+(genOn?' open':'')+'><summary>Material de síntese, perda de redução, corpo estranho</summary><div class="chips" style="margin-top:6px">'+GEN.map(ach).join('')+'</div></details>';
     const nr=nomeReg(r);
-    c+='<div class="grp-l">'+nr+'</div><div class="chips">'+R.clin.concat(CLIN_GEN).map(a=>{const on=S.clin.some(x=>x.t===a&&x.reg===nr);
+    const so=R.clin.concat(CLIN_GEN).filter(a=>/SUSPEITA/.test(a));   // v83: só a suspeita clínica vai para o texto
+    if(so.length) c+='<div class="grp-l">'+nr+'</div><div class="chips">'+so.map(a=>{const on=S.clin.some(x=>x.t===a&&x.reg===nr);
       return '<button class="chip" data-clin="'+a+'" data-reg="'+nr+'" aria-pressed="'+on+'">'+a+'</button>';}).join('')+'</div>';});
   $('achList').innerHTML=h||'<p class="note">Marque a região no modelo para ver os achados mais comuns.</p>';
   $('clinList').innerHTML=c||'<p class="note">Marque a região no modelo.</p>';
@@ -1184,7 +1303,7 @@ function renderRegs(){
 $('expRes').addEventListener('change',e=>{S.expIni=e.target.checked;update();});
 $('selRegs').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;const r=S.regs.splice(+b.dataset.rm,1)[0];S.ach=S.ach.filter(a=>!(a.k===r.k&&a.side===r.side));S.clin=S.clin.filter(c=>c.reg!==nomeReg(r));update();});
 $('achList').addEventListener('click',e=>{const b=e.target.closest('[data-ach]');if(!b)return;const a={t:b.dataset.ach,k:b.dataset.k,side:b.dataset.side};
-  const i=S.ach.findIndex(x=>x.t===a.t&&x.k===a.k&&x.side===a.side); if(i>=0)S.ach.splice(i,1); else {a.d=[];S.ach.push(a);const rx=S.exs.find(x=>x.tipo==='RADIOGRAFIAS');if(rx)rx.st='achado';else S.exs.unshift({tipo:'RADIOGRAFIAS',st:'achado',txt:''});} update();});
+  const i=S.ach.findIndex(x=>x.t===a.t&&x.k===a.k&&x.side===a.side); if(i>=0)S.ach.splice(i,1); else {a.d=[];S.ach.push(a);const rx=S.exs.find(x=>x.tipo==='RADIOGRAFIAS');if(rx){if(!ehAchado(rx.st))rx.st='achado';}else S.exs.unshift({tipo:'RADIOGRAFIAS',st:'achado',txt:''});} update();});
 $('clinList').addEventListener('click',e=>{const b=e.target.closest('[data-clin]');if(!b)return;const c={t:b.dataset.clin,reg:b.dataset.reg};
   const i=S.clin.findIndex(x=>x.t===c.t&&x.reg===c.reg); if(i>=0)S.clin.splice(i,1); else S.clin.push(c); update();});
 $('regrasChips').addEventListener('click',e=>{const b=e.target.closest('[data-regra]');if(!b)return;const v=b.dataset.regra,i=S.regras.indexOf(v);if(i>=0)S.regras.splice(i,1);else S.regras.push(v);update();});
@@ -1195,23 +1314,28 @@ $('retBox').addEventListener('click',e=>{const b=e.target.closest('[data-para]')
   S.ret.para=PARA.filter(x=>p.includes(x)); update();});
 
 /* exames (lista): RX com resultado; TC/RM/USG com local, data e laudo */
+// v83: exame externo — RX ganha a data do exame de fora ("RX EXTERNO dd/mm/aaaa: …")
+const extTxt=e=>'<label class="item" style="font-size:14px;flex:1 1 100%"><input type="checkbox" data-f="ext"'+(e.ext?' checked':'')+'><span>RX externo (de outro serviço)</span></label>'+
+  (e.ext?'<label class="fld req'+(e.data?'':' vazio')+'" style="flex:0 1 180px"><span>Data do RX</span><input type="date" data-f="data" value="'+esc(e.data||'')+'"></label>':'');
 function renderExs(){
   const rOpt=e=>'<select data-f="reg"><option value="">— (preencher)</option>'+S.regs.map(r=>'<option value="'+regKey(r)+'"'+(e.reg===regKey(r)?' selected':'')+'>'+nomeReg(r)+'</option>').join('')+'</select>';
   $('exList').innerHTML=S.exs.map((e,i)=>{
     const rx=e.tipo==='RADIOGRAFIAS', nome={RADIOGRAFIAS:'Radiografias',TC:'TC',RM:'RM',USG:'USG'}[e.tipo]||e.tipo;
     const head='<div class="exh"><b>'+nome+'</b><button class="x" data-exrm="'+i+'" aria-label="Remover '+nome+'">×</button></div>';
     const body=rx?
-      '<div class="seg'+(e.st||U(e.txt)?'':' pendst')+'">'+[['normal','Sem fratura / luxação'],['achado','Com achado']].map(([v,l])=>'<button data-st="'+v+'" aria-pressed="'+(e.st===v)+'">'+l+'</button>').join('')+'</div>'+
-      '<input type="text" data-f="txt" class="w-lg" placeholder="Texto próprio (opcional): substitui o resultado" value="'+esc(e.txt||'')+'">'
+      '<div class="seg'+(e.st||U(e.txt)?'':' pendst')+'">'+RX_ST.map(([v,l])=>'<button data-st="'+v+'" aria-pressed="'+(e.st===v)+'">'+l+'</button>').join('')+'</div>'+
+      '<input type="text" data-f="txt" class="w-lg" placeholder="Texto próprio (opcional): substitui o resultado" value="'+esc(e.txt||'')+'">'+
+      extTxt(e)
      :'<label class="fld req'+(e.reg||S.regs.length===1?'':' vazio')+'"><span>Local</span>'+rOpt(e)+'</label>'+
       '<label class="fld req'+(e.data?'':' vazio')+'" style="flex:0 1 180px"><span>Data</span><input type="date" data-f="data" value="'+esc(e.data||'')+'"></label>'+
-      '<label class="fld req'+(U(e.txt)?'':' vazio')+'" style="flex:1 1 100%"><span>Laudo</span><textarea data-f="txt" rows="2" placeholder="Cole ou escreva o laudo">'+esc(e.txt||'')+'</textarea></label>';
+      '<label class="fld req'+(U(e.txt)?'':' vazio')+'" style="flex:1 1 100%"><span>Laudo</span><textarea data-f="txt" rows="2" placeholder="Cole ou escreva o laudo">'+esc(e.txt||'')+'</textarea></label>'+
+      '<label class="item" style="font-size:14px;flex:1 1 100%"><input type="checkbox" data-f="ext"'+(e.ext?' checked':'')+'><span>Exame externo (de outro serviço)</span></label>';
     return '<div class="exrow" data-i="'+i+'">'+head+body+'</div>';}).join('')||'<p class="note">Nenhum exame. Sem imagem, use as regras de decisão abaixo, se for o caso.</p>';
 }
 $('exList').addEventListener('click',e=>{const row=e.target.closest('.exrow');if(!row)return;const i=+row.dataset.i;
   const st=e.target.closest('[data-st]'); if(st){S.exs[i].st=S.exs[i].st===st.dataset.st?'':st.dataset.st;update();return;}
   if(e.target.closest('[data-exrm]')){S.exs.splice(i,1);update();}});
-$('exList').addEventListener('change',e=>{const row=e.target.closest('.exrow');const f=e.target.dataset.f;if(!row||!f||f==='txt')return;S.exs[+row.dataset.i][f]=e.target.value;update();});
+$('exList').addEventListener('change',e=>{const row=e.target.closest('.exrow');const f=e.target.dataset.f;if(!row||!f||f==='txt')return;S.exs[+row.dataset.i][f]=f==='ext'?e.target.checked:e.target.value;update();});
 $('exList').addEventListener('input',e=>{const row=e.target.closest('.exrow');if(!row||e.target.dataset.f!=='txt')return;S.exs[+row.dataset.i].txt=e.target.value;
   const fl=e.target.closest('.fld.req');if(fl)fl.classList.toggle('vazio',!e.target.value.trim());update('ex');});
 $('exAdd').addEventListener('click',e=>{const b=e.target.closest('[data-exadd]');if(!b)return;const t=b.dataset.exadd;
@@ -1233,10 +1357,11 @@ $('descChips').addEventListener('click',e=>{const b=e.target.closest('[data-desc
 
 /* fratura exposta */
 function renderExp(el){
-  el.innerHTML='<div class="grp-l" style="margin-top:0">Fratura exposta · Gustilo e Anderson (provisório)</div>'+
+  el.innerHTML='<div class="grp-l" style="margin-top:0">Fratura exposta · guia de prescrição (Gustilo e Anderson não vai para o texto)</div>'+
     '<div class="seg" data-gust>'+['I','II','IIIA','IIIB','IIIC'].map(g=>'<button data-g="'+g+'" aria-pressed="'+(S.gust===g)+'">'+g+'</button>').join('')+'</div>'+
     '<div class="row"><label class="fld w-lg"><span>Padrão da equipe · I e II</span><input type="text" data-atb="atb12" value="'+esc(S.atb12)+'"></label></div>'+
-    '<div class="row"><label class="fld w-lg"><span>Padrão da equipe · III</span><input type="text" data-atb="atb3" value="'+esc(S.atb3)+'"></label></div>';
+    '<div class="row"><label class="fld w-lg"><span>Padrão da equipe · III</span><input type="text" data-atb="atb3" value="'+esc(S.atb3)+'"></label></div>'+
+    (S.gust?'<p class="hint" style="margin:6px 0 0">Prescrever: <b>'+esc(atbExposta())+'</b></p>':'');
 }
 ['expBox','expBoxIni'].forEach(id=>{const el=$(id);
   el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;S.gust=S.gust===b.dataset.g?'':b.dataset.g;update();});
@@ -1315,7 +1440,7 @@ const RX=(st)=>({tipo:'RADIOGRAFIAS',st,txt:''});
 const PRE={
  reav:()=>{S.fase='inicial';S.ini.exames=['RADIOGRAFIAS'];},
  completo:()=>{S.fase='completo';S.regs=[{k:'tornozelo',side:'D'}];S.ini.exames=['RADIOGRAFIAS'];S.exs=[RX('normal')];S.clin=[{t:'ENTORSE',reg:'TORNOZELO DIREITO'}];
-   S.regras=[];S.melhora=true;S.procs.imob=true;S.imobTipo='BOTA IMOBILIZADORA (ROBOFOOT)';S.imobSem='3';S.desf='alta';},
+   S.regras=[];S.reav='plena';S.procs.imob=true;S.imobTipo='BOTA IMOBILIZADORA';S.imobSem='3';S.desf='alta';},
  inter:()=>{S.fase='inter';S.regs=[{k:'tornozelo',side:'D'}];S.exs=[RX('achado')];S.ach=[{t:'FRATURA BIMALEOLAR',k:'tornozelo',side:'D',d:[]}];
    PR('fratura',{anest:'ANALGESIA E SEDAÇÃO',man:'TRAÇÃO LONGITUDINAL COM CORREÇÃO DA DEFORMIDADE'});S.procs.imob=true;S.imobTipo='TALA SUROPODÁLICA';S.sol=['tc'];S.agu=['rxpos','tc'];},
  semfx:()=>{S.fase='final';S.exs=[RX('normal')];S.melhora=true;S.desf='alta';},
@@ -1365,17 +1490,19 @@ function compat(){
 /* Atualização geral */
 function update(src){
   compat();
-  syncFase();syncDesf();syncInter();syncMot();syncCol();syncPreop();
+  syncFase();syncDesf();syncInter();syncMot();syncCol();syncPreop();syncReav();syncRch();syncCC();syncOe();syncEl();
+  document.querySelectorAll('#camSeg button').forEach(b=>b.setAttribute('aria-pressed',String((S.cam||['cir']).includes(b.dataset.v))));
+  $('clinTit').hidden=!$('clinList').querySelector('.chip');
   $('secAss').hidden=!ehFinal(); $('discDataFld').hidden=!S.discutido; if(!S.discData) $('discData').value=hojeISO();
   $('imobSem').disabled=S.imobUn==='ATÉ SEGUNDA ORDEM'; $('imob2Sem').disabled=S.imob2Un==='ATÉ SEGUNDA ORDEM';
-  $('avalBox').hidden=S.inter!=='aval'; $('obsRow').hidden=S.inter!=='obs'; $('transfRow').hidden=!['cross','origem','ubs'].includes(S.inter);
+  $('avalBox').hidden=S.inter!=='aval'; $('obsRow').hidden=S.inter!=='obs'; $('transfRow').hidden=!['origem','ubs'].includes(S.inter);
   $('secColuna').hidden=S.fase==='inicial'||!temColuna();
   $('colNote').textContent=S.colRest?'':'Automático: '+(colRest()==='exames'?'até resultado de exames (paciente aguardando ou internando)':'sem restrição (paciente saindo)')+'. Toque para escolher.';
   const ini=S.fase==='inicial', inter=ehInter();
   S.procs.reducao=pOn('fratura')||pOn('luxacao'); S.procs.sutura=pOn('sutura'); S.procs.drenagem=pOn('drenagem')||pOn('ungueal')||pOn('ce')||pOn('puncao')||pOn('lavagem'); S.procs.regul=pOn('regul');
   $('secInicial').hidden=!comInicial(); $('secResultado').hidden=ini; $('secProcs').hidden=ini;
   $('secInter').hidden=!inter; $('secDesf').hidden=!ehFinal();
-  $('faseNote').textContent=ini?'#CONDUTA — o que foi solicitado antes dos resultados.':inter?'# EM TEMPO # — visto + realizado + o que ainda aguarda (o atendimento continua).':S.fase==='completo'?'#CONDUTA + # EM TEMPO # + conduta final num texto só (plantão corrido). Assinatura uma vez, no fim.':'# EM TEMPO # — visto + realizado + conduta final.';
+  $('faseNote').textContent=ini?'# CONDUTA — o que foi solicitado antes dos resultados.':inter?'# EM TEMPO # — visto + realizado + o que ainda aguarda (o atendimento continua).':S.fase==='completo'?'# CONDUTA + # EM TEMPO # + conduta final num texto só (plantão corrido). Assinatura uma vez, no fim.':'# EM TEMPO # — visto + realizado + conduta final.';
   if(src!=='pr') renderProcs();
   const temP=algumProc()||S.procs.imob; $('prGlobal').hidden=!temP;
   $('nvPreTxt').closest('label').hidden=S.nvPre!=='ALTERADO'; $('nvPosTxt').closest('label').hidden=S.nvPos!=='ALTERADO'; $('intercTxt').closest('label').hidden=S.interc!=='COM';
@@ -1390,7 +1517,7 @@ function update(src){
   renderDesc();
   {const ROT={[REGRAS[0]]:'Ottawa tornozelo negativo',[REGRAS[1]]:'Ottawa joelho negativo',[REGRAS[2]]:'Canadian C-spine baixo risco'};const rl=REGRAS.filter(regraOk);
    $('regrasChips').innerHTML=chipsHTML(rl,S.regras,'data-regra',rl.map(x=>ROT[x]));
-   $('regrasChips').hidden=$('regrasChips').previousElementSibling.hidden=!rl.length;}
+   $('regrasChips').hidden=true;}   // v83: regras de decisão fora do texto e da tela
   $('solChips').innerHTML=SOL.map(([k,t])=>'<button class="chip" data-sol="'+k+'" aria-pressed="'+S.sol.includes(k)+'">'+t+'</button>').join('');
   $('aguChips').innerHTML=AGU.map(([k,t])=>'<button class="chip" data-agu="'+k+'" aria-pressed="'+S.agu.includes(k)+'">'+t+'</button>').join('');
   if(src!=='ex') renderExs();
@@ -1403,11 +1530,16 @@ function update(src){
   const lt=labLinhas(), ln=S.labTxt.trim()?(EXM?'Sai assim: ':'Motor de exames não carregado — vai como colado: ')+lt.join(' · '):'';
   $('labNote').textContent=ln+(S.labOn&&labsNaConduta()&&ln?' (na internação sai na conduta)':''); $('labNote2').textContent=ln;
   const d=S.desf;
+  const C=S.cam||['cir'];
   $('cargaRow').hidden=d==='intern'||(temReg()&&!temMMII());
-  $('internRow').hidden=!(d==='intern'||d==='outraEq');
+  $('internRow').hidden=!(d==='intern'||d==='outraEq'||d==='eletiva')||(d==='intern'&&!C.includes('cir'))||(d==='outraEq'&&S.oeFecho==='nada');
   $('urg').closest('label').hidden=d!=='intern';
-  $('cirNomeFld').hidden=d!=='intern'; $('cirNomeFld').classList.toggle('vazio',!U(S.cirNome)); $('preopRow').hidden=d!=='intern'; $('preopBox').hidden=!labsNaConduta(); if(document.activeElement!==$('labTxt2')) $('labTxt2').value=S.labTxt;
-  $('eqRow').hidden=d!=='outraEq';
+  $('intBox').hidden=d!=='intern'; $('eqProgRow').hidden=!C.includes('eq'); $('preparoRow').hidden=$('avalRow').hidden=!C.includes('cir');
+  $('ccFld').hidden=!(U(S.cirNome)&&(S.cirData||S.urg));
+  $('oeRow').hidden=d!=='outraEq'; $('trRow').hidden=d!=='transf'; $('elRow').hidden=d!=='eletiva';
+  if(document.activeElement!==$('transfPara2')) $('transfPara2').value=S.transfPara||'';
+  $('cirNomeFld').hidden=!(d==='intern'||d==='eletiva'); $('cirNomeFld').classList.toggle('vazio',!U(S.cirNome)); $('preopRow').hidden=d!=='intern'||!(C.includes('cir')||C.includes('rm')); $('preopBox').hidden=!labsNaConduta(); if(document.activeElement!==$('labTxt2')) $('labTxt2').value=S.labTxt;
+  $('eqRow').hidden=d!=='outraEq'||S.oeFecho==='nada';
   renderAssUI(); renderRet();
   renderItems($('itemsIni'),'inicial');
   renderItems($('itemsInter'),'inter');
@@ -1431,6 +1563,7 @@ function update(src){
 function avisos(){
   const A=[], fin=ehFinal(), d=S.desf;
   if(fin&&d==='alta'){
+    if(S.imobTipo||temFratura()) A.push('Confira: o desfecho é retorno (alta com imobilização ou fratura para seguir).');
     if(temExposta()) A.push('Fratura exposta com alta: precisa de retorno no ambulatório ou seguimento no serviço de origem.');
     if(S.clin.some(c=>/COMPARTIMENTAL/.test(c.t))) A.push('Suspeita de síndrome compartimental com alta.');
     if(S.nvPos==='ALTERADO') A.push('Neurovascular pós-procedimento alterado com alta.');
@@ -1457,12 +1590,14 @@ function renderPend(){
   fixos.forEach(([id,l])=>{const el=$(id);const f=el.closest('.fld');const req=vis(el)&&temNV();f.classList.toggle('req',req);f.classList.toggle('vazio',req&&!el.value);if(req&&!el.value)PEND.push([l,el]);});
   S.exs.forEach((e,i)=>{if(e.tipo==='RADIOGRAFIAS'&&!e.st&&!U(e.txt)){const b=document.querySelector('.exrow[data-i="'+i+'"] [data-st]');if(vis(b))PEND.push(['Resultado da radiografia',b]);}});
   document.querySelectorAll('.exrow .fld.vazio').forEach(f=>{const el=f.querySelector('input,select,textarea');if(vis(el))PEND.push([f.closest('.exrow').querySelector('.exh b').textContent+': '+f.querySelector('span').textContent.toLowerCase(),el]);});
-  if(ehInter()&&['cross','origem','ubs'].includes(S.inter)&&!U(S.transfPara)) PEND.push(['Para / serviço',$('transfPara')]);
+  if(ehInter()&&['origem','ubs'].includes(S.inter)&&!U(S.transfPara)) PEND.push(['Para / serviço',$('transfPara')]);
   if(ehInter()&&S.inter==='aval'&&!U(S.aguEq)) PEND.push(['Equipe da interconsulta',$('aguEq')]);
-  if(ehFinal()&&S.desf==='outraEq'&&!U(S.equipe)) PEND.push(['Equipe que interna',$('equipe')]);
-  if(ehFinal()&&S.desf==='intern'&&!U(S.cirNome)) PEND.push(['Cirurgia',$('cirNome')]);
+  if(ehFinal()&&S.desf==='outraEq'&&S.oeFecho!=='nada'&&!U(S.equipe)) PEND.push(['Equipe que interna',$('equipe')]);
+  if(ehFinal()&&((S.desf==='intern'&&(S.cam||['cir']).includes('cir'))||S.desf==='eletiva')&&!U(S.cirNome)) PEND.push(['Cirurgia',$('cirNome')]);
+  if(ehFinal()&&S.desf==='eletiva'&&!S.cirData) PEND.push(['Data da cirurgia',$('cirData')]);
+  if(ehFinal()&&S.desf==='intern'&&(S.cam||[]).includes('eq')&&!U(S.eqProg)) PEND.push(['Equipe da programação',$('eqProg')]);
+  if(ehFinal()&&S.desf==='transf'&&!U(S.transfPara)) PEND.push(['Vaga liberada para',$('transfPara2')]);
   document.querySelectorAll('#procList .fld.vazio').forEach(f=>{const el=f.querySelector('input,select');if(vis(el))PEND.push([f.querySelector('span').textContent,el]);});
-  if(temExposta()&&!S.gust){const g=document.querySelector(':is(#expBox,#expBoxIni):not([hidden]) [data-g]');if(g)PEND.push(['Gustilo',g]);}
   const af=$('ass').closest('.fld');af.classList.add('req');af.classList.toggle('vazio',!U(S.ass));if(ehFinal()&&!U(S.ass))PEND.push(['Assistente',$('ass')]);
   $('pend').hidden=!PEND.length;
   $('pendList').innerHTML=PEND.map((p,i)=>'<button class="chip" data-pend="'+i+'">'+esc(p[0])+'</button>').join('');
@@ -1574,12 +1709,14 @@ function initMap(){
 
 // v81: a tela Atendimento lê o texto daqui e passa o que já se sabe (região, lado, sugestões). Nada aqui muda o texto do programa sozinho.
 window.__condutas={gerar:gerar,
-  estado:()=>({fase:S.fase,regs:S.regs.map(r=>({k:r.k,side:r.side})),extrasIni:S.extrasIni.slice(),chk:Object.assign({},S.chk)}),
+  estado:()=>({reav:S.reav,fase:S.fase,regs:S.regs.map(r=>({k:r.k,side:r.side})),extrasIni:S.extrasIni.slice(),chk:Object.assign({},S.chk)}),
   aplicar:o=>{o=o||{};
     (o.tirar||[]).forEach(r=>{const i=S.regs.findIndex(x=>x.k===r.k&&x.side===(REG[r.k]&&REG[r.k].lat?r.side:''));if(i>=0)S.regs.splice(i,1);});
     (o.regs||[]).forEach(r=>{if(!REG[r.k])return;const side=REG[r.k].lat?(r.side||''):'';if(!S.regs.some(x=>x.k===r.k&&x.side===side))S.regs.push({k:r.k,side});});
     (o.linhasIni||[]).forEach(l=>{if(!S.extrasIni.includes(l))S.extrasIni.push(l);});
     Object.keys(o.chk||{}).forEach(k=>{S.chk[k]=o.chk[k];});
+    if(o.exposta!=null)S.expIni=!!o.exposta;
+    if(o.reav!=null)S.reav=o.reav;
     if(o.fase)S.fase=o.fase;
     update();}};
 writeForm();initMap();update();

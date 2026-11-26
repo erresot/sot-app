@@ -119,15 +119,15 @@ O **Mapa Cirúrgico** (`hub/mapa.html`) não aparece na lista do OrthoHub: abre 
 
 | Tipo de registro | Sai como |
 |---|---|
-| Conduta inicial | `#CONDUTA` + solicitações, medicação e "REAVALIAR APÓS" |
-| Em tempo intermediário | `# EM TEMPO #` + visto + realizado + `CD:` com SOLICITO / AGUARDO |
-| Em tempo final | `# EM TEMPO #` + visto + realizado + `CD:` com a conduta final |
-| Completo | `#CONDUTA` + `# EM TEMPO #` + conduta final num texto só; assinatura uma vez |
+| Conduta inicial | (`REALIZADO:` curativo/tala provisória, se houver) + `# CONDUTA` com solicitações, medicação, VAT/ANTIBIOTICOTERAPIA/ORIENTO JEJUM/REAVALIAÇÃO SERIADA quando cabem e "REAVALIAR APÓS" por último (v82) |
+| Em tempo intermediário | `# EM TEMPO #` + visto (RX em 4 graus, externos, suspeita clínica, labs) + `AO REAVALIAR…` + `REALIZADO:` + `# CONDUTA` com SOLICITO / AGUARDO / SOLICITO INTERCONSULTA DA EQUIPE DE X / REAVALIAÇÃO SERIADA / INSIRO PACIENTE NO CROSS (v83) |
+| Em tempo final | `# EM TEMPO #` + visto + `REALIZADO:` + `# CONDUTA` (1ª linha `DISCUTIDO E ORIENTADO POR DR X EM dd/mm/aaaa` quando marcado; na internação, sempre) + `ASS DR X`. Desfechos (v84): alta · retorno · internação (ordem fixa, caminhos cirurgia/equipe/infecção/ressonância, estados de RCH/avaliações/aviso CC) · outra equipe · transferência (CROSS) · cirurgia eletiva A/B |
+| Completo | `# CONDUTA` + `# EM TEMPO #` + conduta final num texto só; assinatura uma vez |
 
 - Retorno: dia pelo assistente ("dono" do paciente tem prioridade); "Mandar para o dia da equipe" acrescenta `DISCUTIR COM EQUIPE ___`; texto do paciente "… às 7 horas. Ambulatório Mário Covas".
 - "RETORNAR AO PS SE NECESSÁRIO" + sinais de alarme em toda saída do paciente.
 - **Anticoagulação profilática** destacada quando há imobilização de membro inferior ou "sem carga" (a dose fica na prescrição).
-- **Fratura exposta:** antibiótico pelo **padrão da equipe** (`const ATB12`, `const ATB3`), não pelo protocolo da CCIH.
+- **Fratura exposta:** no texto só `VAT` + `ANTIBIOTICOTERAPIA` (v82); o Gustilo e o esquema pelo **padrão da equipe** (`const ATB12`, `const ATB3`, não o protocolo da CCIH) ficam como guia de prescrição na tela.
 - Sutura no padrão do serviço; **lacunas `___`** para o que não pode ser presumido (o app conta as que sobraram ao copiar); "SEM INTERCORRÊNCIAS" nunca sai sozinho.
 - Neurovascular pré e pós só em reduções e tração, pela região.
 - Onde mudar: `const REG`, `IMOB`, `SOL`, `AGU`, `AMBS`, `PARA`, `REGRAS`, `LUX`, `NV`, `NV_PROCS`, `PROCS`, `PRE`, `function itemsFor`.

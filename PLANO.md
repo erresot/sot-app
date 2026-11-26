@@ -59,7 +59,10 @@ Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o
 7. Encadear Anamnese → Exame Físico → Condutas — **desenho fechado em 26/11/2026** (documento "Plano — Atendimento do PS" no Claude Docs). Ordem combinada, uma versão por etapa:
    - ✅ v80 (em preparo): motor da ficha `sot-ficha.js` (escreve e lê os blocos; nenhum programa usa ainda).
    - ✅ v81 (em preparo): tela Atendimento — 3 passos e um Copiar só; o dado desce (região/lado → Exame e pedidos; NV alterado → seriada; exposição óssea → VAT/ATB/jejum/seriada); em tempo com "Continuar atendimento" e "Ao reavaliar". Modo "Evolução enfermaria" da Anamnese fica por enquanto (decisão de 26/11).
-   - Frases novas do próprio Condutas (RX em 4 graus, REALIZADO, medicação genérica, desfechos novos, internação em ordem fixa…).
+   - Frases novas do próprio Condutas, em 3 versões (combinado em 26/11):
+     - ✅ v82 (em preparo): estrutura (`# CONDUTA`, `REALIZADO:`, discutido) + 1º momento (jejum, exposta sem Gustilo, seriada, coluna).
+     - ✅ v83 (em preparo): resultados + intermediária (RX em 4 graus, externos, sem "quadro clínico"/regras, ao reavaliar, interconsulta, CROSS, seriada).
+     - ✅ v84 (em preparo): desfechos finais (alta/retorno com carga e cuidados, internação com 4 caminhos e estados, outra equipe, transferência, cirurgia eletiva A/B). Falta: suspensão de outros medicamentos (sot-med.js), texto do paciente da eletiva, feriados de SP/Marília.
    - Molde do evoluidor ("Guardar no Drive", leitura no evoluidor, "Apagar molde").
    - Mini-kanban (quadro opcional, 4 colunas, print do kanban do hospital, avisos 8 h/24 h, histórico de 21 dias).
 8. Outras ideias que surgirem no uso: entram aqui antes de serem feitas.

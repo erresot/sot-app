@@ -79,7 +79,7 @@ button{cursor:pointer}
         <textarea id="anterior" placeholder="Cole aqui a ficha do sistema"></textarea>
         <div class="linha"><button class="btn pri" id="ler">Ler ficha</button><button class="btn" id="limparAnt">Limpar</button></div>
         <div class="resumo" id="resumo" style="margin-top:10px"></div></div>
-      <div class="cartao"><h2>Ao reavaliar</h2><p class="dica">Sai no em tempo: "AO REAVALIAR, PACIENTE …".</p>
+      <div class="cartao"><h2>Ao reavaliar</h2><p class="dica">Sai no em tempo: "AO REAVALIAR, PACIENTE …" (o mesmo botão do Condutas).</p>
         <div class="chips" id="reav"><button class="chip" data-r="plena" aria-pressed="false">Melhora plena</button><button class="chip" data-r="parcial" aria-pressed="false">Melhora parcial</button><button class="chip" data-r="nega" aria-pressed="false">Nega melhora</button><button class="chip" data-r="" aria-pressed="true">Não escrever</button></div></div>
     </section>
   </div>
@@ -178,10 +178,10 @@ function sugerir(ef){
   var u=String(ef||'').toUpperCase(), av=[];
   if(MOM!=='1'){ EST.avisos=av; return; }
   if(RE_NV.test(u)){ av.push(['a','Neurovascular alterado no exame.']);
-    if(!EST.sug.nv&&condutasAplicar({linhasIni:['REAVALIAÇÃO SERIADA']})){ EST.sug.nv=1; } if(EST.sug.nv) av.push(['s','Sugerido na conduta: REAVALIAÇÃO SERIADA (dá para tirar no Condutas).']); }
+    if(!EST.sug.nv&&condutasAplicar({chk:{'inicial:seriada':true}})){ EST.sug.nv=1; } if(EST.sug.nv) av.push(['s','Sugerido na conduta: REAVALIAÇÃO SERIADA (dá para tirar no Condutas).']); }
   if(RE_EXP.test(u)){ av.push(['a','Exposição óssea no exame.']);
-    if(!EST.sug.exp&&condutasAplicar({chk:{'inicial:vat':true},linhasIni:['ANTIBIOTICOTERAPIA','ORIENTO JEJUM','REAVALIAÇÃO SERIADA']})){ EST.sug.exp=1; }
-    if(EST.sug.exp) av.push(['s','Sugerido na conduta: VAT, ANTIBIOTICOTERAPIA, ORIENTO JEJUM e REAVALIAÇÃO SERIADA (dá para tirar no Condutas).']); }
+    if(!EST.sug.exp&&condutasAplicar({exposta:true})){ EST.sug.exp=1; }   // o Condutas marca a exposta: VAT, ATB, jejum, seriada, curativo e tala (REALIZADO)
+    if(EST.sug.exp) av.push(['s','Exposta marcada no Condutas: VAT, ANTIBIOTICOTERAPIA, ORIENTO JEJUM, REAVALIAÇÃO SERIADA e, em REALIZADO, curativo e tala (dá para tirar no Condutas).']); }
   else if(/FERIMENTO/.test(u)) av.push(['a','Ferimento no exame: há exposição? Se sim, marque "Exposição óssea" no Exame.']);
   EST.avisos=av;
 }
@@ -210,7 +210,7 @@ function juntar2(e,c){   // em tempo = evolução nova: só o que é deste momen
   var C=c?SOTFICHA.ler(c):{momentos:[]}, M=C.momentos, et=M.filter(function(x){return x.emTempo;});
   var base=et.length?et[0]:(M[0]||{resultados:[],outros:[],realizado:[],conduta:[]});
   var efNovo=e&&e!==EST.efBase?semGustilo(e):'';
-  var m={emTempo:true,resultados:base.resultados||[],reavaliacao:REAV[EST.reav]||'',ef:efNovo,outros:(base.outros||[]).concat(base.reavaliacao?[base.reavaliacao]:[]),
+  var m={emTempo:true,resultados:base.resultados||[],reavaliacao:base.reavaliacao||'',ef:efNovo,outros:base.outros||[],
     realizado:base.realizado||[],conduta:base.conduta||[],discutido:base.discutido,ass:base.ass};
   var vazio=!m.resultados.length&&!m.reavaliacao&&!m.ef&&!m.outros.length&&!m.realizado.length&&!m.conduta.length;
   if(vazio) return '';
@@ -262,7 +262,8 @@ $('#prox').addEventListener('click',function(){ var L=PASSOS[MOM].map(function(p
 $('#copiar').addEventListener('click',copiar);
 $('#ler').addEventListener('click',lerAnterior);
 $('#limparAnt').addEventListener('click',function(){ $('#anterior').value=''; $('#resumo').textContent=''; EST.ant=null; try{localStorage.removeItem('sot-atend-ant');}catch(e){} montar(); });
-$('#reav').addEventListener('click',function(ev){ var b=ev.target.closest('[data-r]'); if(!b) return; EST.reav=b.dataset.r; this.querySelectorAll('[data-r]').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); }); montar(); });
+$('#reav').addEventListener('click',function(ev){ var b=ev.target.closest('[data-r]'); if(!b) return; EST.reav=b.dataset.r; condutasAplicar({reav:EST.reav});   // a reavaliação mora no Condutas (v83): um lugar só
+  this.querySelectorAll('[data-r]').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); }); montar(); });
 $('#abre').addEventListener('click',function(){ var p=$('#painel'), on=!p.classList.contains('aberta'); p.classList.toggle('aberta',on); this.setAttribute('aria-expanded',String(on)); this.textContent=on?'▼ Ficha':'▲ Ficha'; });
 setInterval(montar,2000);   // garante a ficha em dia mesmo se algum programa mudar sem evento
 if(window.top!==window) document.querySelector('.top h1').hidden=true;   // dentro do app o título já está na barra de cima
