@@ -708,7 +708,7 @@ function avisosCoerencia(A){const cur=sel();const vis=new Set();
   if(['confuso','agitado','sonolento'].includes(S.nivel)&&S.inf!=='acomp'&&Object.keys(S.neg).length)A.push({t:`Atenção: relato de paciente ${S.nivel} (confiabilidade). Considere “Acompanhante refere” ou a fonte das informações.`,alvo:'#cFonte',am:1});
   if(S.gcs.trim()&&!gcsOk())A.push({t:`Glasgow “${S.gcs.trim()}” fora do padrão (3 a 15, com T se intubado). Ficou fora do texto.`,alvo:'#gcs'});
   if(S.mech.includes('queda de altura')&&+String(S.altura).replace(',','.')>20)A.push({t:`Atenção: queda de ${S.altura} m. Confira a altura.`,alvo:'#altura',am:1});
-  if(S.regime==='direta'&&!S.chamado)A.push({t:'Avaliação direta: falta o local do chamado (Sala Amarela ou Sala Vermelha).',alvo:'#cChamado'});
+  // v79: avaliação direta = paciente no PS da ortopedia; não exige sala
   if(S.acomp==='acomp'&&!S.acompQuem)A.push({t:'Acompanhante: falta escolher quem acompanha.',alvo:'#cQuem'});
   if((S.chamado==='Enfermaria')&&!S.equipe)A.push({t:'Interconsulta: falta a equipe solicitante.',alvo:'#cEquipe'});
   if(t&&t.k==='trauma'&&S.devido.trim()&&S.mech.length)A.push({t:`O texto escrito (“${S.devido.trim()}”) substitui o mecanismo marcado (${joinPt(S.mech)}).`,alvo:'#devido2',am:1});
@@ -775,7 +775,7 @@ function render(){
  }
  // chamado
  const c=$('#cChamado');c.innerHTML='';CHAMADO.forEach(([l,col])=>{const lab=[];if(col)lab.push(el('span',{class:'dot',style:`background:var(--${col})`}));lab.push(l);
-  c.append(chip(lab,S.chamado===l,()=>{S.chamado=S.chamado===l?'':l;if(['Sala Vermelha','Enfermaria','UTI'].includes(S.chamado))S.regime='inter';if(S.chamado==='Sala Vermelha')S.equipe='';renderAll();}));});
+  c.append(chip(lab,S.chamado===l,()=>{S.chamado=S.chamado===l?'':l;if(['Sala Amarela','Sala Vermelha','Enfermaria','UTI'].includes(S.chamado))S.regime='inter';if(S.chamado==='Sala Vermelha')S.equipe='';renderAll();}));});
  const intern=S.chamado==='Enfermaria'||S.chamado==='UTI';
  if(intern&&S.regime!=='inter')S.regime='inter';
  single('cRegime',[['direta','Avaliação direta'],['inter','Interconsulta']],'regime');
@@ -894,6 +894,7 @@ function outPS(){
  if(intern)P.push(S.equipe?`Sou chamado pela equipe de ${S.equipe} para avaliação ortopédica em regime de interconsulta.`:S.chamado==='UTI'?'Sou chamado pela equipe da UTI para avaliação ortopédica em regime de interconsulta.':'Sou chamado para avaliação ortopédica em regime de interconsulta.');
  else if(inter)P.push(S.chamado?`Sou chamado pela equipe da ${S.chamado} para avaliação ortopédica em regime de interconsulta.`:'Sou chamado para avaliação ortopédica em regime de interconsulta.');
  else if(S.chamado)P.push(`Avalio paciente a pedido da equipe da ${S.chamado}.`);
+ else P.push('Avalio paciente no PS Ortopedia.');   // v79: avaliação direta sem sala
  // frase A: quem é e de onde veio
  const p1=[];const cid=S.cidade.trim();
  if(cid)p1.push(`proveniente de ${cid}`);

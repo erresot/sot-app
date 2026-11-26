@@ -1,6 +1,11 @@
 # CHANGELOG — SOT APP
 
-## v78 (atual) — Internação pelo dia da cirurgia; exame sem ambiguidade
+## v79 (atual) — Anamnese: avaliação direta
+- Avaliação direta = paciente no PS da ortopedia: não exige mais a sala (saiu o aviso "falta o local do chamado") e, sem sala, o texto abre com "Avalio paciente no PS Ortopedia." (regra do usuário, 26/11/2026).
+- Sala Amarela passa a levar para interconsulta, como a Vermelha; dá para voltar para avaliação direta ("Avalio paciente a pedido da equipe da Sala Amarela.").
+- Teste novo `t_anam79`.
+
+## v78 — Internação pelo dia da cirurgia; exame sem ambiguidade
 - **Condutas · internação** (regras do serviço, 26/11/2026):
   - campo **Cirurgia** (nome) + Urgência + Data: "PROCEDIMENTO CIRÚRGICO (X) EM dd/mm/aaaa", "PROCEDIMENTO CIRÚRGICO DE URGÊNCIA (X)" (hoje) ou "… DE URGÊNCIA (X) EM dd/mm/aaaa"; sem nome = lacuna e "Falta preencher";
   - **hoje**: MANTER JEJUM + ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA HOJE); **amanhã**: JEJUM A PARTIR DAS 23H + … SUSPENSA (CIRURGIA AMANHÃ); **depois de amanhã ou mais**: … HOJE; SUSPENDER EM <véspera> (VÉSPERA DA CIRURGIA); sem data: como antes;
