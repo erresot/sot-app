@@ -292,20 +292,25 @@ const ASSIST=(window.SOTESCALA?window.SOTESCALA.pessoas():[]).map(p=>p.n.replace
 if(!window.SOTESCALA) console.warn('sot-escala.js não carregou: lista de assistentes vazia (o campo continua livre)');
 const MECS=[
  [/QUEDA D[AE] (?:SUA )?PROPRIA(?:\s+ALTURA)?|\bQPA\b/,'Queda Da Própria Altura'],
- [/QUEDA DE (\d+(?:[.,]\d+)?)\s*(?:M\b|METROS?)/,m=>'Queda De '+m[1]+' Metros'],
+ [/QUEDA DE ALTURA \(APROXIMADAMENTE (\d+(?:[.,]\d+)?) M\)/,m=>'Queda De '+m[1]+(/^1$/.test(m[1])?' Metro':' Metros')],   /* texto da Anamnese */
+ [/QUEDA DE (\d+(?:[.,]\d+)?)\s*(?:M\b|METROS?)/,m=>'Queda De '+m[1]+(/^1$/.test(m[1])?' Metro':' Metros')],
  [/QUEDA D[AEO] (TELHADO|ESCADA|ARVORE|ANDAIME|LAJE|CAMA|CADEIRA|MOTO|BICICLETA|CAVALO|MACA|MURO)/,m=>'Queda De '+cap(fixAcc(m[1].toLowerCase()))],
  [/CARRO X CARRO/,'Carro X Carro'],
  [/MOTO X CARRO|CARRO X MOTO/,'Moto X Carro'],
- [/ACIDENTE (?:DE|COM) (?:MOTO|MOTOCICLETA)|QUEDA DE MOTO/,'Acidente De Moto'],
+ [/ACIDENTE (?:DE|COM) (?:MOTO|MOTOCICLETA)|QUEDA DE MOTO|ACIDENTE MOTOCICLISTICO/,'Acidente De Moto'],
  [/ACIDENTE AUTOMOBILISTICO|ACIDENTE DE CARRO|COLISAO/,'Acidente Automobilístico'],
  [/ATROPELAMENTO/,'Atropelamento'],
  [/ACIDENTE DE BICICLETA|QUEDA DE BICICLETA/,'Queda De Bicicleta'],
  [/ARMA DE FOGO|\bPAF\b|\bFAF\b/,'Ferimento Por Arma De Fogo'],
+ [/ARMA BRANCA|\bFAB\b/,'Ferimento Por Arma Branca'],
+ [/MORDEDURA/,'Mordedura'],
  [/AGRESSAO/,'Agressão'],
  [/ESMAGAMENTO|PRENSAMENTO/,'Esmagamento'],
  [/MAQUITA/,'Trauma Com Maquita'],
  [/SERRA/,'Trauma Com Serra'],
  [/PREENSAO POR EQUINO|COICE|CAVALO/,'Trauma Por Equino'],
+ [/QUEDA DE ALTURA/,'Queda De Altura'],
+ [/TRAUMA ESPORTIVO/,'Trauma Esportivo'],
  [/ENTORSE/,'Entorse'],
  [/TRAUMA DIRETO/,'Trauma Direto'],
  [/ATRAUMATIC/,'Atraumático'],
@@ -389,6 +394,7 @@ function parse(raw){
   r.ap=ap;r.muc=muc;r.alergia=al;
 
   // Diagnósticos (fora da conduta)
+  const daAnamnese=/^\s*#\s*(PS|INTERCONSULTA) ORTOPEDIA\s*#/m.test(U);
   const preCD=cdI>0?cdI:U.length;
   const lines=txt.slice(0,preCD).split('\n');let off=0;const seen=new Set();
   // bloco "## INTERNAÇÃO ##" (evolução): linhas de PO e diagnósticos
@@ -418,7 +424,9 @@ function parse(raw){
     const LU=deacc(L).toUpperCase();
     const k=LU.search(/\b(FRATURA|FX|LUXACAO|FRATURA-LUXACAO|PSEUDOARTROSE|OSTEOMIELITE|ARTRITE SEPTICA|RUPTURA)\b/);
     const isHD=/^\s*(HD|HIPOTESE|DIAGNOSTICO)/.test(LU);
-    if(k>=0||isHD){
+    /* "Nega fratura prévia", "sem fratura": negado não é diagnóstico. A Anamnese do OrthoHub não escreve hipótese: dali só sai diagnóstico de linha HD */
+    const negado=k>=0&&/\b(NEGA|SEM|NAO|NENHUM[A]?|AUSENCIA DE|DESCARTAD[OA])\b[^.;]*$/.test(LU.slice(0,k).split(/[.;]/).pop()+' ');
+    if((k>=0&&!negado&&!daAnamnese)||isHD){
       let s=isHD&&k<0?L.replace(/^\s*[^:]*:\s*/,''):L.slice(k);
       s.split(/\s*\+\s*|,\s*(?=(?:fratura|fx|luxa))|\s+e\s+(?=(?:fratura|fx|luxa))/i).forEach(p=>{p=p.replace(/[.;:\s]+$/,'').trim();const key=deacc(p).toUpperCase();if(p.length>5&&!seen.has(key)&&!r.dx.some(d=>deacc(d.txt).toUpperCase().includes(key.replace(/^(FRATURA|FX)\s+DE\s+/,'')))){seen.add(key);r.dx.push({txt:fmtCase(fixAcc(p.toLowerCase()),'title'),data:''})}});
     }
@@ -487,7 +495,7 @@ function parse(raw){
     if(!r.nome&&f.nome)r.nome=f.nome; if(!r.reg&&f.prontuario)r.reg=f.prontuario; if(r.idadeTxt==null&&f.idade)r.idadeTxt=+f.idade;
     if(!r.ap||(/^NEGA\s+(COMORB|CMB)/i.test(r.ap)&&/\/|NEGA\s+(MUC|ALERG)/i.test(r.ap)))r.ap=f.cmb||r.ap;
     if(r.ap&&/,?\s*NEGA\s+ALERGIAS?\s*$/i.test(r.ap)){r.ap=r.ap.replace(/,?\s*NEGA\s+ALERGIAS?\s*$/i,'').trim();if(!r.alergia)r.alergia='NEGA'}
-    if(!r.muc&&f.muc)r.muc=f.muc; if(!r.alergia&&f.alergia)r.alergia=f.alergia;
+    if(!r.muc&&f.muc)r.muc=f.muc; if(!r.alergia&&f.alergia&&/ALERG/.test(U))r.alergia=f.alergia;   /* sem menção a alergia no texto: fica em branco, não "NEGA" */
     if(!r.dx.length&&f.dx)f.dx.split(' / ').forEach(t=>r.dx.push({txt:fmtCase(fixAcc(t.toLowerCase()),'title'),data:'',tipo:/^(\d+\s*(PO|DPO|POT|POI)\b|POT?\b|POI\b)/i.test(t)?'po':'dx'}));
   }catch(e){console.warn(e)}}
   // achados

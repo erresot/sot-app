@@ -9,6 +9,7 @@ Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o
 - **Folha de visita impressa:** impressão A4 com todo o internograma de cada paciente + leitura da foto + tela de revisão (testada com fotos simuladas).
 - **OrthoHub:** os 12 programas funcionando e em uso diário.
 - **Escala única** (`sot-escala.js`) lida por Condutas, Retornos, Novo Paciente e Pós-Op; retorno fora do dia com alerta.
+- **Anamnese, Exame Físico e Condutas novos (v77):** feitos em conversas à parte e integrados.
 - **Contagem do cabeçalho (v76):** regra do serviço (altas dentro do HC quando o cabeçalho não tem "N Altas"; RN conta; cada registro uma vez), igual no Atualizador e na conferência.
 - **Interface:** tema único, ícones, tela larga lado a lado, atalhos de teclado.
 - **Testes automatizados:** ~40 arquivos de teste.

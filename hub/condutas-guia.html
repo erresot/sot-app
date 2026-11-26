@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Condutas (PS) — como usar</title>
+<meta name="theme-color" content="#13365c">
+<style>
+:root{--bg:#edf1f6;--surface:#fff;--surface-2:#f4f7fb;--ink:#14243a;--muted:#5c6b7e;--line:#d9e1ea;--accent:#1f6fce;--accent-soft:#e6effb;--warn:#b4540f;--mark:#fff0b8;--mark-ink:#5a4300;
+  --f-body:"IBM Plex Sans","Barlow","Segoe UI",Roboto,Arial,sans-serif;--f-mono:"IBM Plex Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1520;--surface:#142030;--surface-2:#1a2738;--ink:#e3eaf3;--muted:#93a3b8;--line:#2a3a4f;--accent-soft:#16304f;--warn:#f0a060;--mark:#4a3b0e;--mark-ink:#ffe6a0;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.6 var(--f-body);padding:20px max(16px,env(safe-area-inset-left)) 64px}
+main{max-width:760px;margin:0 auto}
+a{color:var(--accent)}
+h1{font-size:26px;line-height:1.2;margin:4px 0 6px;font-weight:600}
+.lead{color:var(--muted);margin:0 0 18px}
+nav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 18px}
+nav b{font-size:14px}
+nav ol{margin:6px 0 0;padding-left:20px;columns:2;column-gap:24px;font-size:14.5px}
+@media (max-width:560px){nav ol{columns:1}}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px 6px;margin:0 0 14px}
+h2{font-size:19px;margin:0 0 8px;font-weight:600;scroll-margin-top:12px}
+h3{font-size:15.5px;margin:14px 0 4px;font-weight:600}
+p,li{max-width:68ch}
+ul,ol{padding-left:20px}
+li{margin:4px 0}
+.k{display:inline-block;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:0 9px;font-size:13.5px;white-space:nowrap}
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:12.5px/1.6 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 12px}
+mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:6px 0 12px}
+th,td{text-align:left;vertical-align:top;border-top:1px solid var(--line);padding:7px 8px}
+th{color:var(--muted);font-weight:500;font-size:13.5px;border-top:0}
+.nota{border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 8%,var(--surface));padding:8px 12px;border-radius:0 8px 8px 0;margin:10px 0 14px}
+.back{display:inline-block;margin-bottom:8px;font-size:14px}
+@media (max-width:560px){table,thead,tbody,tr,td,th{display:block;width:100%}tr{border-top:1px solid var(--line);padding:6px 0}tr:first-child:has(th){display:none}td{border:0;padding:2px 0}td:first-child{font-weight:600}}
+</style></head><body><main>
+<a class="back" href="condutas.html">← Voltar para Condutas</a>
+<h1>Condutas (PS) — como usar</h1>
+<p class="lead">Monta o texto do registro do pronto-socorro ortopédico no padrão do serviço. Você marca o que viu e fez; o app escreve, mostra o que falta e avisa incoerências. Nada do paciente é salvo — só o nome do assistente do plantão fica lembrado por 14 horas neste aparelho.</p>
+
+<nav><b>Nesta página</b><ol>
+<li><a href="#momento">Qual registro fazer</a></li>
+<li><a href="#regiao">Região</a></li>
+<li><a href="#exames">Exames e achados</a></li>
+<li><a href="#exposta">Fratura exposta e ferimentos</a></li>
+<li><a href="#procs">Procedimentos e imobilização</a></li>
+<li><a href="#inter">Conduta intermediária</a></li>
+<li><a href="#final">Conduta final</a></li>
+<li><a href="#coluna">Cuidados de coluna</a></li>
+<li><a href="#retorno">Retorno</a></li>
+<li><a href="#assinatura">Discussão e assinatura</a></li>
+<li><a href="#lacunas">Lacunas, "falta preencher" e avisos</a></li>
+<li><a href="#regras">Regras do serviço que o app já segue</a></li>
+<li><a href="#modelos">Modelos e atalhos</a></li>
+</ol></nav>
+
+<section id="momento"><h2>1. Qual registro fazer</h2>
+<p>Escolha no topo do formulário o momento do registro:</p>
+<table>
+<tr><th>Momento</th><th>Quando usar</th><th>Assinatura</th></tr>
+<tr><td><span class="k">Conduta inicial</span></td><td>Paciente chegou: o que você pede (RX, TC, USG, laboratório), medicação, VAT + antibiótico se exposta, jejum até decidir. Termina em "REAVALIAR APÓS".</td><td>Sem assinatura</td></tr>
+<tr><td><span class="k">Em tempo intermediário</span></td><td>Já viu algo, mas o atendimento continua: aguarda exame, interconsulta, reavaliação seriada, vaga via CROSS, serviço de origem ou UBS.</td><td>Sem assinatura</td></tr>
+<tr><td><span class="k">Em tempo final</span></td><td>Resultado + o que foi feito + conduta que fecha o atendimento (alta, retorno, internação ou internação por outra equipe).</td><td>Com assinatura</td></tr>
+<tr><td><span class="k">Completo</span></td><td>Plantão corrido: conduta inicial + em tempo final num texto só. O antibiótico sai uma vez, na parte inicial.</td><td>Assinatura uma vez, no fim</td></tr>
+</table>
+</section>
+
+<section id="regiao"><h2>2. Região</h2>
+<ul>
+<li>Toque no boneco 3D (arraste para girar; botões Anterior/Posterior) ou use a seleção manual (região + lado → <span class="k">+</span>). Pode marcar mais de uma.</li>
+<li>A região decide o que aparece: imobilizações, carga, luxações, tração, bloqueio digital e regras de decisão. Membro superior não oferece bota nem carga; coluna não oferece "elevação do membro".</li>
+<li>Se você trocar a região e algo escolhido deixar de combinar, o app <b>tira e avisa</b> embaixo da tela (ex.: "Removido: bota — não combina com a região").</li>
+<li><b>Paciente pediátrico</b>: muda antibiótico (dose em branco para calcular por peso), desliga a anticoagulação profilática e escreve "PACIENTE E RESPONSÁVEL (FAMILIAR / ACOMPANHANTE) CIENTES…". Libera também as características pediátricas da fratura.</li>
+</ul></section>
+
+<section id="exames"><h2>3. Exames e achados</h2>
+<p>O app abre <b>sem exame</b> — nem todo atendimento tem imagem. Adicione o que houver:</p>
+<h3>Radiografias</h3>
+<ul>
+<li>Escolha <span class="k">Sem fratura / luxação</span> ou <span class="k">Com achado</span>. Sem escolher, sai lacuna.</li>
+<li>Com achado, marque os achados de cada região. Sai achado + lado:</li>
+</ul>
+<pre>RADIOGRAFIAS COM EVIDÊNCIAS NÍTIDAS DE FRATURA DE RÁDIO DISTAL À ESQUERDA
+RADIOGRAFIAS SEM EVIDÊNCIAS NÍTIDAS DE FRATURAS OU LUXAÇÕES</pre>
+<ul>
+<li>Uma linha de RX junta todos os achados; por isso só dá para adicionar uma radiografia.</li>
+<li><b>Características da fratura</b> (desviada, cominutiva…) ficam recolhidas: geralmente não se escreve. Se usar, elas ficam presas à fratura escolhida e combinações sem sentido se excluem.</li>
+<li>Achados de material de síntese, perda de redução e corpo estranho ficam em "+ Material de síntese…" de cada região.</li>
+</ul>
+<h3>Laudos de TC, USG e RM</h3>
+<p>Local, data e o laudo colado:</p>
+<pre>TC DE OMBRO DIREITO 25/11/2026 LAUDO: FRATURA DO TUBÉRCULO MAIOR</pre>
+<p>Não existe "aguarda laudo" no resultado: o laudo é escrito quando sai. Enquanto isso, use "Aguardo laudo" na conduta intermediária. RM não aparece para solicitar no PS (só em internados), mas o laudo pode ser colado.</p>
+<h3>Outros</h3>
+<ul>
+<li><b>Quadro clínico</b> (sem achado de imagem): "QUADRO CLÍNICO COMPATÍVEL COM ENTORSE (TORNOZELO DIREITO)". Suspeitas saem como "SUSPEITA CLÍNICA DE FRATURA DE ESCAFOIDE (PUNHO DIREITO)".</li>
+<li><b>Regras de decisão</b> (Ottawa tornozelo/joelho, Canadian C-spine): só aparecem na região certa; Canadian some no pediátrico.</li>
+<li><b>Laboratório</b>: cole do sistema; o app formata em linha (mesmo motor do Exames Updater).</li>
+</ul></section>
+
+<section id="exposta"><h2>4. Fratura exposta e ferimentos</h2>
+<p>Marque <span class="k">Fratura exposta (exame físico)</span> e o Gustilo (provisório). O fluxo do serviço:</p>
+<ol>
+<li><b>Conduta inicial:</b> RX (± laboratório) + <code>EV EM PS: VAT + ANTIBIÓTICO</code> + curativo oclusivo + <code>JEJUM ATÉ DEFINIÇÃO DE CONDUTA</code>. Ferimento sem exposta: VAT e jejum aparecem desligados para marcar.</li>
+<li><b>Em tempo final:</b> RX + o que foi feito (limpeza, fechamento da ferida no PS) + a conduta: retorno com tala, ou internação.</li>
+</ol>
+<p>O antibiótico <b>não se repete</b> no em tempo: ele já foi na conduta inicial (fica desligado na lista, caso ainda não tenha sido prescrito). A sutura também não repete o VAT.</p>
+<table><tr><th>Gustilo</th><th>Antibiótico (padrão da equipe)</th></tr>
+<tr><td>I e II</td><td>VAT + CEFALOTINA 2 G 6/6H</td></tr>
+<tr><td>III (A, B, C)</td><td>VAT + GENTAMICINA 240 MG 1×/dia + CLINDAMICINA 600 MG 6/6H</td></tr>
+<tr><td>Pediátrico</td><td>mesmas drogas, dose em branco ("___ MG (DOSE POR PESO)")</td></tr></table>
+</section>
+
+<section id="procs"><h2>5. Procedimentos e imobilização</h2>
+<ul>
+<li>Toque em <span class="k">+ Redução de luxação</span>, <span class="k">+ Sutura de FCC</span> etc. Só os escolhidos abrem; o × tira.</li>
+<li>Campos obrigatórios têm um ponto laranja e ficam amarelos enquanto vazios. Números têm a unidade ao lado (mL, kg, horas) e abrem o teclado numérico.</li>
+<li><b>Luxação</b>: a articulação vem do achado marcado; sem achado correspondente fica em branco. Para luxações fora da lista (acromioclavicular, esternoclavicular…), use "OUTRA (ESCREVER)". Dedos já vêm com bloqueio digital.</li>
+<li><b>Redução de fratura</b>: bloqueio de hematoma só vem pronto em punho/antebraço. O controle pós-redução sai "AGUARDA" quando a conduta intermediária aguarda o RX pós-redução.</li>
+<li><b>Neurovascular pré/pós</b>: obrigatório em redução e tração; opcional (fácil de preencher, não cobra) em imobilização e ajuste de gesso.</li>
+<li><b>Amputação / regularização de coto</b>: VAT e antibioticoterapia já entram marcados no começo da conduta (no completo, na parte inicial).</li>
+<li><b>Punção</b>: artrocentese (articular) ou punção de coleção (abscesso, sobre material de síntese…), com local livre.</li>
+<li><b>Imobilização</b>: tipo conforme a região, duração e unidade (semanas, dias ou <b>até segunda ordem</b>). "Depois (sequência)" escreve "GESSO AXILOPALMAR 3 SEMANAS + TALA AXILOPALMAR 3 SEMANAS".</li>
+</ul></section>
+
+<section id="inter"><h2>6. Conduta intermediária</h2>
+<p>Escolha a situação e marque o que solicita e o que aguarda:</p>
+<table>
+<tr><th>Situação</th><th>Texto</th></tr>
+<tr><td>Aguardo exames / reavaliação</td><td>SOLICITO … / AGUARDO … / REAVALIAR APÓS. O que foi solicitado não repete como "aguardo" (SOLICITO TC já basta).</td></tr>
+<tr><td>Interconsulta</td><td>SOLICITO AVALIAÇÃO DA EQUIPE DE X (MOTIVO) + <br>"CONDUTA ORTOPÉDICA APÓS ESTABILIZAÇÃO CLÍNICA" (motivo clínico) ou "APÓS AVALIAÇÃO DA EQUIPE DE X" (outra especialidade). O app sugere pela equipe; dá para trocar.</td></tr>
+<tr><td>Reavaliação seriada</td><td>REAVALIAÇÃO SERIADA NO PS (± reavaliar em N horas) + neurovascular seriado + membro elevado</td></tr>
+<tr><td>Vaga via CROSS</td><td>SOLICITADA VAGA VIA CROSS PARA … / PACIENTE AGUARDA REGULAÇÃO NO PS</td></tr>
+<tr><td>Serviço de origem / UBS</td><td>CONTRARREFERÊNCIA… ou ENCAMINHO À UBS… / AGUARDO ACEITE E TRANSPORTE</td></tr>
+</table>
+<p class="nota">A interconsulta não fecha a ficha: quando a sua parte se resolve, faça o em tempo final.</p>
+</section>
+
+<section id="final"><h2>7. Conduta final</h2>
+<table>
+<tr><th>Desfecho</th><th>O que sai</th></tr>
+<tr><td>Alta</td><td>Analgesia, repouso, crioterapia, imobilização/carga se houver, orientações + sinais de alarme, retornar ao PS se necessário. <b>Sem retorno.</b></td></tr>
+<tr><td>Retorno em ambulatório</td><td>O mesmo + linha de retorno (dia da escala) + texto para o paciente.</td></tr>
+<tr><td>Internação hospitalar</td><td>Formato de sempre: CD discutida e orientada pelo ass., internação, procedimento (urgência ou data), pré-op, RCH, aviso CC, manter imobilização, carga, anticoagulação…</td></tr>
+<tr><td>Internação por outra equipe</td><td>PACIENTE INTERNADO PELA EQUIPE DE X + REAVALIAÇÃO ORTOPÉDICA MEDIANTE NOVA SOLICITAÇÃO DE INTERCONSULTA. Fecha a ficha do PS.</td></tr>
+</table>
+<p>Itens com padrão desligado aparecem em cinza: toque para incluir. "Adicionar linha" escreve qualquer coisa a mais (cada momento tem a sua).</p>
+<p>O que vai para o centro cirúrgico termina aqui em internação; o que vem depois do CC não é deste programa.</p>
+</section>
+
+<section id="coluna"><h2>8. Cuidados de coluna</h2>
+<p>Com região de coluna marcada, aparece o bloco <b>Cuidados de coluna</b> (em qualquer desfecho e no intermediário):</p>
+<ul>
+<li><span class="k">DDH + mov. em bloco até exames</span>, <span class="k">até segunda ordem</span> ou <span class="k">sem restrição</span>. Automático: aguardando/internando → até exames; saindo → sem restrição.</li>
+<li>Órtese (colar Philadelphia, colete Jewett, TLSO) fica em Imobilização.</li>
+<li>Exame neurológico seriado e "não sentar e não levantar" ficam disponíveis, desligados.</li>
+</ul></section>
+
+<section id="retorno"><h2>9. Retorno</h2>
+<ul>
+<li>O dia sai da escala do ambulatório: do <b>dono</b> do paciente, se informado; senão, do assistente do plantão (se ele atende em dois dias, escolha qual).</li>
+<li>"Mandar para o dia de uma equipe" envia ao dia da especialidade e escreve "(FORA DO DIA DO ASSISTENTE)" quando for o caso. No dia do dono, não escreve.</li>
+<li>"Daqui a N dias" acha o primeiro dia de ambulatório depois disso. O "Para" sugere sozinho (reavaliação, RX de controle, partes moles); "Mais motivos" tem o resto.</li>
+<li>Abaixo do prontuário sai o <b>texto para o paciente</b>, com dia, data e local, pronto para copiar.</li>
+</ul></section>
+
+<section id="assinatura"><h2>10. Discussão e assinatura</h2>
+<p>Só no em tempo final (e no fim do completo). Com "Incluir Discutido com", a data vem de hoje e pode ser trocada:</p>
+<pre>CD:
+DISCUTIDO COM DR AMILTON EM 24/11/2026
+- AINES + ANALGESIA VO CONFORME DOR
+- …
+- PACIENTE CIENTE DO QUADRO E SUAS POSSÍVEIS COMPLICAÇÕES
+
+ASS DR AMILTON</pre>
+<p>O assistente fica lembrado por 14 horas (o plantão), mesmo ao limpar o formulário.</p>
+</section>
+
+<section id="lacunas"><h2>11. Lacunas, "falta preencher" e avisos</h2>
+<ul>
+<li>Tudo o que o app não pode presumir sai como <mark>___</mark>, destacado em amarelo no texto.</li>
+<li><b>Falta preencher</b>, abaixo do prontuário: cada botão leva direto ao campo. Ao copiar, o app avisa quantas lacunas ficaram.</li>
+<li><b>Confira</b> (faixa laranja acima do texto): avisa, nunca bloqueia —
+  <ul>
+  <li>alta com fratura exposta, com suspeita de síndrome compartimental ou com neurovascular pós alterado;</li>
+  <li>luxação "redução obtida" com controle "incompleta"; redução sem sucesso sem internação;</li>
+  <li>ambulatório de especialidade fora do dia dele; retirada de pontos sem sutura; troca e retirada de imobilização juntas; data de cirurgia no passado.</li>
+  </ul></li>
+<li>No celular, a barra de baixo mostra lacunas e avisos, com <span class="k">Ver texto</span> e <span class="k">Copiar</span>.</li>
+</ul></section>
+
+<section id="regras"><h2>12. Regras do serviço que o app já segue</h2>
+<ul>
+<li>Antibiótico uma vez só no PS; VAT não se repete.</li>
+<li>Imobilização de membro inferior na saída → "ANTICOAGULAÇÃO PROFILÁTICA" (destacada). Pediátrico: desligada. Esparadrapagem e enfaixamento não contam.</li>
+<li>"Retornar ao PS se necessário" e sinais de alarme estão sempre na saída; com sutura, drenagem ou limpeza de ferida, entram os sinais de infecção.</li>
+<li>Texto padrão da sutura: LIMPEZA EXAUSTIVA DE FCC COM SF 0,9% + ASSEPSIA + ANTISSEPSIA + ANESTESIA COM LIDOCAÍNA S/V + SUTURA DE FCC COM NYLON 3,0.</li>
+<li>Números zero não entram no texto (viram lacuna); espaços repetidos são limpos.</li>
+<li>Nomes de assistente com "Dra" saem como DRA.</li>
+</ul></section>
+
+<section id="modelos"><h2>13. Modelos e atalhos</h2>
+<ul>
+<li>A linha <b>Modelos</b> (role para o lado) preenche casos comuns: solicitar RX, completo, em tempo intermediário, sem fratura, escafoide, fratura MMSS, luxação de ombro, redução + gesso, sutura, exposta, internação, coluna. <span class="k">Limpar</span> zera o paciente e mantém o assistente.</li>
+<li>Opções do texto abaixo do prontuário: hífen nos itens e separadores "---".</li>
+<li>Funciona no claro e no escuro, no celular e no computador.</li>
+</ul></section>
+</main></body></html>

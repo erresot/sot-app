@@ -61,6 +61,23 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 .chip.n{background:var(--neg-soft);border-color:transparent;color:var(--neg)}
 .chip.p{background:var(--pos-soft);border-color:var(--pos);color:var(--pos);font-weight:600}
 .chip.off{color:var(--muted);border-style:dashed}
+.chip.sug{border-color:var(--accent);border-style:dashed;color:var(--ink)}
+.chip.sug::after{content:'sugerido';font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-left:2px}
+.chip.dis{opacity:.45;cursor:not-allowed}
+.rmx{border:0;background:transparent;color:var(--muted);font-size:.9rem;padding:0 6px 0 0;margin-left:-4px;cursor:pointer;min-height:32px}
+.nota{color:var(--muted);font-size:.8rem;margin:0}
+/* v75: pinta no campo que precisa de ação (vermelha = falta/erro; amarela = atenção) */
+.field.falta>.lbl::before,.field.falta>label::before,.field.atenc>.lbl::before,.field.atenc>label::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--vermelha)}
+.field.atenc>.lbl::before,.field.atenc>label::before{background:var(--amarela)}
+.field.falta input,.field.falta textarea{border-color:var(--vermelha);box-shadow:0 0 0 1px var(--vermelha)}
+.sec.falta>h2::before,.sec.atenc>h2::before{content:'';display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px;background:var(--vermelha)}
+.sec.atenc:not(.falta)>h2::before{background:var(--amarela)}
+.sec.falta>h2,.sec.atenc>h2{justify-content:flex-start}
+.sec.falta textarea#obs{border-color:var(--vermelha)}
+.aviso.ir{cursor:pointer}.aviso.ir::after{content:'ir ao campo ›';margin-left:auto;font-size:.75rem;font-weight:600;white-space:nowrap;opacity:.9}
+.aviso.am{background:#FBF3D6;color:#7A5A00;border-color:var(--amarela)}
+@media (prefers-color-scheme:dark){.aviso.am{background:#3A3115;color:#F2D27A}}
+:root[data-theme=dark] .aviso.am{background:#3A3115;color:#F2D27A}:root[data-theme=light] .aviso.am{background:#FBF3D6;color:#7A5A00}
 .chip .tag{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
 .add{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.86rem;width:130px}
 .tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -97,6 +114,11 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 .bar .primary{flex:1}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;z-index:30}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.avisos{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}.avisos[hidden]{display:none}
+.aviso{background:var(--pos-soft);color:var(--pos);border:1px solid var(--pos);border-radius:8px;padding:6px 10px;font-size:.82rem;line-height:1.35;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.aviso button,.retoma button{font:inherit;font-size:.8rem;padding:6px 12px;min-height:36px;border-radius:7px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
+.refln{color:var(--muted);font-size:.76rem;line-height:1.35}
+.retoma{background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}.retoma[hidden]{display:none}.retoma .row{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 
 <header class="top">
@@ -112,6 +134,11 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 
 <main class="wrap">
   <div class="form">
+    <div class="retoma" id="retoma" role="alert" hidden></div>
+    <section class="sec">
+      <h2>Paciente</h2>
+      <div class="field"><span class="lbl">Sexo <small>(ajusta a concordância do texto)</small></span><div class="chips" id="cSexo"></div></div>
+    </section>
     <!-- ================= PS ================= -->
     <section class="sec" data-m="ps">
       <h2>Chamado e origem</h2>
@@ -176,13 +203,13 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
       <div class="chips" id="eSit"></div>
       <div class="row">
         <div class="field" style="flex:2 1 220px"><label for="eproc" id="eprocLbl">Procedimento</label><input type="text" id="eproc" data-k="enf.eproc" placeholder="ex.: artroplastia parcial de quadril" autocomplete="off"></div>
-        <div class="field" style="flex:0 1 130px"><label for="enfN" id="enfNLbl">DPO</label><input type="number" id="enfN" data-k="enf.n" inputmode="numeric" min="0"></div>
+        <div class="field" style="flex:0 1 130px"><label for="enfN" id="enfNLbl">PO (0 = POI)</label><input type="number" id="enfN" data-k="enf.n" inputmode="numeric" min="0"></div>
       </div>
       <div class="field"><label for="diag">Diagnóstico</label><input type="text" id="diag" data-k="enf.diag" placeholder="ex.: fratura de colo de fêmur esquerdo" autocomplete="off"></div>
     </section>
 
     <section class="sec" data-m="enf" hidden>
-      <h2>Evolução <small>já vem no padrão; toque para mudar</small></h2>
+      <h2>Evolução <small>toque só no que avaliou</small> <button type="button" class="ghost" id="enfNormal" style="padding:3px 10px;font-size:.78rem;text-transform:none;letter-spacing:0">Avaliei: sem alterações</button></h2>
       <div class="grid">
         <div class="field"><span class="lbl">Posição</span><div class="chips" id="eDecub"></div></div>
         <div class="field"><span class="lbl">Diurese</span><div class="chips" id="eDiur"></div></div>
@@ -202,7 +229,7 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
         <div class="field"><span class="lbl">Dor · intensidade</span><div class="chips" id="eDorI"></div></div>
         <div class="field"><span class="lbl">Dor · piora à</span><div class="chips" id="eDorF"></div></div>
       </div>
-      <p class="empty" style="margin:0">O local da dor vem do mapa abaixo; sem região marcada, sai “no membro”.</p>
+      <p class="empty" style="margin:0">O local da dor vem do mapa abaixo; sem região marcada, o texto não cita o local.</p>
       <div class="grid">
         <div class="field"><span class="lbl">Controles da enfermagem</span><div class="chips" id="eCtrl"></div>
           <div id="tmaxWrap" hidden style="max-width:150px"><input type="text" id="tmax" data-k="enf.tmax" inputmode="decimal" placeholder="T máx (°C)" aria-label="Temperatura máxima"></div></div>
@@ -233,6 +260,7 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 
     <section class="sec" id="secDor" data-m="ps" hidden>
       <h2>Dor</h2>
+      <p class="nota" id="dorNota" hidden>Paciente sem condições de referir (torporoso, sedado ou em IOT): a dor relatada não entra no texto.</p>
       <div class="field"><span class="lbl">Intensidade (EVA)</span><div class="chips" id="cEva"></div></div>
       <div class="field"><span class="lbl">Características</span><div class="chips" id="cCar"></div></div>
       <div class="field"><span class="lbl">Irradiação</span><div class="chips" id="cIrr"></div></div>
@@ -243,11 +271,12 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 
     <section class="sec" id="secSym" data-m="ps" hidden>
       <h2 id="symTitle">Outros sinais e sintomas</h2>
+      <p class="nota" id="symNota">Tracejado = típico do modelo, só como lembrete: só entra no texto o que você marcar.</p>
       <div class="chips" id="cSym"></div>
     </section>
 
     <section class="sec" id="secNeg" data-m="ps" hidden>
-      <h2>Interrogatório <small>toque: nega → refere → omitir</small></h2>
+      <h2>Interrogatório <small>toque: nega → refere → omitir · tracejado = sugerido, não entra no texto</small> <button type="button" class="ghost" id="negaNeg" style="padding:3px 10px;font-size:.78rem;text-transform:none;letter-spacing:0">Perguntei: nega os não marcados</button></h2>
       <div class="chips" id="cNeg"></div>
     </section>
 
@@ -289,6 +318,7 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
         <h2>Texto para o prontuário</h2>
         <button type="button" class="chip" id="capsBtn" aria-pressed="false">CAIXA ALTA</button>
       </div>
+      <div class="avisos" id="avisos" hidden></div>
       <textarea id="outTxt" readonly aria-label="Texto da anamnese" placeholder="O texto aparece aqui conforme você preenche."></textarea>
       <button class="primary" id="copyBtn" type="button">Copiar texto</button>
     </div>
@@ -315,7 +345,8 @@ const hh=t=>{if(!t)return '';const[h,m]=t.split(':');return `${parseInt(h,10)}h$
 /* ---------- vocabulário PS ---------- */
 const CHAMADO=[['Sala Amarela','amarela'],['Sala Vermelha','vermelha'],['Enfermaria',''],['UTI','']];
 const ORIGEM=[['cross','CROSS','encaminhado via CROSS'],['esp','Demanda espontânea','por demanda espontânea'],['samu','SAMU','trazido pelo SAMU'],['resg','Resgate / Bombeiros','trazido pelo Resgate'],['transf','Transferência','transferido de outro serviço'],['int','Já internado','internado neste serviço']];
-const QUEM=[['da mãe','Mãe'],['do pai','Pai'],['do(a) filho(a)','Filho(a)'],['do(a) cônjuge','Cônjuge'],['do(a) irmão(ã)','Irmão(ã)'],['do(a) cuidador(a)','Cuidador(a)'],['de familiar','Familiar'],['da equipe do resgate','Resgate']];
+const QUEM=[['da mãe','Mãe'],['do pai','Pai'],['do filho','Filho'],['da filha','Filha'],['do esposo','Esposo'],['da esposa','Esposa'],['do irmão','Irmão'],['da irmã','Irmã'],['do cuidador','Cuidador'],['da cuidadora','Cuidadora'],['de familiar','Familiar'],['da equipe do resgate','Resgate']];
+const QUEM_ANTIGO={'do(a) filho(a)':1,'do(a) cônjuge':1,'do(a) irmão(ã)':1,'do(a) cuidador(a)':1};
 const MECH=['queda da própria altura','queda de altura','acidente motociclístico','acidente automobilístico','atropelamento','acidente de bicicleta','trauma esportivo','acidente de trabalho','agressão física','esmagamento','ferimento por arma de fogo','ferimento por arma branca','mordedura'];
 const TIPO=['trauma direto','entorse','torção','queda sobre a mão espalmada','hiperextensão','trauma indireto','trauma axial'];
 const DATAOPT=[['hoje','Hoje'],['ontem','Ontem'],['dias','Há N dias'],['data','Outra data']];
@@ -334,23 +365,24 @@ const NEG={febre:'febre',calafrios:'calafrios',tce:'trauma cranioencefálico (TC
  sangr:'sangramento ativo',dpior:'piora progressiva da dor',atb:'uso de antibiótico após a alta',frat:'fratura prévia no local',
  outrostraumas:'outros traumas associados',demais:'demais queixas no momento'};
 
-const SYM_TR=['edema','equimose','deformidade','redução da amplitude de movimento','impotência funcional','incapacidade de carga','crepitação','parestesia','ferida no local'];
+const SYM_TR=['dor','edema','equimose','deformidade','redução da amplitude de movimento','impotência funcional','incapacidade de carga','crepitação','parestesia','ferida no local'];
 const SYM_ART=['edema','calor local','hiperemia','derrame articular','redução da amplitude de movimento','incapacidade de carga'];
-const SYM_PO=['saída de secreção','hiperemia','edema','calor local','dor','deiscência de ferida','flutuação','odor fétido'];
+const SYM_PO=['saída de secreção','hiperemia','edema','calor local','dor','deiscência','flutuação','odor fétido'];
 const SYM_COL=['parestesia','perda de força','claudicação neurogênica','espasmo muscular','rigidez matinal'];
 const SYM_ACH=['dor','dor noturna','dor à carga','claudicação','incapacidade de carga','aumento de volume local'];
 const NEG_TR=['tce','pc','vomito','convulsoes','rnc','fs','sela','incont','dtorac','dabd','febre','outrostraumas','demais'];
 const NEG_TR_D=['tce','pc','vomito','convulsoes','outrostraumas','demais'];
 
 const EX={
- deamb:{l:'Marcha',o:[['Deambula','Deambula sem auxílio.'],['Com dificuldade','Deambula com dificuldade.'],['Não deambula','Não deambula desde o ocorrido.'],['Em maca','Admitido em maca.']]},
+ deamb:{l:'Marcha / chegada',o:[['Deambula','Deambula sem auxílio.'],['Com dificuldade','Deambula com dificuldade.'],['Não deambula','Não deambula desde o ocorrido.'],['Em maca','Admitido em maca.']]},
+ deamb2:{l:'Marcha / chegada',o:[['Deambula','Deambula sem auxílio.'],['Com dificuldade','Deambula com dificuldade.'],['Não deambula','Não deambula.'],['Em maca','Admitido em maca.']]},
  dom:{l:'Membro dominante',o:[['Destro','Destro.'],['Canhoto','Canhoto.']]},
  ferida:{l:'Ferida',o:[['Sem ferida','Sem ferimentos associados.'],['Escoriação','Escoriação em topografia do trauma.'],['Corto-contusa','Ferida corto-contusa em topografia do trauma.'],['Exposição óssea','Ferida com exposição óssea.']]},
  tetano:{l:'Antitetânica',o:[['Em dia','Vacina antitetânica em dia.'],['Desatualizada','Vacina antitetânica desatualizada.'],['Desconhecida','Desconhece situação vacinal antitetânica.']]},
  jejum:{l:'Jejum desde',type:'text',ph:'ex.: 08h',t:'Jejum desde {v}.'},
  ep:{l:'Episódios',o:[['1º episódio','Primeiro episódio de luxação.'],['Recidivante','Luxação recidivante, com episódios prévios.']]},
  redTent:{l:'Redução prévia',o:[['Não tentada','Sem tentativa prévia de redução.'],['Tentada, sem sucesso','Tentativa prévia de redução na origem, sem sucesso.'],['Reduzida na origem','Luxação reduzida na origem.']]},
- atls:{l:'Admissão',multi:true,o:[['ATLS na Sala Vermelha','Avaliado inicialmente pela equipe da Sala Vermelha conforme protocolo ATLS.'],['Pan-TC realizada','Submetido a tomografia de corpo inteiro (pan-TC).'],['FAST negativo','FAST negativo.'],['FAST positivo','FAST positivo.']]},
+ atls:{l:'Admissão',multi:true,o:[['ATLS na admissão','Avaliado inicialmente conforme protocolo ATLS.'],['Pan-TC realizada','Submetido a tomografia de corpo inteiro (pan-TC).'],['FAST negativo','FAST negativo.'],['FAST positivo','FAST positivo.']]},
  secrecao:{l:'Aspecto da secreção',o:[['Serosa','Secreção de aspecto seroso.'],['Sero-hemática','Secreção de aspecto sero-hemático.'],['Seropurulenta','Secreção de aspecto seropurulento.'],['Purulenta','Secreção de aspecto purulento.']]}
 };
 
@@ -358,17 +390,17 @@ const TPL=[
  {id:'trauma',l:'Trauma / entorse',s:'Contusão, entorse, partes moles',k:'trauma',sym:SYM_TR,symD:['edema','redução da amplitude de movimento'],neg:NEG_TR,negD:NEG_TR_D,ex:['deamb','dom','ferida','tetano']},
  {id:'fratura',l:'Suspeita de fratura',s:'Dor, deformidade, impotência',k:'trauma',sym:SYM_TR,symD:['edema','deformidade','impotência funcional'],neg:NEG_TR,negD:NEG_TR_D,ex:['ferida','tetano','dom','deamb']},
  {id:'luxacao',l:'Luxação',s:'Ombro, cotovelo, quadril, dedos',k:'trauma',sym:SYM_TR,symD:['deformidade','impotência funcional'],neg:NEG_TR,negD:NEG_TR_D,ex:['ep','redTent','dom']},
- {id:'poli',l:'Politrauma',s:'Sala vermelha, alta energia',k:'trauma',sym:SYM_TR,symD:['deformidade'],neg:NEG_TR.concat(['cervical','dispneia']),negD:['tce','pc','vomito','convulsoes','dtorac','dabd','fs','demais'],ex:['atls','ferida','tetano']},
+ {id:'poli',l:'Politrauma',s:'Alta energia, múltiplas lesões',k:'trauma',sym:SYM_TR,symD:['deformidade'],neg:NEG_TR.concat(['cervical','dispneia']),negD:['tce','pc','vomito','convulsoes','dtorac','dabd','fs','demais'],ex:['atls','ferida','tetano']},
  {id:'coluna',l:'Lombalgia / coluna',s:'Bandeiras vermelhas',k:'clin',sym:SYM_COL,symD:[],topoD:['lomb|'],
-  neg:['trauma','febre','peso','neo','noturna','sela','fs','incont','drogasev','imuno','cortic','demais'],negD:['trauma','febre','peso','neo','sela','fs','incont','demais'],ex:['deamb']},
+  neg:['trauma','febre','peso','neo','noturna','sela','fs','incont','drogasev','imuno','cortic','demais'],negD:['trauma','febre','peso','neo','sela','fs','incont','demais'],ex:['deamb2']},
  {id:'posop',l:'Ferida operatória',s:'Secreção, hiperemia, deiscência',k:'posop',sym:SYM_PO,symD:['saída de secreção','hiperemia'],
-  neg:['febre','calafrios','trauma','sangr','dpior','atb','demais'],negD:['febre','calafrios','trauma','demais'],ex:['secrecao','deamb']},
+  neg:['febre','calafrios','trauma','sangr','dpior','atb','demais'],negD:['febre','calafrios','trauma','demais'],ex:['secrecao','deamb2']},
  {id:'artrite',l:'Artrite séptica',s:'Monoartrite aguda',k:'clin',sym:SYM_ART,symD:['edema','calor local','hiperemia'],
-  neg:['febre','calafrios','trauma','proc','infec','imuno','cortic','drogasev','protese','ep','poli','demais'],negD:['febre','calafrios','trauma','proc','infec','imuno','ep','demais'],ex:['deamb']},
+  neg:['febre','calafrios','trauma','proc','infec','imuno','cortic','drogasev','protese','ep','poli','demais'],negD:['febre','calafrios','trauma','proc','infec','imuno','ep','demais'],ex:['deamb2']},
  {id:'gota',l:'Gota / cristais',s:'Crise articular aguda',k:'clin',sym:SYM_ART,symD:['edema','calor local','hiperemia'],
-  neg:['febre','calafrios','trauma','ep','diur','alcool','purina','poli','demais'],negD:['febre','trauma','ep','demais'],ex:['deamb']},
+  neg:['febre','calafrios','trauma','ep','diur','alcool','purina','poli','demais'],negD:['febre','trauma','ep','demais'],ex:['deamb2']},
  {id:'achado',l:'Lesão óssea / achado',s:'Metástase, lesão lítica',k:'achado',sym:SYM_ACH,symD:[],
-  neg:['trauma','febre','peso','frat','fs','sela','incont','demais'],negD:['trauma','fs','demais'],ex:['deamb']}
+  neg:['trauma','febre','peso','frat','fs','sela','incont','demais'],negD:['trauma','fs','demais'],ex:['deamb2']}
 ];
 const tplById=id=>TPL.find(t=>t.id===id);
 const EQUIPES=['Clínica Médica','Cirurgia Geral','Emergência','Neurocirurgia','Neurologia','Urologia','Oncologia','Cardiologia','Geriatria','Pediatria'];
@@ -378,7 +410,8 @@ const APAR_F=/^(tala|talafix|bota|tipoia|prancha|tração)/;
 const APAR_ORIG=[['na origem','Na origem'],['pelo resgate','Pelo resgate'],['neste serviço','Neste serviço']];
 const NIVEL=[['consciente e orientado','Consciente e orientado'],['confuso','Confuso'],['sonolento','Sonolento'],['agitado','Agitado'],['torporoso','Torporoso'],['sedado','Sedado']];
 const SUP=[['em IOT sob ventilação mecânica','IOT / VM'],['traqueostomizado','TQT'],['em O2 suplementar por cateter nasal','O₂ cateter'],['em O2 por máscara','Máscara O₂'],['em uso de noradrenalina','Noradrenalina'],['em uso de droga vasoativa','Outra DVA'],['em sedação contínua','Sedação contínua'],['com sonda vesical de demora','SVD'],['com sonda nasoenteral','SNE / SNG'],['hemodinamicamente estável','Estável HD'],['hemodinamicamente instável','Instável HD']];
-const FONTE=['equipe assistente','acompanhante','prontuário','equipe do resgate'];
+const FONTE=['equipe assistente','acompanhante','prontuário','equipe do SAMU','equipe do resgate'];
+const FONTE_ART={'equipe assistente':'a equipe assistente','acompanhante':'o acompanhante','prontuário':'o prontuário','equipe do SAMU':'a equipe do SAMU','equipe do resgate':'a equipe do resgate'};
 
 /* regiões */
 const REG_L=[['ombro','ombro',0],['clavicula','clavícula',1],['escapula','escápula',1],['braco','braço',0],['cotovelo','cotovelo',0],['antebraco','antebraço',0],['punho','punho',0],['mao','mão',1],['dedosmao','dedos da mão',1],
@@ -425,13 +458,289 @@ function fresh(mode){return {mode:mode||'ps',tpl:'',chamado:'',regime:'',equipe:
  mech:[],tipo:[],altura:'',data:'',dias:'',dataX:'',hora:'',apos:[],proc:'',dataCir:'',localCir:'',achado:'',exame:'',
  topo:[],lado:'D',sym:[],eva:'',car:[],irr:'',irrPara:'',piora:[],melhora:[],neg:{},ex:{},
  aparato:[],aparOrig:'',nivel:'',gcs:'',suporte:[],fonte:[],hist:{comorb:[],muc:[],alerg:[],intern:[],hv:[]},obs:'',jejumH:'',jejumD:'',
- enf:mode==='enf'?ENF_DEF():ENF_EMPTY(),custom:{}};}
+ enf:ENF_EMPTY(),custom:{},ref:0,mod:0,sexo:'',share:{}};}
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
-if(S&&S.mode){const f=fresh(S.mode);S=Object.assign(f,S);S.hist=Object.assign(f.hist,S.hist);S.enf=Object.assign(ENF_EMPTY(),S.enf);}else S=fresh('ps');
+if(S&&S.mode){const f=fresh(S.mode);S=Object.assign(f,S);S.hist=Object.assign(f.hist,S.hist);S.enf=Object.assign(ENF_EMPTY(),S.enf);
+ S.sym=S.sym.map(x=>x==='deiscência de ferida'?'deiscência':x);if(S.ex&&Array.isArray(S.ex.atls))S.ex.atls=S.ex.atls.map(x=>x==='ATLS na Sala Vermelha'?'ATLS na admissão':x);if(QUEM_ANTIGO[S.acompQuem])S.acompQuem='';}else S=fresh('ps');
 let caps=true;try{const c=localStorage.getItem(CAPS);if(c!==null)caps=c==='1';}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+/* v74 (fragmento): as datas do texto valem para o MOMENTO DO ATENDIMENTO (S.ref = 1º toque), não para a hora em que a tela abre */
+const refMs=()=>S.ref||Date.now();const refD=(dd=0)=>new Date(refMs()-dd*864e5);
+const isoDe=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const futuro=iso=>!!iso&&iso>isoDe(refD());
+const minDe=t=>{if(!t)return -1;const[h,m]=t.split(':');return (+h)*60+(+m||0);};
+const minRef=()=>{const d=refD();return d.getHours()*60+d.getMinutes();};
+const horaFut=(t,dia)=>dia==='hoje'&&minDe(t)>minRef()+10;   // tolerância de 10 min
+const diasOk=()=>{const v=String(S.dias||'').trim();return /^\d+$/.test(v)&&+v>=1?+v:0;};
 const getP=p=>p.split('.').reduce((o,k)=>o==null?o:o[k],S);
 const setP=(p,v)=>{const ks=p.split('.');let o=S;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=v;};
+
+/* ---------- coerência (v75, fragmento) ----------
+   Cada opção marcada vira um id ("reg:joelho", "mech:mordedura", "neg:tce=n", "e:resp=vm"…).
+   A cada toque, o que acabou de ser marcado é cruzado com o que já estava:
+   - IMPOSSÍVEL (X): a opção antiga é desmarcada e um aviso diz qual e por quê;
+   - IMPROVÁVEL (A): nada é desmarcado; aparece um aviso acima do texto.
+   As regras são as do relatório "Cruzamento completo". */
+const RG={ombro:['MS',1],clavicula:['MS',.5],escapula:['MS',0],braco:['MS',0],cotovelo:['MS',1],antebraco:['MS',0],punho:['MS',1],mao:['MS',1],dedosmao:['MS',1],
+ quadril:['MI',1],coxa:['MI',0],joelho:['MI',1],perna:['MI',0],tornozelo:['MI',1],pe:['MI',1],halux:['MI',1],dedospe:['MI',1],
+ cranio:['AXC',0],face:['AXC',0],cerv:['COL',1],torac:['COL',.5],lomb:['COL',1],sacro:['AX',.5],pelve:['AX',.5],torax:['TR',0],abd:['TR',0]};
+const AP_SEG={'tala gessada':'M','talafix':'M','tala metálica':'M','gesso circular':'M','bota gessada':'MI','tipoia':'MS','imobilizador de ombro':'MS','imobilizador de joelho':'MI',
+ 'bota ortopédica':'MI','colar cervical':'*','prancha rígida':'*','enfaixamento com ataduras':'*','curativo compressivo':'*','fixador externo':'MP','tração esquelética':'MIC','tração cutânea':'MI','torniquete':'M'};
+function segOk(sg,r){const s=(RG[r]||[''])[0];return sg==='*'||(sg==='M'&&(s==='MS'||s==='MI'))||(sg==='MP'&&(s==='MS'||s==='MI'||r==='pelve'))||(sg==='MS'&&s==='MS')||(sg==='MI'&&s==='MI')||(sg==='MIC'&&(s==='MI'||r==='pelve'||r==='cerv'));}
+const SEM_CARGA=['bota gessada','tração esquelética','tração cutânea','prancha rígida','fixador externo'];
+const SO_HOSP=['fixador externo','tração esquelética','tração cutânea','gesso circular','bota gessada'];
+const PENETR=['ferimento por arma de fogo','ferimento por arma branca','mordedura'];
+const VEIC=['acidente motociclístico','acidente automobilístico','atropelamento','acidente de bicicleta'];
+const FOOSH_OK=['queda da própria altura','queda de altura','acidente de bicicleta','trauma esportivo','acidente motociclístico','acidente de trabalho','agressão física'];
+const ANTICOAG=['varfarina','rivaroxabana','apixabana'];
+const SEMFALA_N=['torporoso','sedado'],SEMFALA_S=['em IOT sob ventilação mecânica','em sedação contínua'];
+function semFala(){return SEMFALA_N.includes(S.nivel)||S.suporte.some(x=>SEMFALA_S.includes(x));}
+const gcsOk=()=>/^(3|4|5|6|7|8|9|1[0-5])T?$/i.test(S.gcs.trim());
+
+/* opções marcadas → ids */
+function sel(){const L=[];const enf=S.mode==='enf';
+ S.topo.forEach(k=>L.push('reg:'+k.split('|')[0]));
+ S.aparato.forEach(a=>L.push('apar:'+a));if(S.aparOrig&&S.aparato.length)L.push('aorig:'+S.aparOrig);
+ if(!enf){if(S.tpl)L.push('modelo:'+S.tpl);if(S.chamado)L.push('ch:'+S.chamado);if(S.regime)L.push('regime:'+S.regime);if(S.origem)L.push('orig:'+S.origem);
+  if(S.acomp)L.push('acomp:'+S.acomp);if(S.acomp==='acomp'&&S.acompQuem)L.push('quem:'+S.acompQuem);if(S.acomp==='acomp'&&S.inf==='acomp')L.push('inf:acomp');
+  const t=S.tpl?tplById(S.tpl):null;
+  if(t&&t.k==='trauma'){S.mech.forEach(m=>L.push('mech:'+m));S.tipo.forEach(x=>L.push('tipo:'+x));}
+  if(t){S.sym.forEach(x=>L.push('sym:'+x));if(t.k!=='trauma'&&t.k!=='posop')S.apos.forEach(a=>L.push('apos:'+a));
+   if(S.eva!=='')L.push(S.eva==='0'?'eva:0':'eva:alta');S.car.forEach(x=>L.push('car:'+x));S.piora.forEach(x=>L.push('piora:'+x));S.melhora.forEach(x=>L.push('melh:'+x));if(S.irr==='com')L.push('irr:com');
+   Object.keys(S.neg).forEach(k=>L.push(`neg:${k}=${S.neg[k]}`));
+   t.ex.forEach(id=>{const v=S.ex[id];if(Array.isArray(v))v.forEach(l=>L.push(`ex:${id}=${l}`));else if(v)L.push(`ex:${id}=${v}`);});}
+  if(S.nivel)L.push('nivel:'+S.nivel);S.suporte.forEach(x=>L.push('sup:'+x));S.fonte.forEach(x=>L.push('fonte:'+x));
+  Object.keys(S.hist).forEach(k=>S.hist[k].forEach(o=>L.push(k+':'+o)));}
+ else{const e=S.enf;['sit','decub','diur','evac','consc','resp','sono','dieta','hd','perf','cur','dorT','dorI'].forEach(k=>{if(e[k])L.push(`e:${k}=${e[k]}`);});
+  e.dorF.forEach(v=>L.push('e:dorF='+v));e.ctrl.forEach(v=>L.push('e:ctrl='+v));e.fecha.forEach(v=>L.push('e:fecha='+v));if(e.analg==='1')L.push('e:analg=1');
+  const n=String(e.n||'').trim();if(/^\d+$/.test(n))L.push('e:n='+(+n===0?'0':'n'));}
+ return L;}
+function remover(id){const i=id.indexOf(':'),g=id.slice(0,i),r=id.slice(i+1);const tira=(a,v)=>{const k=a.indexOf(v);if(k>=0)a.splice(k,1);};
+ switch(g){
+  case 'reg':S.topo=S.topo.filter(k=>k.split('|')[0]!==r);break;
+  case 'apar':tira(S.aparato,r);break;case 'aorig':S.aparOrig='';break;
+  case 'mech':tira(S.mech,r);break;case 'tipo':tira(S.tipo,r);break;case 'sym':tira(S.sym,r);break;case 'apos':tira(S.apos,r);break;
+  case 'eva':S.eva='';break;case 'car':tira(S.car,r);break;case 'piora':tira(S.piora,r);break;case 'melh':tira(S.melhora,r);break;case 'irr':S.irr='';break;
+  case 'neg':delete S.neg[r.split('=')[0]];break;
+  case 'ex':{const k=r.slice(0,r.indexOf('=')),l=r.slice(r.indexOf('=')+1);if(Array.isArray(S.ex[k]))tira(S.ex[k],l);else S.ex[k]='';break;}
+  case 'nivel':S.nivel='';break;case 'sup':tira(S.suporte,r);break;case 'fonte':tira(S.fonte,r);break;
+  case 'ch':S.chamado='';break;case 'regime':S.regime='';break;case 'orig':S.origem='';break;
+  case 'acomp':S.acomp='';S.inf='pac';break;case 'quem':S.acompQuem='';break;case 'inf':S.inf='pac';break;
+  case 'comorb':case 'muc':case 'alerg':case 'intern':case 'hv':tira(S.hist[g],r);break;
+  case 'e':{const k=r.slice(0,r.indexOf('=')),v=r.slice(r.indexOf('=')+1);if(k==='analg')S.enf.analg='';else if(Array.isArray(S.enf[k]))tira(S.enf[k],v);else S.enf[k]='';break;}
+ }}
+function rotulo(id){const i=id.indexOf(':'),g=id.slice(0,i),r=id.slice(i+1);
+ if(g==='reg')return (REG[r]||{n:r}).n;
+ if(g==='neg'){const[k,v]=r.split('=');return (v==='n'?'nega ':'refere ')+(NEG[k]||k);}
+ if(g==='eva')return r==='0'?'EVA 0':'EVA';
+ if(g==='e'){const k=r.slice(0,r.indexOf('=')),v=r.slice(r.indexOf('=')+1);if(k==='analg')return 'controlada c/ analgesia';const L=E[k];const o=L&&L.find(x=>x[0]===v);return o?o[1]:v;}
+ if(g==='ex')return r.slice(r.indexOf('=')+1);
+ if(g==='orig'){const o=ORIGEM.find(x=>x[0]===r);return o?o[1]:r;}
+ if(g==='acomp')return r==='des'?'desacompanhado':'acompanhado';
+ if(g==='inf')return 'acompanhante relata';
+ return r;}
+/* regra de um par → ['X'|'A', motivo] ou null */
+function conflito(a,b){
+ const par=(pa,pb)=>a.startsWith(pa)&&b.startsWith(pb)?[a.slice(a.indexOf(':')+1),b.slice(b.indexOf(':')+1)]:b.startsWith(pa)&&a.startsWith(pb)?[b.slice(b.indexOf(':')+1),a.slice(a.indexOf(':')+1)]:null;
+ const P=(x,y)=>(a===x&&b===y)||(a===y&&b===x);
+ if(a!==b&&((a==='apos:__sem'&&b.startsWith('apos:'))||(b==='apos:__sem'&&a.startsWith('apos:'))))return['X','"sem fator desencadeante" exclui os fatores marcados'];
+ if(a!==b&&((a==='melh:__sem'&&b.startsWith('melh:'))||(b==='melh:__sem'&&a.startsWith('melh:'))))return['X','"sem fator de melhora" exclui os fatores marcados'];
+ if(a!==b&&((a==='e:ctrl=sem'&&b.startsWith('e:ctrl='))||(b==='e:ctrl=sem'&&a.startsWith('e:ctrl='))))return['X','"sem alterações" exclui as alterações marcadas'];
+ if(P('fonte:equipe do resgate','orig:samu')||P('fonte:equipe do SAMU','orig:resg')||P('quem:da equipe do resgate','orig:samu'))return['A','SAMU e Resgate são equipes diferentes'];
+ const Pp=(x,y)=>(a===x&&b.startsWith(y))||(b===x&&a.startsWith(y));
+ let p;
+ // região × tipo de trauma
+ if((p=par('tipo:','reg:'))){const[tp,r]=p;const[s,j]=RG[r]||['',1];
+  if(tp==='entorse'&&j===0)return['X','entorse só ocorre em articulação'];
+  if(tp==='entorse'&&j===.5)return['A','entorse em articulação pouco típica'];
+  if(tp==='hiperextensão'&&j===0)return['X','hiperextensão só ocorre em articulação'];
+  if(tp==='torção'&&(s==='AXC'||s==='TR'))return['X','torção não se aplica a crânio, face, tórax ou abdome'];
+  if(tp==='queda sobre a mão espalmada'&&s!=='MS')return['X','queda sobre a mão espalmada atinge o membro superior'];
+  if(tp==='trauma axial'&&['braco','antebraco','face','torax','abd','escapula','clavicula'].includes(r))return['A','trauma axial pouco típico nesta região'];}
+ // mecanismo
+ if(a.startsWith('mech:')&&b.startsWith('mech:')){const x=a.slice(5),y=b.slice(5);
+  if(VEIC.includes(x)&&VEIC.includes(y))return[(x==='atropelamento'||y==='atropelamento')?'X':'A','a vítima é pedestre ou condutor/passageiro'];
+  if([x,y].every(v=>PENETR.concat(['agressão física']).includes(v)))return['A','FAF/FAB/mordedura já descrevem a agressão'];
+  if((x==='queda da própria altura'&&y==='queda de altura')||(y==='queda da própria altura'&&x==='queda de altura'))return['X','uma só altura de queda por evento'];
+  if(CTX.includes(x)!==CTX.includes(y))return null;
+  return['A','dois mecanismos diferentes no mesmo evento'];}
+ if((p=par('mech:','tipo:'))){const[m,tp]=p;
+  if(PENETR.includes(m)&&['entorse','torção','hiperextensão','trauma axial','queda sobre a mão espalmada','trauma indireto'].includes(tp))return['X','mecanismo penetrante não causa '+tp];
+  if(tp==='queda sobre a mão espalmada'&&!FOOSH_OK.includes(m))return['X','queda sobre a mão espalmada exige mecanismo de queda'];
+  if(m==='esmagamento'&&['entorse','torção','hiperextensão','queda sobre a mão espalmada'].includes(tp))return['X','esmagamento não causa '+tp];}
+ if((p=par('mech:','ex:ferida='))&&PENETR.includes(p[0])&&p[1]==='Sem ferida')return['X','FAF/FAB/mordedura sempre deixam ferida'];
+ // sintomas
+ if(P('sym:ferida no local','ex:ferida=Sem ferida'))return['X','há ferida no local'];
+ if(P('sym:incapacidade de carga','ex:deamb=Deambula')||P('sym:incapacidade de carga','ex:deamb2=Deambula'))return['X','incapacidade de carga × deambula sem auxílio'];
+ if(P('sym:incapacidade de carga','ex:deamb=Com dificuldade')||P('sym:incapacidade de carga','ex:deamb2=Com dificuldade'))return['A','incapacidade de carga × deambula com dificuldade'];
+ if(P('sym:claudicação','ex:deamb2=Não deambula')||P('sym:claudicação neurogênica','ex:deamb2=Não deambula'))return['X','claudicação exige marcha'];
+ if(P('sym:deformidade','ex:redTent=Reduzida na origem'))return['A','deformidade com luxação já reduzida'];
+ if(P('sym:parestesia','neg:fs=n')||P('sym:perda de força','neg:fs=n'))return['X','déficit marcado nos sintomas'];
+ if((p=par('sym:','reg:'))){const[sy,r]=p;const[s,j]=RG[r]||['',1];
+  if(sy==='derrame articular'&&j===0)return['X','derrame articular exige articulação'];
+  if((sy==='incapacidade de carga'||sy==='dor à carga')&&(s==='MS'||s==='AXC'||s==='TR'))return['A','região que não sustenta carga'];}
+ if(['sym:dor','sym:dor noturna','sym:dor à carga'].some(x=>P(x,'eva:0')))return['X','dor marcada com EVA 0'];
+ // dor
+ if((a==='eva:0'&&/^(car|piora|melh|irr):/.test(b))||(b==='eva:0'&&/^(car|piora|melh|irr):/.test(a)))return['X','EVA 0 = sem dor'];
+ if(P('car:contínua','car:intermitente'))return['X','contínua × intermitente'];
+ if(P('car:de caráter mecânico','car:de caráter inflamatório'))return['A','dor mecânica e inflamatória (dor mista)'];
+ if(P('car:de caráter mecânico','piora:ao repouso')||P('car:de caráter mecânico','piora:no período noturno'))return['X','piora ao repouso/à noite é padrão inflamatório, não mecânico'];
+ if(P('car:de caráter inflamatório','melh:repouso'))return['A','dor inflamatória costuma piorar com repouso'];
+ if(P('piora:ao repouso','melh:repouso'))return['X','piora e melhora com repouso'];
+ if(P('melh:gelo','melh:calor local'))return['A','melhora com gelo e com calor'];
+ if((p=par('piora:à carga','reg:'))){const s=(RG[p[1]]||[''])[0];if(s==='MS'||s==='AXC'||s==='TR')return['A','região que não sustenta carga'];}
+ if(P('neg:noturna=n','piora:ao repouso')||P('neg:noturna=n','piora:no período noturno'))return['X','piora ao repouso/à noite marcada'];
+ // interrogatório × resto
+ if(P('neg:trauma=n','apos:queda'))return['X','início após queda'];
+ if(P('neg:tce=n','reg:cranio'))return['X','trauma em crânio marcado'];
+ if(P('neg:tce=n','reg:face'))return['A','trauma de face com TCE negado'];
+ if(P('neg:dtorac=n','reg:torax'))return['X','tórax marcado como região'];
+ if(P('neg:dabd=n','reg:abd'))return['X','abdome marcado como região'];
+ if(P('neg:cervical=n','reg:cerv'))return['X','coluna cervical marcada como região'];
+ if((p=par('neg:protese=p','reg:'))&&(RG[p[1]]||[0,1])[1]===0)return['X','prótese articular exige articulação'];
+ if(['comorb:HIV','comorb:neoplasia','muc:prednisona'].some(x=>P('neg:imuno=n',x)))return['X','há causa de imunossupressão nos antecedentes'];
+ if(P('neg:imuno=n','comorb:artrite reumatoide'))return['A','artrite reumatoide costuma ter tratamento imunossupressor'];
+ if(P('neg:cortic=n','muc:prednisona'))return['X','prednisona no MUC'];
+ if(P('neg:neo=n','comorb:neoplasia'))return['X','neoplasia nas CMB'];
+ if(P('neg:diur=n','muc:hidroclorotiazida'))return['X','hidroclorotiazida no MUC'];
+ if(P('neg:ep=n','comorb:gota'))return['X','gota nas CMB = episódios prévios'];
+ if(P('neg:drogasev=n','hv:usuário de drogas ilícitas'))return['A','confirmar a via das drogas'];
+ if(P('neg:dispneia=n','sup:em IOT sob ventilação mecânica')||P('neg:dispneia=n','sup:traqueostomizado'))return['X','em IOT/TQT não há como negar dispneia'];
+ if(P('neg:dispneia=n','sup:em O2 suplementar por cateter nasal')||P('neg:dispneia=n','sup:em O2 por máscara'))return['A','em O2 com dispneia negada'];
+ if(P('neg:rnc=n','nivel:torporoso')||P('neg:rnc=n','nivel:sedado'))return['X','nível de consciência rebaixado'];
+ if(P('neg:rnc=n','nivel:sonolento')||P('neg:rnc=n','nivel:confuso'))return['A','confuso/sonolento com rebaixamento negado'];
+ if(P('neg:sela=p','ex:deamb=Deambula')||P('neg:incont=p','ex:deamb=Deambula')||P('neg:sela=p','ex:deamb2=Deambula')||P('neg:incont=p','ex:deamb2=Deambula'))return['A','bandeira vermelha positiva: conferir'];
+ // complementos
+ if(Pp('orig:esp','ex:redTent=Tentada')||P('orig:esp','ex:redTent=Reduzida na origem'))return['X','quem veio por demanda espontânea não tem "origem"'];
+ if(P('ex:redTent=Reduzida na origem','orig:samu')||P('ex:redTent=Reduzida na origem','orig:resg'))return['A','redução pré-hospitalar é rara'];
+ if(P('ex:atls=FAST negativo','ex:atls=FAST positivo'))return['X','FAST negativo × positivo'];
+ // dispositivos
+ if((p=par('apar:','aorig:'))){const[ap,o]=p;if(o==='pelo resgate'&&SO_HOSP.includes(ap))return['X',ap+' só é colocado no hospital'];if(o==='neste serviço'&&ap==='prancha rígida')return['A','prancha rígida é pré-hospitalar'];}
+ if((p=par('apar:','ex:deamb'))){const ap=p[0],v=p[1].slice(p[1].indexOf('=')+1);if(SEM_CARGA.includes(ap)&&v==='Deambula')return['X',ap+' impede deambular sem auxílio'];if(SEM_CARGA.includes(ap)&&v==='Com dificuldade')return[ap==='bota gessada'?'A':'X',ap+' × deambula'];}
+ if(a.startsWith('apar:')&&b.startsWith('apar:')){const s2=[a.slice(5),b.slice(5)].sort().join('|');
+  if(['imobilizador de ombro|tipoia','tração cutânea|tração esquelética','bota gessada|bota ortopédica','gesso circular|tala gessada','tala gessada|talafix','tala gessada|tala metálica'].includes(s2))return['A','dois dispositivos de mesma função (só em segmentos diferentes)'];
+  if(/prancha rígida/.test(s2)&&/(tração esquelética|fixador externo)/.test(s2))return['X','prancha é pré-hospitalar; tração/fixador são hospitalares'];}
+ // chegada, fonte, acompanhante
+ if(P('aorig:pelo resgate','orig:esp'))return['X','não veio pelo resgate'];
+ if(P('aorig:na origem','orig:esp'))return['X','demanda espontânea não tem serviço de origem'];
+ if(P('aorig:pelo resgate','orig:cross')||P('aorig:pelo resgate','orig:transf'))return['A','resgate e depois transferência'];
+ if(P('aorig:na origem','orig:int'))return['A','"na origem" em paciente já internado'];
+ if(P('fonte:equipe do resgate','orig:esp')||P('fonte:equipe do resgate','orig:cross')||P('fonte:equipe do SAMU','orig:esp')||P('fonte:equipe do SAMU','orig:cross'))return['X','não chegou por SAMU/resgate'];
+ if(P('fonte:equipe do resgate','orig:samu')||P('fonte:equipe do SAMU','orig:resg'))return['A','SAMU e resgate são serviços diferentes'];
+ if(P('quem:da equipe do resgate','orig:esp'))return['X','não chegou pelo resgate'];
+ if(P('quem:da equipe do resgate','orig:samu'))return['A','SAMU e resgate são serviços diferentes'];
+ if(P('fonte:acompanhante','acomp:des'))return['X','desacompanhado'];
+ if(P('inf:acomp','acomp:des'))return['X','desacompanhado'];
+ if(P('orig:int','ch:Sala Amarela')||P('orig:int','ch:Sala Vermelha'))return['A','paciente já internado avaliado na sala do PS'];
+ if(P('regime:direta','ch:Enfermaria')||P('regime:direta','ch:UTI'))return['X','enfermaria e UTI são interconsulta'];
+ // estado
+ if(a.startsWith('sup:')&&b.startsWith('sup:')){const s2=[a.slice(4),b.slice(4)];const h=v=>s2.includes(v);
+  if(h('hemodinamicamente estável')&&h('hemodinamicamente instável'))return['X','estável × instável'];
+  if(h('em IOT sob ventilação mecânica')&&(h('traqueostomizado')||h('em O2 suplementar por cateter nasal')||h('em O2 por máscara')))return['X','IOT exclui TQT, cateter e máscara'];
+  if(h('traqueostomizado')&&h('em O2 suplementar por cateter nasal'))return['A','em TQT o O2 costuma ir pela traqueostomia'];
+  if(h('em O2 suplementar por cateter nasal')&&h('em O2 por máscara'))return['A','cateter e máscara juntos'];
+  if(h('hemodinamicamente estável')&&(h('em uso de noradrenalina')||h('em uso de droga vasoativa')))return['A','estável às custas de DVA?'];}
+ if(P('nivel:consciente e orientado','sup:em sedação contínua')||P('nivel:consciente e orientado','sup:em IOT sob ventilação mecânica'))return['A','consciente e orientado em IOT/sedação'];
+ if(P('nivel:agitado','sup:em sedação contínua'))return['A','agitado em sedação contínua'];
+ // antecedentes
+ if(a.startsWith('muc:')&&b.startsWith('muc:')){const s2=[a.slice(4),b.slice(4)];if(s2.every(v=>ANTICOAG.includes(v)))return['X','dois anticoagulantes ao mesmo tempo'];if(s2.includes('losartana')&&s2.includes('enalapril'))return['A','BRA + IECA juntos'];}
+ if(P('hv:tabagista','hv:ex-tabagista')||P('hv:etilista','hv:ex-etilista'))return['X','atual × ex'];
+ if(P('comorb:DM1','comorb:DM2'))return['X','DM1 × DM2'];
+ if(P('comorb:DM1','muc:glibenclamida'))return['X','sulfonilureia não se usa em DM1'];
+ if(P('comorb:DM1','muc:metformina')||P('comorb:DRC','muc:metformina'))return['A','metformina: conferir indicação'];
+ if(Pp('comorb:nega','muc:')&&a!=='muc:nega'&&b!=='muc:nega')return['A','"CMB: nega" com medicação de uso contínuo'];
+ if(P('alerg:AINE','muc:AAS'))return['A','alergia a AINE em uso de AAS'];
+ // modelo × região
+ if((p=par('modelo:','reg:'))){const[m,r]=p;const[s,j]=RG[r]||['',1];
+  if((m==='artrite'||m==='gota')&&j===0)return['X','artrite/gota exigem articulação'];
+  if((m==='artrite'||m==='gota')&&s==='COL')return['A','na coluna é espondilodiscite (outro quadro)'];
+  if((m==='artrite'||m==='gota'||m==='luxacao')&&j===.5)return['A','articulação pouco típica'];
+  if(m==='luxacao'&&j===0)return['X','luxação exige articulação'];
+  if(m==='coluna'&&(s==='AXC'||s==='TR'))return['X','fora da coluna'];
+  if(m==='coluna'&&(s==='MS'||s==='MI'||r==='pelve'))return['A','no modelo de coluna, membro entra como irradiação'];
+  if(m==='achado'&&r==='abd')return['X','lesão óssea não fica no abdome'];
+  if(m==='posop'&&(s==='AXC'||s==='TR'))return['A','ferida operatória ortopédica pouco provável aqui'];}
+ // enfermaria
+ if(a.startsWith('e:')&&b.startsWith('e:')){const h=v=>a===v||b===v;
+  const sed=h('e:consc=sed'),vm=h('e:resp=vm');
+  if(vm&&h('e:consc=lo'))return['X','em ventilação mecânica não está lúcido e orientado'];
+  if(vm&&(h('e:consc=conf')||h('e:consc=agit')||h('e:consc=sono')))return['A','confuso/agitado/sonolento em VM'];
+  if((vm||sed)&&(h('e:dieta=bem')||h('e:dieta=parc')||h('e:dieta=baixa')))return['X','sem dieta oral em VM/sedação'];
+  if((vm||sed)&&(h('e:decub=deamb')||h('e:decub=polt')))return['X','sedado/VM não deambula nem senta em poltrona'];
+  if(sed&&(h('e:sono=pres')||h('e:sono=prej')))return['X','sedado: sono não se avalia'];
+  if((sed||vm)&&[a,b].some(x=>/^e:dorT=|^e:dorF=|^e:analg=|^e:dorI=(discreta|moderada|intensa)$/.test(x)))return['X','sedado/em VM não refere dor'];
+  if((h('e:hd=dva')||h('e:hd=inst'))&&h('e:fecha=estavel'))return['X','não está estável no período'];
+  if(['hipo','taqui','dessat','febre'].some(c=>h('e:ctrl='+c))&&h('e:fecha=estavel'))return['X','houve alteração nos controles'];
+  if(h('e:ctrl=hipo')&&h('e:hd=est'))return['A','hipotensão × estável sem DVA'];
+  if(h('e:ctrl=dessat')&&h('e:resp=aa'))return['A','dessaturação × AA sem desconforto'];
+  if(h('e:decub=deamb')&&(h('e:diur=svd')||h('e:diur=fralda')))return['A','deambulando com SVD/fralda'];
+  if(h('e:dorI=sem')&&[a,b].some(x=>/^e:dorT=|^e:dorF=|^e:analg=/.test(x)))return['X','sem dor'];
+  if((h('e:dorT=piora')||h('e:dorI=intensa'))&&h('e:analg=1'))return['A','piora/dor intensa × controlada com analgesia'];
+  if(h('e:dieta=jejum')&&h('e:sit=cons'))return['A','jejum para procedimento em tratamento conservador'];
+  if([a,b].some(x=>/^e:cur=(limpo|serosa|sh|pur)$/.test(x))&&(h('e:sit=cons')||h('e:sit=pre')))return['A','curativo sem ferida operatória (pré-op/conservador)'];
+  if(h('e:n=n')&&h('e:sit=pre'))return null;
+  if(h('e:dorF=ao repouso')&&h('e:decub=deamb'))return['A','dor ao repouso × deambulando'];
+  if(h('e:perf=boa')&&(h('e:hd=inst')||h('e:hd=dva')))return['A','bem perfundido × instável/DVA'];}
+ if((p=par('e:decub=deamb','apar:'))&&['tração esquelética','prancha rígida','bota gessada','tração cutânea'].includes(p[1]))return['X',p[1]+' impede deambular'];
+ if((p=par('e:decub=polt','apar:'))&&['tração esquelética','prancha rígida'].includes(p[1]))return['A',p[1]+' em poltrona'];
+ return null;}
+/* chamado a cada toque: o que acabou de ser marcado desmarca o que é impossível junto */
+let ultSel=null;
+function coerencia(){const prev=new Set(ultSel||[]);const add=sel().filter(x=>!prev.has(x));const msgs=[];
+ add.forEach(a=>{sel().forEach(b=>{if(a===b)return;const c=conflito(a,b);if(!c||c[0]!=='X')return;
+  const alvo=/^(modelo|ch):/.test(b)||(a.startsWith('aorig:')&&b.startsWith('apar:'))?a:b;if(!sel().includes(alvo))return;remover(alvo);msgs.push(`${rotulo(alvo)} (${c[1]})`);});});
+ ultSel=sel();if(msgs.length)setTimeout(()=>toast('Desmarcado: '+msgs.join('; ')),0);}
+/* avisos de coerência: impossíveis que já vieram salvos juntos + improváveis + regras de conjunto */
+function avisosCoerencia(A){const cur=sel();const vis=new Set();
+ for(let i=0;i<cur.length;i++)for(let j=i+1;j<cur.length;j++){const c=conflito(cur[i],cur[j]);if(!c)continue;
+  const k=c[0]+c[1];if(vis.has(k))continue;vis.add(k);
+  A.push({t:c[0]==='X'?`Marcados juntos: “${rotulo(cur[i])}” e “${rotulo(cur[j])}” (${c[1]}). Escolha um.`:`Atenção: ${c[1]} (“${rotulo(cur[i])}” + “${rotulo(cur[j])}”).`,alvo:[campoDe(cur[i]),campoDe(cur[j])].filter(Boolean),am:c[0]!=='X'});}
+ const enf=S.mode==='enf';const regs=S.topo.map(k=>k.split('|')[0]);const segs=regs.map(r=>(RG[r]||[''])[0]);
+ if(regs.length)S.aparato.forEach(ap=>{if(!regs.some(r=>segOk(AP_SEG[ap]||'*',r)))A.push({t:`Atenção: ${ap} sem região correspondente marcada.`,alvo:['#cApar','#selTopo'],am:1});});
+ if(!enf){
+  const t=S.tpl?tplById(S.tpl):null;
+  if(regs.length&&segs.every(s=>s==='MI')&&S.sym.includes('impotência funcional')&&(S.ex.deamb==='Deambula'))A.push({t:'Marcados juntos: impotência funcional de membro inferior e “deambula sem auxílio”. Escolha um.',alvo:['#cSym','#dEx']});
+  if(regs.length&&!segs.includes('MS')&&(S.ex.dom))A.push({t:'Atenção: dominância só importa em lesão de membro superior.',alvo:'#dEx',am:1});
+  if(regs.length&&segs.every(s=>s==='MS')&&(S.ex.deamb==='Não deambula'||S.ex.deamb2==='Não deambula'))A.push({t:'Atenção: “não deambula” com lesão só de membro superior.',alvo:'#dEx',am:1});
+  if(semFala()&&S.inf!=='acomp'){const temRel=Object.keys(S.neg).length||S.eva!==''||S.car.length||S.piora.length||S.melhora.length;
+   if(temRel&&!S.fonte.length)A.push({t:'Paciente sem condições de referir: a dor relatada e o interrogatório só entram com a fonte das informações (Estado atual → Informações obtidas com).',alvo:'#cFonte'});
+   else if(S.eva!==''||S.car.length||S.piora.length||S.melhora.length)A.push({t:'Paciente sem condições de referir: a dor relatada ficou fora do texto.',alvo:'#cNivel',am:1});}
+  if(['confuso','agitado','sonolento'].includes(S.nivel)&&S.inf!=='acomp'&&Object.keys(S.neg).length)A.push({t:`Atenção: relato de paciente ${S.nivel} (confiabilidade). Considere “Acompanhante refere” ou a fonte das informações.`,alvo:'#cFonte',am:1});
+  if(S.gcs.trim()&&!gcsOk())A.push({t:`Glasgow “${S.gcs.trim()}” fora do padrão (3 a 15, com T se intubado). Ficou fora do texto.`,alvo:'#gcs'});
+  if(S.mech.includes('queda de altura')&&+String(S.altura).replace(',','.')>20)A.push({t:`Atenção: queda de ${S.altura} m. Confira a altura.`,alvo:'#altura',am:1});
+  if(S.regime==='direta'&&!S.chamado)A.push({t:'Avaliação direta: falta o local do chamado (Sala Amarela ou Sala Vermelha).',alvo:'#cChamado'});
+  if(S.acomp==='acomp'&&!S.acompQuem)A.push({t:'Acompanhante: falta escolher quem acompanha.',alvo:'#cQuem'});
+  if((S.chamado==='Enfermaria')&&!S.equipe)A.push({t:'Interconsulta: falta a equipe solicitante.',alvo:'#cEquipe'});
+  if(t&&t.k==='trauma'&&S.devido.trim()&&S.mech.length)A.push({t:`O texto escrito (“${S.devido.trim()}”) substitui o mecanismo marcado (${joinPt(S.mech)}).`,alvo:'#devido2',am:1});
+  if(t){const vagos=['fs','infec','noturna','incont','proc','purina','outrostraumas'].filter(k=>S.neg[k]==='p').map(k=>NEG[k]);
+   if(vagos.length)A.push({t:`Especifique em Observações: ${joinPt(vagos)}.`,alvo:'#obs'});}
+  if(t&&t.k==='posop'&&!S.proc.trim())A.push({t:'Ferida operatória: falta o procedimento.',alvo:'#proc'});
+  if(t&&t.k==='posop'&&S.dataCir&&S.data==='data'&&S.dataX&&S.dataX<S.dataCir)A.push({t:'Início dos sintomas antes da data da cirurgia: confira as datas.',alvo:['#dataX','#dataCir']});}
+ else{if(S.enf.sit==='po'&&String(S.enf.n||'').trim()===''&&S.enf.eproc)A.push({t:'Pós-operatório: falta o dia (0 = POI).',alvo:'#enfN'});}}
+/* id → campo da tela, para a pinta e o "ir ao campo" */
+const CAMPO={reg:'#selTopo',apar:'#cApar',aorig:'#cAparOrig',mech:'#cMech',tipo:'#cTipo',sym:'#cSym',apos:'#cApos',eva:'#cEva',car:'#cCar',piora:'#cPiora',melh:'#cMelhora',irr:'#cIrr',neg:'#cNeg',ex:'#dEx',
+ nivel:'#cNivel',sup:'#cSup',fonte:'#cFonte',ch:'#cChamado',regime:'#cRegime',orig:'#cOrigem',acomp:'#cAcomp',quem:'#cQuem',inf:'#cInf',modelo:'#cTpl',comorb:'#dHist',muc:'#dHist',alerg:'#dHist',intern:'#dHist',hv:'#dHist'};
+const CAMPO_E={sit:'#eSit',decub:'#eDecub',diur:'#eDiur',evac:'#eEvac',consc:'#eConsc',resp:'#eResp',sono:'#eSono',dieta:'#eDieta',hd:'#eHd',perf:'#ePerf',cur:'#eCur',dorT:'#eDorT',dorI:'#eDorI',dorF:'#eDorF',analg:'#eDorF',ctrl:'#eCtrl',fecha:'#eFecha',n:'#enfN'};
+function campoDe(id){const g=id.slice(0,id.indexOf(':'));if(g==='e'){const k=id.slice(2,id.indexOf('='));return CAMPO_E[k]||'';}return CAMPO[g]||'';}
+function pintaCampos(A){document.querySelectorAll('.field.falta,.field.atenc,.sec.falta,.sec.atenc').forEach(e=>e.classList.remove('falta','atenc'));
+ A.forEach(a=>{(Array.isArray(a.alvo)?a.alvo:a.alvo?[a.alvo]:[]).forEach(sel=>{const e=document.querySelector(sel);if(!e)return;const cls=a.am?'atenc':'falta';
+  const f=e.closest('.field');if(f)f.classList.add(cls);const sec=e.closest('.sec');if(sec)sec.classList.add(cls);});});}
+function irAoCampo(a){const sel=(Array.isArray(a.alvo)?a.alvo:[a.alvo])[0];const e=sel&&document.querySelector(sel);if(!e)return;const f=e.closest('.field')||e.closest('.sec')||e;
+ f.scrollIntoView({behavior:'smooth',block:'center'});const inp=/^(INPUT|TEXTAREA)$/.test(e.tagName)?e:f.querySelector('input,textarea');if(inp)setTimeout(()=>inp.focus({preventScroll:true}),350);}
+/* concordância: feminino quando o sexo é F (não mexe nas Observações) */
+const GEN=[['acompanhado','acompanhada'],['desacompanhado','desacompanhada'],['internado','internada'],['encaminhado','encaminhada'],['trazido','trazida'],['transferido','transferida'],
+ ['sedado','sedada'],['Sedado','Sedada'],['confuso','confusa'],['Confuso','Confusa'],['sonolento','sonolenta'],['Sonolento','Sonolenta'],['agitado','agitada'],['Agitado','Agitada'],['torporoso','torporosa'],
+ ['orientado','orientada'],['Lúcido','Lúcida'],['lúcido','lúcida'],['Destro','Destra'],['Canhoto','Canhota'],['Avaliado','Avaliada'],['Submetido','Submetida'],['Admitido','Admitida'],
+ ['traqueostomizado','traqueostomizada'],['sentado','sentada']];
+function gen(t){if(S.sexo!=='F'||!t)return t;GEN.forEach(([m,f])=>{t=t.replace(new RegExp(`(^|[^A-Za-zÀ-ÿ])${m}(?=[^A-Za-zÀ-ÿ]|$)`,'g'),`$1${f}`);});return t;}
+function fonteTxt(){const pes=S.fonte.filter(f=>f!=='prontuário'),pr=S.fonte.includes('prontuário');
+ return [pes.length?`com ${joinPt(pes)}`:'',pr?'em prontuário':''].filter(Boolean).join(' e ');}
+/* PS e enfermaria têm memória própria de regiões, dispositivos e observações */
+function trocaModo(v){S.share=S.share||{};S.share[S.mode]={topo:S.topo,aparato:S.aparato,aparOrig:S.aparOrig,obs:S.obs};
+ const o=S.share[v]||{topo:[],aparato:[],aparOrig:'',obs:''};S.topo=o.topo.slice();S.aparato=o.aparato.slice();S.aparOrig=o.aparOrig;S.obs=o.obs;S.mode=v;ultSel=sel();}
+function mantidos(){const m=[];if(S.eva!=='')m.push('EVA');if(S.car.length)m.push('características da dor');if(S.piora.length||S.melhora.length)m.push('piora/melhora');if(S.irr)m.push('irradiação');
+ if(S.data)m.push('data');if(S.apos.length)m.push('fator desencadeante');if(S.proc.trim()||S.dataCir)m.push('cirurgia');if(S.achado.trim()||S.exame)m.push('achado');return m;}
+function exclui(){}
 
 /* ---------- componentes ---------- */
 function chip(label,on,onclick,extra){const b=el('button',{type:'button',class:'chip'+(on?' on':'')+(extra?' '+extra:''),'aria-pressed':on?'true':'false',onclick});
@@ -443,16 +752,22 @@ function addInput(groupKey,onAdd){const i=el('input',{type:'text',class:'add',pl
 const norm=o=>Array.isArray(o)?o:[o,o];
 function single(id,opts,path,custom,after){const c=$('#'+id);c.innerHTML='';const cur=getP(path);
  opts.concat(custom?(S.custom[custom]||[]):[]).map(norm).forEach(([v,l])=>c.append(chip(l,cur===v,()=>{setP(path,cur===v?'':v);after&&after(v);renderAll();})));
+ if(custom)rmCustom(c,custom,path);
  if(custom)c.append(addInput(custom,v=>setP(path,v)));}
+/* itens próprios ("+ outro") podem ser apagados: × ao lado de cada um */
+function rmCustom(c,key,path){(S.custom[key]||[]).forEach(v=>{const b=[...c.querySelectorAll('.chip')].find(x=>x.textContent===v);if(!b)return;
+ b.after(el('button',{type:'button',class:'rmx',title:'Apagar este item próprio','aria-label':'Apagar '+v,text:'×',onclick:()=>{S.custom[key]=S.custom[key].filter(x=>x!==v);const cur=getP(path);if(Array.isArray(cur)){const k=cur.indexOf(v);if(k>=0)cur.splice(k,1);}else if(cur===v)setP(path,'');renderAll();}}));});}
 function multi(id,opts,path,custom,after){const c=$('#'+id);c.innerHTML='';const arr=getP(path);
  opts.concat(custom?(S.custom[custom]||[]):[]).map(norm).forEach(([v,l])=>c.append(chip(l,arr.includes(v),()=>{toggleIn(arr,v);after&&after(v,arr.includes(v));renderAll();})));
+ if(custom)rmCustom(c,custom,path);
  if(custom)c.append(addInput(custom,v=>{if(!arr.includes(v))arr.push(v);after&&after(v,true);}));}
 
 /* ---------- render ---------- */
 function render(){
  const enf=S.mode==='enf';const t=S.tpl?tplById(S.tpl):null;
+ single('cSexo',[['M','Masculino'],['F','Feminino']],'sexo');
  const m=$('#cMode');m.innerHTML='';[['ps','PS / Interconsulta'],['enf','Evolução enfermaria']].forEach(([v,l])=>m.append(el('button',{type:'button',class:S.mode===v?'on':'','aria-pressed':S.mode===v?'true':'false',text:l,
-  onclick:()=>{if(S.mode===v)return;S.mode=v;if(v==='enf'&&!S.enf.decub&&!S.enf.consc)S.enf=Object.assign(ENF_DEF(),{diag:S.enf.diag,eproc:S.enf.eproc,n:S.enf.n,sit:S.enf.sit});renderAll();}})));
+  onclick:()=>{if(S.mode===v)return;trocaModo(v);renderAll();}})));
  document.querySelectorAll('[data-m]').forEach(s=>{s.hidden=s.dataset.m!==(enf?'enf':'ps');});
  if(!enf){
   $('#secMech').hidden=!t||t.k!=='trauma';$('#devidoWrap').hidden=!!(t&&t.k==='trauma');$('#secCir').hidden=!t||t.k!=='posop';$('#secAch').hidden=!t||t.k!=='achado';
@@ -461,8 +776,11 @@ function render(){
  // chamado
  const c=$('#cChamado');c.innerHTML='';CHAMADO.forEach(([l,col])=>{const lab=[];if(col)lab.push(el('span',{class:'dot',style:`background:var(--${col})`}));lab.push(l);
   c.append(chip(lab,S.chamado===l,()=>{S.chamado=S.chamado===l?'':l;if(['Sala Vermelha','Enfermaria','UTI'].includes(S.chamado))S.regime='inter';if(S.chamado==='Sala Vermelha')S.equipe='';renderAll();}));});
+ const intern=S.chamado==='Enfermaria'||S.chamado==='UTI';
+ if(intern&&S.regime!=='inter')S.regime='inter';
  single('cRegime',[['direta','Avaliação direta'],['inter','Interconsulta']],'regime');
- $('#interWrap').hidden=S.regime!=='inter';const intern=S.chamado==='Enfermaria'||S.chamado==='UTI';
+ if(intern){const bd=$('#cRegime .chip');bd.disabled=true;bd.classList.add('dis');bd.title='Enfermaria e UTI são sempre interconsulta';}
+ $('#interWrap').hidden=!(S.regime==='inter'||intern||S.chamado==='Sala Vermelha'||S.motivo.trim()||S.equipe);
  $('#equipeWrap').hidden=S.chamado==='Sala Vermelha';$('#equipeLbl').textContent=intern?'Equipe solicitante (especialidade)':'Aos cuidados da equipe';
  single('cEquipe',EQUIPES,'equipe','equipe');
  single('cOrigem',ORIGEM,'origem');
@@ -472,11 +790,11 @@ function render(){
  const ci=$('#cInf');ci.innerHTML='';[['pac','Paciente refere'],['acomp','Acompanhante refere']].forEach(([v,l])=>ci.append(chip(l,S.inf===v,()=>{S.inf=v;renderAll();})));
  // modelos
  const tg=$('#cTpl');tg.innerHTML='';TPL.forEach(tp=>{tg.append(el('button',{type:'button',class:'tpl'+(S.tpl===tp.id?' on':''),'aria-pressed':S.tpl===tp.id?'true':'false',
-  onclick:()=>{if(S.tpl===tp.id)return;S.tpl=tp.id;S.sym=tp.symD.slice();S.neg={};tp.negD.forEach(n=>S.neg[n]='n');S.ex={};
+  onclick:()=>{if(S.tpl===tp.id)return;const mant=mantidos();const ant=S.tpl?tplById(S.tpl):null;if(S.devido.trim()&&(!ant||(ant.k==='trauma')!==(tp.k==='trauma'))){S.devido='';}S.tpl=tp.id;S.sym=[];S.neg={};S.ex={};
    if(tp.k!=='trauma'){S.mech=[];S.tipo=[];S.hora='';}
-   if(tp.topoD&&!S.topo.length)S.topo=tp.topoD.slice();
-   if(tp.id==='poli'){S.chamado='Sala Vermelha';S.regime='inter';S.equipe='';}
-   renderAll();}},el('b',{text:tp.l}),el('span',{text:tp.s})));});
+   const msg=[];
+   if(mant.length)msg.push('mantidos do modelo anterior: '+mant.join(', '));
+   renderAll();if(msg.length)setTimeout(()=>toast(cap(msg.join(' · '))),0);}},el('b',{text:tp.l}),el('span',{text:tp.s})));});
  // mecanismo
  multi('cMech',MECH,'mech','mech');$('#alturaWrap').hidden=!S.mech.includes('queda de altura');
  multi('cTipo',TIPO,'tipo','tipo');
@@ -486,6 +804,7 @@ function render(){
  const trauma=t&&t.k==='trauma';
  $('#dataTitle').textContent=trauma?'Data e hora do trauma':'Início dos sintomas';
  single('cData',DATAOPT,'data');
+ $('#dataX').max=isoDe(refD());$('#dataCir').max=isoDe(refD());$('#dias').min='1';
  $('#diasWrap').hidden=S.data!=='dias';$('#dateWrap').hidden=S.data!=='data';$('#horaWrap').hidden=!trauma;
  $('#aposWrap').hidden=!t||trauma||t.k==='posop';
  multi('cApos',APOS,'apos','apos',(v,on)=>{if(!on)return;if(v==='__sem')S.apos.splice(0,S.apos.length,'__sem');else{const i=S.apos.indexOf('__sem');if(i>=0)S.apos.splice(i,1);}});
@@ -502,13 +821,15 @@ function render(){
  multi('cPiora',PIORA,'piora','piora');
  multi('cMelhora',MELHORA,'melhora','melhora',(v,on)=>{if(!on)return;if(v==='__sem')S.melhora.splice(0,S.melhora.length,'__sem');else{const i=S.melhora.indexOf('__sem');if(i>=0)S.melhora.splice(i,1);}});
  // sintomas
- if(t){$('#symTitle').textContent=t.k==='posop'?'Ferida operatória':t.k==='achado'?'Queixas':'Outros sinais e sintomas';multi('cSym',t.sym,'sym','sym_'+t.id);}
+ if(t){$('#symTitle').textContent=t.k==='posop'?'Ferida operatória':t.k==='achado'?'Queixas':'Outros sinais e sintomas';multi('cSym',t.sym,'sym','sym_'+t.id);
+  $('#cSym').querySelectorAll('.chip').forEach(b=>{if(t.symD.includes(b.textContent)&&!S.sym.includes(b.textContent))b.classList.add('sug');});}
+ const sf=semFala();$('#dorNota').hidden=!sf;['cEva','cCar','cIrr','cPiora','cMelhora'].forEach(id=>$('#'+id).closest('.field').hidden=sf);$('#irrWrap').hidden=sf||S.irr!=='com';
  // interrogatório
  const dn=$('#cNeg');dn.innerHTML='';
  if(t){t.neg.concat(S.custom['neg_'+t.id]||[]).forEach(id=>{const st=S.neg[id];const lab=NEG[id]||id;
   const tag=st==='n'?'nega':st==='p'?'refere':'';const parts=[];if(tag)parts.push(el('span',{class:'tag',text:tag}));parts.push(lab);
-  dn.append(chip(parts,false,()=>{S.neg[id]=st==='n'?'p':st==='p'?undefined:'n';if(!S.neg[id])delete S.neg[id];
-   renderAll();},st==='n'?'n':st==='p'?'p':'off'));});
+  dn.append(chip(parts,false,()=>{S.neg[id]=st==='n'?(id==='demais'?undefined:'p'):st==='p'?undefined:'n';if(!S.neg[id])delete S.neg[id];
+   renderAll();},st==='n'?'n':st==='p'?'p':(t.negD.includes(id)?'off sug':'off')));});
   dn.append(addInput('neg_'+t.id,v=>{S.neg[v]='n';}));}
  // complementos
  const de=$('#dEx');de.innerHTML='';
@@ -532,7 +853,7 @@ function render(){
   dh.append(el('div',{class:'field'},el('span',{class:'lbl',text:h.l}),cc));});
  // enfermaria
  single('eSit',E.sit,'enf.sit');
- $('#enfNLbl').textContent=S.enf.sit==='po'?'DPO':'Dia de internação';
+ $('#enfNLbl').textContent=S.enf.sit==='po'?'PO (0 = POI)':'DIH (0 = dia da internação)';
  $('#eprocLbl').textContent=S.enf.sit==='pre'?'Aguardando (procedimento)':'Procedimento';
  single('eDecub',E.decub,'enf.decub');single('eDiur',E.diur,'enf.diur');single('eEvac',E.evac,'enf.evac');$('#evacWrap').hidden=S.enf.evac!=='ausente';
  single('eConsc',E.consc,'enf.consc');single('eResp',E.resp,'enf.resp');$('#o2Wrap').hidden=S.enf.resp!=='cat';
@@ -545,68 +866,94 @@ function render(){
  $('#capsBtn').classList.toggle('on',caps);$('#capsBtn').setAttribute('aria-pressed',caps?'true':'false');
 }
 function syncInputs(){document.querySelectorAll('[data-k]').forEach(i=>{if(document.activeElement!==i)i.value=getP(i.dataset.k)||'';});}
-function renderAll(){render();syncInputs();out();paint3d();save();}
+function tocou(){if(!S.ref&&$('#outTxt').value)S.ref=Date.now();S.mod=Date.now();}
+let inicial=true;
+function renderAll(){if(!inicial)coerencia();else ultSel=sel();render();syncInputs();out();if(!inicial){tocou();out();}paint3d();save();}
 
 /* ---------- texto PS ---------- */
+const CTX=['acidente de trabalho','trauma esportivo'];
+/* mecanismo com contexto: "esmagamento em acidente de trabalho", "queda da própria altura durante prática esportiva" */
+function mechTxt(foosh){const ctx=S.mech.filter(m=>CTX.includes(m)),ph=mechList().filter((m,i)=>!CTX.includes(S.mech[i]));
+ if(!ph.length)return joinPt(ctx);if(foosh){const i=ph.findIndex(m=>/^queda/.test(m));if(i>=0)ph[i]+=' sobre a mão espalmada';}let x=joinPt(ph);
+ if(ctx.includes('acidente de trabalho'))x+=' em acidente de trabalho';if(ctx.includes('trauma esportivo'))x+=' durante prática esportiva';return x;}
 function mechList(){return S.mech.map(m=>m==='queda de altura'&&S.altura?`queda de altura (aproximadamente ${String(S.altura).replace('.',',')} m)`:m);}
 function autoDevido(t,topo){if(!t)return '';
  if(t.k==='trauma')return joinPt(mechList())||joinPt(S.tipo);
- if(t.k==='posop')return S.sym.length?`${joinPt(S.sym)} em ferida operatória`:'alteração em ferida operatória';
+ if(t.k==='posop')return S.sym.length?`${joinPt(S.sym)} em ferida operatória`:'avaliação de ferida operatória';
  if(t.k==='achado')return S.achado.trim()?`achado de ${S.achado.trim()}`:'achado de imagem';
  return topo?`dor em ${topo}`:'';}
+/* quando no texto: data absoluta sempre ao lado de hoje/ontem/há N dias (v75) */
+function quando(){const n=diasOk(),dxOk=S.dataX&&!futuro(S.dataX);
+ return S.data==='hoje'?`hoje (${fmt(refD())})`:S.data==='ontem'?`ontem (${fmt(refD(1))})`:S.data==='dias'&&n?`há ${n} dia${n>1?'s':''} (${fmt(refD(n))})`:S.data==='data'&&dxOk?`em ${isoToBr(S.dataX)}`:'';}
 function outPS(){
- const t=S.tpl?tplById(S.tpl):null;const acomp=S.inf==='acomp'&&S.acomp==='acomp';
+ const t=S.tpl?tplById(S.tpl):null;const acomp=S.inf==='acomp'&&S.acomp==='acomp';const sf=semFala()&&!acomp;
  const REF=acomp?'Acompanhante refere':'Refere',NEGA=acomp?'Acompanhante nega':'Nega',APR=acomp?'Acompanhante refere que paciente apresenta':'Apresenta';
- const inter=S.regime==='inter';const topo=joinPt(S.topo.map(regName));const P=[];
- // chamado
  const intern=S.chamado==='Enfermaria'||S.chamado==='UTI',verm=S.chamado==='Sala Vermelha';
+ const inter=S.regime==='inter'||intern;const topo=joinPt(S.topo.map(regName));const P=[];
+ // chamado
  if(intern)P.push(S.equipe?`Sou chamado pela equipe de ${S.equipe} para avaliação ortopédica em regime de interconsulta.`:S.chamado==='UTI'?'Sou chamado pela equipe da UTI para avaliação ortopédica em regime de interconsulta.':'Sou chamado para avaliação ortopédica em regime de interconsulta.');
  else if(inter)P.push(S.chamado?`Sou chamado pela equipe da ${S.chamado} para avaliação ortopédica em regime de interconsulta.`:'Sou chamado para avaliação ortopédica em regime de interconsulta.');
  else if(S.chamado)P.push(`Avalio paciente a pedido da equipe da ${S.chamado}.`);
- // P1
+ // frase A: quem é e de onde veio
  const p1=[];const cid=S.cidade.trim();
  if(cid)p1.push(`proveniente de ${cid}`);
- const og=ORIGEM.find(o=>o[0]===S.origem);if(og)p1.push(og[2]);
+ const og=ORIGEM.find(o=>o[0]===S.origem);let ogI=-1;if(og&&!(og[0]==='int'&&intern)){ogI=p1.length;p1.push(og[2]);}
  if(S.acomp==='des')p1.push('desacompanhado');
- else if(S.acomp==='acomp'){const q=S.acompQuem;p1.push('acompanhado'+(q?(/^(d[aoe]s?|pel[ao]s?)\b|^do\(a\)/i.test(q)?' '+q:' de '+q):''));}
+ else if(S.acomp==='acomp'){const q=S.acompQuem;p1.push('acompanhado'+(q?(/^(d[aoe]s?|pel[ao]s?)\b/i.test(q)?' '+q:' de '+q):''));}
  const mot=S.motivo.trim();
  if(intern)p1.push(`internado ${S.chamado==='UTI'?'na UTI':'em enfermaria'}${mot?` por ${mot}`:''}`);
- else if(verm)p1.push(`aos cuidados da equipe da Sala Vermelha${mot?` por ${mot}`:''}`);
- else if(inter&&(S.equipe||mot))p1.push(S.equipe?`aos cuidados da ${S.equipe}${mot?` por ${mot}`:''}`:`internado por ${mot}`);
+ else if(verm){if(mot)p1.push(`em atendimento por ${mot}`);}
+ else if(inter&&(S.equipe||mot)){if(!S.equipe&&S.origem==='int'&&ogI>=0)p1[ogI]+=` por ${mot}`;else p1.push(S.equipe?`aos cuidados da equipe de ${S.equipe}${mot?` por ${mot}`:''}`:`internado por ${mot}`);}
  const auto=autoDevido(t,topo);$('#devido').placeholder=auto?`automático: ${auto}`:'motivo do encaminhamento';
- const trauma=t&&t.k==='trauma';const today=new Date();const n=parseInt(S.dias,10);
- if(trauma){const d=S.devido.trim()||joinPt(mechList());
-  const q=S.data==='hoje'?`hoje (${fmt(today)})`:S.data==='ontem'?`ontem (${fmt(new Date(Date.now()-864e5))})`:S.data==='dias'&&n?`há ${n} dia${n>1?'s':''} (${fmt(new Date(Date.now()-n*864e5))})`:S.data==='data'&&S.dataX?`em ${isoToBr(S.dataX)}`:'';
-  if(d||q||S.hora||S.tipo.length||topo||S.sym.length){let x=`devido a ${d||'trauma'}`;if(q)x+=` ${q}`;if(S.hora)x+=`, aproximadamente às ${hh(S.hora)}`;
-   if(S.tipo.length)x+=`, com ${joinPt(S.tipo)}${topo?` em ${topo}`:''}`;else if(topo)x+=`, com trauma em ${topo}`;
-   x+=`, evoluindo com ${joinPt(['dor'].concat(S.sym))}`;p1.push(x);}}
- else{const dev=S.devido.trim()||auto;if(dev)p1.push(`devido a ${dev}`);}
- if(p1.length)P.push(`Paciente ${p1.join(', ')}.`);
- // P2
- const H=[];
- const dStart=S.data==='hoje'?'hoje':S.data==='ontem'?'ontem':S.data==='dias'?(n?`há ${n} dia${n>1?'s':''}`:''):S.data==='data'?(S.dataX?`em ${isoToBr(S.dataX)}`:''):'';
- if(t&&t.k==='posop'){const pr=S.proc.trim();if(pr||S.dataCir||S.localCir)H.push(`Em pós-operatório de ${pr||'procedimento ortopédico'}${S.dataCir?` realizado em ${isoToBr(S.dataCir)}`:''}${S.localCir?` ${S.localCir}`:''}.`);}
- if(t&&t.k==='achado'&&(S.achado.trim()||S.exame))H.push(`Apresenta achado de ${S.achado.trim()||'lesão óssea'}${topo?` em ${topo}`:''}${S.exame?` ${S.exame}`:''}.`);
- if(t){let apos='',semF=false;
-  if(t.k==='trauma'){}
-  else if(t.k!=='posop'){semF=S.apos.includes('__sem');apos=joinPt(S.apos.filter(a=>a!=='__sem'));}
-  if(!trauma&&(dStart||apos||semF)){let s=`${REF} início dos sintomas`+(dStart?` ${dStart}`:'');
-   if(apos)s+=(dStart?', após ':' após ')+apos;else if(semF)s+=', sem fator desencadeante identificado';H.push(s+'.');}}
+ const A=p1.length?`Paciente ${p1.join(', ')}.`:'';
+ const sujeito=s=>A?cap(s):'Paciente '+s;   // sem frase A, a frase seguinte começa por "Paciente …"
+ const trauma=t&&t.k==='trauma';const dev=S.devido.trim();
  const hasDor=S.eva!==''||S.car.length||S.irr||S.piora.length||S.melhora.length;
- const dorTopo=t&&(t.k==='trauma'||t.k==='clin')?topo:'';
+ const evaZero=S.eva==='0';
+ const dorOn=!sf&&!evaZero&&(S.sym.includes('dor')||(hasDor&&!evaZero));
+ let B='';
+ if(trauma){const FO='queda sobre a mão espalmada',ph=S.mech.filter(m=>!CTX.includes(m));const q=quando();
+  const dq=!dev&&ph.some(m=>/^queda/.test(m))&&S.tipo.includes(FO);const d=dev||mechTxt(dq);
+  const tps=S.tipo.filter(x=>!(dq&&x===FO)),fo=tps.includes(FO),outr=tps.filter(x=>x!==FO);
+  const lesao=outr.length?`${joinPt(outr)}${topo?` em ${topo}`:''}`:(topo?`trauma em ${topo}`:'');
+  const evol=(dorOn?['dor']:[]).concat(S.sym.filter(x=>x!=='dor'));
+  if(d||q||S.hora||S.tipo.length||topo||evol.length){let x,c='';
+   if(d){x=`vítima de ${d}`;c=[fo?FO:'',lesao].filter(Boolean).join(' e ');}
+   else if(fo){x=`vítima de ${FO}`;c=lesao;}
+   else x=`vítima de ${lesao||'trauma'}`;
+   if(q)x+=` ${q}`;if(S.hora&&!horaFut(S.hora,S.data))x+=`, aproximadamente às ${hh(S.hora)}`;
+   if(c)x+=`, com ${c}`;
+   if(evol.length)x+=`, evoluindo com ${joinPt(evol)}`;B=sujeito(x)+'.';}}
+ else if(t&&t.k==='posop'){const pr=S.proc.trim(),dc=S.dataCir&&!futuro(S.dataCir)?isoToBr(S.dataCir):'';
+  const sy=S.sym.filter(x=>!(x==='dor'&&hasDor));
+  let x=`em pós-operatório de ${pr||'procedimento ortopédico'}${dc?` (cirurgia em ${dc})`:''}${S.localCir?` ${S.localCir}`:''}`;
+  x+=sy.length?`, com ${joinPt(sy)} em ferida operatória${topo?` de ${topo}`:''}`:`, para avaliação de ferida operatória${topo?` de ${topo}`:''}`;
+  B=sujeito(x)+'.';}
+ else if(t&&t.k==='achado'){const ach=`achado de ${S.achado.trim()||'imagem'}${topo?` em ${topo}`:''}${S.exame?` ${S.exame}`:''}`;B=(A?`Apresenta ${ach}`:`Paciente com ${ach}`)+'.';}
+ if(!trauma&&dev)B+=(B?' ':'')+(A||B?'Procura atendimento':'Paciente procura atendimento')+` devido a ${dev}.`;
+ if(A||B)P.push([A,B].filter(Boolean).join(' '));
+ // história
+ const H=[];
+ if(t&&!trauma){const dStart=quando();let apos='',semF=false;
+  if(t.k!=='posop'){semF=S.apos.includes('__sem');apos=joinPt(S.apos.filter(a=>a!=='__sem'));}
+  if(dStart||apos||semF){let s=(sf?'Início dos sintomas':`${REF} início dos sintomas`)+(dStart?` ${dStart}`:'');
+   if(apos)s+=(dStart?', após ':' após ')+apos;else if(semF)s+=', sem fator desencadeante identificado';H.push(s+'.');}}
+ const clin=t&&t.k==='clin';
  let dorDone=false;
- if(t&&(hasDor||(dorTopo&&!trauma))){let s=trauma?`${REF} dor`:`${APR} dor`+(dorTopo||(hasDor&&t.k!=='achado'&&topo)?` em ${dorTopo||topo}`:'');
-  if(S.eva!=='')s+=`, de intensidade ${S.eva}/10`;if(S.car.length)s+=`, ${joinPt(S.car)}`;
+ if(t&&sf){if(clin&&topo)H.push(`Região acometida: ${topo}.`);}
+ else if(t&&evaZero){H.push(`${NEGA} dor no momento.`);if(clin&&topo&&!S.sym.some(x=>!/^dor/.test(x)))H.push(`Região acometida: ${topo}.`);}
+ else if(t&&(hasDor||(clin&&topo))){
+  let s=trauma?`${REF} dor`:`${APR} dor`+(clin&&topo?` em ${topo}`:'');
+  if(S.eva!=='')s+=(clin&&topo?', ':' ')+`de intensidade ${S.eva}/10`;if(S.car.length)s+=(S.eva!==''||(clin&&topo)?', ':' ')+joinPt(S.car);
   if(S.irr==='sem')s+=', sem irradiação';else if(S.irr==='com')s+=`, com irradiação${S.irrPara.trim()?` para ${S.irrPara.trim()}`:''}`;
   H.push(s+'.');dorDone=true;
   const mel=S.melhora.filter(x=>x!=='__sem'),semM=S.melhora.includes('__sem');
   if(S.piora.length){let x=`${REF} piora ${joinPt(S.piora)}`;if(mel.length)x+=` e melhora com ${joinPt(mel)}`;else if(semM)x+=', sem fatores de melhora';H.push(x+'.');}
   else if(mel.length)H.push(`${REF} melhora com ${joinPt(mel)}.`);else if(semM)H.push(`${REF} ausência de fatores de melhora.`);}
- if(t&&!trauma&&S.sym.length){const sy=joinPt(S.sym);
-  if(t.k==='posop')H.push(`${APR} ${sy} em topografia de ferida operatória${topo?` de ${topo}`:''}.`);
-  else if(t.k==='achado')H.push(`${REF} ${sy}.`);
-  else H.push(dorDone?`Evolui com ${sy}.`:`${APR} ${sy}${topo?` em ${topo}`:''}.`);}
- else if(t&&t.k==='achado'&&(S.achado.trim()||S.exame)&&!dorDone)H.push('Sem queixas ortopédicas no momento.');
+ if(t&&!trauma&&t.k!=='posop'){const sy=S.sym.filter(x=>!(dorDone&&x==='dor')&&!(evaZero&&/^dor/.test(x)));
+  if(sy.length){const j=joinPt(sy);
+   if(t.k==='achado')H.push(sf?`Com ${j}.`:`${REF} ${j}.`);
+   else H.push(dorDone?`Evolui com ${j}.`:`${APR} ${j}${topo?` em ${topo}`:''}.`);}}
  if(H.length)P.push(H.join(' '));
  // complementos + dispositivos
  const X=[];if(t)t.ex.forEach(id=>{const e=EX[id];const v=S.ex[id];if(!v||(Array.isArray(v)&&!v.length))return;
@@ -614,19 +961,24 @@ function outPS(){
   (e.multi?e.o.filter(o=>v.includes(o[0])):e.o.filter(o=>o[0]===v)).forEach(o=>X.push(o[1]));});
  const ap=aparTxt();if(ap)X.push(ap);if(X.length)P.push(X.join(' '));
  // estado
- const est=[];if(S.nivel)est.push(S.nivel);if(S.gcs.trim())est.push(`Glasgow ${S.gcs.trim()}`);SUP.forEach(s=>{if(S.suporte.includes(s[0]))est.push(s[0]);});
- const EL=[];if(est.length)EL.push(`No momento, ${joinPt(est)}.`);if(S.fonte.length){const prej=S.nivel&&S.nivel!=='consciente e orientado'||S.suporte.some(x=>/IOT|sedação/.test(x));EL.push(prej?`Anamnese prejudicada; informações obtidas com ${joinPt(S.fonte)}.`:`Informações obtidas com ${joinPt(S.fonte)}.`);}
+ const est=[];if(S.nivel)est.push(S.nivel);if(gcsOk())est.push(`Glasgow ${S.gcs.trim().toUpperCase()}`);SUP.forEach(s=>{if(S.suporte.includes(s[0]))est.push(s[0]);});
+ const EL=[];if(est.length)EL.push(`No momento, ${joinPt(est)}.`);if(S.fonte.length){const prej=S.nivel&&S.nivel!=='consciente e orientado'||S.suporte.some(x=>/IOT|sedação/.test(x));EL.push(prej?`Anamnese prejudicada; informações obtidas ${fonteTxt()}.`:`Informações obtidas ${fonteTxt()}.`);}
  if(EL.length)P.push(EL.join(' '));
  // interrogatório
  if(t){const order=t.neg.concat(S.custom['neg_'+t.id]||[]);const pos=order.filter(i=>S.neg[i]==='p').map(i=>NEG[i]||i);const neg=order.filter(i=>S.neg[i]==='n').map(i=>NEG[i]||i);
-  const ni=[];if(pos.length)ni.push(`${REF} ${joinPt(pos)}.`);if(neg.length)ni.push(`${NEGA} ${joinPt(neg)}.`);if(ni.length)P.push(ni.join(' '));}
+  const ni=[];
+  if(semFala()&&!acomp){if(S.fonte.length&&(pos.length||neg.length)){const q=joinPt(S.fonte.map(f=>FONTE_ART[f]||f));const nem=neg.length<=1?(neg[0]||''):neg.slice(0,-1).join(', ')+' nem '+neg[neg.length-1];
+   ni.push(`Segundo ${q}, `+[pos.length?`houve ${joinPt(pos)}`:'',neg.length?`sem ${nem}`:''].filter(Boolean).join('; ')+'.');}}
+  else{if(pos.length)ni.push(`${REF} ${joinPt(pos)}.`);if(neg.length)ni.push(`${NEGA} ${joinPt(neg)}.`);}
+  if(ni.length)P.push(ni.join(' '));}
+ for(let i=0;i<P.length;i++)P[i]=gen(P[i]);
  if(S.obs.trim())P.push(S.obs.trim());
  // AP
- const jej=S.jejumH?`${hh(S.jejumH)}${S.jejumD==='ontem'?` de ${fmt(new Date(Date.now()-864e5))}`:S.jejumD==='hoje'?` de ${fmt(new Date())}`:''}`:'';
+ const jej=S.jejumH&&!horaFut(S.jejumH,S.jejumD)?`${hh(S.jejumH)}${S.jejumD==='ontem'?` de ${fmt(refD(1))}`:S.jejumD==='hoje'?` de ${fmt(refD())}`:''}`:'';
  const anyH=Object.keys(HIST).some(k=>S.hist[k].length)||!!jej;
  if(!P.length&&!anyH)return '';
- let txt=(inter?'# INTERCONSULTA ORTOPEDIA #':'# PS ORTOPEDIA #')+(P.length?'\n\n'+P.join('\n\n'):'');
- if(anyH){txt+='\n---\n# AP\n'+Object.keys(HIST).map(k=>{const a=S.hist[k];const v=a.includes('nega')?HIST[k].nega:a.join(', ');return `${HIST[k].t}:${v?' '+v:''}`;}).join('\n')+`\nJejum de sólidos e líquidos desde${jej?' '+jej:''}`+'\n-----';}
+ let txt=(inter||intern?'# INTERCONSULTA ORTOPEDIA #':'# PS ORTOPEDIA #')+(P.length?'\n\n'+P.join('\n\n'):'');
+ if(anyH){const L=Object.keys(HIST).map(k=>{const a=S.hist[k];const v=a.includes('nega')?HIST[k].nega:a.join(', ');return v?`${HIST[k].t}: ${v}`:'';}).filter(Boolean);if(jej)L.push(`Jejum de sólidos e líquidos desde ${jej}`);txt+='\n---\n# AP\n'+L.join('\n')+'\n-----';}
  return txt;
 }
 function aparTxt(){if(!S.aparato.length)return '';const fem=S.aparato.length===1&&APAR_F.test(S.aparato[0]);const part=S.aparato.length>1?'instalados':fem?'instalada':'instalado';
@@ -635,10 +987,11 @@ function aparTxt(){if(!S.aparato.length)return '';const fem=S.aparato.length===1
 /* ---------- texto enfermaria ---------- */
 function outEnf(){
  const e=S.enf;const P=[];const n=String(e.n||'').trim();const diag=e.diag.trim(),pr=e.eproc.trim();
- if(e.sit==='po')P.push(`Paciente em ${n?n+'º DPO':'pós-operatório'} de ${pr||'procedimento ortopédico'}${diag?`, por ${diag}`:''}.`);
- else if(e.sit==='pre')P.push(`Paciente internado${diag?` por ${diag}`:''}, aguardando ${pr||'procedimento cirúrgico'}${n?`, ${n}º dia de internação`:''}.`);
- else if(e.sit==='cons')P.push(`Paciente internado${diag?` por ${diag}`:''}, em tratamento conservador${n?`, ${n}º dia de internação`:''}.`);
- else if(diag)P.push(`Paciente internado por ${diag}${n?`, ${n}º dia de internação`:''}.`);
+ const nOk=/^\d+$/.test(n);const po=nOk?(+n===0?'POI':`${+n}º PO`):'',dih=nOk?`, DIH ${+n}`:'';
+ if(e.sit==='po')P.push(`Paciente em ${po||'pós-operatório'} de ${pr||'procedimento ortopédico'}${diag?`, por ${diag}`:''}.`);
+ else if(e.sit==='pre')P.push(`Paciente internado${diag?` por ${diag}`:''}, aguardando ${pr||'procedimento cirúrgico'}${dih}.`);
+ else if(e.sit==='cons')P.push(`Paciente internado${diag?` por ${diag}`:''}, em tratamento conservador${dih}.`);
+ else if(diag)P.push(`Paciente internado por ${diag}${dih}.`);
  const B=[];
  // posição + eliminações
  const anyEv=e.decub||e.diur||e.evac||e.consc||e.resp||e.sono||e.dieta||e.hd||e.perf||e.dorI||e.dorT||e.dorF.length||e.cur||e.ctrl.length||e.fecha.length||S.aparato.length;
@@ -653,12 +1006,12 @@ function outEnf(){
  ['sono','dieta','hd','perf'].forEach(k=>{if(e[k])G.push(pick(E[k],e[k]));});
  if(G.length)B.push(cap(G.join(', '))+'.');
  // dor
- const topo=joinPt(S.topo.map(regName));const loc=topo?`em ${topo}`:'no membro';const F=e.dorF.length?' '+joinPt(e.dorF):'';const I=e.dorI&&e.dorI!=='sem'?e.dorI:'';const an=e.analg==='1'?', controlada com analgesia':'';
+ const topo=joinPt(S.topo.map(regName));const loc=topo?` em ${topo}`:'';const F=e.dorF.length?' '+joinPt(e.dorF):'';const I=e.dorI&&e.dorI!=='sem'?e.dorI:'';const an=e.analg==='1'?', controlada com analgesia':'';
  if(e.dorI==='sem')B.push(e.dorT==='melhora'?'Refere melhora da dor, sem dor no momento.':'Nega dor no momento.');
  else if(I||e.dorT||e.dorF.length){
-  if(e.dorT==='melhora')B.push(`Refere melhora da dor${I?`, atualmente ${I}`:''} ${loc}${F}${an}.`);
-  else if(e.dorT==='piora')B.push(`Refere piora da dor${I?`, atualmente ${I}`:''} ${loc}${F}${an}.`);
-  else B.push(`Refere ${e.dorT==='mantem'?'manter ':''}dor${I?' '+I:''} ${loc}${F}${an}.`);}
+  if(e.dorT==='melhora')B.push(`Refere melhora da dor${I?`, atualmente ${I}`:''}${loc}${F}${an}.`);
+  else if(e.dorT==='piora')B.push(`Refere piora da dor${I?`, atualmente ${I}`:''}${loc}${F}${an}.`);
+  else B.push(`Refere ${e.dorT==='mantem'?'manter ':''}dor${I?' '+I:''}${loc}${F}${an}.`);}
  const ap=aparTxt();if(ap)B.push(ap);
  if(e.cur)B.push(cap(pick(E.cur,e.cur))+'.');
  const febre=e.ctrl.includes('febre');
@@ -667,27 +1020,57 @@ function outEnf(){
  if(e.fecha.includes('nega'))B.push(febre?'Nega demais intercorrências.':'Nega febre e demais intercorrências.');
  if(e.fecha.includes('estavel'))B.push('Mantendo-se estável no período.');
  if(B.length)P.push(B.join(' '));
+ for(let i=0;i<P.length;i++)P[i]=gen(P[i]);
  if(S.obs.trim())P.push(S.obs.trim());
  return P.join('\n\n');
 }
+/* ---------- avisos (v74, fragmento): o que ficou FORA do texto e por quê ---------- */
+function avisos(){const A=[];const enf=S.mode==='enf';const t=S.tpl?tplById(S.tpl):null;const trauma=t&&t.k==='trauma';
+ if(!enf&&t){
+  if(S.data==='dias'&&String(S.dias||'').trim()!==''&&!diasOk())A.push({t:'“Há quantos dias” precisa ser 1 ou mais (para hoje, use “Hoje”). Ficou fora do texto.',alvo:'#dias'});
+  if(S.data==='data'&&futuro(S.dataX))A.push({t:`Data ${isoToBr(S.dataX)} está no futuro. Ficou fora do texto.`,alvo:'#dataX'});
+  if(t.k==='posop'&&futuro(S.dataCir))A.push({t:`Data da cirurgia ${isoToBr(S.dataCir)} está no futuro. Ficou fora do texto.`,alvo:'#dataCir'});
+  if(trauma&&S.hora&&horaFut(S.hora,S.data))A.push({t:`Trauma “hoje” às ${hh(S.hora)}, depois do horário do atendimento (${hh(isoHora(refD()))}). A hora ficou fora do texto. O trauma foi ontem?`,b:'Foi ontem',f:()=>{S.data='ontem';},alvo:'#hora'});}
+ if(!enf){
+  if(S.jejumH&&horaFut(S.jejumH,S.jejumD))A.push({t:`Jejum “hoje” desde ${hh(S.jejumH)}, depois do horário do atendimento. Ficou fora do texto. Foi ontem?`,b:'Foi ontem',f:()=>{S.jejumD='ontem';},alvo:'#jejumH'});
+  else if(S.jejumH&&!S.jejumD)A.push({t:'Jejum: falta escolher Hoje ou Ontem.',alvo:'#cJejumD'});
+  const intern=S.chamado==='Enfermaria'||S.chamado==='UTI',verm=S.chamado==='Sala Vermelha',inter=S.regime==='inter';
+  if(S.motivo.trim()&&!intern&&!verm&&!inter)A.push({t:`“Internado por: ${S.motivo.trim()}” está preenchido, mas não entra no texto em avaliação direta.`,alvo:'#motivo',am:1});
+  if(S.equipe&&!intern&&!inter)A.push({t:`Equipe “${S.equipe}” está marcada, mas não entra no texto em avaliação direta.`,alvo:'#cEquipe',am:1});}
+ if(enf){const e=S.enf,n=String(e.n||'').trim(),temDor=(e.dorI&&e.dorI!=='sem')||e.dorT||e.dorF.length;
+  if(/^\d+$/.test(n)&&!e.sit&&!e.diag.trim())A.push({t:'Dia (POI/PO/DIH) preenchido, mas falta a situação: pós-operatório, pré-operatório ou conservador. Ficou fora do texto.',alvo:['#eSit','#enfN']});
+  if(e.analg==='1'&&!temDor)A.push({t:'“Controlada com analgesia” marcado sem dor descrita. Ficou fora do texto.',alvo:['#eDorI','#eDorF']});
+  if(e.dorI==='sem'&&e.dorT==='piora')A.push({t:'“Piora da dor” e “sem dor no momento” juntos: o texto diz só “Nega dor no momento”. Conferir.',alvo:['#eDorT','#eDorI'],am:1});}
+ avisosCoerencia(A);
+ return A;}
+const isoHora=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function pintaAvisos(txt){const box=$('#avisos');box.innerHTML='';const A=avisos();
+ A.forEach(a=>{const temAlvo=!!(a.alvo&&(!Array.isArray(a.alvo)||a.alvo.length));const d=el('div',{class:'aviso'+(a.am?' am':'')+(temAlvo&&!a.b?' ir':''),...(temAlvo?{role:'button',tabindex:'0'}:{})},el('span',{text:a.t}));
+  if(temAlvo){d.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')irAoCampo(a);});d.addEventListener('keydown',e=>{if(e.key==='Enter')irAoCampo(a);});}
+  if(a.b)d.append(el('button',{type:'button',text:a.b,onclick:()=>{a.f();renderAll();}}));box.append(d);});
+ pintaCampos(A);
+ if(S.ref&&txt){const d=new Date(S.ref);box.append(el('div',{class:'refln',text:`Datas do texto calculadas para o atendimento de ${fmt(d)} às ${hh(isoHora(d))} (início deste preenchimento).`}));}
+ box.hidden=!box.childNodes.length;}
 function out(){let txt=S.mode==='enf'?outEnf():outPS();if(caps)txt=txt.toLocaleUpperCase('pt-BR');
- $('#outTxt').value=txt;const dis=!txt;$('#copyBtn').disabled=dis;$('#copyBtn2').disabled=dis;}
+ $('#outTxt').value=txt;pintaAvisos(txt);const dis=!txt;$('#copyBtn').disabled=dis;$('#copyBtn2').disabled=dis;}
 
 /* ---------- entradas ---------- */
 document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>{setP(i.dataset.k,i.value);
- if(['altura','dias','dataX'].includes(i.dataset.k)||i.dataset.k==='achado'){}out();save();}));
+ if(['altura','dias','dataX'].includes(i.dataset.k)||i.dataset.k==='achado'){}out();tocou();out();save();}));
+$('#negaNeg').addEventListener('click',()=>{const t=S.tpl?tplById(S.tpl):null;if(!t)return;t.neg.concat(S.custom['neg_'+t.id]||[]).forEach(id=>{if(!S.neg[id])S.neg[id]='n';});renderAll();toast('Itens não marcados registrados como “nega”');});
+$('#enfNormal').addEventListener('click',()=>{const e=S.enf,N={diur:'presente',evac:'presente',consc:'lo',resp:'aa',sono:'pres',dieta:'bem',hd:'est',perf:'boa'};Object.keys(N).forEach(k=>{if(!e[k])e[k]=N[k];});if(!e.ctrl.length)e.ctrl=['sem'];if(!e.fecha.length)e.fecha=['nega','estavel'];renderAll();toast('Preenchido só o que estava vazio; confira dor, curativo e posição');});
 $('#negaAll').addEventListener('click',()=>{Object.keys(HIST).forEach(k=>{if(!S.hist[k].length)S.hist[k]=['nega'];});renderAll();});
 $('#capsBtn').addEventListener('click',()=>{caps=!caps;try{localStorage.setItem(CAPS,caps?'1':'0')}catch(e){}render();out();});
 
 /* ---------- copiar ---------- */
-let toastT;function toast(m){let t=$('.toast');if(!t){t=el('div',{class:'toast',role:'status'});document.body.append(t);}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1800);}
+let toastT;function toast(m){let t=$('.toast');if(!t){t=el('div',{class:'toast',role:'status'});document.body.append(t);}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,m.length>60?4500:1800);}
 function copy(){const ta=$('#outTxt');const txt=ta.value;if(!txt)return;
  const fb=()=>{ta.focus();ta.select();toast('Texto selecionado; use Copiar do sistema');};
  try{navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado'),fb);}catch(e){fb();}}
 $('#copyBtn').addEventListener('click',copy);$('#copyBtn2').addEventListener('click',copy);
 $('#seeBtn').addEventListener('click',()=>$('#outAside').scrollIntoView({behavior:'smooth',block:'start'}));
 let resetArm=null;$('#resetBtn').addEventListener('click',e=>{const b=e.currentTarget;
- if(resetArm){clearTimeout(resetArm);resetArm=null;const custom=S.custom;S=fresh(S.mode);S.custom=custom;b.textContent='Novo paciente';b.classList.remove('warn');renderAll();toast('Formulário limpo');return;}
+ if(resetArm){clearTimeout(resetArm);resetArm=null;novoPaciente();b.textContent='Novo paciente';b.classList.remove('warn');toast('Formulário limpo');return;}
  b.textContent='Toque de novo para limpar';b.classList.add('warn');resetArm=setTimeout(()=>{resetArm=null;b.textContent='Novo paciente';b.classList.remove('warn');},3000);});
 
 /* ---------- corpo 3D ---------- */
@@ -754,7 +1137,19 @@ let paint3d=()=>{};
  new MutationObserver(()=>paint3d()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 })();
 
-renderAll();
+function novoPaciente(){const custom=S.custom;S=fresh(S.mode);S.custom=custom;$('#retoma').hidden=true;inicial=true;renderAll();inicial=false;}
+/* ---------- ao abrir: preenchimento antigo? (v74, fragmento) ---------- */
+const RETOMA_H=4;   // horas sem mexer até perguntar se é o mesmo paciente
+function virgem(){const z=o=>JSON.stringify(Object.assign({},o,{ref:0,mod:0,custom:{}}));return z(S)===z(fresh(S.mode));}
+function retomada(){const box=$('#retoma');if(virgem()||!$('#outTxt').value){box.hidden=true;return;}
+ const velho=S.mod&&Date.now()-S.mod>RETOMA_H*36e5,semData=!S.ref;if(!velho&&!semData){box.hidden=true;return;}
+ box.innerHTML='';const d=S.ref?new Date(S.ref):null;
+ box.append(el('b',{text:semData?'Há um preenchimento salvo sem data (de uma versão anterior do programa).':`Há um preenchimento de ${fmt(d)} às ${hh(isoHora(d))}.`}),
+  el('span',{text:semData?'As datas do texto (hoje, ontem, há N dias, jejum) estão sendo contadas a partir de agora. É o mesmo paciente?':`As datas do texto continuam valendo para ${fmt(d)}. É o mesmo paciente?`}),
+  el('div',{class:'row'},el('button',{type:'button',text:semData?'Mesmo paciente: contar de agora':`Mesmo paciente: manter ${fmt(d).slice(0,5)}`,onclick:()=>{if(semData)S.ref=Date.now();S.mod=Date.now();box.hidden=true;renderAll();}}),
+   el('button',{type:'button',text:'Novo paciente (limpar)',onclick:()=>{novoPaciente();toast('Formulário limpo');}})));
+ box.hidden=false;}
+renderAll();inicial=false;retomada();
 })();
 </script>
 

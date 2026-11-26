@@ -177,7 +177,7 @@ Campos (`CAMPOS`), cada um com quando aparece (`when`: operado, membro, coluna�
 - **Armazenamento no aparelho:**
   - estado do app: `localStorage['sot-app-v1']`; se encher, passa para IndexedDB;
   - fotos: IndexedDB `sot-fotos`;
-  - programas do hub: chaves próprias (`pos-op-*`, `cd_plantao`, `ig-draft`, `ig-list`, `np-prefill`, `exorto3`, `mapaSOT.*`, `sot-ambint`, `examesUpdater.*`).
+  - programas do hub: chaves próprias (`pos-op-*`, `cd_plantao`, `ig-draft`, `ig-list`, `np-prefill`, `mapaSOT.*`, `sot-ambint`, `examesUpdater.*`).
 - **Google:** login OAuth (`CLIENT_ID`); escopos Drive (`drive.file`, `drive.readonly`) e Agenda (`calendar.readonly`).
 - **Drive (pasta `config.js → PASTA`):** subpastas `pacientes/` (um JSON por paciente), `fotos/`, `folhas/`, `backups/`; arquivos `mapa-AAAA-MM-DD.json`, `amb-<prontuário>.json`, `internograma-hist.json`, `folha-<id>.json`. Cada arquivo é achado pelo nome; o mais novo vale.
 - **Rede:** cada pedido tem tempo-limite (30 s; envio 120 s) e nova tentativa em erro temporário; envios em paralelo e em fila.

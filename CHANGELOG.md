@@ -1,6 +1,14 @@
 # CHANGELOG — SOT APP
 
-## v76 (atual) — Contagem do cabeçalho na regra do serviço
+## v77 (atual) — Anamnese, Exame Físico e Condutas novos (feitos em conversas à parte, revisados e integrados)
+- **Anamnese** (`hub/anamnese.html`, versão "v76" da conversa da anamnese): nada vem marcado; itens do modelo aparecem como SUGERIDO e só entram no texto quando tocados; "Perguntei: nega os não marcados"; modo Enfermaria (evolução curta); avisos com "ir ao campo"; datas sempre com ano e nunca no futuro. Detalhes: `anamnese-v76-orientacoes.md` (no pacote da conversa).
+- **Novo Paciente** (`hub/novopac.html`), para ler o texto da Anamnese nova: "QUEDA DE ALTURA (APROXIMADAMENTE N M)", acidente motociclístico, arma branca, mordedura, trauma esportivo; "nega fratura" não vira diagnóstico; da Anamnese só sai diagnóstico de linha HD; alergia só quando o texto fala de alergia.
+- **Exame Físico** (`hub/exame.html`): "Tudo normal" honesto com sinal de fratura; ADM sem graus; motor de coerência (vale o último toque); faixas Atenção/Confira (fora do texto); campo Idade (Ortolani/Barlow < 1 ano, Galeazzi < 18); dor à palpação numa frase só; sela = S2–S5. **Não guarda mais o exame** entre aberturas: a chave `exorto3` é apagada ao abrir (tira dado de paciente do aparelho). Mudanças de texto listadas nas notas da conversa (testes funcionais, sem graus, concordâncias, ponto final).
+- **Condutas** (`hub/condutas.html` + página nova `hub/condutas-guia.html` "Como usar"): imobilização e opções por região; exames (RX com achado + lado; TC/USG/RM com local, data e laudo); exposta com marcador próprio e antibiótico uma vez só; desfechos Alta / Retorno / Internação / Internação por outra equipe; intermediário (interconsulta, reavaliação seriada, CROSS, origem, UBS); "Cuidados de coluna"; assinatura só no em tempo final com "DISCUTIDO COM DR X EM data"; avisos "Confira" que não bloqueiam. Guarda só `cd_plantao`, no mesmo formato (nada a converter).
+- `sw.js`: `hub/condutas-guia.html` na lista RESTO.
+- Testes: `t_hub77` (os 4 programas abrem no app, celular e computador, geram texto, sem erro; `exorto3` apagado). Conferidos também com os testes das conversas: Condutas 70 verificações, 0 falhas; Exame, cada botão sozinho (2.953), 0 violação.
+
+## v76 — Contagem do cabeçalho na regra do serviço
 - Regra (definida pelo usuário, 25/11/2026): **HC** = pacientes da ortopedia no HC; **IC** = interconsultas (outra prestadora), à parte; **Hm** = todos do Materno Infantil, **RN conta**. Cabeçalho **sem** "N Altas" → as altas entram no HC; **com** "N Altas" → o HC fica sem elas.
 - A contagem passou para o motor (`SOTCONT.contarIG`) e é a mesma no Atualizador e na conferência da enfermaria. Mesmo registro em 2 linhas (ala + ALTAS) conta 1 paciente.
 - Antes: as duas tiravam as altas do HC num cabeçalho sem "N Altas" (no Doc de 25/11 escreveriam 16 HC em vez de 19), e o Atualizador contava 2 vezes quem estava na ala e em ALTAS.

@@ -42,6 +42,7 @@ header.top p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
 .main{display:grid;gap:16px;min-width:0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
 .ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.85rem}
+.ghost[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 .ghost:hover{border-color:var(--accent);color:var(--accent)}
 
 /* 3D */
@@ -209,6 +210,11 @@ button.lhead:hover{color:var(--accent)}
 .locline{border:0;background:none;text-align:left;padding:4px 0;font-size:.88rem;color:var(--ink)}
 .locline b{color:var(--accent)}
 .locline:hover b{text-decoration:underline}
+.avisos{display:grid;gap:6px;margin:6px 0}
+.warn2box{border:1px solid #d9a400;background:#fff6d6;color:#5a4300;border-radius:8px;padding:8px 10px;font-size:.85rem}
+:root[data-theme="dark"] .warn2box{background:#3b3200;color:#ffe48a;border-color:#a88400}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .warn2box{background:#3b3200;color:#ffe48a;border-color:#a88400}}
+.idade{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}.idade input{width:4.5em;min-height:36px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:var(--surface)}
 </style>
 
 <div class="wrap">
@@ -217,7 +223,8 @@ button.lhead:hover{color:var(--accent)}
       <h1>Exame Ortopédico Rápido</h1>
       <p>Escolha o segmento, use “Tudo normal” e marque só o que estiver alterado. O texto sai pronto para o prontuário.</p>
     </div>
-    <button class="ghost" id="clearAll" type="button">Limpar tudo</button>
+    <div class="actions"><label class="idade" for="idade">Idade <input id="idade" type="text" inputmode="numeric" placeholder="anos" size="4" autocomplete="off"></label>
+    <button class="ghost" id="clearAll" type="button">Limpar tudo</button></div>
   </header>
 
   <div class="grid">
@@ -229,7 +236,7 @@ button.lhead:hover{color:var(--accent)}
       <div class="card out">
         <div class="panel-head"><h2>Texto do exame</h2><div class="seg" id="fmt" role="group" aria-label="Formato do texto"><button type="button" data-fmt="lista">Lista</button><button type="button" data-fmt="paragrafo">Parágrafo</button><button type="button" data-fmt="caps">CAIXA ALTA</button></div></div>
         <textarea id="out" readonly aria-label="Texto gerado do exame físico"></textarea>
-        <div class="keys"><b>Atalhos</b> N tudo normal · Shift+N normal e próximo · ← → segmento · D/E lado · O lado oposto normal · C copiar</div>
+        <div class="keys"><b>Atalhos</b> N tudo normal · Shift+N normal e próximo · ← → segmento · D/E lado · C copiar</div>
       </div>
     </div>
   </div>
@@ -252,10 +259,11 @@ const SELA=[["Sensibilidade perineal preservada","Sensibilidade perineal (S2–S
 const STAB_PELVE=["Estável horizontalmente","Estável verticalmente","Instabilidade horizontal (rotacional)","Instabilidade vertical"];
 const OPP={"ADM preservada":"ADM reduzida","ADM reduzida":"ADM preservada","Sem crepitações":"Crepitação","Crepitação":"Sem crepitações","Sem dor à mobilização":"Dor à mobilização","Dor à mobilização":"Sem dor à mobilização",
   "Estável horizontalmente":"Instabilidade horizontal (rotacional)","Instabilidade horizontal (rotacional)":"Estável horizontalmente","Estável verticalmente":"Instabilidade vertical","Instabilidade vertical":"Estável verticalmente"};
-const mobList=(r)=>(R[r]&&R[r].jrom?["Sem crepitações","Crepitação",NOTEST]:r==="marcha"?[]:MOB_BASE.concat(r==="bacia"?STAB_PELVE:[])).concat(R[r]&&LIMBJ[R[r].grp]?[DEMAIS]:[]);
-function mobText(m){const o=[];
+const mobList=(r)=>(R[r]&&R[r].jrom?["Sem crepitações","Crepitação",NOTEST]:r==="marcha"?[]:(typeof SEM_ADM!=="undefined"&&SEM_ADM.includes(r)?["Sem crepitações","Crepitação","Sem dor à mobilização","Dor à mobilização"]:MOB_BASE).concat(r==="bacia"?STAB_PELVE:[])).concat(R[r]&&LIMBJ[R[r].grp]?[DEMAIS]:[]);
+function mobText(m,red){const o=[];red=red||[];const redA=red.filter(a=>admWord(a)==="reduzida").map(a=>lc(a.n)),other=red.filter(a=>admWord(a)!=="reduzida");
   if(m.includes("Sem crepitações"))o.push("Sem crepitações.");if(m.includes("Crepitação"))o.push("Crepitação à mobilização.");
-  if(m.includes("ADM reduzida"))o.push("Redução da amplitude de movimento.");
+  if(redA.length)o.push("Redução da amplitude de movimento: "+joinE(redA)+".");else if(m.includes("ADM reduzida"))o.push("Redução da amplitude de movimento.");
+  other.forEach(a=>o.push(a.n+" "+admWord(a)+"."));
   const adm=m.includes("ADM preservada"),sd=m.includes("Sem dor à mobilização");
   if(adm&&sd)o.push("Amplitude de movimento preservada e sem dor à mobilização.");else{if(adm)o.push("Amplitude de movimento preservada.");if(sd)o.push("Sem dor à mobilização.")}
   if(m.includes("Dor à mobilização"))o.push("Dor à mobilização.");if(m.includes(NOTEST))o.push("Amplitude de movimento não testada.");return o}
@@ -280,8 +288,19 @@ function rootsText(k,ro){
     if(sd.length)p.push("dermátomo sensitivo de "+rt+" "+sd.join(" e "));
     out.push("§"+cap(p.join(" / ")))});
   return out}
+/* testes de função: "positivo/negativo" seria ambíguo; 1º valor = alterado (1 toque), 2º = preservado (2 toques) */
+const FUNC={"Marcha em pontas":["alterada","preservada"],"Marcha em calcanhares":["alterada","preservada"],
+  "Elevação ativa da perna estendida":["impossível","possível"],"Extensão ativa do joelho":["ausente","preservada"],
+  "Elevação unipodal":["impossível","possível"],"Elevação unipodal do calcanhar":["impossível","possível"],
+  "Flexor profundo (FPD)":["ausente","preservado"],"Flexor superficial (FSD)":["ausente","preservado"],
+  "Sinal do OK (interósseo anterior)":["alterado","normal"],"Coleman (bloco)":["sem correção do retropé","com correção do retropé"],
+  "Jack (Hubscher)":["sem formação do arco","com formação do arco"]};
 const REFL_OPTS=["","0","1+","2+","3+","4+"];
 const A=(n,ref,u="°",ph)=>({n,ref,u,ph});
+/* ADM sem graus (decisão 25/11/2026): movimentos em graus viram "reduzida"; só medidas em cm continuam com número */
+const admQual=a=>a.u!=="cm";
+const admWord=a=>/poplíteo/i.test(a.n)?"aumentado":"reduzida";
+const admRed=(d,e)=>d.adm.filter(a=>admQual(a)&&e.adm[a.n]==="R");
 
 /* ---------- achados com localização: faces × níveis por tipo de segmento ---------- */
 /* ferimentos: descrição estruturada */
@@ -292,6 +311,8 @@ const FER={tipo:[["Corto-contuso","ferimento corto-contuso"],["Cortante (inciso)
   exp:["Sem exposição","Exposição óssea","Exposição tendínea","Exposição muscular","Exposição articular","Exposição neurovascular"],
   cont:["Limpo","Contaminado","Grosseiramente contaminado"],
   gust:["I","II","IIIA","IIIB","IIIC"]};
+const FER_FEM=["Escoriação","Avulsão / desenluvamento","Esmagamento","Queimadura"];
+const PROF_TXT={"Superficial (pele)":f=>"superficial, "+(f?"restrita":"restrito")+" à pele","Subcutâneo":()=>"com profundidade até o subcutâneo","Até a fáscia":()=>"com profundidade até a fáscia","Muscular":()=>"com profundidade até a musculatura","Até o osso":()=>"com profundidade até o osso"};
 const newWound=()=>({tipo:"Corto-contuso",c:"",l:"",prof:"",bordas:"",sang:"",exp:[],cont:"",faces:[],levels:[],gust:""});
 const num=v=>String(v).replace(".",",");
 function gustHint(w){const c=parseFloat(String(w.c).replace(",","."));if(!w.exp.includes("Exposição óssea"))return"";
@@ -304,12 +325,13 @@ function woundText(w,d){
     const fs=w.faces.map(i=>cfg.faces[i]&&cfg.faces[i][1]).filter(Boolean),lv=w.levels.map(i=>cfg.levels[i]&&cfg.levels[i][1]).filter(Boolean);
     if(fs.length)txt+=" em "+facesPhrase(fs);if(lv.length)txt+=" "+joinE(lv)}
   const p=[];
-  if(w.prof)p.push("com profundidade "+(w.prof.startsWith("Até")?w.prof.toLowerCase():"até "+w.prof.toLowerCase().replace(" (pele)","")));
+  const fem=FER_FEM.includes(w.tipo);
+  if(w.prof)p.push(PROF_TXT[w.prof](fem));
   if(w.bordas)p.push(w.bordas.toLowerCase());
   if(w.sang)p.push(w.sang==="Exsanguinante"?"com sangramento exsanguinante":w.sang.toLowerCase());
   if(w.exp.length)p.push(w.exp.includes("Sem exposição")?"sem exposição de estruturas profundas":"com "+joinE(w.exp.map(x=>x.toLowerCase())));
-  if(w.cont)p.push(w.cont.toLowerCase());
-  return cap(txt+(p.length?", "+p.join(", "):""))+"."+(w.gust?" Fratura exposta Gustilo-Anderson "+w.gust+" (classificação preliminar).":"")}
+  if(w.cont)p.push(fem?w.cont.toLowerCase().replace(/o$/,"a"):w.cont.toLowerCase());
+  return cap(txt+(p.length?", "+p.join(", "):""))+"."+(w.gust&&w.exp.includes("Exposição óssea")?" Fratura exposta Gustilo-Anderson "+w.gust+" (classificação preliminar).":"")}
 /* ferida operatória / sutura prévia */
 const FO={fech:["Pontos (fio)","Grampos","Pontos retirados"],pontos:["Íntegros","Soltos / rompidos"],
   deisc:["Sem deiscência","Deiscência"],flog:["Sem sinais flogísticos","Hiperemia perincisional","Calor local","Edema perincisional","Induração","Flutuação"],
@@ -412,7 +434,7 @@ const R={
   forca:[],roots:"T",refl:["Cutâneo-abdominal"],
   testes:["Adams (flexão anterior)","Beevor"],
   neuro:["Sem déficits neurológicos","Nível sensitivo em T4 (mamilo)","Nível sensitivo em T10 (umbigo)"],
-  frases:["gibosidade torácica à direita","escoliômetro com ATR de ___°","cifose flexível à extensão"]},
+  frases:["gibosidade torácica à direita","escoliômetro alterado","cifose flexível à extensão"]},
  lombar:{nome:"Coluna lombossacra",loc:"spineL",back:true,pc:[["e",100,178,-.4,.32,.5,.13,0]],
   insp:["Hiperlordose","Retificação lombar","Escoliose","Contratura paravertebral","Degrau visível"],
   palp:["Sem dor à palpação","Junção lombossacra","Degrau palpável","Sacroilíacas"],
@@ -421,7 +443,7 @@ const R={
   refl:["Patelar","Aquileu"],
   testes:["Lasègue","Lasègue contralateral","Slump","Estiramento femoral","Babinski","Clônus"],
   neuro:["Hipoestesia em L4","Hipoestesia em L5","Hipoestesia em S1","Anestesia em sela"],
-  frases:["Lasègue a 45°","dor irradiada para MI","marcha em pontas e calcanhares preservada"]},
+  frases:["dor irradiada para MI","marcha em pontas e calcanhares preservada"]},
  clavicula:{nome:"Clavícula",bi:true,fem:true,noNV:true,loc:"clav",pc:[["c",96,74,.36,64,77,.1,.07]],
   insp:["Proeminência do fragmento","Tenda de pele (tenting)","Ombro caído","Encurtamento da cintura escapular"],
   palp:["Sem dor à palpação","Articulação esternoclavicular","Articulação acromioclavicular","Mobilidade anormal"],
@@ -454,11 +476,11 @@ const R={
  ombro:{nome:"Ombro",nvExcl:["TEC < 3 s"],loc:"shoulder",pc:[["e",60,80,0,.36,.32,.34,0]],
   insp:["Sinal de Popeye","Escápula alada","Degrau acromioclavicular","Atrofia supraespinal","Atrofia infraespinal","Sinal da dragona"],
   palp:["Sem dor à palpação","Tubérculo maior","Sulco bicipital","Acromioclavicular","Coracoide","Esternoclavicular"],
-  adm:[A("Elevação anterior",180),A("Abdução",180),A("Rotação externa",60),A("Rotação interna (nível)",null,"","ex.: L3"),A("Extensão",60)],
+  adm:[A("Elevação anterior",180),A("Abdução",180),A("Rotação externa",60),A("Rotação interna",null,""),A("Extensão",60)],
   forca:["Supraespinal","Infraespinal","Subescapular","Deltoide"],
   testes:["Neer","Hawkins-Kennedy","Jobe","Patte","Gerber (lift-off)","Belly-press","Bear-hug","Speed","Yergason","O'Brien","Apreensão","Recolocação","Sulco","Cross-body","Drop arm"],
   neuro:["Nervo axilar íntegro (sensibilidade do deltoide)"],
-  frases:["arco doloroso 60–120°","discinesia escapular","dor noturna"]},
+  frases:["arco doloroso","discinesia escapular","dor noturna"]},
  braco:{nome:"Braço",loc:"thirds",boneF:"úmero",nvExcl:["TEC < 3 s"],pc:[["c",52,92,0,49,140,0,.225]],
   insp:["Encurtamento","Angulação","Sinal de Popeye"],
   palp:["Sem dor à palpação","Diáfise umeral","Bíceps","Tríceps","Mobilidade anormal"],
@@ -620,7 +642,8 @@ bone("Ossos do mediopé","","mi",true,[["e",79,404,.2,.12,.05,.1,0]]);
 const BONES=[];
 function backOf(shapes){const zs=shapes.map(s=>s[0]==="e"||s[0]==="s"||s[0]==="b"?s[3]:s[0]==="c"?(s[3]+s[6])/2:s[0]==="v"?s[2]:0);return zs.length>0&&zs.reduce((a,b)=>a+b,0)/zs.length<-.2}
 function boneRegion(b,p){
-  if(b==="Clavícula")return null;   // clavícula: localização já feita na grade de terçosif(b==="Escápula")return"escapula";
+  if(b==="Clavícula")return null;   // clavícula: localização já feita na grade de terços
+  if(b==="Escápula")return"escapula";
   if(b==="Sacro"||b==="Cóccix"||b==="Sínfise púbica")return"bacia";
   if(b==="Ilíaco")return p==="acetábulo"?"quadril":"bacia";
   if(b==="Úmero")return p==="proximal"?"ombro":p==="diáfise"?null:"cotovelo";   // diáfise do úmero: localizada na grade de terços do braço
@@ -643,7 +666,7 @@ function boneLabel(z,r){if(!R[r].bi)return zName(z);return z.base==="Costela"?z.
 function zChipLabel(z){return z.base==="Vértebra"||z.base==="Costela"?z.part:(z.part||z.base)}
 
 /* ---------- estado ---------- */
-let S={fmt:"caps",mode:"exame",entries:{},cur:null,side:"D",handTab:"exame",vView:"flex",lastPe:"pe_ante",lastByGrp:{},locF:null,
+let S={idade:"",fmt:"caps",mode:"exame",entries:{},cur:null,side:"D",handTab:"exame",vView:"flex",lastPe:"pe_ante",lastByGrp:{},locF:null,
   bones:{},zSeg:"tronco",zSide:"D",zActive:null,example:false};
 const key=(r,s)=>r+"|"+s;
 function blank(){return{jrom:{},fos:[],idig:{},sela:"",colar:"",wounds:[],roots:{},insp:[],mob:[],loc:{},palp:[],adm:{},forca:{},testes:{},neuro:[],refl:{},extra:[],obs:"",verdan:{flex:[],ext:[]}}}
@@ -652,8 +675,8 @@ function filled(e){return !!(e&&(Object.keys(e.jrom||{}).length||(e.fos&&e.fos.l
 const sides=r=>R[r].bi?["D","E"]:["X"];
 const regHas=(r,s)=>filled(S.entries[key(r,s)])||bonesOf(r,s).some(z=>S.bones[z.id]);
 const anyFilled=r=>sides(r).some(s=>regHas(r,s));
-function save(){try{localStorage.setItem("exorto3",JSON.stringify(S))}catch(e){}}
-function load(){try{const v=JSON.parse(localStorage.getItem("exorto3")||"null");if(v&&v.entries)return v}catch(e){}return null}
+function save(){}   /* decisão 25/11/2026: o exame não fica salvo entre aberturas */
+function load(){try{localStorage.removeItem("exorto3")}catch(e){}return null}
 
 function sideWord(r,s){if(s==="X")return"";const f=R[r].fem&&!/ms|mi/.test(R[r].grp);return s==="D"?(f?"direita":"direito"):(f?"esquerda":"esquerdo")}
 function headName(r,s){
@@ -661,36 +684,202 @@ function headName(r,s){
   if(g.limb){const sub=d.parent?"Pé ("+d.nome.toLowerCase()+")":d.nome;return g.limb+" "+sideWord(r,s)+" — "+sub}
   return d.nome+(s!=="X"?" "+sideWord(r,s):"")}
 
-function example(){
-  S=Object.assign(S,{entries:{},cur:{r:"quadril",s:"D"},side:"D",lastByGrp:{ms:"braco",mi:"quadril"},locF:"Dor à palpação",bones:{"o:Fêmur|proximal:D":{f:["Dor à palpação"],obs:""}},example:true});
-  const q=entry("quadril","D");
-  q.insp=["Encurtamento do membro","Rotação externa do membro"];
-  q.loc={"Dor à palpação":["0|0","1|0","1|1"]};
-  q.testes={"Log roll":"pos"};q.neuro=["Pulsos distais presentes","Sensibilidade preservada","Motricidade preservada"];
-  const b=entry("braco","D");
-  b.loc={"Dor à palpação":["0|0","0|2"],"Edema":["0|0","0|1","0|2","0|3","1|0"],"Equimose":["2|1"]};
-  b.palp=["Diáfise umeral"];b.neuro=["Nervo radial íntegro","Pulsos distais presentes"];
-}
+/* sinais de fratura/trauma, em qualquer bloco do segmento (inspeção, grade, palpação, testes, ossos, ferimento) */
+const TRAUMA_F=["Deformidade","Mobilidade anormal","Fratura suspeita","Exposição óssea","Desvio angular"];
+const TRAUMA_INSP=["Encurtamento do membro","Rotação externa do membro","Encurtamento","Angulação","Deformidade em dorso de garfo","Proeminência do fragmento","Tenda de pele (tenting)","Encurtamento da cintura escapular","Alargamento do calcanhar","Encurtamento do calcanhar","Degrau visível"];
+const TRAUMA_PALP=["Mobilidade anormal","Degrau palpável"];
+const TRAUMA_TEST=["Mobilidade anormal do foco"];
+const INSP_ADM=["Hálux rígido","Dedo em martelo","Dedos em martelo","Dedos em garra","Botoeira","Pescoço de cisne","Dedo em gatilho","Atitude em flexão","Perda da cascata digital","Corda de Dupuytren"];
+const SEM_ADM=["clavicula","escapula","bacia","braco","coxa","perna","pe_calc"];   // segmentos sem articulação própria: o normal não afirma ADM
+function traumaDe(r,s,e){
+  return e.wounds.some(w=>w.exp.includes("Exposição óssea"))||TRAUMA_F.some(f=>e.loc[f])||e.insp.some(x=>TRAUMA_INSP.includes(x))||
+    e.palp.some(x=>TRAUMA_PALP.includes(x))||TRAUMA_TEST.some(t=>e.testes[t]==="pos")||
+    bonesOf(r,s).some(z=>S.bones[z.id]&&S.bones[z.id].f.some(f=>TRAUMA_F.includes(f)))}
 /* "Tudo normal" completa com normalidade só o que ainda está em branco: não apaga achados já marcados */
 function setNormal(r,s){
   const d=R[r],e=entry(r,s),locF=Object.keys(e.loc).filter(f=>(e.loc[f]||[]).length||true);
   const hasLoc=f=>locF.includes(f);
   if(r==="marcha"){if(!e.insp.length)e.insp=["Marcha normal"];return}
-  if(!e.insp.filter(x=>x!=="Sem alterações").length&&!locF.some(f=>INSP_ABN.includes(f))&&!e.wounds.length&&!e.fos.length)e.insp=["Sem alterações"];
-  const trauma=e.wounds.some(w=>w.exp.includes("Exposição óssea"))||["Deformidade","Mobilidade anormal","Fratura suspeita","Exposição óssea"].some(hasLoc);   // fratura exposta/deformidade: não presume palpação, força e mobilização normais
+  const ossoInsp=bonesOf(r,s).some(z=>S.bones[z.id]&&S.bones[z.id].f.some(f=>INSP_ABN.includes(f)||f==="Proeminência"||f==="Ferida próxima"));
+  if(!e.insp.filter(x=>x!=="Sem alterações").length&&!locF.some(f=>INSP_ABN.includes(f))&&!e.wounds.length&&!e.fos.length&&!ossoInsp)e.insp=["Sem alterações"];
+  const trauma=traumaDe(r,s,e);   // sinal de fratura em qualquer bloco: não presume palpação, força e mobilização normais
+  const inspAdm=e.insp.some(x=>INSP_ADM.includes(x));   // achado da inspeção que já altera a ADM (ex.: hálux rígido, dedo em martelo)
   if(!trauma&&d.palp.length&&!e.palp.length&&!hasLoc("Dor à palpação"))e.palp=["Sem dor à palpação"];
   if(!trauma)d.forca.forEach(n=>{if(e.forca[n]==null)e.forca[n]=5});
   const spine=d.loc&&LOC[d.loc]&&LOC[d.loc].vert;
   if(!spine&&!d.noNV&&!e.neuro.length)e.neuro=["Pulsos distais presentes","TEC < 3 s","Sensibilidade preservada","Motricidade preservada"].filter(x=>!(d.nvExcl||[]).includes(x));
-  if(d.roots)ROOTS[d.roots].forEach(([rt,m])=>{const o=e.roots[rt]||(e.roots[rt]={});if(m&&o.fD==null)o.fD=5;if(m&&o.fE==null)o.fE=5;if(r==="lombar"&&e.sela==="Anestesia em sela"&&rt==="S1")return;if(o.sD==null)o.sD=2;if(o.sE==null)o.sE=2});
-  if(d.jrom&&!trauma)JLIST.forEach(k=>{if(!e.jrom[k])e.jrom[k]="P"});
-  const want=(e.colar||e.mob.includes(NOTEST)||d.jrom?["Sem crepitações"]:["Sem crepitações","ADM preservada","Sem dor à mobilização"]).concat(r==="bacia"?["Estável horizontalmente","Estável verticalmente"]:[]);
-  const block={"Sem crepitações":hasLoc("Crepitação"),"ADM preservada":hasLoc("Limitação de ADM")||hasLoc("Rigidez")};
+  if(d.roots)ROOTS[d.roots].forEach(([rt,m])=>{const o=e.roots[rt]||(e.roots[rt]={});if(m&&o.fD==null)o.fD=5;if(m&&o.fE==null)o.fE=5;if(o.sD==null)o.sD=2;if(o.sE==null)o.sE=2});
+  if(d.jrom&&!trauma&&!inspAdm)JLIST.forEach(k=>{if(!e.jrom[k])e.jrom[k]="P"});
+  const want=(e.colar||e.mob.includes(NOTEST)||d.jrom?["Sem crepitações"]:SEM_ADM.includes(r)?["Sem crepitações"]:["Sem crepitações","ADM preservada","Sem dor à mobilização"]).concat(r==="bacia"?["Estável horizontalmente","Estável verticalmente"]:[]);
+  const crepOsso=bonesOf(r,s).some(z=>S.bones[z.id]&&S.bones[z.id].f.includes("Crepitação"))||e.palp.some(x=>/crepita/i.test(x));
+  const block={"Sem crepitações":hasLoc("Crepitação")||crepOsso,"ADM preservada":hasLoc("Limitação de ADM")||hasLoc("Rigidez")||inspAdm||admRed(d,e).length>0};
   if(!trauma)want.forEach(t=>{if(!e.mob.includes(t)&&!e.mob.includes(OPP[t])&&!block[t])e.mob.push(t)});
 }
 
+
+/* =================== coerência (25/11/2026) ===================
+   Depois de cada toque, compara o estado com o anterior: o que acabou de entrar vence o oposto exato,
+   em qualquer bloco. No "Tudo normal" (modo normal) o achado alterado que já existia sempre vence. */
+const SEP="¦",J=(...p)=>p.join(SEP);
+const PALP_ACHADO=["Mobilidade anormal","Degrau palpável","Crepitação escapulotorácica","Compartimento tenso","Defeito muscular palpável"];
+const VIS_OSSO=["Edema","Equimose","Deformidade","Proeminência","Exposição óssea","Ferida próxima"];
+const PROF_RANK={"Superficial (pele)":0,"Subcutâneo":1,"Até a fáscia":2,"Muscular":3,"Até o osso":4};
+const EXP_MIN={"Exposição óssea":4,"Exposição articular":3,"Exposição muscular":3,"Exposição tendínea":2,"Exposição neurovascular":2};
+const profDe=n=>Object.keys(PROF_RANK).find(k=>PROF_RANK[k]===n);
+const MARCHA_TESTE=["Romberg","Marcha em pontas","Marcha em calcanhares"];
+/* idade: testes pediátricos só aparecem com a idade marcada (anos; 0 = menos de 1 ano) */
+const PED={"Ortolani":a=>a<1,"Barlow":a=>a<1,"Galeazzi":a=>a<18};
+function idadeNum(){const v=String(S.idade==null?"":S.idade).trim();return v===""?null:Number(v)}
+function testeVisivel(t){if(!PED[t])return true;const a=idadeNum();return a!=null&&!isNaN(a)&&PED[t](a)}
+function testesDe(d){return d.testes.filter(testeVisivel)}
+function fatos(r,s,e){const F=new Set(),a=(...p)=>F.add(J(...p));
+  e.insp.forEach(x=>a("insp",x));e.palp.forEach(x=>a("palp",x));Object.keys(e.loc).forEach(x=>a("loc",x));e.mob.forEach(x=>a("mob",x));
+  e.neuro.forEach(x=>a("neuro",x));Object.entries(e.testes).forEach(([t,v])=>a("teste",t,v));Object.entries(e.forca).forEach(([n,g])=>a("forca",n,g));
+  Object.entries(e.adm).forEach(([n,v])=>{if(v==="R")a("adm",n)});Object.entries(e.jrom).forEach(([k,v])=>a("jrom",k,v));
+  if(e.colar)a("colar",e.colar);
+  bonesOf(r,s).forEach(z=>{const v=S.bones[z.id];if(v)v.f.forEach(f=>a("osso",z.id,f))});
+  e.wounds.forEach((w,i)=>{a("fer",i,"existe");a("fer",i,"tipo",w.tipo);if(w.prof)a("fer",i,"prof",w.prof);w.exp.forEach(x=>a("fer",i,"exp",x));if(w.gust)a("fer",i,"gust",w.gust)});
+  e.fos.forEach((f,i)=>{a("fo",i,"existe");f.extra.forEach(x=>a("fo",i,"extra",x))});
+  e.extra.forEach(x=>a("extra",x));
+  return F}
+const removivel=f=>!/¦existe$/.test(f)&&!/^fer¦\d+¦tipo¦/.test(f);
+function tirar(r,s,e,f){const p=f.split(SEP),k=p[0],x=p[1],rm=(arr,v)=>{const i=arr.indexOf(v);if(i>=0)arr.splice(i,1)};
+  if(k==="insp")rm(e.insp,x);else if(k==="palp")rm(e.palp,x);else if(k==="loc"){delete e.loc[x];if(S.locF===x)S.locF=null}
+  else if(k==="mob")rm(e.mob,x);else if(k==="neuro")rm(e.neuro,x);else if(k==="teste")delete e.testes[x];
+  else if(k==="forca")delete e.forca[x];else if(k==="adm")delete e.adm[x];else if(k==="jrom")delete e.jrom[x];else if(k==="colar")e.colar="";
+  else if(k==="osso"){const v=S.bones[x];if(v){rm(v.f,p[2]);if(!v.f.length){delete S.bones[x];if(S.zActive===x)S.zActive=null}}}
+  else if(k==="fer"){const w=e.wounds[+x];if(w){if(p[2]==="prof")w.prof="";else if(p[2]==="exp")rm(w.exp,p[3]);else if(p[2]==="gust")w.gust=""}}
+  else if(k==="fo"){const o=e.fos[+x];if(o&&p[2]==="extra")rm(o.extra,p[3])}
+  else if(k==="extra")rm(e.extra,p.slice(1).join(SEP))}
+const is=(...xs)=>f=>xs.includes(f);
+const deOsso=(...fs)=>f=>f.startsWith("osso"+SEP)&&fs.includes(f.split(SEP)[2]);
+/* [lado normal, lado alterado, mesmo ferimento/FO] */
+/* frases prontas que dizem o oposto exato de uma marcação: o último toque vale (frase ou botão) */
+const tPos=(...ts)=>f=>ts.some(t=>f===J("teste",t,"pos"));
+const FRASE_OPOSTA=[
+  [/sem sinais de síndrome compartimental|compartimentos flexíveis/i,f=>tPos("Compartimento tenso","Dor ao estiramento passivo","Dor ao estiramento passivo dos dedos")(f)||f===J("palp","Compartimento tenso")],
+  [/sem sinais de fratura exposta/i,f=>/^fer¦\d+¦exp¦Exposição óssea$/.test(f)||f===J("loc","Exposição óssea")||deOsso("Exposição óssea")(f)],
+  [/pelve estável à compressão/i,f=>/^mob¦Instabilidade/.test(f)||tPos("Compressão laterolateral","Compressão anteroposterior")(f)],
+  [/instabilidade rotacional/i,is(J("mob","Estável horizontalmente"))],
+  [/marcha em pontas e calcanhares preservada/i,tPos("Marcha em pontas","Marcha em calcanhares")],
+  [/sem sinais de mielopatia/i,tPos("Hoffmann","Lhermitte","Babinski","Clônus")],
+  [/pele íntegra sem risco de exposição/i,f=>f===J("insp","Tenda de pele (tenting)")||/^fer¦\d+¦existe$/.test(f)],
+  [/apoio parcial|sem carga no membro|apoio monopodal impossível/i,is(J("insp","Marcha normal"))],
+  [/bloqueio à extensão|déficit de extensão|bloqueio articular/i,is(J("mob","ADM preservada"))],
+  [/dor à mobilização passiva|arco doloroso/i,is(J("mob","Sem dor à mobilização"))],
+  [/crepitação patelofemoral/i,is(J("mob","Sem crepitações"))],
+  [/varo corrige no bloco de Coleman/i,tPos("Coleman (bloco)")],
+  [/hipoestesia em território mediano/i,is(J("neuro","Nervo mediano íntegro"),J("neuro","Sensibilidade preservada"))],
+  [/perda da força de pinça/i,is(J("forca","Pinça","5"))],
+  [/regras de Ottawa positivas/i,is(J("palp","Sem dor à palpação"))],
+  [/discinesia tipo I de Kibler/i,f=>f===J("extra","discinesia tipo II de Kibler")],
+  [/sem sinais de fratura exposta/i,f=>/^fer¦\d+¦gust¦/.test(f)],
+  [/gibosidade|degrau acromioclavicular|rotação externa e encurtado|equimose|calosidade|atitude de extensão|valgo flexível|varo corrige/i,is(J("insp","Sem alterações"))],   /* algo visível na inspeção × "pele íntegra, sem desvios" */
+  [/dor à mobilização passiva|arco doloroso|dor inguinal à rotação interna|bloqueio à extensão|déficit de extensão|bloqueio articular|crepitação patelofemoral|flexível à extensão/i,is(J("mob",NOTEST))]
+];
+const ADM_JROM={pe_ante:{"1ª MTF dorsiflexão":"1|2","1ª MTF flexão plantar":"1|2"}};
+const REGRAS=[
+  [is(J("insp","Sem alterações")),f=>(f.startsWith("insp"+SEP)&&f!==J("insp","Sem alterações"))||INSP_ABN.some(x=>f===J("loc",x))||deOsso(...VIS_OSSO)(f)||/^(fer|fo)¦\d+¦existe$/.test(f)],
+  [is(J("palp","Sem dor à palpação")),f=>f===J("loc","Dor à palpação")||(f.startsWith("palp"+SEP)&&f!==J("palp","Sem dor à palpação")&&!PALP_ACHADO.includes(f.split(SEP)[1]))||deOsso("Dor à palpação")(f)],
+  [is(J("mob","Sem crepitações")),f=>f===J("mob","Crepitação")||f===J("loc","Crepitação")||deOsso("Crepitação")(f)||f===J("palp","Crepitação escapulotorácica")],
+  [is(J("mob","ADM preservada")),f=>f===J("mob","ADM reduzida")||f.startsWith("adm"+SEP)||f===J("loc","Limitação de ADM")||f===J("loc","Rigidez")||f===J("mob",NOTEST)],
+  [is(J("mob",NOTEST)),f=>["ADM reduzida","Sem dor à mobilização","Dor à mobilização"].some(x=>f===J("mob",x))||f.startsWith("adm"+SEP)||f.startsWith("jrom"+SEP)],
+  [is(J("mob","Sem dor à mobilização")),f=>f===J("mob","Dor à mobilização")||(f.startsWith("jrom"+SEP)&&f.endsWith(SEP+"D"))],
+  [is(J("neuro","Pulsos distais presentes")),is(J("neuro","Pulsos diminuídos"))],
+  [is(J("neuro","Sensibilidade preservada")),is(J("neuro","Hipoestesia"))],
+  [is(J("neuro","Motricidade preservada")),f=>/^forca¦.*¦[012]$/.test(f)||f===J("neuro","Mão caída")],
+  [is(J("neuro","Nervo radial íntegro"),J("neuro","Extensão ativa de punho e dedos preservada")),is(J("neuro","Mão caída"))],
+  [is(J("mob","Estável horizontalmente")),is(J("mob","Instabilidade horizontal (rotacional)"),J("mob","Instabilidade vertical"))],
+  [is(J("mob","Estável verticalmente")),is(J("mob","Instabilidade vertical"))],
+  [f=>(f.startsWith("insp"+SEP)&&f!==J("insp","Não deambula"))||MARCHA_TESTE.some(t=>f.startsWith(J("teste",t)+SEP)),is(J("insp","Não deambula"))],
+  [f=>/^fo¦\d+¦extra¦Curativo limpo e seco$/.test(f),f=>/^fo¦\d+¦extra¦Curativo com exsudato$/.test(f),true]
+].concat(FRASE_OPOSTA.map(([re,B])=>[f=>f.startsWith("extra"+SEP)&&re.test(f.slice(6)),B]));
+function coerencia(r,s,e,antes,modoNormal){
+  const d=R[r];let avisoPele=false;
+  for(let volta=0;volta<8;volta++){let mudou=false;const F=fatos(r,s,e),L=[...F];
+    for(const [A,B,mesmo] of REGRAS){const fa=L.filter(f=>F.has(f)&&A(f)),fb=L.filter(f=>F.has(f)&&B(f));
+      for(const x of fa)for(const y of fb){if(!F.has(x)||!F.has(y)||x===y)continue;if(mesmo&&x.split(SEP)[1]!==y.split(SEP)[1])continue;
+        const nx=!antes.has(x),ny=!antes.has(y);
+        let perde=modoNormal?x:(nx&&!ny)?y:(ny&&!nx)?x:x;
+        if(!removivel(perde))perde=perde===x?y:x;if(!removivel(perde))continue;
+        if(perde===J("insp","Sem alterações")&&/existe$/.test(y))avisoPele=true;
+        tirar(r,s,e,perde);F.delete(perde);mudou=true}}
+    e.wounds.forEach((w,i)=>{
+      if(w.tipo==="Escoriação"){if(PROF_RANK[w.prof]>0){w.prof="Superficial (pele)";mudou=true}const ex=w.exp.filter(x=>x==="Sem exposição");if(ex.length!==w.exp.length){w.exp=ex;mudou=true}}
+      const need=Math.max(0,...w.exp.map(x=>EXP_MIN[x]||0)),rk=PROF_RANK[w.prof];
+      if(w.prof&&need>rk){const expNova=w.exp.some(x=>EXP_MIN[x]>rk&&!antes.has(J("fer",i,"exp",x)));
+        if(expNova&&!modoNormal)w.prof=profDe(need);else w.exp=w.exp.filter(x=>!(EXP_MIN[x]>rk));mudou=true}
+      if(w.gust&&!w.exp.includes("Exposição óssea")){w.gust="";mudou=true}});
+    /* escoriação marcada na grade e como ferimento: é o mesmo achado; o local da grade passa para o ferimento */
+    const wEsc=e.wounds.find(w=>w.tipo==="Escoriação");
+    if(wEsc&&e.loc["Escoriação"]){const cfg=d.loc&&LOC[d.loc];(e.loc["Escoriação"]||[]).filter(c=>!c.startsWith("d|")).forEach(c=>{const [li,fi]=c.split("|").map(Number);
+        if(cfg&&!cfg.lvOnly&&!wEsc.faces.includes(fi))wEsc.faces.push(fi);if(cfg&&cfg.levels.length&&!cfg.vert&&!wEsc.levels.includes(li))wEsc.levels.push(li)});
+      delete e.loc["Escoriação"];if(S.locF==="Escoriação")S.locF=null;if(typeof flash==="function")flash("Escoriação registrada no ferimento");mudou=true}
+    /* antepé: o movimento da 1ª MTF e a tabela por articulação falam da mesma articulação */
+    Object.entries(ADM_JROM[r]||{}).forEach(([mov,k])=>{const red=e.adm[mov]==="R";if(!red)return;const v=e.jrom[k]||"";
+      if(v==="L"||v==="D")return;
+      const admNovo=!antes.has(J("adm",mov)),jNovo=!antes.has(J("jrom",k,v))&&v!=="";
+      if(v===""&&!admNovo&&antes.has(J("jrom",k,"P"))){delete e.adm[mov];mudou=true;return}   /* tabela acabou de ser limpa: o movimento sai também */
+      if(!modoNormal&&jNovo&&!admNovo){delete e.adm[mov]}else{e.jrom[k]="L"}mudou=true});
+    Object.keys(e.testes).forEach(t=>{if(!testesDe(d).includes(t)){delete e.testes[t];mudou=true}});
+    if(!mudou)break}
+  if(avisoPele&&typeof flash==="function")flash("Há ferimento ou ferida operatória: a pele não está íntegra");
+}
+/* avisos (amarelo: combinação improvável, você confere) e alertas (vermelho: urgência) */
+const GUST_N={I:1,II:2,IIIA:3,IIIB:3,IIIC:3};
+const FRASE_X=[
+  [/sem sinais de síndrome compartimental|compartimentos flexíveis/i,(e)=>e.testes["Compartimento tenso"]==="pos"||e.testes["Dor ao estiramento passivo"]==="pos"||e.testes["Dor ao estiramento passivo dos dedos"]==="pos"||e.palp.includes("Compartimento tenso")||e.insp.includes("Edema tenso"),"a frase diz que não há sinal compartimental, mas há sinal marcado"],
+  [/sem sinais de fratura exposta/i,(e,r,s)=>expostaMarcada(r,s,e),"a frase diz que não é exposta, mas há exposição óssea marcada"],
+  [/pelve estável à compressão/i,e=>e.mob.some(x=>/^Instabilidade/.test(x)),"a frase diz pelve estável, mas há instabilidade marcada"],
+  [/instabilidade rotacional/i,e=>e.mob.includes("Estável horizontalmente"),"a frase diz instabilidade rotacional, mas está marcado estável horizontalmente"],
+  [/marcha em pontas e calcanhares preservada/i,e=>e.testes["Marcha em pontas"]==="pos"||e.testes["Marcha em calcanhares"]==="pos","a frase diz marcha em pontas e calcanhares preservada, mas um dos testes está alterado"],
+  [/sem sinais de mielopatia/i,e=>["Hoffmann","Lhermitte","Babinski","Clônus"].some(t=>e.testes[t]==="pos"),"a frase diz sem sinais de mielopatia, mas há sinal positivo"],
+  [/pele íntegra sem risco de exposição/i,e=>e.insp.includes("Tenda de pele (tenting)"),"a frase diz sem risco de exposição, mas há pele em tenda"],
+  [/apoio parcial|sem carga no membro/i,e=>e.insp.includes("Marcha normal"),"a frase fala de restrição de carga, mas a marcha está normal"],
+  [/Lachman com end-point firme/i,e=>e.testes["Lachman"]==="pos","Lachman positivo com end-point firme"],
+  [/bloqueio à extensão|déficit de extensão|bloqueio articular/i,e=>e.mob.includes("ADM preservada"),"a frase fala de bloqueio/déficit, mas a ADM está preservada"],
+  [/dor à mobilização passiva/i,e=>e.mob.includes("Sem dor à mobilização"),"a frase fala de dor à mobilização, mas está marcado sem dor"],
+  [/crepitação patelofemoral/i,e=>e.mob.includes("Sem crepitações"),"a frase fala de crepitação, mas está marcado sem crepitações"],
+  [/varo corrige no bloco de Coleman/i,e=>e.testes["Coleman (bloco)"]==="pos","a frase diz que corrige, mas o teste de Coleman está sem correção"],
+  [/hipoestesia em território mediano/i,e=>e.neuro.includes("Nervo mediano íntegro")||e.neuro.includes("Sensibilidade preservada"),"a frase fala de hipoestesia no mediano, mas o nervo/sensibilidade está marcado como normal"],
+  [/perda da força de pinça/i,e=>e.forca["Pinça"]===5,"a frase fala de perda de força de pinça, mas a pinça está grau 5"],
+  [/sem déficits? neurológico/i,e=>e.neuro.some(x=>/Hipoestesia|Parestesia|Mão caída/.test(x))||Object.values(e.forca).some(g=>g<5),"a frase diz sem déficit, mas há déficit marcado"]
+];
+function expostaMarcada(r,s,e){return e.wounds.some(w=>w.exp.includes("Exposição óssea"))||!!e.loc["Exposição óssea"]||bonesOf(r,s).some(z=>S.bones[z.id]&&S.bones[z.id].f.includes("Exposição óssea"))}
+function avisos(r,s,e){const A=[],W=[],d=R[r];
+  const comp=e.testes["Compartimento tenso"]==="pos"||e.testes["Dor ao estiramento passivo"]==="pos"||e.testes["Dor ao estiramento passivo dos dedos"]==="pos"||e.palp.includes("Compartimento tenso");
+  if(comp)A.push("Sinal de síndrome compartimental marcado: reavaliar com urgência.");
+  if(e.neuro.includes("Pulsos diminuídos"))A.push("Pulso diminuído: comparar com o outro lado e avaliar lesão vascular.");
+  if(Object.values(e.forca).some(g=>g<=3)||e.neuro.includes("Mão caída"))A.push("Déficit motor marcado: registrar o território e o horário do exame.");
+  if(e.insp.includes("Tenda de pele (tenting)"))A.push("Pele em tenda: risco de exposição.");
+  if(expostaMarcada(r,s,e))A.push("Fratura exposta: antibiótico e profilaxia antitetânica conforme o padrão do serviço.");
+  if(e.colar==="Colar cervical mal posicionado")A.push("Colar cervical mal posicionado: reposicionar.");
+  if(e.wounds.some(w=>w.sang==="Sangramento em jato"||w.sang==="Exsanguinante"))A.push("Sangramento ativo importante: controle imediato.");
+  e.wounds.forEach((w,i)=>{const n=e.wounds.length>1?"Ferimento "+(i+1)+": ":"Ferimento: ",gh=gustHint(w);
+    if(w.gust&&gh&&GUST_N[w.gust]<GUST_N[gh==="III"?"IIIA":gh])W.push(n+"Gustilo "+w.gust+" abaixo do sugerido pelos dados marcados ("+gh+").");
+    if(w.gust&&w.gust!=="IIIC"&&w.exp.includes("Exposição óssea")&&(w.sang==="Sangramento em jato"||w.sang==="Exsanguinante"||w.exp.includes("Exposição neurovascular")))W.push(n+"lesão vascular marcada: se precisar de reparo, a classificação é IIIC.");
+    if(w.tipo==="Mordedura"&&w.cont==="Limpo")W.push(n+"mordedura marcada como limpa.")});
+  e.fos.forEach((f,i)=>{const n="Ferida operatória"+(e.fos.length>1?" "+(i+1):"")+": ";
+    if(f.secr==="Purulenta"&&f.flog.includes("Sem sinais flogísticos"))W.push(n+"secreção purulenta sem sinais flogísticos.");
+    if(f.extra.includes("Curativo limpo e seco")&&f.secr&&f.secr!=="Sem secreção"&&f.modo==="Ativa")W.push(n+"curativo limpo e seco com secreção ativa.")});
+  if((e.loc["Exposição óssea"]||bonesOf(r,s).some(z=>S.bones[z.id]&&S.bones[z.id].f.includes("Exposição óssea")))&&!e.wounds.some(w=>w.exp.includes("Exposição óssea")))W.push("Exposição óssea marcada sem ferimento: registre o ferimento.");
+  if(e.neuro.includes("Parestesia")&&e.neuro.includes("Sensibilidade preservada"))W.push("Parestesia com sensibilidade preservada: confira.");
+  if((e.neuro.includes("Hipoestesia")||e.neuro.includes("Parestesia"))&&e.neuro.some(x=>/íntegro|Sensibilidade .*preservada|Discriminação/.test(x)&&x!=="Sensibilidade preservada"))W.push("Hipoestesia/parestesia sem território junto de nervo íntegro: diga o território na observação.");
+  if(e.insp.includes("Com muleta")&&e.insp.includes("Com andador"))W.push("Muleta e andador marcados ao mesmo tempo.");
+  const ia=e.insp.filter(x=>INSP_ADM.includes(x));if(ia.length&&(e.mob.includes("ADM preservada")||(d.jrom&&JLIST.every(k=>e.jrom[k]==="P"))))W.push("Inspeção com "+ia.join(", ").toLowerCase()+" e ADM preservada: confira.");
+  if(e.colar&&(e.mob.some(x=>NOTEST_X.includes(x))||admRed(d,e).length))W.push("Paciente com colar e ADM cervical registrada: confira.");
+  if(Object.values(e.forca).some(g=>g===3)&&e.neuro.includes("Motricidade preservada"))W.push("Força grau 3 com motricidade preservada: confira.");
+  if(e.mob.some(x=>/^Instabilidade/.test(x))&&["Compressão laterolateral","Compressão anteroposterior"].some(t=>e.testes[t]==="neg"))W.push("Instabilidade da pelve com teste de compressão negativo: confira.");
+  if(e.palp.includes("Sem dor à palpação")&&e.palp.some(x=>PALP_ACHADO.includes(x)))W.push("Indolor à palpação com "+e.palp.filter(x=>PALP_ACHADO.includes(x)).join(", ").toLowerCase()+": confira.");
+  e.extra.forEach(x=>FRASE_X.forEach(([re,cond,msg])=>{if(re.test(x)&&cond(e,r,s))W.push("“"+x+"”: "+msg+".")}));
+  return {A,W}}
+function avisosBox(r,s,e){const {A,W}=avisos(r,s,e);if(!A.length&&!W.length)return null;
+  return h("div",{class:"avisos"},A.length?h("div",{class:"warn"},h("b",{text:"Atenção: "}),A.join(" ")):null,
+    W.length?h("div",{class:"warn2box",role:"status"},h("b",{text:"Confira: "}),W.join(" ")):null)}
+
 /* ---------- texto ---------- */
 const cap=t=>t.replace(/^./,c=>c.toUpperCase());
+const lc=x=>/^[A-ZÀ-Ú0-9]{2}/.test(x)?x:x.charAt(0).toLowerCase()+x.slice(1);   /* minúscula só na 1ª letra: siglas e nomes próprios ficam */
 const joinE=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" e "+a[a.length-1];
 function facesPhrase(list){
   if(list.length>1&&list.every(p=>p.startsWith("face ")))return"faces "+joinE(list.map(p=>p.slice(5)));
@@ -719,42 +908,51 @@ function regionText(r,s,e){
   const d=R[r],L=[];
   if(e.colar){const c=COLAR.find(x=>x[0]===e.colar);if(c)L.push(c[1])}
   if(e.insp.length===1&&e.insp[0]==="Sem alterações")L.push("Pele íntegra, sem sinais de equimose, edema ou desvios aparentes.");
-  else if(e.insp.length)L.push((r==="marcha"?"Marcha/postura: ":"Inspeção: ")+cap(e.insp.filter(x=>x!=="Sem alterações").map(x=>inspItem(x,e,d)).join(", ").toLowerCase())+".");
+  else if(e.insp.length)L.push((r==="marcha"?"Marcha/postura: ":"Inspeção: ")+cap(e.insp.filter(x=>x!=="Sem alterações").map(x=>lc(inspItem(x,e,d))).join(", "))+".");
   (e.fos||[]).forEach((f,i)=>L.push(foText(f,d,e.fos.length>1?i+1:0)));
   (e.wounds||[]).forEach((w,i)=>L.push((e.wounds.length>1?"Ferimento "+(i+1)+": ":"")+woundText(w,d)));
-  locList(d).filter(f=>e.loc[f]).forEach(f=>{const t=d.loc?locFull(d,e.loc[f]):"";L.push(f+(t?": "+t:"")+".")});
-  if(e.palp.length){const p=e.palp.filter(x=>x!=="Sem dor à palpação");L.push(p.length?"Palpação: dor em "+p.join(", ").toLowerCase()+".":(d.loc&&LOC[d.loc].vert?"Indolor à palpação de proeminências ósseas e musculatura paravertebral.":"Indolor à palpação."))}
-  L.push(...mobText(e.mob||[]));
+  /* 25/11/2026: toda dor à palpação (grade, pontos anatômicos e ossos) sai numa frase só */
+  const ossoDor=bonesOf(r,s).filter(z=>S.bones[z.id]&&S.bones[z.id].f.includes("Dor à palpação"));
+  const ossoNome=z=>(R[r].bi?(z.base==="Costela"?z.part+" costela":z.base+(z.part?" ("+z.part+")":"")):zName(z));
+  const pDor=e.palp.filter(x=>x!=="Sem dor à palpação"&&!PALP_ACHADO.includes(x));
+  const dorFrase=()=>{const g=e.loc["Dor à palpação"]?(d.loc?locFull(d,e.loc["Dor à palpação"]):"").replace(/^(no|na|nos|nas|em) /,""):"";
+    const partes=[g].concat(pDor.map(lc),ossoDor.map(z=>lc(ossoNome(z)))).filter(Boolean);return "Dor à palpação"+(partes.length?": "+partes.join("; "):"")+"."};
+  const temDor=!!e.loc["Dor à palpação"]||pDor.length>0||ossoDor.length>0;let dorFeita=false;
+  locList(d).filter(f=>e.loc[f]).forEach(f=>{if(f==="Dor à palpação"){L.push(dorFrase());dorFeita=true;return}const t=d.loc?locFull(d,e.loc[f]):"";L.push(f+(t?": "+t:"")+".")});
+  const pAch=e.palp.filter(x=>PALP_ACHADO.includes(x));if(pAch.length)L.push("À palpação: "+pAch.map(lc).join(", ")+".");
+  if(temDor&&!dorFeita)L.push(dorFrase());
+  else if(!temDor&&e.palp.includes("Sem dor à palpação"))L.push(d.loc&&LOC[d.loc].vert?"Indolor à palpação de proeminências ósseas e musculatura paravertebral.":"Indolor à palpação.");
+  L.push(...mobText(e.mob||[],admRed(d,e)));
   if((e.mob||[]).includes(DEMAIS)&&!d.jrom){const t=demaisText(r);if(t)L.push(t)}
   if(d.jrom)L.push(...jromText(e.jrom||{},d.jrom));
   if((e.mob||[]).includes(DEMAIS)&&d.jrom){const t=demaisText(r);if(t)L.push(t)}
-  const adm=d.adm.filter(a=>e.adm[a.n]!==undefined&&e.adm[a.n]!=="").map(a=>{
-    const v=e.adm[a.n],u=a.u==="cm"?" cm":a.u;
-    const flag=(a.ref!=null&&a.u==="°"&&Number(v)<a.ref)?" (ref. "+a.ref+"°)":"";return a.n+" "+v+u+flag});
-  if(adm.length)L.push("ADM/medidas: "+adm.join("; ")+".");
+  const med=d.adm.filter(a=>!admQual(a)&&e.adm[a.n]!==undefined&&e.adm[a.n]!=="").map(a=>a.n+" "+num(e.adm[a.n])+" cm");
+  if(med.length)L.push("Medidas: "+med.join("; ")+".");
   if(d.roots)L.push(...rootsText(d.roots,e.roots||{}));
   if(r==="lombar"&&e.sela){const x=SELA.find(q=>q[0]===e.sela);if(x)L.push(x[1])}
   const f=d.forca.filter(n=>e.forca[n]!=null).map(n=>n+" "+e.forca[n]+"/5");
   if(f.length){const allN=f.length===d.forca.length&&d.forca.every(n=>e.forca[n]===5);L.push("Força: "+(allN?"grau 5 em todos os grupos":f.join(", "))+".")}
   const refl=(d.refl||[]).filter(n=>e.refl[n]).map(n=>n+" "+e.refl[n]);
   if(refl.length)L.push("Reflexos: "+refl.join(", ")+".");
-  const tests=d.testes.concat(Object.keys(e.testes).filter(t=>!d.testes.includes(t)));
-  const pos=tests.filter(t=>e.testes[t]==="pos"),neg=tests.filter(t=>e.testes[t]==="neg");
+  const tests=testesDe(d),fun=tests.filter(t=>FUNC[t]&&e.testes[t]);
+  const pos=tests.filter(t=>!FUNC[t]&&e.testes[t]==="pos"),neg=tests.filter(t=>!FUNC[t]&&e.testes[t]==="neg");
   if(pos.length||neg.length){const parts=[];if(pos.length)parts.push("positivos: "+pos.join(", "));if(neg.length)parts.push("negativos: "+neg.join(", "));L.push("Testes especiais "+parts.join("; ")+".")}
+  if(fun.length)L.push("Testes funcionais: "+fun.map(t=>lc(t)+" "+FUNC[t][e.testes[t]==="pos"?0:1]).join("; ")+".");
   if(e.verdan.flex.length)L.push("Zonas flexoras (Verdan): "+zoneList(e.verdan.flex)+".");
   if(e.verdan.ext.length)L.push("Zonas extensoras (Kleinert–Verdan): "+zoneList(e.verdan.ext)+".");
-  bonesOf(r,s).filter(z=>S.bones[z.id]).forEach(z=>{const v=S.bones[z.id];
-    L.push((R[r].bi?(z.base==="Costela"?z.part+" costela":z.base+(z.part?" ("+z.part+")":"")):zName(z))+": "+(v.f.length?v.f.join(", ").toLowerCase():"marcado")+"."+(v.obs&&v.obs.trim()?" "+v.obs.trim():""))});
+  bonesOf(r,s).filter(z=>S.bones[z.id]).forEach(z=>{const v=S.bones[z.id],f=v.f.filter(x=>x!=="Dor à palpação"),ob=v.obs&&v.obs.trim()?" "+fimPonto(v.obs.trim()):"";
+    if(!f.length&&!ob)return;L.push(ossoNome(z)+": "+(f.length?f.map(lc).join(", "):"ver observação")+"."+ob)});
   if(e.neuro.length&&!d.noNV&&!(d.loc&&LOC[d.loc]&&LOC[d.loc].vert)){const NV=["Pulsos distais presentes","Sensibilidade preservada","Motricidade preservada"].filter(x=>!(d.nvExcl||[]).includes(x)),nvOk=NV.every(x=>e.neuro.includes(x));
     const rest=e.neuro.filter(x=>!(nvOk&&NV.includes(x))&&x!=="TEC < 3 s"&&x!=="Sem déficits neurológicos");if(e.neuro.includes("Sem déficits neurológicos"))L.push("Sem déficits neurológicos.");
     if(nvOk)L.push((d.nvExcl||[]).includes("Pulsos distais presentes")?"Sensibilidade e motricidade preservadas.":"Neurovascular preservado.");if(e.neuro.includes("TEC < 3 s"))L.push("TEC < 3 s.");
-    if(rest.length)L.push((nvOk?"":"Neurovascular: ")+(nvOk?cap(rest.join(", ").toLowerCase()):rest.join(", ").toLowerCase())+".")}
+    if(rest.length)L.push((nvOk?"":"Neurovascular: ")+(nvOk?cap(rest.map(lc).join(", ")):rest.map(lc).join(", "))+".")}
   L.push(...stabText(e.mob||[]));
-  if(e.extra.length)L.push("Outros: "+e.extra.join("; ")+".");
-  if(e.obs.trim())L.push("Obs.: "+e.obs.trim());
+  if(e.extra.length)L.push("Outros: "+e.extra.map(x=>x.replace(/[.;]+$/,"")).join("; ")+".");
+  if(e.obs.trim())L.push("Obs.: "+fimPonto(e.obs.trim()));
   if(!L.length)return"";const H=headName(r,s).toUpperCase();
-  return S.fmt==="lista"?H+"\n"+L.map(x=>(x[0]==="§"?"   • "+x.slice(1)+".":"- "+x)).join("\n"):H+": "+L.map((x,i)=>x[0]==="§"?"- "+x.slice(1)+(L[i+1]&&L[i+1][0]!=="§"?".":""):x).join(" ");
+  return S.fmt==="lista"?H+"\n"+L.map(x=>(x[0]==="§"?"   • "+x.slice(1)+".":"- "+x)).join("\n"):H+": "+L.map((x,i)=>x[0]==="§"?"- "+x.slice(1)+(!L[i+1]||L[i+1][0]!=="§"?".":""):x).join(" ");
 }
+const fimPonto=t=>/[.!?]$/.test(t)?t:t+".";
 function allText(){
   const blocks=[];
   ORDER.forEach(r=>sides(r).forEach(s=>{if(regHas(r,s)){const e=S.entries[key(r,s)];const t=regionText(r,s,e||Object.assign(blank(),{}));if(t)blocks.push(t)}}));
@@ -834,6 +1032,14 @@ function locBlock(r,e){
     return h("button",{type:"button",class:"chip"+(act?" focus":""),"aria-pressed":String(on),on:{click:()=>{
       if(!on){e.loc[f]=[];S.locF=f;contradict(e,f)}else if(!act)S.locF=f;else{delete e.loc[f];S.locF=Object.keys(e.loc)[0]||null}
       update()}}},f,n?h("small",{class:"cnt",text:String(n)}):null)}));
+  /* 25/11/2026: "Sem dor à palpação" fica ao lado de "Dor à palpação" (opostos: o último toque vale) */
+  const semDor=e.palp.includes("Sem dor à palpação");
+  const sd=h("button",{type:"button",class:"chip","aria-pressed":String(semDor),text:"Sem dor à palpação",on:{click:()=>{
+    if(semDor)e.palp=e.palp.filter(x=>x!=="Sem dor à palpação");
+    else e.palp.push("Sem dor à palpação");   /* a coerência apaga a dor da grade, dos pontos e dos ossos */
+    update()}}});
+  const dorChip=chips.children[locList(d).indexOf("Dor à palpação")];
+  if(d.palp.length){if(dorChip)dorChip.after(sd);else chips.prepend(sd)}
   const kids=[chips];
   if(S.locF){
     const f=S.locF,cells=e.loc[f],has=c=>cells.includes(c);
@@ -896,7 +1102,7 @@ function foBlock(r,s,e,d){
       h("div",{class:"zrow-h"},h("b",{text:"Ferida operatória "+(i+1)}),h("div",{class:"actions"},
         h("button",{type:"button",class:"btn-normal sm",text:"FO de bom aspecto",on:{click:()=>{goodFO(f);update()}}}),
         h("button",{type:"button",class:"x","aria-label":"Remover ferida operatória "+(i+1),text:"×",on:{click:()=>{e.fos.splice(i,1);render()}}}))),
-      row("Pós-operatório",h("label",{for:podId,class:"wdim"},h("div",{class:"num"},h("span",{text:"PO"}),h("input",{id:podId,type:"text",inputmode:"numeric",placeholder:"ex.: 14",value:f.pod,on:{input:ev=>{f.pod=ev.target.value.trim();update(false)}}}),h("span",{text:"dias"})))),
+      row("Pós-operatório",h("label",{for:podId,class:"wdim"},h("div",{class:"num"},h("span",{text:"PO"}),h("input",{id:podId,type:"text",inputmode:"numeric",placeholder:"ex.: 14",value:f.pod,on:{input:ev=>{f.pod=ev.target.value.replace(/\D/g,"");if(ev.target.value!==f.pod)ev.target.value=f.pod;update(false)}}}),h("span",{text:"dias"})))),
       cfg?row("Local",h("div",{class:"wloc"},cfg.lvOnly?null:many(f,"faces",cfg.faces),cfg.levels.length&&!cfg.vert?many(f,"levels",cfg.levels):null)):null,
       row("Fechamento",one(f,"fech",FO.fech)),
       f.fech&&f.fech!=="Pontos retirados"?row(f.fech==="Grampos"?"Grampos":"Pontos",one(f,"pontos",FO.pontos,["Soltos / rompidos"])):null,
@@ -936,10 +1142,10 @@ function woundBlock(r,s,e,d){
       row("Tipo",one(w,"tipo",FER.tipo)),
       row("Dimensão",h("div",{class:"wdims"},dim("c","Comprimento"),dim("l","Largura"))),
       cfg?row("Local",h("div",{class:"wloc"},cfg.lvOnly?null:many(w,"faces",cfg.faces),cfg.levels.length&&!cfg.vert?many(w,"levels",cfg.levels):null)):null,
-      row("Profundidade",one(w,"prof",FER.prof)),
+      row("Profundidade",one(w,"prof",w.tipo==="Escoriação"?["Superficial (pele)"]:FER.prof)),
       row("Bordas",one(w,"bordas",FER.bordas)),
       row("Sangramento",one(w,"sang",FER.sang)),
-      row("Exposição",many(w,"exp",FER.exp,"Sem exposição")),
+      w.tipo==="Escoriação"?null:row("Exposição",many(w,"exp",FER.exp,"Sem exposição")),
       row("Contaminação",one(w,"cont",FER.cont)),
       w.exp.includes("Exposição óssea")?row("Gustilo",h("div",{},one(w,"gust",FER.gust),h("div",{class:"hint",text:"Fratura exposta: classificação preliminar, confirmada no desbridamento."+(gh?" Sugestão pelos dados marcados: "+gh+(gh==="III"?" (A, B ou C conforme cobertura e lesão vascular).":"."):"")}))):null,
       h("div",{class:"hint wprev",text:woundText(w,d)}))});
@@ -948,16 +1154,15 @@ function renderPanel(){
   const P=$("#panel");P.innerHTML="";
   if(!S.cur){P.append(h("div",{class:"empty",text:"Escolha um segmento nas abas acima."}));return}
   const {r,s}=S.cur,d=R[r],e=entry(r,s),g=GRP[d.grp];
-  if(S.example)P.append(h("div",{class:"banner"},h("span",{text:"Exemplo carregado (fratura do colo femoral à direita, e braço direito) para mostrar o funcionamento."}),h("button",{class:"ghost",type:"button",text:"Começar do zero",on:{click:()=>{S.entries={};S.bones={};S.zActive=null;S.example=false;S.locF=null;render()}}})));
   const title=h("div",{},h("small",{text:g.limb?g.limb+(s!=="X"?" · "+sideWord(r,s):""):g.nome}),h("h2",{text:d.parent?"Pé · "+d.nome:d.nome+(s!=="X"&&!g.limb?" "+sideWord(r,s):"")}));
   const head=h("div",{class:"panel-head"},title);
   const acts=h("div",{class:"actions"});
   if(d.bi)acts.append(h("div",{class:"seg",role:"group","aria-label":"Lado"},["D","E"].map(x=>h("button",{type:"button","aria-pressed":String(s===x),text:x==="D"?"Direito":"Esquerdo",on:{click:()=>go(r,x,true)}}))));
   acts.append(h("button",{type:"button",class:"btn-normal",text:"Tudo normal",title:"Atalho: N",on:{click:()=>quick("normal")}}));
   acts.append(h("button",{type:"button",class:"btn-normal",text:"Normal → próximo",title:"Atalho: Shift+N",on:{click:()=>quick("next")}}));
-  if(d.bi)acts.append(h("button",{type:"button",class:"ghost",text:"Lado "+(s==="D"?"E":"D")+" normal",title:"Atalho: O",on:{click:()=>quick("opp")}}));
   acts.append(h("button",{type:"button",class:"ghost",text:"Limpar",on:{click:()=>{delete S.entries[key(r,s)];S.locF=null;render()}}}));
   head.append(acts);P.append(head);
+  {const ab=avisosBox(r,s,e);if(ab)P.append(ab)}
   if(d.bi&&filled(S.entries[key(r,s==="D"?"E":"D")]))P.append(h("div",{class:"hint",text:"O lado "+(s==="D"?"esquerdo":"direito")+" também tem achados registrados."}));
 
   if(d.verdan){
@@ -969,7 +1174,7 @@ function renderPanel(){
   }
 
   if(r==="cervical")P.append(blk("Imobilização",h("div",{class:"chips"},COLAR.map(([c])=>h("button",{type:"button",class:"chip"+(c.includes("mal")?" alarm":""),"aria-pressed":String(e.colar===c),text:c,on:{click:()=>{
-    e.colar=e.colar===c?"":c;if(e.colar){e.mob=e.mob.filter(x=>!NOTEST_X.includes(x));if(!e.mob.includes(NOTEST))e.mob.push(NOTEST)}update()}}})))));
+    e.colar=e.colar===c?"":c;if(e.colar){e.mob=e.mob.filter(x=>!NOTEST_X.includes(x));if(!e.mob.includes(NOTEST))e.mob.push(NOTEST);d.adm.forEach(a=>{if(admQual(a)&&e.adm[a.n]==="R")delete e.adm[a.n]})}update()}}})))));
   const digRows=d.inspDig?e.insp.filter(x=>d.inspDig.includes(x)).map(x=>{const a=e.idig[x]||(e.idig[x]=[]);
     return h("div",{class:"digpick"},h("span",{text:x}),h("div",{class:"grades",role:"group","aria-label":"Dedos: "+x},[1,2,3,4,5].map(n=>h("button",{type:"button","aria-pressed":String(a.includes(n)),
       title:n===1?(d.dig==="foot"?"hálux":"polegar"):n+"º dedo",text:n===1?(d.dig==="foot"?"1º hálux":"1º polegar"):n+"º",on:{click:()=>{const i=a.indexOf(n);if(i>=0)a.splice(i,1);else a.push(n);update()}}}))))}):[];
@@ -978,17 +1183,25 @@ function renderPanel(){
   if(r!=="marcha")P.append(foBlock(r,s,e,d));
   if(d.loc)P.append(locBlock(r,e));
   if(bonesOf(r,s).length)P.append(boneBlock(r,s));
-  if(d.palp.length&&!d.hidePalp)P.append(blk("Palpação · pontos anatômicos dolorosos",chipSet(e.palp,d.palp)));
+  /* 25/11/2026: "Sem dor à palpação" sai da lista de pontos dolorosos; o "Tudo normal" ainda escreve "Indolor à palpação", e tocar um ponto doloroso apaga isso sozinho */
+  if(d.palp.length&&!d.hidePalp)P.append(blk("Palpação · pontos anatômicos dolorosos",chipSet(e.palp,d.palp.filter(x=>x!=="Sem dor à palpação"))));
   if(d.jrom)P.append(jromBlock(e,d.jrom));
   if(mobList(r).length)P.append(blk(r==="bacia"?"Crepitação, mobilização e estabilidade":"Crepitação e mobilização",h("div",{class:"chips"},mobList(r).map(t=>h("button",{type:"button",class:"chip","aria-pressed":String(e.mob.includes(t)),text:t,on:{click:()=>{
     const i=e.mob.indexOf(t);if(i>=0)e.mob.splice(i,1);else{e.mob.push(t);const o=OPP[t];if(o&&e.mob.includes(o))e.mob.splice(e.mob.indexOf(o),1);
-      if(t===NOTEST)e.mob=e.mob.filter(x=>!NOTEST_X.includes(x));else if(NOTEST_X.includes(t))e.mob=e.mob.filter(x=>x!==NOTEST)}update()}}})))));
-  if(d.adm.length){
-    const gr=h("div",{class:"adm"},d.adm.map((a,i)=>{
+      if(t===NOTEST)e.mob=e.mob.filter(x=>!NOTEST_X.includes(x));else if(NOTEST_X.includes(t))e.mob=e.mob.filter(x=>x!==NOTEST);
+      if(t==="ADM preservada"||t===NOTEST)d.adm.forEach(a=>{if(admQual(a)&&e.adm[a.n]==="R")delete e.adm[a.n]})}update()}}})))));
+  if(d.adm.some(admQual)){
+    P.append(blk("Amplitude de movimento por movimento",h("div",{class:"chips"},d.adm.filter(admQual).map(a=>{const on=e.adm[a.n]==="R";
+      return h("button",{type:"button",class:"chip","aria-pressed":String(on),text:a.n+" "+admWord(a),on:{click:()=>{
+        if(on)delete e.adm[a.n];else{e.adm[a.n]="R";e.mob=e.mob.filter(x=>x!=="ADM preservada"&&x!==NOTEST)}update()}}})})),
+      h("div",{class:"hint",text:"Marque só o movimento alterado. Sem graus: sai “Redução da amplitude de movimento: flexão e abdução”."})));
+  }
+  if(d.adm.some(a=>!admQual(a))){
+    const gr=h("div",{class:"adm"},d.adm.map((a,i)=>[a,i]).filter(([a])=>!admQual(a)).map(([a,i])=>{
       const id="adm-"+r+"-"+i;
       const inp=h("input",{id,type:a.ref==null&&a.u===""?"text":"number",inputmode:a.u===""?"text":"decimal",placeholder:a.ph||(a.ref!=null?String(a.ref):""),value:e.adm[a.n]??"",list:a.u===""?"dl-ri":null,on:{input:ev=>{e.adm[a.n]=ev.target.value;update(false)}}});
       return h("label",{for:id},a.n,h("div",{class:"num"},inp,h("span",{text:a.u==="°"?(a.ref!=null?"° / "+a.ref+"°":"°"):a.u==="cm"?(a.ref!=null?"cm / "+a.ref:"cm"):""})))}));
-    P.append(blk("Amplitude de movimento e medidas",gr,h("div",{class:"hint",text:"O placeholder mostra o valor de referência. Valores em graus abaixo da referência saem com a referência no texto."})));
+    P.append(blk("Medidas (cm)",gr));
   }
   if(d.roots){
     const ro=e.roots,set=(rt,k,v)=>{const o=ro[rt]||(ro[rt]={});if(o[k]===v)delete o[k];else o[k]=v;if(!Object.keys(o).length)delete ro[rt];update()};
@@ -1001,9 +1214,8 @@ function renderPanel(){
         h("div",{class:"rgs"},m?grades(rt,"fD",5,"Força D"):null,m?grades(rt,"fE",5,"Força E"):null,grades(rt,"sD",2,"Sens. D"),grades(rt,"sE",2,"Sens. E")))))));
   }
   if(r==="lombar"){
-    const ro=e.roots||{},s1=ro.S1||{},div=e.sela==="Anestesia em sela"&&(s1.sD===2||s1.sE===2||ROOTS.L.every(([rt])=>ro[rt]&&ro[rt].sD===2&&ro[rt].sE===2));
     P.append(blk("Sensibilidade perineal (S2–S5)",h("div",{class:"chips"},SELA.map(([c])=>h("button",{type:"button",class:"chip"+(c==="Anestesia em sela"?" alarm":""),"aria-pressed":String(e.sela===c),text:c,on:{click:()=>{e.sela=e.sela===c?"":c;update()}}}))),
-      e.sela==="Anestesia em sela"?h("div",{class:"warn"},h("b",{text:"Bandeira vermelha: "}),"anestesia em sela sugere síndrome da cauda equina. Documente tônus esfincteriano e retenção urinária."+(div?" Atenção: a tabela de dermátomos acima está com S1 (ou todos os níveis) normal. Confira se é isso mesmo antes de copiar.":"")):null));
+      e.sela==="Anestesia em sela"?h("div",{class:"warn"},h("b",{text:"Bandeira vermelha: "}),"anestesia em sela sugere síndrome da cauda equina. Documente tônus esfincteriano e retenção urinária."):null));
   }
   if(d.forca.length){
     P.append(blk("Força (MRC 0–5)",h("div",{class:"forca"},d.forca.map(n=>h("div",{class:"frow"},h("span",{text:n}),h("div",{class:"grades",role:"group","aria-label":"Força "+n},[0,1,2,3,4,5].map(gv=>h("button",{type:"button","aria-pressed":String(e.forca[n]===gv),text:String(gv),on:{click:()=>{if(e.forca[n]===gv)delete e.forca[n];else e.forca[n]=gv;update()}}}))))))));
@@ -1012,26 +1224,30 @@ function renderPanel(){
     P.append(blk("Reflexos",h("div",{class:"refl"},d.refl.map((n,i)=>{const id="rf-"+r+"-"+i;
       return h("label",{for:id},n,h("select",{id,on:{change:ev=>{e.refl[n]=ev.target.value;update(false)}}},REFL_OPTS.map(o=>{const op=h("option",{value:o,text:o||"—"});if((e.refl[n]||"")===o)op.selected=true;return op})))}))));
   }
-  if(d.testes.length||Object.keys(e.testes).length){
-    const all=d.testes.concat(Object.keys(e.testes).filter(t=>!d.testes.includes(t)));
-    P.append(blk("Testes especiais",h("div",{class:"legend",text:"1 toque = positivo (+) · 2 toques = negativo (−) · 3 toques = limpa"}),
+  if(testesDe(d).length){
+    const all=testesDe(d),temF=all.some(t=>FUNC[t]),ped=d.testes.filter(t=>PED[t]&&!testeVisivel(t));
+    P.append(blk("Testes especiais",h("div",{class:"legend",text:"1 toque = positivo (+) · 2 toques = negativo (−) · 3 toques = limpa"+(temF?" · testes de função: 1 toque = alterado (✗) · 2 toques = preservado (✓)":"")}),
+      ped.length?h("div",{class:"hint",text:ped.join(", ")+": aparecem quando a idade (no topo) for marcada e compatível."}):null,
       h("div",{class:"chips"},all.map(t=>{const st=e.testes[t]||"";
-        return h("button",{type:"button",class:"chip test","data-s":st,"aria-label":t+(st==="pos"?" positivo":st==="neg"?" negativo":" não testado"),on:{click:()=>{
+        return h("button",{type:"button",class:"chip test","data-s":st,"aria-label":t+(FUNC[t]?(st==="pos"?" "+FUNC[t][0]:st==="neg"?" "+FUNC[t][1]:" não testado"):(st==="pos"?" positivo":st==="neg"?" negativo":" não testado")),on:{click:()=>{
           const nx=st===""?"pos":st==="pos"?"neg":"";if(nx)e.testes[t]=nx;else delete e.testes[t];update()}}},
-          h("span",{class:"mark",text:st==="pos"?"+":st==="neg"?"−":""}),t)}))));
+          h("span",{class:"mark",text:FUNC[t]?(st==="pos"?"✗":st==="neg"?"✓":""):(st==="pos"?"+":st==="neg"?"−":"")}),t)}))));
   }
   if(r!=="marcha"&&!d.noNV&&!(d.loc&&LOC[d.loc]&&LOC[d.loc].vert))P.append(blk("Neurovascular",chipSet(e.neuro,NEURO_BASE.filter(x=>!(d.nvExcl||[]).includes(x)).concat(d.neuro||[]))));
 
-  const dlId="dl-"+r;const pool=[...new Set([].concat(d.frases,d.insp,d.palp.filter(p=>p!=="Sem dor à palpação").map(p=>"dor em "+p.toLowerCase()),allTests().map(t=>"Teste: "+t)))];
+  const dlId="dl-"+r;const pool=[...new Set([].concat(d.frases,d.insp,d.palp.filter(p=>p!=="Sem dor à palpação"&&!PALP_ACHADO.includes(p)).map(p=>"dor em "+lc(p)),d.palp.filter(p=>PALP_ACHADO.includes(p)),testesDe(d).map(t=>"Teste: "+t)))];
   const dl=h("datalist",{id:dlId},pool.map(o=>h("option",{value:o})));
   const inp=h("input",{class:"txt",id:"add-"+r,list:dlId,placeholder:"Digite: teste, achado ou frase…",autocomplete:"off"});
   const add=()=>{const v=inp.value.trim();if(!v)return;
-    if(v.startsWith("Teste: ")){const t=v.slice(7);e.testes[t]=e.testes[t]||"pos"}
+    const pd=d.palp.find(p=>v.toLowerCase()==="dor em "+p.toLowerCase()||v.toLowerCase()===p.toLowerCase());
+    if(v.startsWith("Teste: ")){const t=v.slice(7);if(!testesDe(d).includes(t)){flash("Esse teste não pertence a este segmento");return}e.testes[t]=e.testes[t]||"pos"}
+    else if(d.insp.includes(v)){if(!e.insp.includes(v)){if(["Marcha normal"].includes(v))e.insp.length=0;e.insp.push(v)}}   /* o que já é botão marca o botão (coerência garantida) */
+    else if(pd&&pd!=="Sem dor à palpação"){if(!e.palp.includes(pd))e.palp.push(pd)}
     else if(!e.extra.includes(v))e.extra.push(v);inp.value="";render();$("#add-"+r).focus()};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();add()}});
   const extra=e.extra.length?h("div",{class:"chips"},e.extra.map(t=>h("button",{type:"button",class:"chip custom","aria-pressed":"true","aria-label":"Remover "+t,text:t+" ×",on:{click:()=>{e.extra.splice(e.extra.indexOf(t),1);render()}}}))):null;
   P.append(blk("Outros achados (autocompletar)",h("div",{class:"addrow"},inp,dl,h("button",{type:"button",text:"Adicionar",on:{click:add}})),extra,
-    h("div",{class:"hint",text:"Escolher “Teste: …” adiciona o teste à lista acima, já como positivo."})));
+    h("div",{class:"hint",text:"Escolher “Teste: …” marca o teste deste segmento, já como positivo."})));
   const obsId="obs-"+r+"-"+s;
   P.append(blk("Observação livre",h("textarea",{class:"txt",id:obsId,rows:"2",placeholder:"Texto livre que entra no fim do segmento",on:{input:ev=>{e.obs=ev.target.value;update(false)}}},e.obs)));
 }
@@ -1090,7 +1306,11 @@ function renderVerdan(P,r,s,e){
 
 /* ---------- zoneamento ósseo ---------- */
 /* ---------- ciclo ---------- */
+const ANTES={};
+function coerTodos(modoNormal){Object.keys(S.entries).forEach(k=>{const [r,s]=k.split("|");if(!R[r])return;const e=entry(r,s);
+  coerencia(r,s,e,ANTES[k]||new Set(),modoNormal);ANTES[k]=fatos(r,s,e)})}
 function update(rerender=true){
+  coerTodos(!!S._modoNormal);S._modoNormal=false;
   if(rerender){const y=window.scrollY;renderNav();renderPanel();window.scrollTo(0,y)}
   if(MAP3D)MAP3D.refresh();
   const t=allText();$("#out").value=t||"Nenhum achado marcado ainda.";
@@ -1105,9 +1325,9 @@ document.querySelectorAll("#fmt button").forEach(b=>b.addEventListener("click",(
 
 function step(dir){if(!S.cur){go(ORDER[0],null);return}const i=ORDER.indexOf(S.cur.r),n=ORDER[(i+dir+ORDER.length)%ORDER.length];go(n,R[n].bi?(R[S.cur.r].bi?S.cur.s:S.side):null)}
 function quick(kind){if(!S.cur)return;const {r,s}=S.cur;
-  if(kind==="normal"){setNormal(r,s);S.locF=null;render()}
-  else if(kind==="next"){setNormal(r,s);S.locF=null;step(1)}
-  else if(kind==="opp"&&R[r].bi){setNormal(r,s==="D"?"E":"D");render();flash("Lado "+(s==="D"?"esquerdo":"direito")+" marcado como normal")}}
+  if(kind==="normal"){setNormal(r,s);S._modoNormal=true;S.locF=null;render()}
+  else if(kind==="next"){setNormal(r,s);S._modoNormal=true;S.locF=null;step(1)}
+}
 function flash(t){let el=$("#flash");if(!el){el=h("div",{id:"flash",class:"flash",role:"status"});document.body.append(el)}el.textContent=t;el.hidden=false;clearTimeout(flash.t);flash.t=setTimeout(()=>el.hidden=true,1600)}
 document.addEventListener("keydown",ev=>{
   const tg=ev.target;if(ev.ctrlKey||ev.metaKey||ev.altKey||(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)||tg.isContentEditable)))return;
@@ -1116,7 +1336,6 @@ document.addEventListener("keydown",ev=>{
   else if(k==="n"){quick("normal");ev.preventDefault()}
   else if(k==="ArrowRight"){step(1);ev.preventDefault()}else if(k==="ArrowLeft"){step(-1);ev.preventDefault()}
   else if((k==="d"||k==="e")&&S.cur&&R[S.cur.r].bi){go(S.cur.r,k==="d"?"D":"E");ev.preventDefault()}
-  else if(k==="o"){quick("opp");ev.preventDefault()}
   else if(k==="c"){$("#copyBtn").click();ev.preventDefault()}});
 $("#copyBtn").addEventListener("click",()=>{
   const t=allText();const b=$("#copyBtn");if(!t){b.textContent="Nada para copiar";setTimeout(()=>b.textContent="Copiar exame",1400);return}
@@ -1127,14 +1346,11 @@ $("#copyBtn").addEventListener("click",()=>{
 let armed=false;
 $("#clearAll").addEventListener("click",ev=>{const b=ev.currentTarget;
   if(!armed){armed=true;b.textContent="Toque de novo para confirmar";setTimeout(()=>{armed=false;b.textContent="Limpar tudo"},2500);return}
-  armed=false;b.textContent="Limpar tudo";S.entries={};S.bones={};S.zActive=null;S.locF=null;S.example=false;render()});
+  armed=false;b.textContent="Limpar tudo";S.entries={};S.bones={};S.zActive=null;S.locF=null;S.example=false;S.idade="";$("#idade").value="";render()});
+$("#idade").addEventListener("input",ev=>{const v=ev.target.value.replace(/\D/g,"").slice(0,3);if(v!==ev.target.value)ev.target.value=v;S.idade=v;render()});
 document.body.append(h("datalist",{id:"dl-ri"},["T7","T10","T12","L1","L3","L5","Sacro","Glúteo","Trocânter"].map(v=>h("option",{value:v}))));
 
-const saved=load();
-if(saved&&(Object.keys(saved.entries).length||Object.keys(saved.bones||{}).length)){
-  S=Object.assign(S,saved);if(!["exame","osso"].concat(window.ANAT_IMG?["img"]:[]).includes(S.mode))S.mode=window.ANAT_IMG?"img":"exame";if(!S.bones)S.bones={};
-  Object.keys(S.bones).forEach(id=>{if(!BBYID[id])delete S.bones[id]});if(S.cur&&!R[S.cur.r])S.cur=null}
-else{example();if(window.ANAT_IMG)S.mode="img"}
+load();
 render();
 </script>
 
