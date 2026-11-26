@@ -262,11 +262,12 @@ const OPP={"ADM preservada":"ADM reduzida","ADM reduzida":"ADM preservada","Sem 
 const mobList=(r)=>(R[r]&&R[r].jrom?["Sem crepitações","Crepitação",NOTEST]:r==="marcha"?[]:(typeof SEM_ADM!=="undefined"&&SEM_ADM.includes(r)?["Sem crepitações","Crepitação","Sem dor à mobilização","Dor à mobilização"]:MOB_BASE).concat(r==="bacia"?STAB_PELVE:[])).concat(R[r]&&LIMBJ[R[r].grp]?[DEMAIS]:[]);
 function mobText(m,red){const o=[];red=red||[];const redA=red.filter(a=>admWord(a)==="reduzida").map(a=>lc(a.n)),other=red.filter(a=>admWord(a)!=="reduzida");
   if(m.includes("Sem crepitações"))o.push("Sem crepitações.");if(m.includes("Crepitação"))o.push("Crepitação à mobilização.");
-  if(redA.length)o.push("Redução da amplitude de movimento: "+joinE(redA)+".");else if(m.includes("ADM reduzida"))o.push("Redução da amplitude de movimento.");
+  const porDor=m.includes("Dor à mobilização")&&(redA.length||m.includes("ADM reduzida"));   // v77: "reduzida" + "dor à mobilização" = uma frase só
+  if(redA.length)o.push("Redução da amplitude de movimento"+(porDor?" por dor":"")+": "+joinE(redA)+".");else if(m.includes("ADM reduzida"))o.push("Redução da amplitude de movimento"+(porDor?" por dor":"")+".");
   other.forEach(a=>o.push(a.n+" "+admWord(a)+"."));
   const adm=m.includes("ADM preservada"),sd=m.includes("Sem dor à mobilização");
   if(adm&&sd)o.push("Amplitude de movimento preservada e sem dor à mobilização.");else{if(adm)o.push("Amplitude de movimento preservada.");if(sd)o.push("Sem dor à mobilização.")}
-  if(m.includes("Dor à mobilização"))o.push("Dor à mobilização.");if(m.includes(NOTEST))o.push("Amplitude de movimento não testada.");return o}
+  if(m.includes("Dor à mobilização")&&!porDor)o.push("Dor à mobilização.");if(m.includes(NOTEST))o.push("Amplitude de movimento não testada.");return o}
 function stabText(m){const o=[],hz=m.includes("Estável horizontalmente"),vt=m.includes("Estável verticalmente");
   if(hz&&vt)o.push("Estável horizontal e verticalmente.");else{if(hz)o.push("Estável horizontalmente.");if(vt)o.push("Estável verticalmente.")}
   if(m.includes("Instabilidade horizontal (rotacional)"))o.push("Instabilidade horizontal (rotacional).");if(m.includes("Instabilidade vertical"))o.push("Instabilidade vertical.");return o}
@@ -956,7 +957,7 @@ const fimPonto=t=>/[.!?]$/.test(t)?t:t+".";
 function allText(){
   const blocks=[];
   ORDER.forEach(r=>sides(r).forEach(s=>{if(regHas(r,s)){const e=S.entries[key(r,s)];const t=regionText(r,s,e||Object.assign(blank(),{}));if(t)blocks.push(t)}}));
-  const t=blocks.length?"EXAME FÍSICO ORTOPÉDICO\n\n"+blocks.join("\n\n"):"";return S.fmt==="caps"?t.toUpperCase():t;
+  const t=blocks.length?"EXAME FÍSICO ORTOPÉDICO\n\n"+blocks.join("\n\n"):"";return S.fmt==="caps"?t.toUpperCase().replace(/TEC < 3 S\b/g,"TEC < 3 s"):t;
 }
 
 /* ---------- helpers ---------- */
@@ -1307,7 +1308,13 @@ function renderVerdan(P,r,s,e){
 /* ---------- zoneamento ósseo ---------- */
 /* ---------- ciclo ---------- */
 const ANTES={};
-function coerTodos(modoNormal){Object.keys(S.entries).forEach(k=>{const [r,s]=k.split("|");if(!R[r])return;const e=entry(r,s);
+// v77: o mesmo sinal do membro inteiro aparece em dois segmentos (quadril e coxa) — marcado num, sai do outro (vale o último toque)
+const MESMO_SINAL=[[["quadril","Encurtamento do membro"],["coxa","Encurtamento"]],[["quadril","Rotação externa do membro"],["coxa","Rotação externa do membro"]]];
+function coerEntreSeg(){["D","E"].forEach(s=>MESMO_SINAL.forEach(g=>{
+  const tem=g.filter(([r,v])=>S.entries[r+"|"+s]&&(S.entries[r+"|"+s].insp||[]).includes(v));if(tem.length<2)return;
+  const novo=tem.find(([r,v])=>!(ANTES[r+"|"+s]||new Set()).has(J("insp",v)));const fica=novo||tem[0];
+  tem.filter(x=>x!==fica).forEach(([r,v])=>{const e=S.entries[r+"|"+s];e.insp=e.insp.filter(x=>x!==v);});}))}
+function coerTodos(modoNormal){coerEntreSeg();Object.keys(S.entries).forEach(k=>{const [r,s]=k.split("|");if(!R[r])return;const e=entry(r,s);
   coerencia(r,s,e,ANTES[k]||new Set(),modoNormal);ANTES[k]=fatos(r,s,e)})}
 function update(rerender=true){
   coerTodos(!!S._modoNormal);S._modoNormal=false;

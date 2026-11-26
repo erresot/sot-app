@@ -1,6 +1,17 @@
 # CHANGELOG — SOT APP
 
-## v77 (atual) — Anamnese, Exame Físico e Condutas novos (feitos em conversas à parte, revisados e integrados)
+## v78 (atual) — Internação pelo dia da cirurgia; exame sem ambiguidade
+- **Condutas · internação** (regras do serviço, 26/11/2026):
+  - campo **Cirurgia** (nome) + Urgência + Data: "PROCEDIMENTO CIRÚRGICO (X) EM dd/mm/aaaa", "PROCEDIMENTO CIRÚRGICO DE URGÊNCIA (X)" (hoje) ou "… DE URGÊNCIA (X) EM dd/mm/aaaa"; sem nome = lacuna e "Falta preencher";
+  - **hoje**: MANTER JEJUM + ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA HOJE); **amanhã**: JEJUM A PARTIR DAS 23H + … SUSPENSA (CIRURGIA AMANHÃ); **depois de amanhã ou mais**: … HOJE; SUSPENDER EM <véspera> (VÉSPERA DA CIRURGIA); sem data: como antes;
+  - **pré-operatórios**: Solicitar / Já pedidos (CHECAR) / Já saíram — só em "Já saíram" abre a caixa de laboratoriais, que sai na conduta como "LABS dd/mm/aaaa: …" (o mesmo texto da caixa do resultado; não repete no resultado);
+  - **RCH** marcado só quando opera hoje ou amanhã (bolsa vence); **avaliação cardiológica, avaliação anestésica e UTI** como sugestões desmarcadas;
+  - **"MANTER … ATÉ SEGUNDA ORDEM" só com imobilização escolhida** (antes escrevia "TALA" sem tala).
+- **Condutas · laboratoriais:** sempre o motor de exames pela entrada única (`ler`), igual à evolução e ao mapa — antes, linha escrita ("HB … / LEUCO …") perdia exames e só sobrava o último. No resultado, botão **+ Laboratoriais** (a caixa só aparece quando há exames, com ×). Formato em todo lugar: **"LABS dd/mm/aaaa: …"** (sem data no texto colado: "LABS ___: …").
+- **Exame físico:** "ADM reduzida" + "Dor à mobilização" = "Redução da amplitude de movimento por dor"; encurtamento e rotação externa (quadril × coxa): marcado num segmento sai do outro (vale o último toque); "TEC < 3 s" com s minúsculo no CAIXA ALTA.
+- Teste novo `t_cir77`.
+
+## v77 — Anamnese, Exame Físico e Condutas novos (feitos em conversas à parte, revisados e integrados)
 - **Anamnese** (`hub/anamnese.html`, versão "v76" da conversa da anamnese): nada vem marcado; itens do modelo aparecem como SUGERIDO e só entram no texto quando tocados; "Perguntei: nega os não marcados"; modo Enfermaria (evolução curta); avisos com "ir ao campo"; datas sempre com ano e nunca no futuro. Detalhes: `anamnese-v76-orientacoes.md` (no pacote da conversa).
 - **Novo Paciente** (`hub/novopac.html`), para ler o texto da Anamnese nova: "QUEDA DE ALTURA (APROXIMADAMENTE N M)", acidente motociclístico, arma branca, mordedura, trauma esportivo; "nega fratura" não vira diagnóstico; da Anamnese só sai diagnóstico de linha HD; alergia só quando o texto fala de alergia.
 - **Exame Físico** (`hub/exame.html`): "Tudo normal" honesto com sinal de fratura; ADM sem graus; motor de coerência (vale o último toque); faixas Atenção/Confira (fora do texto); campo Idade (Ortolani/Barlow < 1 ano, Galeazzi < 18); dor à palpação numa frase só; sela = S2–S5. **Não guarda mais o exame** entre aberturas: a chave `exorto3` é apagada ao abrir (tira dado de paciente do aparelho). Mudanças de texto listadas nas notas da conversa (testes funcionais, sem graus, concordâncias, ponto final).

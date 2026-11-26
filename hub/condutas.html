@@ -184,6 +184,9 @@ details.more[open]>summary::before{content:"−"}
   .dock .btn{flex:none}
 }
 /* exames, exposta, retorno, registro do procedimento */
+.labrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line-2)}
+.labrow textarea{width:100%;min-height:64px;padding:8px 10px;text-transform:uppercase;font-size:14px}
+.labrow .x{margin-left:auto}
 .exrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line-2)}
 .exh{flex:1 1 100%;display:flex;align-items:center;justify-content:space-between;font-size:14px}
 .exrow textarea{width:100%;min-height:64px;padding:8px 10px;text-transform:uppercase;font-size:14px}
@@ -303,7 +306,7 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
     <section class="card sec" id="secResultado">
       <div class="sec-h"><span class="n">2</span><h3>Visto · resultado dos exames</h3><span class="sub">Um ou mais exames</span></div>
       <div id="exList"></div>
-      <div class="padd" id="exAdd" role="group" aria-label="Adicionar exame" style="margin-top:8px"><button data-exadd="RADIOGRAFIAS">+ Radiografias</button><button data-exadd="TC">+ Laudo de TC</button><button data-exadd="USG">+ Laudo de USG</button><button data-exadd="RM">+ Laudo de RM</button></div>
+      <div class="padd" id="exAdd" role="group" aria-label="Adicionar exame" style="margin-top:8px"><button data-exadd="RADIOGRAFIAS">+ Radiografias</button><button data-exadd="LAB">+ Laboratoriais</button><button data-exadd="TC">+ Laudo de TC</button><button data-exadd="USG">+ Laudo de USG</button><button data-exadd="RM">+ Laudo de RM</button></div>
       <div id="achWrap">
         <div id="achList"></div>
         <div class="row"><label class="fld w-lg"><span>Outro achado (texto livre)</span><input type="text" id="achLivre" placeholder="Ex.: fratura de base do 1º metacarpo em mão direita"></label></div>
@@ -315,10 +318,10 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
       <div id="clinList"><p class="note">Marque a região no modelo.</p></div>
       <div class="grp-l">Regras de decisão (quando não há indicação de imagem)</div>
       <div class="chips" id="regrasChips"></div>
-      <details class="lab"><summary>Exames laboratoriais (colar do sistema)</summary>
-        <textarea id="labTxt" rows="4" placeholder="Cole aqui o resultado do sistema — sai formatado pelo mesmo motor do Exames Updater"></textarea>
+      <div class="labrow" id="labBox" hidden><div class="exh"><b>Laboratoriais</b><button class="x" id="labRm" aria-label="Remover laboratoriais">×</button></div>
+        <textarea id="labTxt" rows="3" placeholder="Cole o laudo do sistema ou a linha dos exames — sai pelo motor de exames: LABS dd/mm/aaaa: …"></textarea>
         <p class="note" id="labNote"></p>
-      </details>
+      </div>
       <div class="row">
         <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="melhora"><span>Paciente refere melhora do quadro após analgesia</span></label>
       </div>
@@ -414,10 +417,15 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
           <option value="">—</option><option>SEM CARGA NO MEMBRO ACOMETIDO</option><option>CARGA PARCIAL COM AUXÍLIO DE MULETAS</option><option>CARGA CONFORME TOLERÂNCIA</option><option>SEM CARGA ATÉ SEGUNDA ORDEM</option></select></label>
       </div>
       <div class="row" id="internRow">
-        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="urg"><span>Cirurgia de urgência (CC agora)</span></label>
+        <label class="fld w-lg req" id="cirNomeFld"><span>Cirurgia</span><input type="text" id="cirNome" placeholder="Ex.: osteossíntese de fêmur à direita"></label>
+        <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="urg"><span>Urgência</span></label>
         <label class="fld" id="cirDataFld"><span>Data da cirurgia</span><input type="date" id="cirData"></label>
-        <span class="note" id="cirNote">Em branco: "DATA A DEFINIR"</span>
+        <span class="note" id="cirNote">Sem data: "DATA A DEFINIR" · urgência sem data: hoje · urgência com data: "DE URGÊNCIA EM dd/mm/aaaa"</span>
       </div>
+      <div class="row" id="preopRow"><div class="fld"><span>Pré-operatórios (laboratoriais)</span><div class="seg" id="preopSeg"><button data-v="sol">Solicitar</button><button data-v="chk">Já pedidos · checar</button><button data-v="ok">Já saíram</button></div></div></div>
+      <div class="labrow" id="preopBox" hidden><div class="exh"><b>Laboratoriais do pré-operatório</b></div>
+        <textarea id="labTxt2" rows="3" placeholder="Cole o laudo do sistema ou a linha dos exames — sai na conduta: LABS dd/mm/aaaa: …"></textarea>
+        <p class="note" id="labNote2"></p></div>
       <div class="row" id="eqRow"><label class="fld w-lg req"><span>Equipe que interna</span><input type="text" id="equipe" list="dlEquipes" placeholder="Ex.: cirurgia geral, neurocirurgia"></label></div>
       <datalist id="dlEquipes"><option value="CIRURGIA GERAL"></option><option value="CIRURGIA VASCULAR"></option><option value="CIRURGIA PLÁSTICA"></option><option value="NEUROCIRURGIA"></option><option value="CLÍNICA MÉDICA"></option><option value="UTI"></option><option value="TRAUMA"></option><option value="PEDIATRIA"></option><option value="UROLOGIA"></option></datalist>
 
@@ -564,13 +572,13 @@ function blank(){return{
  regs:[], pedi:false, fase:'final',
  ini:{exames:['RADIOGRAFIAS'], med:'ANALGESIA EV CONFORME PRESCRIÇÃO'}, expIni:false,
  exs:[],
- ach:[], clin:[], achLivre:'', regras:[], labTxt:'', melhora:false, resExtra:'',
+ ach:[], clin:[], achLivre:'', regras:[], labTxt:'', labOn:false, melhora:false, resExtra:'',
  gust:'', atb12:ATB12, atb3:ATB3,
  procs:{imob:false,reducao:false,sutura:false,drenagem:false,regul:false},
  imobTipo:'', imobSem:'', imobUn:'SEMANAS', imob2:'', imob2Sem:'', imob2Un:'SEMANAS',
  pr:{}, nvPre:'', nvPreTxt:'', nvPos:'', nvPosTxt:'', interc:'', intercTxt:'', prHora:'',
  sol:[], agu:[], aguEq:'',
- discData:'', desf:'alta', inter:'', motTipo:'', colRest:'', carga:'', urg:false, cirData:'', equipe:'', motAval:'', obsH:'', transfTipo:'cross', transfPara:'',
+ discData:'', cirNome:'', preop:'chk', desf:'alta', inter:'', motTipo:'', colRest:'', carga:'', urg:false, cirData:'', equipe:'', motAval:'', obsH:'', transfTipo:'cross', transfPara:'',
  ret:{dias:'7', dia:0, amb:'', para:null, discEq:'', foraOff:false, assIdx:0, donoIdx:0, diaEsc:0},
  chk:{}, extras:[], extrasI:[], extrasIni:[], ass:'', discutido:false, dono:'', hifen:true, sepTraco:true
 };}
@@ -664,6 +672,27 @@ function textoPaciente(){
   const amb=('ortopedia'+(S.ret.amb?' '+S.ret.amb:'')).toLowerCase();
   return 'Retorno em ambulatório '+amb+' às '+ESC.PLURAL[I.dia].toLowerCase()+' dia '+fmtData(I.data)+' às 7 horas.\n\nAmbulatório Mário Covas';
 }
+
+/* --- cirurgia: quando (regra do serviço, 26/11/2026) ---
+   urgência sem data = hoje · hoje: manter jejum, heparina não passa · amanhã: jejum a partir das 23 h, heparina suspensa (não passa hoje)
+   depois de amanhã ou mais: heparina passa hoje e é suspensa na véspera */
+function cirQuando(){
+  if(S.urg&&!S.cirData) return {q:'hoje'};
+  if(!S.cirData) return {q:'indef'};
+  const d=Math.round((new Date(S.cirData+'T12:00')-new Date(hojeISO()+'T12:00'))/864e5);
+  const v=new Date(S.cirData+'T12:00'); v.setDate(v.getDate()-1);
+  return {q:d<=0?'hoje':d===1?'amanha':'depois', vespera:fmtData(v)};
+}
+function cirLinha(){
+  const nome=' ('+(U(S.cirNome)||LACUNA)+')';
+  if(S.urg) return 'PROCEDIMENTO CIRÚRGICO DE URGÊNCIA'+nome+(S.cirData?' EM '+dataBR(S.cirData):'');
+  return 'PROCEDIMENTO CIRÚRGICO'+nome+' EM '+(S.cirData?dataBR(S.cirData):'DATA A DEFINIR');
+}
+function labsPreop(){
+  const L=labLinhas();
+  return L.length?L:['LABS '+LACUNA+': '+LACUNA];
+}
+const labsNaConduta=()=>ehFinal()&&S.desf==='intern'&&S.preop==='ok';
 
 /* --- itens --- */
 // paciente ciente: pediátrico = paciente e responsável (familiar / acompanhante)
@@ -766,21 +795,30 @@ function itemsFor(key){
     add('ret',retLine(),true);
     saida();
   }
-  if(key==='intern'){   // formato da internação mantido
+  if(key==='intern'){   // formato da internação mantido; cirurgia, jejum, heparina e RCH pelo dia da cirurgia (26/11/2026)
     {const a=assNome(S.ass,S.ret.assIdx); add('disc','CD DISCUTIDA E ORIENTADA '+(a.tit==='DRA'?'PELA ASS DRA ':'PELO ASS DR ')+(a.nome||LACUNA),true);}
     add('int','INTERNAÇÃO HOSPITALAR',true);
     comum();
-    if(S.urg){add('cir','PROCEDIMENTO CIRÚRGICO DE URGÊNCIA',true);add('jej','JEJUM A PARTIR DE AGORA',true);}
-    else{let dc='DATA A DEFINIR'; if(S.cirData){const p=S.cirData.split('-');dc=p[2]+'/'+p[1]+'/'+p[0];} add('cir','PROCEDIMENTO CIRÚRGICO EM '+dc,true);add('jej','JEJUM CONFORME PROGRAMAÇÃO CIRÚRGICA',false);}
-    add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
-    add('rch','RCH (SOLICITAR)',true);
+    const Q=cirQuando(), perto=Q.q==='hoje'||Q.q==='amanha';
+    add('cir',cirLinha(),true);
+    if(Q.q==='hoje') add('jej','MANTER JEJUM',true);
+    else if(Q.q==='amanha') add('jej','JEJUM A PARTIR DAS 23H',true);
+    else add('jej','JEJUM CONFORME PROGRAMAÇÃO CIRÚRGICA',false);
+    if(S.preop==='sol') add('preop','PRÉ-OPERATÓRIOS (SOLICITAR)',true);
+    else if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
+    else add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
+    add('rch','RCH (SOLICITAR)',perto);   // bolsa vence: pede quando opera hoje ou amanhã (cirurgia grande / paciente frágil: marque)
+    add('cardio','AVALIAÇÃO CARDIOLÓGICA (SOLICITAR)',false);
+    add('anest','AVALIAÇÃO ANESTÉSICA (SOLICITAR)',false);
     add('uti','UTI (SOLICITAR)',false);
     add('cc','AVISO CC (NO OPERA)',true);
-    add('tala','MANTER '+(S.imobTipo||'TALA')+' ATÉ SEGUNDA ORDEM',true);   // formato da internação mantido
+    if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);   // nem todo paciente usa tala
     add('carga','SEM CARGA ATÉ SEGUNDA ORDEM',true);
     add('analg','ANALGESIA CONFORME PRESCRIÇÃO',false);
     colunaItens(add);
-    antic(temMMII());
+    {const t=Q.q==='hoje'?'ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA HOJE)':Q.q==='amanha'?'ANTICOAGULAÇÃO PROFILÁTICA SUSPENSA (CIRURGIA AMANHÃ)':
+       Q.q==='depois'?'ANTICOAGULAÇÃO PROFILÁTICA HOJE; SUSPENDER EM '+Q.vespera+' (VÉSPERA DA CIRURGIA)':'ANTICOAGULAÇÃO PROFILÁTICA';
+     add('antic',t,temMMII()&&!S.pedi,precisaAntic()?{alerta:true}:null);}
     if(!exp&&!pOn('regul')) add('atbg','ANTIBIOTICOTERAPIA',false);
     add('orient','ORIENTAÇÕES GERAIS',true);
     add('ciente',cienteTxt(false),true);
@@ -823,8 +861,10 @@ function exLinha(e){
 }
 function labLinhas(){
   const t=(S.labTxt||'').trim(); if(!t) return [];
-  if(EXM){try{const r=EXM.processar(t,EXM.cfgSalva());const f=EXM.formatar(r.dias,{cfg:EXM.cfgSalva()});if(f) return f.split('\n').map(l=>/^\d{2}\/\d{2}[^:]*:/.test(l)?'EXAMES LABORATORIAIS ('+l.replace(/:\s*/,'): '):'EXAMES LABORATORIAIS: '+l);}catch(e){}}
-  return ['EXAMES LABORATORIAIS: '+t.replace(/\s*\n\s*/g,' / ')];
+  // v78: sempre o motor de exames pela entrada única (ler) — laudo do sistema ou linha escrita, igual à evolução e ao mapa
+  if(EXM){try{const cfg=EXM.cfgSalva();const r=(EXM.ler||EXM.processar)(t,EXM.ler?{cfg}:cfg);const f=EXM.formatar(r.dias,{cfg});
+    if(f) return f.split('\n').filter(Boolean).map(l=>/^\d{2}\/\d{2}[^:]*:/.test(l)?'LABS '+l:'LABS '+LACUNA+': '+l);}catch(e){}}
+  return ['LABS '+LACUNA+': '+U(t).replace(/\s*\n\s*/g,' / ')];
 }
 function resultadoLinhas(){
   const out=[];
@@ -833,7 +873,7 @@ function resultadoLinhas(){
   if(qc.length) out.push('QUADRO CLÍNICO COMPATÍVEL COM '+joinE(qc.map(c=>c.t+(c.reg?' ('+c.reg+')':''))));
   susp.forEach(c=>out.push('SUSPEITA CLÍNICA DE '+c.t.replace(/\s*\(SUSPEITA\)/,'').replace(/^SUSPEITA CLÍNICA DE /,'')+(c.reg?' ('+c.reg+')':'')));
   S.regras.forEach(x=>out.push(x));
-  labLinhas().forEach(l=>out.push(l));
+  if(S.labOn&&!labsNaConduta()) labLinhas().forEach(l=>out.push(l));
   if(S.melhora) out.push('PACIENTE REFERE MELHORA DO QUADRO APÓS USO DE ANALGESIA');
   if(U(S.resExtra)) out.push(U(S.resExtra));
   return out;
@@ -888,9 +928,10 @@ const syncDesf=segBind('desfSeg',()=>S.desf,v=>S.desf=v);
 const syncInter=segBind('interSeg',()=>S.inter,v=>S.inter=v);
 const syncMot=segBind('motSeg',()=>motTipo(),v=>S.motTipo=v);
 const syncCol=segBind('colSeg',()=>colRest(),v=>S.colRest=v);
+const syncPreop=segBind('preopSeg',()=>S.preop,v=>S.preop=v);
 const syncRetDia=segBind('retDiaSeg',()=>S.ret.dia,v=>{S.ret.dia=+v;});
 
-const TXT=['discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','equipe','motAval','obsH','transfPara','ass','dono'];
+const TXT=['discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','cirNome','equipe','motAval','obsH','transfPara','ass','dono'];
 const CHK=['melhora','discutido','hifen','sepTraco','expIni','urg','pedi'];
 TXT.forEach(id=>{const el=$(id);const h=(ev)=>{ if(ev&&ev.type==='change'&&el.value===el._ult) return; el._ult=el.value; if(id==='iniMed') S.ini.med=el.value; else S[id]=el.value;
   if(id==='imobTipo'&&el.value&&!S.procs.imob){S.procs.imob=true;}
@@ -1174,7 +1215,10 @@ $('exList').addEventListener('change',e=>{const row=e.target.closest('.exrow');c
 $('exList').addEventListener('input',e=>{const row=e.target.closest('.exrow');if(!row||e.target.dataset.f!=='txt')return;S.exs[+row.dataset.i].txt=e.target.value;
   const fl=e.target.closest('.fld.req');if(fl)fl.classList.toggle('vazio',!e.target.value.trim());update('ex');});
 $('exAdd').addEventListener('click',e=>{const b=e.target.closest('[data-exadd]');if(!b)return;const t=b.dataset.exadd;
+  if(t==='LAB'){S.labOn=true;update();setTimeout(()=>$('labTxt').focus(),50);return;}
   S.exs.push(t==='RADIOGRAFIAS'?{tipo:t,st:'',txt:''}:{tipo:t,reg:S.regs.length===1?regKey(S.regs[0]):'',data:hojeISO(),txt:''});update();});
+$('labRm').addEventListener('click',()=>{S.labOn=false;if(!labsNaConduta())S.labTxt='';$('labTxt').value=S.labTxt;update();});
+$('labTxt2').addEventListener('input',e=>{S.labTxt=e.target.value;$('labTxt').value=e.target.value;update('labTxt2');});
 /* características por achado (opcional) */
 function renderDesc(){
   const op=S.pedi?DESC.concat(DESC_PED):DESC;
@@ -1321,7 +1365,7 @@ function compat(){
 /* Atualização geral */
 function update(src){
   compat();
-  syncFase();syncDesf();syncInter();syncMot();syncCol();
+  syncFase();syncDesf();syncInter();syncMot();syncCol();syncPreop();
   $('secAss').hidden=!ehFinal(); $('discDataFld').hidden=!S.discutido; if(!S.discData) $('discData').value=hojeISO();
   $('imobSem').disabled=S.imobUn==='ATÉ SEGUNDA ORDEM'; $('imob2Sem').disabled=S.imob2Un==='ATÉ SEGUNDA ORDEM';
   $('avalBox').hidden=S.inter!=='aval'; $('obsRow').hidden=S.inter!=='obs'; $('transfRow').hidden=!['cross','origem','ubs'].includes(S.inter);
@@ -1355,12 +1399,14 @@ function update(src){
   const showIni=comInicial()&&S.expIni, showRes=!comInicial()&&S.expIni;
   if(src!=='atb'){ $('expBoxIni').innerHTML=''; $('expBox').innerHTML=''; if(showIni) renderExp($('expBoxIni')); if(showRes) renderExp($('expBox')); }
   $('expBoxIni').hidden=!showIni; $('expBox').hidden=!showRes;
-  const lt=labLinhas(); $('labNote').textContent=S.labTxt.trim()?(EXM?'Sai assim: ':'Motor de exames não carregado — vai como colado: ')+lt.join(' · '):'';
+  $('labBox').hidden=!S.labOn; {const b=document.querySelector('[data-exadd="LAB"]');if(b)b.hidden=S.labOn;}
+  const lt=labLinhas(), ln=S.labTxt.trim()?(EXM?'Sai assim: ':'Motor de exames não carregado — vai como colado: ')+lt.join(' · '):'';
+  $('labNote').textContent=ln+(S.labOn&&labsNaConduta()&&ln?' (na internação sai na conduta)':''); $('labNote2').textContent=ln;
   const d=S.desf;
   $('cargaRow').hidden=d==='intern'||(temReg()&&!temMMII());
   $('internRow').hidden=!(d==='intern'||d==='outraEq');
   $('urg').closest('label').hidden=d!=='intern';
-  $('cirDataFld').hidden=d==='intern'&&S.urg; $('cirNote').hidden=d==='intern'&&S.urg;
+  $('cirNomeFld').hidden=d!=='intern'; $('cirNomeFld').classList.toggle('vazio',!U(S.cirNome)); $('preopRow').hidden=d!=='intern'; $('preopBox').hidden=!labsNaConduta(); if(document.activeElement!==$('labTxt2')) $('labTxt2').value=S.labTxt;
   $('eqRow').hidden=d!=='outraEq';
   renderAssUI(); renderRet();
   renderItems($('itemsIni'),'inicial');
@@ -1414,6 +1460,7 @@ function renderPend(){
   if(ehInter()&&['cross','origem','ubs'].includes(S.inter)&&!U(S.transfPara)) PEND.push(['Para / serviço',$('transfPara')]);
   if(ehInter()&&S.inter==='aval'&&!U(S.aguEq)) PEND.push(['Equipe da interconsulta',$('aguEq')]);
   if(ehFinal()&&S.desf==='outraEq'&&!U(S.equipe)) PEND.push(['Equipe que interna',$('equipe')]);
+  if(ehFinal()&&S.desf==='intern'&&!U(S.cirNome)) PEND.push(['Cirurgia',$('cirNome')]);
   document.querySelectorAll('#procList .fld.vazio').forEach(f=>{const el=f.querySelector('input,select');if(vis(el))PEND.push([f.querySelector('span').textContent,el]);});
   if(temExposta()&&!S.gust){const g=document.querySelector(':is(#expBox,#expBoxIni):not([hidden]) [data-g]');if(g)PEND.push(['Gustilo',g]);}
   const af=$('ass').closest('.fld');af.classList.add('req');af.classList.toggle('vazio',!U(S.ass));if(ehFinal()&&!U(S.ass))PEND.push(['Assistente',$('ass')]);
