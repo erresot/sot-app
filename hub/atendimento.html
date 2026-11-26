@@ -1,0 +1,276 @@
+<!doctype html><html lang="pt-BR"><head><script>/* SOT: esta página só abre depois da senha do app */(function(){var ok=false;try{ok=sessionStorage.getItem('sot-ok')==='1'&&Date.now()-(+localStorage.getItem('sot-ult')||0)<15*60000;}catch(e){}if(window.top===window&&!ok){location.replace(new URL('../index.html',location.href).href);return;}var u=0;function m(){var n=Date.now();if(n-u>20000){u=n;try{localStorage.setItem('sot-ult',String(n));}catch(e){}}}['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,m,{capture:true,passive:true});});})();</script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atendimento PS Ortopedia</title><link rel="stylesheet" href="sot-tema.css">
+<style>
+/* Atendimento (v81): Anamnese → Exame → Conduta numa tela só (1º momento) e Anterior → Exame → Conduta (em tempo).
+   Cada passo é o programa de hoje, aberto aqui dentro; a ficha é montada pelo motor (../sot-ficha.js) e copiada com um botão só. */
+:root{--bg:#edf1f6;--surface:#fff;--surface-2:#f4f7fb;--ink:#14243a;--muted:#5c6b7e;--line:#d9e1ea;--accent:#1f6fce;--accent-ink:#fff;--accent-soft:#e6effb;--ok:#1d7a46;--warn:#b4540f;--warn-bg:#fff4e5;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--r:10px;--ctl:44px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1520;--surface:#142030;--surface-2:#1a2738;--ink:#e3eaf3;--muted:#93a3b8;--line:#2a3a4f;--accent-ink:#07142a;--accent-soft:#16294a;--ok:#5fcf8f;--warn:#f0a060;--warn-bg:#2b1f10;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1520;--surface:#142030;--surface-2:#1a2738;--ink:#e3eaf3;--muted:#93a3b8;--line:#2a3a4f;--accent-ink:#07142a;--accent-soft:#16294a;--ok:#5fcf8f;--warn:#f0a060;--warn-bg:#2b1f10;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;display:flex;flex-direction:column}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;align-items:center;gap:8px;padding:8px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
+.top h1{font-size:16px;font-weight:600;margin:0 8px 0 0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{min-height:var(--ctl);border:0;background:var(--surface-2);padding:0 12px;font-size:14px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.passos{display:flex;gap:6px;flex:1;min-width:260px}
+.passo{flex:1;min-height:var(--ctl);border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;padding:0 8px}
+.passo[aria-current="step"]{border:2px solid var(--accent);background:var(--surface);font-weight:600}
+.passo .v{color:var(--ok);font-weight:700}
+.passo .n{color:var(--muted)}
+.corpo{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,38%);min-height:0}
+.quadros{position:relative;min-height:0}
+.quadros iframe,.quadros .nativo{position:absolute;inset:0;width:100%;height:100%;border:0;visibility:hidden;background:var(--bg)}
+.quadros .on{visibility:visible}   /* escondido sem perder o tamanho: o boneco 3D nasce certo */
+.nativo{overflow:auto;padding:16px}
+.cartao{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;max-width:760px}
+.cartao h2{font-size:15px;margin:0 0 4px}
+.dica{font-size:13px;color:var(--muted);margin:0 0 10px}
+#anterior{width:100%;min-height:180px;border:1px solid var(--line);border-radius:var(--r);padding:10px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface-2)}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-height:var(--ctl);padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border:2px solid var(--accent);font-weight:600}
+.resumo{font-size:14px;line-height:1.5}
+.resumo b{font-weight:600}
+.ficha{border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0}
+.fhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.fhead b{flex:1;font-size:14px}
+.btn{min-height:var(--ctl);padding:0 14px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface-2);font-size:14px;font-weight:500}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+#ficha{flex:1;margin:0;padding:10px 12px;overflow:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+#ficha .cab{color:var(--accent);font-weight:600}
+#ficha:empty::before{content:"A ficha aparece aqui conforme você preenche.";color:var(--muted);font-family:var(--f-body)}
+.avisos{border-top:1px solid var(--line);padding:6px 12px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.avisos:empty{display:none}
+.avisos .s{color:var(--accent)}
+.avisos .a{color:var(--warn)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+.abre{display:none}
+@media (max-width:899px){
+  .corpo{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .ficha{border-left:0;border-top:1px solid var(--line);max-height:46px;transition:max-height .2s}
+  .ficha.aberta{max-height:62vh}
+  .abre{display:inline-flex;align-items:center}
+  #ficha,.avisos{display:none}.ficha.aberta #ficha{display:block}.ficha.aberta .avisos:not(:empty){display:flex}
+  .fhead{padding:0 8px;min-height:46px}
+  .fhead b{font-size:0}
+  .top{gap:6px}
+}
+</style></head><body>
+<header class="top">
+  <h1>Atendimento · PS</h1>
+  <div class="seg" role="group" aria-label="Momento"><button data-mom="1" aria-pressed="true">1º momento</button><button data-mom="2" aria-pressed="false">Em tempo</button></div>
+  <nav class="passos" aria-label="Passos do atendimento" id="passos"></nav>
+</header>
+<main class="corpo">
+  <div class="quadros" id="quadros">
+    <section class="nativo" id="pAnterior" aria-label="Ficha anterior">
+      <div class="cartao"><h2>Continuar atendimento</h2><p class="dica">Cole a ficha anterior (1º momento e em tempos já feitos). O app lê região, lado e o que ficou pedido, e já prepara a Conduta.</p>
+        <textarea id="anterior" placeholder="Cole aqui a ficha do sistema"></textarea>
+        <div class="linha"><button class="btn pri" id="ler">Ler ficha</button><button class="btn" id="limparAnt">Limpar</button></div>
+        <div class="resumo" id="resumo" style="margin-top:10px"></div></div>
+      <div class="cartao"><h2>Ao reavaliar</h2><p class="dica">Sai no em tempo: "AO REAVALIAR, PACIENTE …".</p>
+        <div class="chips" id="reav"><button class="chip" data-r="plena" aria-pressed="false">Melhora plena</button><button class="chip" data-r="parcial" aria-pressed="false">Melhora parcial</button><button class="chip" data-r="nega" aria-pressed="false">Nega melhora</button><button class="chip" data-r="" aria-pressed="true">Não escrever</button></div></div>
+    </section>
+  </div>
+  <aside class="ficha" id="painel" aria-label="Ficha">
+    <div class="fhead"><button class="btn abre" id="abre" aria-expanded="false">▲ Ficha</button><b id="ftit">Ficha</b><button class="btn" id="prox">Próximo →</button><button class="btn pri" id="copiar" disabled>Copiar ficha</button></div>
+    <pre id="ficha" aria-live="polite"></pre>
+    <div class="avisos" id="avisos"></div>
+  </aside>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script src="../campos.js"></script>
+<script src="../sot-ficha.js"></script>
+<script>
+(function(){
+'use strict';
+var PASSOS={'1':[['anamnese','Anamnese'],['exame','Exame'],['condutas','Conduta']],'2':[['anterior','Anterior'],['exame','Exame'],['condutas','Conduta']]};
+var Q=document.getElementById('quadros'), F={}, atual=null, ultimo='', MOM='1';
+var EST={regsPostas:[],exameFoi:'',sug:{},ant:null,reav:'',efBase:null,avisos:[]};
+function $(s){return document.querySelector(s);}
+var COPIAR_DENTRO={anamnese:'#copyBtn,#copyBtn2',exame:'#copyBtn',condutas:'#copiar,#dockCopiar'};
+function frame(id){
+  if(F[id]) return F[id];
+  var f=document.createElement('iframe'); f.dataset.id=id; f.title=id; f.src=id+'.html'+(location.search||'');
+  f.addEventListener('load',function(){ ligar(f); montar(); });
+  Q.appendChild(f); F[id]=f; return f;
+}
+function ligar(f){
+  var id=f.dataset.id, d;
+  try{ d=f.contentDocument;
+    var st=d.createElement('style'); st.textContent=COPIAR_DENTRO[id]+'{display:none!important}';   // um Copiar só: o da ficha
+    d.head.appendChild(st);
+  }catch(e){}
+  try{ if(id==='condutas'&&!f.dataset.ini){ f.dataset.ini='1'; var bi=d.querySelector('#faseSeg button[data-v="'+(MOM==='2'?'inter':'inicial')+'"]'); if(bi) bi.click(); } }catch(e){}
+  try{ var t=null, h=function(){ clearTimeout(t); t=setTimeout(montar,120); };
+    ['input','change','click','keyup'].forEach(function(ev){ d.addEventListener(ev,h,true); }); }catch(e){}
+}
+function painel(id){ return id==='anterior'?$('#pAnterior'):frame(id); }
+function ir(id){
+  var lista=PASSOS[MOM].map(function(p){return p[0];}); if(lista.indexOf(id)<0) id=lista[0];
+  atual=id; painel(id);
+  Q.querySelectorAll('iframe,.nativo').forEach(function(el){ el.classList.toggle('on',(el.dataset.id||'anterior')===id); });
+  desenharPassos();
+  var i=lista.indexOf(id); $('#prox').textContent= i<2 ? 'Próximo →' : '← '+PASSOS[MOM][0][1];
+  try{ localStorage.setItem('sot-atend-passo',MOM+'|'+id); }catch(e){}
+  montar();
+}
+function desenharPassos(){
+  var feito=window.__ficha||{};
+  $('#passos').innerHTML=PASSOS[MOM].map(function(p,i){
+    var ok={anamnese:feito.anamnese,anterior:EST.ant,exame:feito.exame,condutas:feito.conduta}[p[0]];
+    return '<button class="passo" data-p="'+p[0]+'"'+(p[0]===atual?' aria-current="step"':'')+'>'+(ok?'<span class="n v">✓</span>':'<span class="n">'+(i+1)+'</span>')+' '+p[1]+'</button>';
+  }).join('');
+  document.querySelectorAll('.passo').forEach(function(b){ b.onclick=function(){ ir(b.dataset.p); }; });
+}
+function momento(m){
+  if(m===MOM) return; MOM=m;
+  document.querySelectorAll('[data-mom]').forEach(function(b){ b.setAttribute('aria-pressed',String(b.dataset.mom===m)); });
+  if(m==='2'){ EST.efBase=txtExame(); }
+  condutasAplicar({fase:m==='2'?'inter':'inicial'});
+  ir(PASSOS[m][0][0]);
+}
+/* ---- texto e estado de cada programa (o programa de hoje, sem mudar o texto dele) ---- */
+function janela(id){ try{ return F[id]&&F[id].contentWindow; }catch(e){ return null; } }
+function txtAnamnese(){ try{ var t=F.anamnese&&F.anamnese.contentDocument.getElementById('outTxt'); return t?t.value:''; }catch(e){ return ''; } }
+function txtExame(){ try{ var w=janela('exame'); return w&&w.allText?w.allText():''; }catch(e){ return ''; } }
+function txtConduta(){ try{ var w=janela('condutas'); return w&&w.__condutas?w.__condutas.gerar():''; }catch(e){ return ''; } }
+function condutasAplicar(o){ try{ var w=janela('condutas'); if(w&&w.__condutas&&w.__condutas.aplicar){ w.__condutas.aplicar(o); return true; } }catch(e){} return false; }
+/* ---- o dado desce: região e lado da Anamnese → Exame (abre o segmento) e Conduta (pedidos) ---- */
+var AN2C={ombro:'ombro',clavicula:'ombro',escapula:'ombro',braco:'braco',cotovelo:'cotovelo',antebraco:'antebraco',punho:'punho',mao:'mao',dedosmao:'mao',
+  quadril:'quadril',coxa:'coxa',joelho:'joelho',perna:'perna',tornozelo:'tornozelo',pe:'pe',halux:'pe',dedospe:'pe',cerv:'cervical',torac:'toracica',lomb:'lombar',pelve:'pelve'};
+var AN2E={ombro:'ombro',clavicula:'clavicula',escapula:'escapula',braco:'braco',cotovelo:'cotovelo',antebraco:'antebraco',punho:'punho',mao:'mao',dedosmao:'mao',
+  quadril:'quadril',coxa:'coxa',joelho:'joelho',perna:'perna',tornozelo:'tornozelo',pe:'pe_medio',halux:'pe_ante',dedospe:'pe_ante',cerv:'cervical',torac:'toracica',lomb:'lombar',pelve:'bacia'};
+var C2E={pelve:'bacia',pe:'pe_medio'};
+function regsDaAnamnese(){
+  try{ var w=janela('anamnese'), e=w&&w.__anamnese&&w.__anamnese.estado(); if(!e||e.mode==='enf') return null;
+    return e.topo.map(function(k){ var p=k.split('|'); return {an:p[0],side:p[1]||''}; }).filter(function(r){ return AN2C[r.an]; });
+  }catch(err){ return null; }
+}
+function chave(r){ return r.k+'|'+(r.side||''); }
+function descer(){
+  if(MOM!=='1') return;
+  var R=regsDaAnamnese(); if(!R) return;
+  var novas=[], vistas={};
+  R.forEach(function(r){ var c={k:AN2C[r.an],side:r.side}; if(!vistas[chave(c)]){ vistas[chave(c)]=1; novas.push(c); } });
+  var antes=EST.regsPostas.map(chave).join(','), agora=novas.map(chave).join(',');
+  if(antes===agora) return;
+  var tirar=EST.regsPostas.filter(function(r){ return !vistas[chave(r)]; });
+  if(condutasAplicar({regs:novas,tirar:tirar})) EST.regsPostas=novas;
+  var nova=R.filter(function(r){ return antes.split(',').indexOf(AN2C[r.an]+'|'+r.side)<0; })[0];
+  if(nova){ try{ var we=janela('exame'); if(we&&we.go&&AN2E[nova.an]) we.go(AN2E[nova.an],nova.side||'D'); }catch(e){} }
+}
+/* ---- sugestões pelo exame: NV alterado → seriada; exposição óssea → VAT + ATB + jejum + seriada ---- */
+var RE_NV=/NEUROVASCULAR:|PULSOS? (?:DISTAIS )?(?:AUSENTES?|DIMINU)|PARESTESIA|HIPOESTESIA|PARESIA|PLEGIA|TEC\s*>\s*3/;
+var RE_EXP=/EXPOSI[CÇ][AÃ]O [OÓ]SSEA/;
+function sugerir(ef){
+  var u=String(ef||'').toUpperCase(), av=[];
+  if(MOM!=='1'){ EST.avisos=av; return; }
+  if(RE_NV.test(u)){ av.push(['a','Neurovascular alterado no exame.']);
+    if(!EST.sug.nv&&condutasAplicar({linhasIni:['REAVALIAÇÃO SERIADA']})){ EST.sug.nv=1; } if(EST.sug.nv) av.push(['s','Sugerido na conduta: REAVALIAÇÃO SERIADA (dá para tirar no Condutas).']); }
+  if(RE_EXP.test(u)){ av.push(['a','Exposição óssea no exame.']);
+    if(!EST.sug.exp&&condutasAplicar({chk:{'inicial:vat':true},linhasIni:['ANTIBIOTICOTERAPIA','ORIENTO JEJUM','REAVALIAÇÃO SERIADA']})){ EST.sug.exp=1; }
+    if(EST.sug.exp) av.push(['s','Sugerido na conduta: VAT, ANTIBIOTICOTERAPIA, ORIENTO JEJUM e REAVALIAÇÃO SERIADA (dá para tirar no Condutas).']); }
+  else if(/FERIMENTO/.test(u)) av.push(['a','Ferimento no exame: há exposição? Se sim, marque "Exposição óssea" no Exame.']);
+  EST.avisos=av;
+}
+/* ---- ficha ---- */
+function semGustilo(ef){ return String(ef||'').replace(/\s*Fratura exposta Gustilo-Anderson [^.]*\(classificação preliminar\)\./gi,'').replace(/\s*FRATURA EXPOSTA GUSTILO-ANDERSON [^.]*\(CLASSIFICAÇÃO PRELIMINAR\)\./g,''); }
+var REAV={plena:'AO REAVALIAR, PACIENTE REFERE MELHORA PLENA DO QUADRO APÓS ANALGESIA',parcial:'AO REAVALIAR, PACIENTE REFERE MELHORA PARCIAL DO QUADRO APÓS ANALGESIA',nega:'AO REAVALIAR, PACIENTE NEGA MELHORA DO QUADRO APÓS ANALGESIA'};
+function juntar1(a,e,c){
+  var A=a?SOTFICHA.ler(a).momentos[0]:null, C=c?SOTFICHA.ler(c):{momentos:[]};
+  var m={tipo:(A&&A.tipo)||'ps', hma:A?A.hma:'', ap:A?A.ap:[], ef:semGustilo(e), resultados:[], outros:A?A.outros.slice():[], realizado:[], conduta:[]};
+  var M=C.momentos, extra=[];
+  if(M.length){
+    var ini=M[0].emTempo?null:M[0], resto=M[0].emTempo?M:M.slice(1);
+    if(ini){ m.realizado=ini.realizado; m.conduta=ini.conduta; m.resultados=ini.resultados; m.outros=m.outros.concat(ini.outros); }
+    if(!ini && resto.length===1){   // "fechar já": a conduta final entra no próprio 1º momento
+      var r=resto[0]; m.resultados=r.resultados; m.outros=m.outros.concat(r.reavaliacao?[r.reavaliacao]:[],r.outros);
+      m.realizado=r.realizado; m.conduta=r.conduta; m.discutido=r.discutido; m.ass=r.ass; resto=[];
+    }
+    extra=resto;
+  }
+  if(!m.ass){ var ra=m.conduta.filter(function(l){return /^REAVALIAR AP[OÓ]S$/i.test(l.trim());}); if(ra.length) m.conduta=m.conduta.filter(function(l){return ra.indexOf(l)<0;}).concat(ra); }   // REAVALIAR APÓS fecha a conduta inicial
+  var vazio=!m.hma&&!m.ap.length&&!m.ef&&!m.conduta.length&&!m.realizado.length&&!m.outros.length&&!m.resultados.length;
+  if(vazio&&!extra.length) return '';
+  return [vazio?null:SOTFICHA.escrever(m)].concat(extra.map(function(x){return SOTFICHA.escrever(x);})).filter(Boolean).join('\n\n');
+}
+function juntar2(e,c){   // em tempo = evolução nova: só o que é deste momento
+  var C=c?SOTFICHA.ler(c):{momentos:[]}, M=C.momentos, et=M.filter(function(x){return x.emTempo;});
+  var base=et.length?et[0]:(M[0]||{resultados:[],outros:[],realizado:[],conduta:[]});
+  var efNovo=e&&e!==EST.efBase?semGustilo(e):'';
+  var m={emTempo:true,resultados:base.resultados||[],reavaliacao:REAV[EST.reav]||'',ef:efNovo,outros:(base.outros||[]).concat(base.reavaliacao?[base.reavaliacao]:[]),
+    realizado:base.realizado||[],conduta:base.conduta||[],discutido:base.discutido,ass:base.ass};
+  var vazio=!m.resultados.length&&!m.reavaliacao&&!m.ef&&!m.outros.length&&!m.realizado.length&&!m.conduta.length;
+  if(vazio) return '';
+  return [SOTFICHA.escrever(m)].concat(et.slice(1).map(function(x){return SOTFICHA.escrever(x);})).join('\n\n');
+}
+function montar(){
+  descer();
+  var a=MOM==='1'?txtAnamnese():'', e=txtExame(), c=txtConduta(), t='';
+  sugerir(e);
+  try{ t=MOM==='1'?juntar1(a,e,c):juntar2(e,c); }catch(err){ t=''; }
+  ultimo=t; window.__ficha={momento:MOM,anamnese:a,exame:e,conduta:c,ficha:t};
+  var esc=function(s){return s.replace(/[&<>]/g,function(x){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[x];});};
+  $('#ficha').innerHTML=t?esc(t).split('\n').map(function(l){return /^(#.*|REALIZADO:|ASS DRA? .*)$/.test(l)?'<span class="cab">'+l+'</span>':l;}).join('\n'):'';
+  $('#copiar').disabled=!t;
+  var av=EST.avisos.slice();
+  if(MOM==='1'){ var falta=[]; if(!a) falta.push('Anamnese'); if(!e) falta.push('Exame'); if(t&&falta.length) av.push(['a','Ainda vazio: '+falta.join(', ')+'.']); }
+  else { if(!EST.ant) av.push(['a','Cole a ficha anterior em "Anterior" para o app já preparar a Conduta.']);
+    if(EST.reav==='plena'&&/SEM ACHADO/.test(t.toUpperCase())) av.push(['s','Melhora plena e exame sem achado: considere a alta (Em tempo final no Condutas).']); }
+  $('#avisos').innerHTML=av.map(function(x){return '<div class="'+x[0]+'">'+esc(x[1])+'</div>';}).join('');
+  $('#ftit').textContent=MOM==='1'?'Ficha · 1º momento':'Ficha · em tempo';
+  desenharPassos();
+}
+/* ---- em tempo: ler a ficha anterior ---- */
+var NOME={cervical:'coluna cervical',toracica:'coluna torácica',lombar:'coluna lombar',pelve:'bacia',ombro:'ombro',braco:'braço',cotovelo:'cotovelo',antebraco:'antebraço',punho:'punho',mao:'mão',quadril:'quadril',coxa:'coxa',joelho:'joelho',perna:'perna',tornozelo:'tornozelo',pe:'pé'};
+function lerAnterior(){
+  var t=$('#anterior').value, f=SOTFICHA.ler(t);
+  if(!f.momentos.length){ $('#resumo').textContent='Não achei nada para ler.'; EST.ant=null; montar(); return; }
+  EST.ant=f;
+  var M=f.momentos, ult=M[M.length-1], txtReg=M.map(function(m){return [m.ef].concat(m.conduta,m.resultados).join('\n');}).join('\n');
+  var R=SOTFICHA.regioes(txtReg), pend=SOTFICHA.pendencias(ult);
+  var r=[];
+  r.push('<b>'+(f.tipo==='ic'?'Interconsulta':'PS')+'</b> · '+M.length+' momento'+(M.length>1?'s':'')+(f.final?' · <b>ficha já fechada</b> (tem ASS)':''));
+  if(R.length) r.push('Região: '+R.map(function(x){return NOME[x.k]+(x.side?(x.side==='D'?' direito':' esquerdo'):'');}).join(', '));
+  if(pend.length) r.push('Aguardava: '+pend.join(' · '));
+  if(ult.conduta.length) r.push('Última conduta: '+ult.conduta.slice(0,4).join(' / ')+(ult.conduta.length>4?' …':''));
+  $('#resumo').innerHTML=r.join('<br>');
+  if(R.length){ condutasAplicar({regs:R,fase:f.final?'final':'inter'}); var r0=R[0]; try{ var we=janela('exame'); if(we&&we.go) we.go(C2E[r0.k]||r0.k,r0.side||'D'); EST.efBase=txtExame(); }catch(e){} }
+  try{ localStorage.setItem('sot-atend-ant',t); }catch(e){}
+  toast('Ficha anterior lida'); montar();
+}
+function toast(m){ var t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('on');},1800); }
+function copiar(){
+  montar(); if(!ultimo) return;
+  var ok=function(){ toast('Ficha copiada'); }, velho=function(){ var ta=document.createElement('textarea'); ta.value=ultimo; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); ok(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ultimo).then(ok,velho); else velho();
+}
+document.querySelectorAll('[data-mom]').forEach(function(b){ b.addEventListener('click',function(){ momento(b.dataset.mom); }); });
+$('#prox').addEventListener('click',function(){ var L=PASSOS[MOM].map(function(p){return p[0];}), i=L.indexOf(atual); ir(L[(i+1)%3]); });
+$('#copiar').addEventListener('click',copiar);
+$('#ler').addEventListener('click',lerAnterior);
+$('#limparAnt').addEventListener('click',function(){ $('#anterior').value=''; $('#resumo').textContent=''; EST.ant=null; try{localStorage.removeItem('sot-atend-ant');}catch(e){} montar(); });
+$('#reav').addEventListener('click',function(ev){ var b=ev.target.closest('[data-r]'); if(!b) return; EST.reav=b.dataset.r; this.querySelectorAll('[data-r]').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); }); montar(); });
+$('#abre').addEventListener('click',function(){ var p=$('#painel'), on=!p.classList.contains('aberta'); p.classList.toggle('aberta',on); this.setAttribute('aria-expanded',String(on)); this.textContent=on?'▼ Ficha':'▲ Ficha'; });
+setInterval(montar,2000);   // garante a ficha em dia mesmo se algum programa mudar sem evento
+if(window.top!==window) document.querySelector('.top h1').hidden=true;   // dentro do app o título já está na barra de cima
+try{ var guard=localStorage.getItem('sot-atend-ant'); if(guard) $('#anterior').value=guard; }catch(e){}
+['anamnese','exame','condutas'].forEach(frame);   // abre os três já: a ficha junta tudo mesmo sem visitar cada passo
+var ini='1|anamnese'; try{ ini=localStorage.getItem('sot-atend-passo')||ini; }catch(e){}
+var pi=ini.split('|'); ir(pi[0]==='1'&&pi[1]?pi[1]:'anamnese');   // sempre abre no 1º momento
+window.SOTATEND={montar:montar,ir:ir,momento:momento,lerAnterior:lerAnterior,texto:function(){montar();return ultimo;},estado:function(){return EST;}};
+})();
+</script>
+</body></html>

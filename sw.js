@@ -1,9 +1,9 @@
 /* SOT APP — funcionamento offline. O número da versão é carimbado pelo build (python3 build.py N). */
-var V = 'sot-v79';
+var V = 'sot-v81';
 var C_OCR = 'sot-ocr-1';        // leitor de fotos (12 MB): NÃO é apagado quando sai versão nova. Se trocar os arquivos do leitor, mude este nome.
 var C_FONTES = 'sot-fontes-2';  // letras dos programas (arquivos locais em hub/fonts): não mudam entre versões
-var ESSENCIAL = ['./', 'index.html', 'evo.html', 'campos.js', 'pessoa.js', 'sot-datas.js', 'sot-med.js', 'sot-exames.js', 'sot-escala.js', 'sot-linha.js', 'sot-contadores.js', 'sync.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
-var RESTO = ['hub/anamnese.html', 'hub/avaliacao.html', 'hub/condutas.html', 'hub/condutas-guia.html', 'hub/desccir.html', 'hub/evoamb.html', 'hub/exame.html', 'hub/exames.html', 'hub/mapa.html', 'hub/ambint.html', 'hub/novopac.html', 'hub/posop.html', 'hub/retornos.html', 'hub/cid10.txt', 'hub/ocr/sot-ocr.js', 'hub/sot-tema.css', 'hub/relatorio.html', 'hub/atualizador.html',   // v64: relatório (870 KB) também vai em segundo plano — abre sem internet desde a 1ª vez
+var ESSENCIAL = ['./', 'index.html', 'evo.html', 'campos.js', 'pessoa.js', 'sot-datas.js', 'sot-med.js', 'sot-exames.js', 'sot-escala.js', 'sot-linha.js', 'sot-contadores.js', 'sot-ficha.js', 'sync.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+var RESTO = ['hub/atendimento.html', 'hub/anamnese.html', 'hub/avaliacao.html', 'hub/condutas.html', 'hub/condutas-guia.html', 'hub/desccir.html', 'hub/evoamb.html', 'hub/exame.html', 'hub/exames.html', 'hub/mapa.html', 'hub/ambint.html', 'hub/novopac.html', 'hub/posop.html', 'hub/retornos.html', 'hub/cid10.txt', 'hub/ocr/sot-ocr.js', 'hub/sot-tema.css', 'hub/relatorio.html', 'hub/atualizador.html',   // v64: relatório (870 KB) também vai em segundo plano — abre sem internet desde a 1ª vez
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
 var modoLento = 0;

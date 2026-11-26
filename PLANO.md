@@ -7,7 +7,7 @@ Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o
 - **Enfermaria:** importação do internograma (Google Doc e PDF), lista de leitos com busca, modo compacto e prontuário; ficha com visita beira-leito por toques, fotos, pré-operatório, avaliação e notas; pendências; evoluções; agenda com dupla checagem e mapa cirúrgico; segurar alta; laudos por OCR; quem saiu do internograma (igual em todos os aparelhos); backup.
 - **Sincronização:** Drive com tempo-limite e nova tentativa, envio em fila, mescla campo a campo, backup diário com retenção, armazenamento que passa para IndexedDB quando o aparelho enche.
 - **Folha de visita impressa:** impressão A4 com todo o internograma de cada paciente + leitura da foto + tela de revisão (testada com fotos simuladas).
-- **OrthoHub:** os 12 programas funcionando e em uso diário.
+- **OrthoHub:** os 12 programas funcionando e em uso diário; + Atendimento (v81, em preparo).
 - **Escala única** (`sot-escala.js`) lida por Condutas, Retornos, Novo Paciente e Pós-Op; retorno fora do dia com alerta.
 - **Anamnese, Exame Físico e Condutas novos (v77):** feitos em conversas à parte e integrados.
 - **Contagem do cabeçalho (v76):** regra do serviço (altas dentro do HC quando o cabeçalho não tem "N Altas"; RN conta; cada registro uma vez), igual no Atualizador e na conferência.
@@ -56,7 +56,12 @@ Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o
 - **Aprovado (próxima etapa):** usar a programação pós-op escrita no Orienta — "COBRAR RX POI" vira pendência, "ALTA N PO" vira aviso no dia, "SEM CARGA"/"ATB N dias" na ficha.
 
 **Fase C — funções novas**
-7. Encadear Anamnese → Exame Físico → Condutas — **aguardar** decisões futuras.
+7. Encadear Anamnese → Exame Físico → Condutas — **desenho fechado em 26/11/2026** (documento "Plano — Atendimento do PS" no Claude Docs). Ordem combinada, uma versão por etapa:
+   - ✅ v80 (em preparo): motor da ficha `sot-ficha.js` (escreve e lê os blocos; nenhum programa usa ainda).
+   - ✅ v81 (em preparo): tela Atendimento — 3 passos e um Copiar só; o dado desce (região/lado → Exame e pedidos; NV alterado → seriada; exposição óssea → VAT/ATB/jejum/seriada); em tempo com "Continuar atendimento" e "Ao reavaliar". Modo "Evolução enfermaria" da Anamnese fica por enquanto (decisão de 26/11).
+   - Frases novas do próprio Condutas (RX em 4 graus, REALIZADO, medicação genérica, desfechos novos, internação em ordem fixa…).
+   - Molde do evoluidor ("Guardar no Drive", leitura no evoluidor, "Apagar molde").
+   - Mini-kanban (quadro opcional, 4 colunas, print do kanban do hospital, avisos 8 h/24 h, histórico de 21 dias).
 8. Outras ideias que surgirem no uso: entram aqui antes de serem feitas.
 - ✅ v66 (parcial): **Regra de exames:** rotina = pedido hoje, colhido amanhã às 6h; urgência = colhido hoje. No internograma, "dd/mm: labs" = resultado; "dd/mm Solicitar" = deve ser pedido na rotina do dia anterior. App: na véspera, "pedir hoje na rotina"; no dia sem resultado, "atrasado: pedir na urgência?". Contadores pela data: conferir e avisar (quem atualiza é humano).
 - ✅ v66: **Motor único de contadores pela data:** PO, POI→1 PO, dias de fratura/queda/déficit, DIH calculados para uma data-alvo. Usado em 3 lugares: (1) conferência do internograma de hoje (avisa quando o número escrito à mão está errado); (2) **mapa cirúrgico e linha de dados: o texto já sai com o número do dia da cirurgia** (ex.: mapa de 25/11 → "16 Po", "26 D Fx"), na tela, na impressão e no "Copiar"; some a etiqueta separada "· Nº PO"; (3) cards da Agenda. Com data → conta pela data; sem data → soma os dias entre o internograma e a data-alvo e marca "?" para conferir.

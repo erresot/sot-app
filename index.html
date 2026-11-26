@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v79</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v81</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -2624,7 +2624,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '79';
+var VERSAO = '81';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -3329,6 +3329,7 @@ var HUB = [
   { g: 'ENFERMARIA', itens: [
     { id: 'atualizador', n: 'Atualizador de Internograma', i: '🔄', d: 'Protótipo: números do dia (DIH, fratura, PO, POI → 1 PO) e cabeçalho já contados, mais o que só você resolve. Não altera o Google Docs.' } ] },
   { g: 'PRONTO SOCORRO', itens: [
+    { id: 'atendimento', n: 'Atendimento (Anamnese + Exame + Conduta)', i: '🧾', d: 'Os três programas do PS numa tela só, em passos. A ficha sai em blocos (# HMA, # AP, # EF, # CONDUTA) com um Copiar só. Os programas continuam abrindo sozinhos abaixo.' },
     { id: 'anamnese', n: 'Anamnese', i: '🗣', d: 'História do atendimento por toques: chamado, mecanismo, evolução e local da dor no boneco 3D.' },
     { id: 'exame', n: 'Exame Físico', i: '🩺', d: 'Exame ortopédico por segmento: “tudo normal” e marcar só o que está alterado.' },
     { id: 'condutas', n: 'Condutas (Pronto Socorro)', i: '📋', d: 'Continuação e condutas para o prontuário: modelos, exames, medicação, “em tempo” e procedimentos.' },

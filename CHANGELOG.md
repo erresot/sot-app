@@ -1,6 +1,23 @@
 # CHANGELOG — SOT APP
 
-## v79 (atual) — Anamnese: avaliação direta
+## v81 (em preparo, não publicada) — Atendimento: Anamnese + Exame + Conduta numa tela
+- Programa novo no OrthoHub · Pronto-socorro: **Atendimento** (`hub/atendimento.html`). Cada passo é o programa de hoje, aberto dentro da tela; a ficha é montada ao lado (no celular, embaixo, abre no toque) pelo motor `sot-ficha.js` e copiada com **um** botão (os "Copiar" de dentro dos programas ficam escondidos só aqui).
+- **1º momento** (Anamnese · Exame · Conduta): `# HMA`, `# AP`, `# EF` (no lugar de "EXAME FÍSICO ORTOPÉDICO", sem a frase de Gustilo), `# CONDUTA` (no lugar de `#CONDUTA`/`CD:`), separador `---`; REAVALIAR APÓS fecha a conduta inicial. "Fechar já" (Em tempo final no Condutas) põe a conduta final e o `ASS DR` no próprio 1º momento; "Completo" sai como 1º momento + `# EM TEMPO #`. O Condutas começa pela conduta inicial.
+- **O dado desce:** região e lado marcados na Anamnese vão para o Condutas (pedido de RX "DE PUNHO DIREITO"…) e abrem o segmento no Exame; tirar a região tira na Conduta. Exame com neurovascular alterado → sugere REAVALIAÇÃO SERIADA; exposição óssea → sugere VAT, ANTIBIOTICOTERAPIA, ORIENTO JEJUM e REAVALIAÇÃO SERIADA (uma vez; dá para tirar no Condutas); ferimento → pergunta se há exposição. Avisos no pé da ficha.
+- **Em tempo** (Anterior · Exame · Conduta): "Continuar atendimento" — cola a ficha anterior, o motor lê (tipo, momentos, região e lado, o que aguardava, última conduta, ficha fechada) e prepara o Condutas (intermediário, regiões) e o Exame (segmento). "Ao reavaliar": melhora plena / parcial / nega melhora → "AO REAVALIAR, PACIENTE REFERE MELHORA … DO QUADRO APÓS ANALGESIA". A ficha sai só com a evolução nova (`# EM TEMPO #`); o `# EF` só entra se o exame mudou. Melhora plena + "sem achado" → aviso para considerar a alta.
+- **Anamnese, Exame e Condutas sozinhos não mudaram** (mesmo texto de antes). Ligações novas, só leitura/ajuste a pedido da tela: `window.__anamnese.estado()`, `window.__condutas = {gerar, estado, aplicar}`.
+- Motor: `SOTFICHA.regioes(texto)` (regiões e lado citados no texto); linhas sem bloco saem na ficha (nunca se perdem).
+- Ainda não: frases novas do próprio Condutas (RX em 4 graus, bloco REALIZADO, medicação genérica, desfechos novos…), mini-kanban, molde do evoluidor.
+- `sw.js`: `hub/atendimento.html` no `RESTO`. Testes `t_atend81` (25) e `t_ficha80` (25). Suíte inteira: 66/66.
+
+## v80 (em preparo, não publicada) — Motor da ficha do PS
+- **`sot-ficha.js`** (motor novo na raiz, 1ª etapa do plano "Atendimento do PS" de 26/11/2026): escreve e lê a ficha do PS em blocos — `# PS ORTOPEDIA #` / `# INTERCONSULTA ORTOPEDIA #`, `# HMA`, `# AP`, `# EF`, resultados, `REALIZADO:`, `# CONDUTA`, `# EM TEMPO #`, separador `---`, `DISCUTIDO E ORIENTADO POR DR X EM dd/mm/aaaa`, `ASS DR X`.
+- Lê também o formato de hoje (anamnese sem `# HMA`, `EXAME FÍSICO ORTOPÉDICO`, `#CONDUTA`, `CD:`, `DISCUTIDO COM DR X EM …`, `CD DISCUTIDA E ORIENTADA PELO ASS DR X`); linha fora de bloco fica em "outros" (nada se perde).
+- Etiquetas e coluna sugerida do mini-kanban a partir da conduta (`pendencias`, `coluna`).
+- **Nenhum programa usa o motor ainda**: os textos gerados não mudaram. Entrou no `ESSENCIAL` do `sw.js` (funciona sem internet).
+- Teste novo `t_ficha80` (ida e volta com casos fictícios, formato antigo, etiquetas).
+
+## v79 — Anamnese: avaliação direta
 - Avaliação direta = paciente no PS da ortopedia: não exige mais a sala (saiu o aviso "falta o local do chamado") e, sem sala, o texto abre com "Avalio paciente no PS Ortopedia." (regra do usuário, 26/11/2026).
 - Sala Amarela passa a levar para interconsulta, como a Vermelha; dá para voltar para avaliação direta ("Avalio paciente a pedido da equipe da Sala Amarela.").
 - Teste novo `t_anam79`.

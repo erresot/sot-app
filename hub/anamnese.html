@@ -1150,6 +1150,7 @@ function retomada(){const box=$('#retoma');if(virgem()||!$('#outTxt').value){box
   el('div',{class:'row'},el('button',{type:'button',text:semData?'Mesmo paciente: contar de agora':`Mesmo paciente: manter ${fmt(d).slice(0,5)}`,onclick:()=>{if(semData)S.ref=Date.now();S.mod=Date.now();box.hidden=true;renderAll();}}),
    el('button',{type:'button',text:'Novo paciente (limpar)',onclick:()=>{novoPaciente();toast('Formulário limpo');}})));
  box.hidden=false;}
+window.__anamnese={estado:()=>({topo:S.topo.slice(),lado:S.lado,mode:S.mode})};   // v81: a tela Atendimento lê a região e o lado daqui
 renderAll();inicial=false;retomada();
 })();
 </script>

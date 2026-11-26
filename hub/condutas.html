@@ -1572,6 +1572,16 @@ function initMap(){
   window.__map={sync:colors};colors();
 }
 
+// v81: a tela Atendimento lê o texto daqui e passa o que já se sabe (região, lado, sugestões). Nada aqui muda o texto do programa sozinho.
+window.__condutas={gerar:gerar,
+  estado:()=>({fase:S.fase,regs:S.regs.map(r=>({k:r.k,side:r.side})),extrasIni:S.extrasIni.slice(),chk:Object.assign({},S.chk)}),
+  aplicar:o=>{o=o||{};
+    (o.tirar||[]).forEach(r=>{const i=S.regs.findIndex(x=>x.k===r.k&&x.side===(REG[r.k]&&REG[r.k].lat?r.side:''));if(i>=0)S.regs.splice(i,1);});
+    (o.regs||[]).forEach(r=>{if(!REG[r.k])return;const side=REG[r.k].lat?(r.side||''):'';if(!S.regs.some(x=>x.k===r.k&&x.side===side))S.regs.push({k:r.k,side});});
+    (o.linhasIni||[]).forEach(l=>{if(!S.extrasIni.includes(l))S.extrasIni.push(l);});
+    Object.keys(o.chk||{}).forEach(k=>{S.chk[k]=o.chk[k];});
+    if(o.fase)S.fase=o.fase;
+    update();}};
 writeForm();initMap();update();
 })();
 </script>
