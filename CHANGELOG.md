@@ -1,6 +1,14 @@
 # CHANGELOG — SOT APP
 
-## v75 (atual) — Siglas de cirurgia na conferência da Agenda
+## v76 (atual) — Contagem do cabeçalho na regra do serviço
+- Regra (definida pelo usuário, 25/11/2026): **HC** = pacientes da ortopedia no HC; **IC** = interconsultas (outra prestadora), à parte; **Hm** = todos do Materno Infantil, **RN conta**. Cabeçalho **sem** "N Altas" → as altas entram no HC; **com** "N Altas" → o HC fica sem elas.
+- A contagem passou para o motor (`SOTCONT.contarIG`) e é a mesma no Atualizador e na conferência da enfermaria. Mesmo registro em 2 linhas (ala + ALTAS) conta 1 paciente.
+- Antes: as duas tiravam as altas do HC num cabeçalho sem "N Altas" (no Doc de 25/11 escreveriam 16 HC em vez de 19), e o Atualizador contava 2 vezes quem estava na ala e em ALTAS.
+- Paciente manual (PS, CC) continua entrando na contagem, como antes.
+- Teste novo `t_cont76`; `t_leitura56` atualizado para a regra.
+- **Testes mais rápidos** (só a bateria de testes; o app não muda): a espera fixa (`wait_for_timeout`) termina assim que a página sossega (sem fetch, sem timer curto pendente, tela parada há 200 ms), no máximo o tempo pedido — `SOT_ESPERA_FIXA=1` volta ao modo antigo; os testes mais longos começam primeiro (`tests/.tempos.json`); limite por teste 300 s. `t_sw` e `t_checagem55` (mexem em `dist/`) rodam sozinhos no fim — antes derrubavam testes vizinhos com 404; `t_sinc2` e `t_ocr` deixaram de depender do relógio da máquina; depois de escolher arquivo (PDF/foto) a espera continua inteira. Bateria completa: 445 s → 345 s. O resto é processador (2 núcleos) e o teste de OCR (~100 s).
+
+## v75 — Siglas de cirurgia na conferência da Agenda
 - A conferência Agenda × internograma reconhece as siglas e terminações do serviço: **ATQ/ATJ/ATO, PTQ/PTJ, PPQ, RMS, manipulação, biópsia, -ectomia (discectomia…), -plastia, -otomia, reconstrução de LCA**. Antes, "ATQ A DIREITA EM 25/11", "RMS DE PTQ…", "MANIPULAÇÃO DE OMBRO…" e "DISCECTOMIA L5-S1 EM 27/11" davam alarme falso ("cirurgia não está escrita no internograma").
 - Conferido no internograma real (só leitura): mudaram exatamente esses 4 alarmes falsos para "confere"; nenhuma outra conferência mudou.
 

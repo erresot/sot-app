@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v75</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v76</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -854,7 +854,25 @@ function conferir(linhas, ref, opc) {   // v72: lê por bloco (data na linha de 
   });
   return out;
 }
-G.SOTCONT = { atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
+// v76: contagem do cabeçalho na regra do serviço (a mesma no Atualizador e na enfermaria)
+//  - cada paciente conta uma vez (mesmo registro na ala e em ALTAS = 1 paciente, contado como alta)
+//  - Hm = todos do Materno Infantil (RN também) · IC = interconsultas, à parte
+//  - HC = ortopedia no HC; se o cabeçalho NÃO tem a parte "N Altas", as altas entram no HC;
+//    se tem, o HC fica sem elas e as altas vão para a parte delas
+function contarIG(P, comAltas) {
+  var vistos = {}, U = [];
+  (P || []).forEach(function (p) {
+    var r = String(p.registro || '').replace(/\D/g, '');
+    if (r.length >= 5 && vistos[r]) { var a = vistos[r]; a.hm = a.hm || !!p.hm; a.alta = a.alta || !!p.alta; a.ic = a.ic && !!p.ic; return; }
+    var o = { hm: !!p.hm, alta: !!p.alta, ic: !!p.ic }; U.push(o); if (r.length >= 5) vistos[r] = o;
+  });
+  var c = { hc: 0, ic: 0, hm: 0, alta: 0, total: U.length, repetidos: (P || []).length - U.length };
+  U.forEach(function (o) { if (o.hm) c.hm++; else if (o.alta) c.alta++; else if (o.ic) c.ic++; else c.hc++; });
+  c.altasNoHc = !comAltas;
+  if (!comAltas) c.hc += c.alta;   // altas dentro do HC
+  return c;
+}
+G.SOTCONT = { contarIG: contarIG, atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
   RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA, RE_DIH_N: RE_DIH_N, lerDih: lerDih, escreverDih: escreverDih, cabecalho: cabecalho };
 })(typeof window !== 'undefined' ? window : this);
 </script>
@@ -2606,7 +2624,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '75';
+var VERSAO = '76';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -2901,14 +2919,12 @@ function aplicarImport(r, nome) {
   var c = contagem(); toast(lista.length + ' pacientes lidos' + (c.ok ? '' : ' — confira a contagem') + ((S.sumidos || []).length ? ' · ' + S.sumidos.length + ' saíram desde ontem' : ''));
 }
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
-function contagem() {
-  var P = S.pacientes, c = { hc: 0, ic: 0, hm: 0, alta: 0 };
-  P.forEach(function (p) { if (p.hm) c.hm++; else if (p.alta) c.alta++; else if (p.ic) c.ic++; else c.hc++; });
+function contagem() {   // v76: regra do serviço no motor (SOTCONT.contarIG), a mesma do Atualizador
+  var P = S.pacientes || [], comAltas = !!S.cab && S.cab.alta != null;
+  var c = SOTCONT.contarIG(P, comAltas);
   var faltaLeito = (S.leitosPDF || []).filter(function (l) { return !P.some(function (p) { return p.leito === l; }); });
-  // cabeçalho sem a parte das altas: compara só HC / IC / Hm (as altas lidas ficam fora da soma)
-  var semAlta = !!S.cab && S.cab.alta == null;
-  var dif = S.cab ? ['hc', 'ic', 'hm', 'alta'].filter(function (k) { return !(semAlta && k === 'alta') && S.cab[k] !== c[k]; }) : [];
-  var tot = P.length - (semAlta ? c.alta : 0), totCab = S.cab ? S.cab.hc + S.cab.ic + S.cab.hm + (semAlta ? 0 : S.cab.alta) : null;
+  var dif = S.cab ? ['hc', 'ic', 'hm', 'alta'].filter(function (k) { return !(!comAltas && k === 'alta') && S.cab[k] !== c[k]; }) : [];
+  var tot = c.total, totCab = S.cab ? S.cab.hc + S.cab.ic + S.cab.hm + (comAltas ? S.cab.alta : 0) : null;
   return { c: c, cab: S.cab, dif: dif, tot: tot, totCab: totCab, faltaLeito: faltaLeito, soltas: S.soltas || [], ok: (totCab == null || tot === totCab) && !faltaLeito.length && !(S.soltas || []).length };
 }
 
@@ -3109,7 +3125,7 @@ function vConfig() {
     h += '<div class="lock">Atual: ' + esc(S.fonte) + (S.dataIG ? ' (internograma de ' + esc(S.dataIG) + ')' : '') + ' · ' + S.pacientes.length + ' pacientes</div>';
     var k = contagem();
     h += '<h2>Conferência nome por nome</h2><div class="card">';
-    h += '<div class="hint" style="margin:0 0 6px">' + (k.cab ? 'Cabeçalho: ' + k.cab.hc + ' HC · ' + k.cab.ic + ' IC · ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' · ' + k.cab.alta + ' altas' : ' (altas não informadas)') + '. ' : '') + 'Lidos: ' + k.c.hc + ' HC · ' + k.c.ic + ' IC · ' + k.c.hm + ' Hm · ' + k.c.alta + ' altas. ' +
+    h += '<div class="hint" style="margin:0 0 6px">' + (k.cab ? 'Cabeçalho: ' + k.cab.hc + ' HC · ' + k.cab.ic + ' IC · ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' · ' + k.cab.alta + ' altas' : ' (altas dentro do HC)') + '. ' : '') + 'Pelo internograma: ' + k.c.hc + ' HC' + (k.c.altasNoHc ? (k.c.alta ? ' (inclui ' + k.c.alta + ' alta' + (k.c.alta > 1 ? 's' : '') + ')' : '') : '') + ' · ' + k.c.ic + ' IC · ' + k.c.hm + ' Hm' + (k.c.altasNoHc ? '' : ' · ' + k.c.alta + ' altas') + (k.c.repetidos ? ' · ' + k.c.repetidos + ' linha(s) repetida(s) contada(s) uma vez' : '') + '. ' +
       (k.totCab != null ? (k.tot === k.totCab ? '<b style="color:var(--ok)">Total ' + k.tot + ' = cabeçalho ✓</b> ' : '<b style="color:var(--bad)">Total ' + k.tot + ' ≠ cabeçalho ' + k.totCab + '</b> ') : '') + (k.dif.length ? '<b style="color:var(--warn)">Distribuição diferente em: ' + k.dif.join(', ').toUpperCase() + '.</b> O cabeçalho costuma estar desatualizado — confira a lista abaixo com o PDF.' : '✓ bate com o cabeçalho.') + '</div>';
     h += '<div style="margin:6px 0"><b>Conferência do internograma</b>' + htmlConferencia(conferenciaIG()) + '</div>';   // v73: todos os avisos num lugar só
     var conf = S.pacientes.filter(function (p) { return S.conf[p.id]; }).length;
@@ -3897,7 +3913,7 @@ function conferenciaIG(o) {
   if (doApp && !o.semContagem && typeof contagem === 'function') {
     var k = contagem();
     if (k.totCab != null && k.tot !== k.totCab) add('cab', 'Contagem', 'Total: cabeçalho ' + k.totCab + ' × lidos ' + k.tot + '.');
-    if (k.dif.length) add('cab', 'Contagem', 'Cabeçalho: ' + k.cab.hc + ' HC / ' + k.cab.ic + ' IC / ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' / ' + k.cab.alta + ' altas' : '') + ' — o app leu ' + k.c.hc + ' / ' + k.c.ic + ' / ' + k.c.hm + ' / ' + k.c.alta + '.');
+    if (k.dif.length) add('cab', 'Contagem', 'Cabeçalho: ' + k.cab.hc + ' HC / ' + k.cab.ic + ' IC / ' + k.cab.hm + ' Hm' + (k.cab.alta != null ? ' / ' + k.cab.alta + ' altas' : '') + ' — pelo internograma: ' + k.c.hc + ' HC' + (k.c.altasNoHc && k.c.alta ? ' (com ' + k.c.alta + ' alta' + (k.c.alta > 1 ? 's' : '') + ')' : '') + ' / ' + k.c.ic + ' IC / ' + k.c.hm + ' Hm' + (k.c.altasNoHc ? '' : ' / ' + k.c.alta + ' altas') + '.');
     if (k.faltaLeito.length) add('cab', 'Contagem', 'Leitos no PDF sem paciente reconhecido: ' + k.faltaLeito.join(', ') + '.');
     (k.soltas || []).forEach(function (s) { add('mistura', s.section || 'Linha solta', 'Linha do PDF que não entrou em nenhum paciente: "' + String(s.texto || '').slice(0, 80) + '"'); });
   }

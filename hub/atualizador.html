@@ -94,7 +94,9 @@ function trocasCab(t, alvo, c){   // v73: o motor lê o cabeçalho (tolerante); 
   return out;
 }
 function aplicaTrocas(t, tr){ tr.slice().sort(function(a, b){ return b.off - a.off; }).forEach(function(e){ t = t.slice(0, e.off) + e.novo + t.slice(e.off + e.velho.length); }); return t; }
-function contar(P){ var c = { hc: 0, ic: 0, hm: 0, alta: 0 }; P.forEach(function(p){ if (p.hm) c.hm++; else if (p.alta) c.alta++; else if (p.ic) c.ic++; else c.hc++; }); return c; }
+// v76: a contagem é do motor (regra do serviço): cada paciente 1 vez; sem a parte "N Altas" no cabeçalho, as altas entram no HC
+function temParteAltas(t){ var ch = t ? C.cabecalho(t, dAlvo()) : null; return !!(ch && ch.alta != null); }
+function contar(P){ return C.contarIG(P, temParteAltas(FONTE && FONTE.txtCab)); }
 function secao(p){ return String(p.section || p.local || '—').replace(/\s+/g, ' ').trim(); }
 function regDe(p){ var r = String(p.registro || '').replace(/\D/g, ''); return r.length >= 4 ? r : ''; }
 function linhasDe(t){ return String(t || '').split(/\n|\s+\/\s+/); }   // Doc: quebra de linha · PDF: " / "
@@ -155,12 +157,12 @@ function calcular(){
   // cabeçalho
   var cnt = contar(P), cab = '';
   if (FONTE.txtCab) cab = aplicaTrocas(FONTE.txtCab, trocasCab(FONTE.txtCab, alvo, cnt));
-  else cab = '(' + dmy(alvo) + ' - ' + cnt.hc + ' Hc / ' + cnt.ic + ' Ic / ' + cnt.hm + ' Hm' + (cnt.alta ? ' / ' + cnt.alta + ' Altas' : '') + ')';
+  else cab = '(' + dmy(alvo) + ' - ' + cnt.hc + ' Hc / ' + cnt.ic + ' Ic / ' + cnt.hm + ' Hm)';   // v76: altas já dentro do HC
   var h = '<div class="card"><div class="resumo"><span><b>' + nMud + '</b> números a mudar</span><span><b>' + nDuv + '</b> para conferir (sem data)</span><span><b>' + fazer.length + '</b> itens para você</span></div>' +
     '<div class="row" style="margin-top:8px"><button class="sm" id="copiaTudo">Copiar lista de correções</button><button class="sec sm" id="limpa">Desmarcar “feito”</button></div>' +
     '<div class="row" style="margin-top:10px"><button id="criaCopia">📄 Criar cópia atualizada no Drive</button><button class="sec" id="comparar">↔ Comparar lado a lado</button><button class="sec sm" id="ensaio" title="Confere no Doc, sem criar nem mudar nada">🔎 Ensaio (não cria nada)</button></div><div id="cmpBox"></div><div class="hint" id="copiaSt" style="margin-top:6px">Faz uma cópia idêntica do internograma e troca só os números na cópia (amarelo = pela data · laranja = confira). O internograma oficial não é alterado.</div></div>';
   if (cab) h += '<h2>Cabeçalho</h2><div class="card"><div class="cab" id="cabTxt">' + esc(cab) + '</div><div class="row" style="margin-top:8px"><button class="sm" data-copia="' + esc(cab) + '">Copiar</button>' +
-    (FONTE.txtCab && FONTE.txtCab !== cab ? '<span class="tag">hoje está: ' + esc(FONTE.txtCab) + '</span>' : '') + '</div><div class="hint">Contagem feita pelo app a partir das seções do internograma importado.</div></div>';
+    (FONTE.txtCab && FONTE.txtCab !== cab ? '<span class="tag">hoje está: ' + esc(FONTE.txtCab) + '</span>' : '') + '</div><div class="hint">Contagem pelas seções do internograma: ' + cnt.hc + ' HC' + (cnt.altasNoHc && cnt.alta ? ' (inclui ' + cnt.alta + ' alta' + (cnt.alta > 1 ? 's' : '') + ')' : '') + ' · ' + cnt.ic + ' IC · ' + cnt.hm + ' Hm' + (!cnt.altasNoHc ? ' · ' + cnt.alta + ' altas' : '') + (cnt.repetidos ? ' · ' + cnt.repetidos + ' linha(s) repetida(s) contada(s) uma vez' : '') + '.</div></div>';
   var cf = A.conferenciaIG({ P: P, dataIG: FONTE.data, cabAvisos: FONTE.cabAvisos, semContagem: true, semRepetido: true, semAtraso: true });   // v73: a mesma conferência da enfermaria
   window.__conf = cf;
   if (fazer.length) h += '<h2>Para você resolver</h2><div class="card"><ul class="lst">' + fazer.map(function(x){ return '<li><b>' + esc(x.q) + '</b> — ' + esc(x.t) + '</li>'; }).join('') + '</ul></div>';

@@ -172,6 +172,24 @@ function conferir(linhas, ref, opc) {   // v72: lê por bloco (data na linha de 
   });
   return out;
 }
-G.SOTCONT = { atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
+// v76: contagem do cabeçalho na regra do serviço (a mesma no Atualizador e na enfermaria)
+//  - cada paciente conta uma vez (mesmo registro na ala e em ALTAS = 1 paciente, contado como alta)
+//  - Hm = todos do Materno Infantil (RN também) · IC = interconsultas, à parte
+//  - HC = ortopedia no HC; se o cabeçalho NÃO tem a parte "N Altas", as altas entram no HC;
+//    se tem, o HC fica sem elas e as altas vão para a parte delas
+function contarIG(P, comAltas) {
+  var vistos = {}, U = [];
+  (P || []).forEach(function (p) {
+    var r = String(p.registro || '').replace(/\D/g, '');
+    if (r.length >= 5 && vistos[r]) { var a = vistos[r]; a.hm = a.hm || !!p.hm; a.alta = a.alta || !!p.alta; a.ic = a.ic && !!p.ic; return; }
+    var o = { hm: !!p.hm, alta: !!p.alta, ic: !!p.ic }; U.push(o); if (r.length >= 5) vistos[r] = o;
+  });
+  var c = { hc: 0, ic: 0, hm: 0, alta: 0, total: U.length, repetidos: (P || []).length - U.length };
+  U.forEach(function (o) { if (o.hm) c.hm++; else if (o.alta) c.alta++; else if (o.ic) c.ic++; else c.hc++; });
+  c.altasNoHc = !comAltas;
+  if (!comAltas) c.hc += c.alta;   // altas dentro do HC
+  return c;
+}
+G.SOTCONT = { contarIG: contarIG, atualizarTexto: atualizarTexto, atualizarLinhas: atualizarLinhas, analisar: analisar, conferir: conferir, ler: ler, dias: dias, data: data, dia0: dia0, datasDe: datasDe,
   RE_DIH_DATA: RE_DIH_DATA, RE_DIH_DATA_LINHA: RE_DIH_DATA_LINHA, RX_TRAUMA: RX_TRAUMA, RE_DIH_N: RE_DIH_N, lerDih: lerDih, escreverDih: escreverDih, cabecalho: cabecalho };
 })(typeof window !== 'undefined' ? window : this);
