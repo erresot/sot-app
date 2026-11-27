@@ -227,7 +227,91 @@
     return R;
   }
 
-  var API = { escrever: escrever, ler: ler, pendencias: pendencias, coluna: coluna, regioes: regioes, CAB: CAB };
+  /* ---------- molde do evoluidor (v86) ----------
+     A ficha do PS vira a "evolução anterior" que o evoluidor lê: cabeçalho com eventos datados ("1D FRATURA … dd/mm/aaaa",
+     o evoluidor conta os dias pela data), HMA, AP, parágrafo padrão (frases que o evoluidor reconhece e oferece opções),
+     exame do segmento, o que foi feito no PS com data, radiografia, labs e a conduta copiada linha a linha. */
+  // eventos: achado do RX ("COM evidências", traço, linha — "SEM evidências" não é evento) e o que foi feito (redução, gesso, sutura…)
+  function eventos(ficha, hoje) {
+    var Ms = ficha && ficha.momentos || [], E = [], vis = {};
+    var poe = function (t) { t = String(t || '').replace(/\s+/g, ' ').replace(/[.;,\s]+$/, '').trim(); var k = A(t); if (t && !vis[k]) { vis[k] = 1; E.push({ t: t.toUpperCase(), data: hoje || '' }); } };
+    Ms.forEach(function (m) { m.resultados.forEach(function (l) { var x = A(l).match(/(?:COM EVIDENCIAS NITIDAS|TRACO SUGESTIVO|LINHA SUGESTIVA) DE (.+)$/); if (x) poe(String(l).slice(String(l).length - x[1].length)); }); });
+    Ms.forEach(function (m) { m.realizado.forEach(function (l) { if (/REDU[CÇ][AÃ]O|GESSO|TALA|TRA[CÇ][AÃ]O|SUTURA|DRENAGEM|ARTROCENTESE|PUN[CÇ][AÃ]O/i.test(l)) poe(String(l).split(/,|\. |\s(?:SOB|COM|POR|APÓS|APOS)\s/i)[0]); }); });
+    return E;
+  }
+  function mecanismo(ficha) {
+    var h = (ficha && ficha.momentos && ficha.momentos[0] && ficha.momentos[0].hma) || '';
+    var m = A(h).match(/\b(QUEDA DA PROPRIA ALTURA|QUEDA DE [A-Z ]{3,30}?|ACIDENTE (?:DE|COM) [A-Z ]{3,30}?|ATROPELAMENTO|AGRESSAO|ENTORSE|TRAUMA (?:DIRETO|TORCIONAL)|COLISAO [A-Z ]{3,30}?)(?=[,.;]|\s+(?:HA|EM|NO|NA|DIA|EVOLUINDO|COM)\b|$)/);
+    if (!m) return '';
+    var ini = A(h).indexOf(m[1]); return String(h).slice(ini, ini + m[1].length).toUpperCase();
+  }
+  var PARAGRAFO = {
+    enf: 'AVALIO PACIENTE EM LEITO DE ENFERMARIA, EM BOM ESTADO GERAL, LÚCIDO E ORIENTADO EM TEMPO E ESPAÇO, REFERE DOR LEVE, BOA ACEITAÇÃO DA DIETA E ELIMINAÇÕES PRESENTES. HEMODINAMICAMENTE ESTÁVEL.',
+    amb: 'AVALIO PACIENTE EM AMB ORTOPEDIA, REFERE DOR LEVE COM MELHORA COMPLETA AO USO DE ANALGESIA, NEGA FEBRE, NEGA QUEIXAS EM DEMAIS SEGMENTOS.'
+  };
+  /* retorno no ambulatório (v86, revisto 27/11): relato e exame montados com as frases do catálogo do evoluidor
+     (local, dor, orientações, cuidados com a imobilização, carga, curativo, antibiótico, anticoagulação), pelo que a ficha diz */
+  var IMOB_RE = /\b(GESSO (?:AXILOPALMAR|ANTEBRAQUIOPALMAR|LUVA(?: COM INCLUS[AÃ]O DO POLEGAR)?|SUROPOD[AÁ]LICO|INGUINOPOD[AÁ]LICO|INGUINOMALEOLAR|PELVIPOD[AÁ]LICO|TIPO SARMIENTO)|BOTA GESSADA|TALA (?:AXILOPALMAR|ANTEBRAQUIOPALMAR|LUVA|SUROPOD[AÁ]LICA|INGUINOPOD[AÁ]LICA|INGUINOMALEOLAR|BOTA|DIGITAL|DE STACK|GESSADA)|PIN[CÇ]A DE CONFEITEIRO|BOTA IMOBILIZADORA|BRACE(?: ARTICULADO)?(?: DE JOELHO)?|TIPOIA(?: AMERICANA)?|VELPEAU|IMOBILIZADOR DE (?:OMBRO|JOELHO))/;
+  function relatoAmb(Ms, ult) {
+    var tudo = Ms.map(function (m) { return m.realizado.concat(m.conduta).join('\n'); }).join('\n'), cd = (ult.conduta || []).join('\n'), ua = A(cd);
+    var imob = (tudo.match(IMOB_RE) || [])[1] || '', P = [];
+    // local: o ambulatório do retorno ("EM AMBULATÓRIO ORTOPEDIA GESSO" → "AMB ORTOPEDIA GESSO")
+    var amb = (cd.match(/AMBULAT[ÓO]RIO (?:DE )?ORTOPEDIA ((?:GESSO|CURATIVO|P[ÉE] E TORNOZELO|M[ÃA]O|OMBRO E COTOVELO|QUADRIL|JOELHO|COLUNA|PEDI[ÁA]TRICA|TUMOR|TRAUMA))\b/) || [])[1] || '';
+    P.push('AVALIO PACIENTE EM AMB ORTOPEDIA' + (amb ? ' ' + amb : ''));
+    var mmii = /SEM CARGA|CARGA (?:PARCIAL|TOTAL|PROPRIOCEPTIVA|CONFORME DOR)|SUROPOD|BOTA|INGUINO|PELVIPOD|JOELHO|TORNOZELO|\bP[ÉE]\b|QUADRIL|COXA|PERNA/.test(ua);
+    if (mmii) P.push(/SEM CARGA/.test(ua) ? 'DEAMBULANDO EM USO DE MULETAS' : /ANDADOR/.test(ua) ? 'DEAMBULANDO EM USO DE ANDADOR' : 'DEAMBULANDO SEM AUXÍLIO');
+    P.push('REFERE DOR LEVE COM MELHORA COMPLETA AO USO DE ANALGESIA');
+    if (/FISIOTERAPIA/.test(ua)) P.push('EM REALIZAÇÃO DE FISIOTERAPIA CONFORME ORIENTADO');
+    if (/ANTIBIOTICOTERAPIA|CEFALEXINA|AMOXICILINA|CLINDAMICINA|CIPROFLOXACINO|SULFAMETOXAZOL/.test(ua)) P.push('EM USO DE ANTIBIOTICOTERAPIA CONFORME ORIENTADO');
+    if (/ANTICOAGULA|ENOXAPARINA|RIVAROXABANA|HEPARINA/.test(ua)) P.push('EM USO DE ANTICOAGULANTE CONFORME ORIENTADO');
+    P.push('NEGA FEBRE');
+    var cur = /SUTURA|PONTOS|CURATIVO|DRENAGEM|DESBRIDAMENTO/.test(A(tudo)), oper = /OSTEOSS[IÍ]NTESE|ARTROPLASTIA|ARTROSCOPIA|CIR[UÚ]RGIC|FIXADOR/.test(tudo);
+    if (cur) { P.push('RELATA FERIDA' + (oper ? ' OPERATÓRIA' : '') + ' SECA DURANTE TROCAS DE CURATIVO'); P.push('REALIZANDO TROCA DE CURATIVO'); }
+    if (/^GESSO|^BOTA GESSADA/.test(imob)) P.push('REFERE CUIDADO ADEQUADO COM O GESSO'); else if (/^TALA|PIN[CÇ]A/.test(imob)) P.push('REFERE CUIDADO ADEQUADO COM A TALA'); else if (imob) P.push('REFERE CUIDADO ADEQUADO COM A IMOBILIZAÇÃO');
+    if (/\bSEM CARGA\b/.test(ua)) P.push('MANTENDO-SE SEM CARGA');
+    else if (/CARGA PROPRIOCEPTIVA/.test(ua)) P.push('MANTENDO-SE COM CARGA PROPRIOCEPTIVA');
+    else if (/CARGA PARCIAL/.test(ua)) P.push('MANTENDO-SE COM CARGA PARCIAL');
+    else if (/CARGA CONFORME DOR/.test(ua)) P.push('MANTENDO-SE COM CARGA CONFORME DOR');
+    else if (/CARGA TOTAL/.test(ua)) P.push('MANTENDO-SE COM CARGA TOTAL');
+    if (mmii && imob) P.push('NEGA DOR EM PANTURRILHA');   // membro inferior imobilizado: vigiar TVP
+    P.push('NEGA QUEIXAS EM DEMAIS SEGMENTOS');
+    return { texto: P.join(', ') + '.', imob: imob, curativo: cur };
+  }
+  function exameAmb(ef, R) {   // segmento do exame do PS + estado da imobilização + perfusão e neurovascular
+    var seg = (String(ef || '').split('\n').filter(Boolean)[0] || '').split(':')[0].trim() || '___', L = [];
+    var partes = [];
+    if (R.imob) partes.push('EM USO DE ' + R.imob, /^TALA|PIN[CÇ]A/.test(R.imob) ? 'TALA GESSADA BEM POSICIONADA' : /^GESSO|^BOTA GESSADA/.test(R.imob) ? 'GESSO ÍNTEGRO' : 'IMOBILIZAÇÃO ÍNTEGRA');
+    partes.push('EDEMA LEVE');
+    if (R.imob && /GESSO|TALA|PIN[CÇ]A|BOTA/.test(R.imob)) partes.push('MOBILIDADE DOS DEDOS PRESERVADA');
+    partes.push('PERFUSÃO PERIFÉRICA PRESERVADA', 'NEUROVASCULAR PRESERVADO', 'TEC < 3 SEGUNDOS');
+    L.push(seg + ': ' + partes.join(', '));
+    if (R.curativo) L.push('FERIDA: PONTOS ÍNTEGROS SEM DEISCÊNCIAS, SEM SAÍDA DE SECREÇÃO ATIVA OU PASSIVA, SEM SINAIS FLOGÍSTICOS');
+    return L.join('\n');
+  }
+  function molde(ficha, opc) {
+    opc = opc || {}; var tipo = opc.tipo === 'amb' ? 'amb' : 'enf', hoje = opc.hoje || '', Ms = ficha && ficha.momentos || [];
+    var M0 = Ms[0] || novoMomento(false), ult = Ms[Ms.length - 1] || M0, L = [];
+    (opc.eventos || []).forEach(function (e) { if (e && String(e.t || '').trim()) L.push('1D ' + String(e.t).trim().toUpperCase() + (e.data ? ' ' + e.data : '')); });
+    if (String(opc.mec || '').trim()) L.push(String(opc.mec).trim().toUpperCase());
+    var bloco = function (B) { B = B.filter(function (x) { return x != null; }); if (!B.length) return; if (L.length) L.push(SEP); L.push.apply(L, B); };
+    if (M0.hma) bloco(['HMA'].concat(String(M0.hma).split('\n')));
+    if (M0.ap.length) bloco(M0.ap.slice());
+    var ef = ''; Ms.forEach(function (m) { if (m.ef) ef = m.ef; });
+    var par = PARAGRAFO.enf, efTxt = ef;
+    if (tipo === 'amb') { var R = relatoAmb(Ms, ult); par = R.texto; efTxt = exameAmb(ef, R); }
+    bloco([par, '', 'EXAME FISICO', ''].concat(efTxt ? String(efTxt).split('\n') : ['___']));
+    var rz = []; Ms.forEach(function (m) { m.realizado.forEach(function (l) { rz.push((hoje ? hoje + ': ' : '') + l); }); });
+    bloco(rz);
+    var rx = [], labs = [];
+    Ms.forEach(function (m) { m.resultados.forEach(function (l) { if (/^\s*LABS?\b/i.test(l)) labs.push(l); else rx.push((hoje && !/\d{2}\/\d{2}\/\d{4}/.test(l) ? hoje + ': ' : '') + l); }); });
+    if (rx.length) bloco(['RADIOGRAFIA'].concat(rx));
+    bloco(labs);
+    var cd = (ult.discutido ? ['DISCUTIDO E ORIENTADO POR ' + pessoa(ult.discutido) + (ult.discutido.data ? ' EM ' + ult.discutido.data : '')] : []).concat(ult.conduta.map(function (l) { return '- ' + l; }));
+    if (cd.length) bloco(['CONDUTA'].concat(cd));
+    return L.join('\n');
+  }
+
+  var API = { escrever: escrever, ler: ler, pendencias: pendencias, coluna: coluna, regioes: regioes, eventos: eventos, mecanismo: mecanismo, molde: molde, PARAGRAFO: PARAGRAFO, CAB: CAB };
   G.SOTFICHA = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof self !== 'undefined' ? self : this);

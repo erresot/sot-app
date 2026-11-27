@@ -467,7 +467,7 @@ const R={
   neuro:["Sensibilidade perineal preservada","Tônus esfincteriano preservado"],
   frases:["pelve estável à compressão","instabilidade rotacional"]},
  quadril:{nome:"Quadril",bi:true,loc:"hip",pc:[["e",74,206,0,.36,.42,.5,0]],
-  insp:["Encurtamento do membro","Rotação externa do membro","Encurtamento aparente","Atitude em flexão","Incapacidade de elevar o membro estendido"],
+  insp:["Encurtamento de membro","Rotação externa do membro","Encurtamento aparente","Atitude em flexão","Incapacidade de elevar o membro estendido"],
   palp:["Sem dor à palpação","Região inguinal","Trocânter maior","Fêmur proximal (coxa proximal)","Tuberosidade isquiática","Espinha ilíaca anterossuperior"],
   adm:[A("Flexão",120),A("Extensão",30),A("Abdução",45),A("Adução",30),A("Rotação interna",35),A("Rotação externa",45)],
   forca:["Flexores","Extensores","Abdutores","Adutores"],
@@ -522,7 +522,7 @@ const R={
   neuro:["Sensibilidade digital preservada","Discriminação de 2 pontos normal"],
   frases:["dedo em atitude de extensão","perda da força de pinça"]},
  coxa:{nome:"Coxa",loc:"limb",pc:[["c",80,228,0,80,305,0,.345]],
-  insp:["Encurtamento","Rotação externa do membro","Angulação","Atrofia de quadríceps","Edema tenso"],
+  insp:["Encurtamento de membro","Rotação externa do membro","Angulação","Atrofia de quadríceps","Edema tenso"],
   palp:["Sem dor à palpação","Diáfise femoral","Região supracondiliana","Quadríceps","Isquiotibiais","Adutores","Trato iliotibial","Defeito muscular palpável","Compartimento tenso","Mobilidade anormal"],
   adm:[A("Perimetria (15 cm acima da patela)",null,"cm","cm"),A("Ângulo poplíteo",null,"°","ex.: 30")],
   forca:["Quadríceps","Isquiotibiais","Adutores"],
@@ -687,7 +687,7 @@ function headName(r,s){
 
 /* sinais de fratura/trauma, em qualquer bloco do segmento (inspeção, grade, palpação, testes, ossos, ferimento) */
 const TRAUMA_F=["Deformidade","Mobilidade anormal","Fratura suspeita","Exposição óssea","Desvio angular"];
-const TRAUMA_INSP=["Encurtamento do membro","Rotação externa do membro","Encurtamento","Angulação","Deformidade em dorso de garfo","Proeminência do fragmento","Tenda de pele (tenting)","Encurtamento da cintura escapular","Alargamento do calcanhar","Encurtamento do calcanhar","Degrau visível"];
+const TRAUMA_INSP=["Encurtamento de membro","Rotação externa do membro","Encurtamento","Angulação","Deformidade em dorso de garfo","Proeminência do fragmento","Tenda de pele (tenting)","Encurtamento da cintura escapular","Alargamento do calcanhar","Encurtamento do calcanhar","Degrau visível"];
 const TRAUMA_PALP=["Mobilidade anormal","Degrau palpável"];
 const TRAUMA_TEST=["Mobilidade anormal do foco"];
 const INSP_ADM=["Hálux rígido","Dedo em martelo","Dedos em martelo","Dedos em garra","Botoeira","Pescoço de cisne","Dedo em gatilho","Atitude em flexão","Perda da cascata digital","Corda de Dupuytren"];
@@ -1309,7 +1309,7 @@ function renderVerdan(P,r,s,e){
 /* ---------- ciclo ---------- */
 const ANTES={};
 // v77: o mesmo sinal do membro inteiro aparece em dois segmentos (quadril e coxa) — marcado num, sai do outro (vale o último toque)
-const MESMO_SINAL=[[["quadril","Encurtamento do membro"],["coxa","Encurtamento"]],[["quadril","Rotação externa do membro"],["coxa","Rotação externa do membro"]]];
+const MESMO_SINAL=[[["quadril","Encurtamento de membro"],["coxa","Encurtamento de membro"]],[["quadril","Rotação externa do membro"],["coxa","Rotação externa do membro"]]];
 function coerEntreSeg(){["D","E"].forEach(s=>MESMO_SINAL.forEach(g=>{
   const tem=g.filter(([r,v])=>S.entries[r+"|"+s]&&(S.entries[r+"|"+s].insp||[]).includes(v));if(tem.length<2)return;
   const novo=tem.find(([r,v])=>!(ANTES[r+"|"+s]||new Set()).has(J("insp",v)));const fica=novo||tem[0];

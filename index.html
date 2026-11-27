@@ -654,7 +654,7 @@ html.escuro{--presc:#c7a2ff;--presc2:#2a2142}
 
 <div class="top">
   <div class="hrow"><div class="marca" aria-hidden="true">SOT</div><div class="tit"><h1 id="titSec">Enfermaria</h1><span id="resumo">—</span></div><div class="hbtns"><button class="hb" data-doc title="Reler o internograma do Google Doc" aria-label="Reler o internograma">⟳</button><button class="hb" data-temaciclo title="Modo noturno / claro" aria-label="Modo noturno ou claro">🌙</button><button class="syncmini hb" data-sync title="Sincronizar agora" aria-label="Sincronizar agora">☁︎</button><button class="hb" data-sairsis title="Sair do sistema (salva, sincroniza e desconecta)" aria-label="Sair do sistema">⏻</button></div></div>
-  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v84</button></div>
+  <div class="sub"><input type="date" id="hoje" aria-label="Data"><button class="hojebtn" data-irhoje title="Voltar para a data de hoje">Hoje</button><div class="prog" title="Visitados (verde) e evoluídos (azul)"><i id="progbar"></i><i class="e" id="progevo"></i></div><button class="verchip" data-tab="config" title="Versão do app — toque para ver o diagnóstico">v87</button></div>
   <button id="novaVersao" class="novaversao" data-recarregar hidden>⬆ Atualização pronta — toque para recarregar</button>
   <button id="sync" class="sync local" data-sync>📱 só neste aparelho</button>
 </div>
@@ -1394,29 +1394,30 @@ G.SOTDATA = { hojeISO: hojeISO, isoDeBR: isoDeBR, br: br, brCurto: brCurto, addD
 </script>
 <script>/* SOT — MEDICAMENTOS: UMA lista para o app todo (AMB Internação/checklist, avaliação pré-op, mapa, Novo Paciente, Anamnese).
    Cada regra: k (id), nome, re (texto sem acento, maiúsculo), orient (conduta pré-op de referência), tipos:
-   anticoag = anticoagulante/antiagregante/antitrombótico (alerta de sangramento) · mapa = entra no alerta do mapa. */
+   anticoag = anticoagulante/antiagregante/antitrombótico (alerta de sangramento) · mapa = entra no alerta do mapa.
+   dias = suspender N dias antes da cirurgia (o Condutas calcula a data; sem dias → a data fica para o médico). */
 (function (G) {
 'use strict';
 var A = function (s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); };
 var R = [
-  { k: 'varfarina', nome: 'Varfarina', re: /VARFARINA|MAREVAN|COUMADIN|WARFARIN/, anticoag: 1, mapa: 1, orient: 'suspender ~5 dias antes e conferir INR no pré-op (ponte com heparina se alto risco trombótico).' },
+  { k: 'varfarina', nome: 'Varfarina', re: /VARFARINA|MAREVAN|COUMADIN|WARFARIN/, dias: 5, anticoag: 1, mapa: 1, orient: 'suspender ~5 dias antes e conferir INR no pré-op (ponte com heparina se alto risco trombótico).' },
   { k: 'doac', nome: 'DOAC (rivaroxabana/apixabana/edoxabana)', re: /RIVAROXABAN|XARELTO|APIXABAN|ELIQUIS|EDOXABAN|LIXIANA/, anticoag: 1, mapa: 1, orient: 'suspender 48–72 h antes conforme função renal e risco de sangramento.' },
   { k: 'dabigatrana', nome: 'Dabigatrana', re: /DABIGATRAN|PRADAXA/, anticoag: 1, mapa: 1, orient: 'suspender 48–96 h antes conforme função renal.' },
-  { k: 'clopidogrel', nome: 'Clopidogrel', re: /CLOPIDOGREL|PLAVIX/, anticoag: 1, mapa: 1, orient: 'suspender ~5 dias antes (avaliar indicação — stent recente: discutir com cardiologia).' },
-  { k: 'ticagrelor', nome: 'Ticagrelor', re: /TICAGRELOR|BRILINTA/, anticoag: 1, orient: 'suspender 3–5 dias antes (discutir com cardiologia).' },
-  { k: 'prasugrel', nome: 'Prasugrel', re: /PRASUGREL|EFFIENT/, anticoag: 1, orient: 'suspender ~7 dias antes (discutir com cardiologia).' },
+  { k: 'clopidogrel', nome: 'Clopidogrel', re: /CLOPIDOGREL|PLAVIX/, dias: 5, anticoag: 1, mapa: 1, orient: 'suspender ~5 dias antes (avaliar indicação — stent recente: discutir com cardiologia).' },
+  { k: 'ticagrelor', nome: 'Ticagrelor', re: /TICAGRELOR|BRILINTA/, dias: 5, anticoag: 1, orient: 'suspender 3–5 dias antes (discutir com cardiologia).' },
+  { k: 'prasugrel', nome: 'Prasugrel', re: /PRASUGREL|EFFIENT/, dias: 7, anticoag: 1, orient: 'suspender ~7 dias antes (discutir com cardiologia).' },
   { k: 'cilostazol', nome: 'Cilostazol', re: /CILOSTAZOL|PLETAL/, anticoag: 1, orient: 'suspender ~2–3 dias antes (antiplaquetário).' },
   { k: 'fondaparinux', nome: 'Fondaparinux', re: /FONDAPARINUX|ARIXTRA/, anticoag: 1, orient: 'suspender ~2–4 dias antes conforme função renal.' },
   { k: 'aas', nome: 'AAS', re: /\bAAS\b|ACIDO ACETILSALICILICO|ASPIRINA|SOMALGIN|ECASIL/, anticoag: 1, mapa: 1, orient: 'em geral mantido (prevenção secundária); suspensão só se orientado pela equipe/anestesia.' },
   { k: 'heparina', nome: 'Heparina/enoxaparina', re: /ENOXAPARINA|CLEXANE|HEPARINA|\bHBPM\b|\bHNF\b/, anticoag: 1, mapa: 1, orient: 'última dose profilática ≥12 h antes; terapêutica ≥24 h antes (bloqueio neuroaxial).' },
   { k: 'metformina', nome: 'Metformina', re: /METFORMINA|GLIFAGE|GLUCOFORMIN/, orient: 'suspender no dia da cirurgia (24–48 h se contraste ou disfunção renal).' },
-  { k: 'sglt2', nome: 'iSGLT2 (dapagliflozina/empagliflozina)', re: /DAPAGLIFLOZINA|FORXIGA|EMPAGLIFLOZINA|JARDIANCE|CANAGLIFLOZINA|XIGDUO|SYNJARDY/, orient: 'suspender 3 dias antes (risco de cetoacidose euglicêmica).' },
+  { k: 'sglt2', nome: 'iSGLT2 (dapagliflozina/empagliflozina)', re: /DAPAGLIFLOZINA|FORXIGA|EMPAGLIFLOZINA|JARDIANCE|CANAGLIFLOZINA|XIGDUO|SYNJARDY/, dias: 5, orient: 'suspender 5 dias antes (risco de cetoacidose euglicêmica) — regra do serviço.' },
   { k: 'glp1', nome: 'Agonista GLP-1', re: /SEMAGLUTIDA|OZEMPIC|WEGOVY|RYBELSUS|DULAGLUTIDA|TRULICITY|TIRZEPATIDA|MOUNJARO|LIRAGLUTIDA|VICTOZA|SAXENDA/, mapa: 1, orient: 'semanal: suspender 7 dias antes; diário: 1 dia antes (esvaziamento gástrico/aspiração).' },
   { k: 'insulina', nome: 'Insulina', re: /INSULINA|\bNPH\b|GLARGINA|LANTUS|DEGLUDEC|TRESIBA/, orient: 'ajustar dose da noite anterior/manhã conforme protocolo; glicemia capilar na internação.' },
   { k: 'sulfonilureia', nome: 'Sulfonilureia', re: /GLIBENCLAMIDA|GLICLAZIDA|GLIMEPIRIDA|DAONIL|DIAMICRON|AMARYL/, orient: 'não tomar no dia da cirurgia (hipoglicemia em jejum).' },
   { k: 'ieca-bra', nome: 'IECA/BRA', re: /LOSARTANA|VALSARTANA|OLMESARTANA|IRBESARTANA|CANDESARTANA|TELMISARTANA|ENALAPRIL|CAPTOPRIL|RAMIPRIL|LISINOPRIL|PERINDOPRIL|ARADOIS/, orient: 'muitos serviços suspendem no dia da cirurgia (hipotensão na indução) — conforme anestesia.' },
   { k: 'estrogenio', nome: 'Estrogênio (ACO/TRH)', re: /ANTICONCEPCIONAL|ETINILESTRADIOL|ESTRADIOL|TERAPIA HORMONAL|\bTRH\b|DIANE|YASMIN|SELENE|CICLO 21/, orient: 'risco de TEV: discutir suspensão (~4 semanas) em cirurgia de grande porte/imobilização de MMII.' },
-  { k: 'fito', nome: 'Fitoterápico', re: /GINKGO|GINSENG|ALHO|OMEGA ?3|CASTANHA DA INDIA/, orient: 'suspender ~7 dias antes (efeito antiplaquetário).' },
+  { k: 'fito', nome: 'Fitoterápico', re: /GINKGO|GINSENG|ALHO|OMEGA ?3|CASTANHA DA INDIA/, dias: 7, orient: 'suspender ~7 dias antes (efeito antiplaquetário).' },
   { k: 'dmard', nome: 'Imunossupressor/DMARD', re: /METOTREXATO|LEFLUNOMIDA|UPADACITINIBE|TOFACITINIBE|ADALIMUMABE|ETANERCEPT|INFLIXIMABE|BARICITINIBE/, orient: 'conduta individual (risco de infecção × atividade da doença) — reumatologia/anestesia.' },
   { k: 'corticoide', nome: 'Corticoide crônico', re: /PREDNISONA|PREDNISOLONA|DEXAMETASONA|HIDROCORTISONA|CORTICOIDE/, orient: 'não suspender; avaliar dose de estresse peroperatória.' }
 ];
@@ -1430,7 +1431,50 @@ function anticoag(txt) {
 }
 // 1º medicamento que dispara o alerta do mapa (anticoagulante/GLP-1); devolve o trecho original
 function alertaMapa(txt) { var s = String(txt || ''), u = A(s), r = R.filter(function (x) { return x.mapa; }).filter(function (x) { return x.re.test(u); })[0]; if (!r) return null; var m = u.match(r.re); return { regra: r, achado: m ? m[0] : r.nome }; }
-G.SOTMED = { regras: R, achar: achar, anticoag: anticoag, alertaMapa: alertaMapa, A: A };
+// v87: cardiopatia (CMB/MUC) e ECG pré-operatório — regra do serviço: ECG para todo paciente que vai operar com > 45 anos OU condição cardíaca
+var CARD = /CARDIOPAT|\bICC\b|INSUFICIENCIA CARD|\bFA\b|FIBRILA|ARRITM|MARCAPASSO|\bIAM\b|INFARTO|STENT|REVASCULAR|VALVULOPAT|CORONARI|\bDAC\b|ANGINA|\bCRM\b|PONTE DE SAFENA/;
+function cardiaco(txt) { return CARD.test(A(txt)); }
+function ecg(idade, txt) { return (parseInt(idade, 10) || 0) > 45 || cardiaco(txt); }
+G.SOTMED = { regras: R, achar: achar, anticoag: anticoag, alertaMapa: alertaMapa, A: A, cardiaco: cardiaco, ecg: ecg };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>/* SOT — MOLDES DO EVOLUIDOR (v86): um motor só para guardar, listar, apagar e juntar os moldes.
+   Molde = a "evolução anterior" pronta, montada no Atendimento a partir da ficha do PS (enfermaria dia 0 ou retorno no
+   ambulatório). O evoluidor usa o molde no lugar de colar a evolução à mão.
+   Guardado primeiro no aparelho (localStorage 'sot-moldes-v1'); o app junta com o Drive (arquivo moldes.json na pasta do app)
+   e todos os aparelhos veem os mesmos moldes. Apagado = lápide (some em todos). Some sozinho em 30 dias.
+   Item: { id, em (ms da última mudança), criado (ms), pac, tipo:'enf'|'amb', titulo, txt, por, apagado? }   */
+(function (G) {
+  'use strict';
+  var CHAVE = 'sot-moldes-v1', DIAS = 30, MS = 864e5;
+  function agora() { return Date.now(); }
+  function ler() { try { var L = JSON.parse(localStorage.getItem(CHAVE) || '[]'); return Array.isArray(L) ? L : []; } catch (e) { return []; } }
+  function gravar(L) { try { localStorage.setItem(CHAVE, JSON.stringify(L)); } catch (e) {} }
+  function avisar() { try { (window.top || window.parent).postMessage({ src: 'molde', type: 'molde-sinc' }, '*'); } catch (e) {} }
+  // tira o que passou do prazo: molde com mais de 30 dias; lápide com mais de 45 (já chegou em todos)
+  function limpar(L, t) {
+    t = t || agora();
+    return (L || []).filter(function (x) { return x && x.id && (x.apagado ? t - (x.em || 0) < (DIAS + 15) * MS : t - (x.criado || x.em || 0) < DIAS * MS); });
+  }
+  // junta duas listas pelo id: vale a mudança mais nova (apagar é uma mudança)
+  function juntar(a, b) {
+    var M = {};
+    [].concat(a || [], b || []).forEach(function (x) { if (!x || !x.id) return; var y = M[x.id]; if (!y || (x.em || 0) > (y.em || 0)) M[x.id] = x; });
+    return limpar(Object.keys(M).map(function (k) { return M[k]; })).sort(function (x, y) { return (y.criado || 0) - (x.criado || 0); });
+  }
+  function listar() { return limpar(ler()).filter(function (x) { return !x.apagado; }); }
+  function salvar(m) {
+    var t = agora(), x = { id: m.id || ('m' + t.toString(36) + Math.random().toString(36).slice(2, 6)), em: t, criado: m.criado || t,
+      pac: String(m.pac || '').trim(), tipo: m.tipo === 'amb' ? 'amb' : 'enf', titulo: String(m.titulo || '').trim(), txt: String(m.txt || ''), por: m.por || '' };
+    gravar(juntar(ler(), [x])); avisar(); return x;
+  }
+  function apagar(id) {
+    var L = ler(), x = L.filter(function (y) { return y.id === id; })[0]; if (!x) return false;
+    gravar(juntar(L, [{ id: id, em: agora() + 1, criado: x.criado, apagado: true }])); avisar(); return true;
+  }
+  function diasRestantes(x, t) { return Math.max(0, Math.ceil(((x.criado || x.em || 0) + DIAS * MS - (t || agora())) / MS)); }
+  G.SOTMOLDES = { CHAVE: CHAVE, DIAS: DIAS, ler: ler, gravar: gravar, listar: listar, salvar: salvar, apagar: apagar, juntar: juntar, limpar: limpar, diasRestantes: diasRestantes };
+  if (typeof module !== 'undefined' && module.exports) module.exports = G.SOTMOLDES;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>/* SOT — EXAMES: UM motor para todos os exames, não importa como chegaram (laudo do sistema colado, linha do internograma,
@@ -2624,7 +2668,7 @@ function moverDados(de, para) {
 
 </script>
 <script>// ===================== versão na tela, aviso de atualização e registro de erros =====================
-var VERSAO = '84';
+var VERSAO = '87';
 var ERR = (function () {
   var K = 'sot-erros', L = [];
   try { L = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch (e) { L = []; }
@@ -3649,6 +3693,7 @@ function blocoPreOp(p) {
     h += it('jejum', 'Jejum prescrito (checado)');
     h += it('hep', 'Heparina / anticoagulante suspenso (checado)', ac.length ? '⚠ Em uso: ' + esc(ac.join(', ')) + ' — conferir prazo de suspensão com a anestesia' : 'Nenhum anticoagulante encontrado no MUC/condutas — confirmar na prescrição');
     h += it('hb', 'Hb > 10 / reserva de sangue', hb ? 'Último Hb: ' + esc(hb.txt) + (hb.v <= 10 ? ' ⚠ abaixo de 10' : '') : 'Sem Hb no internograma');
+    h += it('ecg', 'ECG (> 45 anos ou condição cardíaca)');
     h += it('aval', 'Avaliações pré-operatórias (anestésica / cardiológica)');
     h += it('lado', 'Lado marcado / termo de consentimento');
     h += '</div>';
@@ -5640,6 +5685,28 @@ var FOLHA = (function () {
   window.addEventListener('afterprint', function () { var c = document.getElementById('folhaPrint'); if (c) c.innerHTML = ''; });
   return { imprimir: imprimir, montar: montar, guardar: guardar, ler: lerArquivo, abrirRevisao: abrirRevisao, G: G, _codigo: codigo, _decodificar: decodificar, CENTROS: CENTROS, COD: COD };
 })();
+
+/* ===== v86: moldes do evoluidor — o app junta os moldes do aparelho com o Drive (moldes.json) =====
+   Atendimento e evoluidor gravam no aparelho (SOTMOLDES) e avisam com postMessage {src:'molde', type:'molde-sinc'}.
+   Aqui: junta com o Drive quando avisado, ao abrir o app e ao voltar a internet. Sem internet/sem login: fica no aparelho. */
+var MOLDES_SINC = { t: null, rodando: false, mais: false };
+function sincMoldes() {
+  if (typeof SOTMOLDES === 'undefined' || typeof SYNC === 'undefined' || !SYNC.moldesTrocar) return Promise.resolve();
+  if (!SYNC.temToken() || !navigator.onLine) return Promise.resolve();
+  if (MOLDES_SINC.rodando) { MOLDES_SINC.mais = true; return Promise.resolve(); }
+  MOLDES_SINC.rodando = true;
+  return SYNC.moldesTrocar(function (rem) {
+    var loc = SOTMOLDES.ler(), r = Array.isArray(rem) ? rem : [], j = SOTMOLDES.juntar(loc, r);
+    var mudou = JSON.stringify(j) !== JSON.stringify(SOTMOLDES.juntar(r, []));
+    SOTMOLDES.gravar(j);
+    return { obj: j, mudou: mudou };
+  }).catch(function (e) { if (typeof ERR !== 'undefined') ERR.log('moldes', e); })
+    .then(function () { MOLDES_SINC.rodando = false; if (MOLDES_SINC.mais) { MOLDES_SINC.mais = false; return sincMoldes(); } });
+}
+function agendarSincMoldes(ms) { clearTimeout(MOLDES_SINC.t); MOLDES_SINC.t = setTimeout(sincMoldes, ms == null ? 800 : ms); }
+window.addEventListener('message', function (e) { var m = e.data || {}; if (m.src === 'molde' && m.type === 'molde-sinc') agendarSincMoldes(); });
+window.addEventListener('online', function () { agendarSincMoldes(2000); });
+setTimeout(function () { try { SOTMOLDES.gravar(SOTMOLDES.limpar(SOTMOLDES.ler())); } catch (e) {} agendarSincMoldes(4000); }, 1500);
 
 // ===================== init =====================
 aplicarTema();

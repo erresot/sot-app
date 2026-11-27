@@ -63,7 +63,10 @@ Situação em **25/11/2026 (v75)**. Prioridade combinada: **primeiro organizar o
      - ✅ v82 (em preparo): estrutura (`# CONDUTA`, `REALIZADO:`, discutido) + 1º momento (jejum, exposta sem Gustilo, seriada, coluna).
      - ✅ v83 (em preparo): resultados + intermediária (RX em 4 graus, externos, sem "quadro clínico"/regras, ao reavaliar, interconsulta, CROSS, seriada).
      - ✅ v84 (em preparo): desfechos finais (alta/retorno com carga e cuidados, internação com 4 caminhos e estados, outra equipe, transferência, cirurgia eletiva A/B). Falta: suspensão de outros medicamentos (sot-med.js), texto do paciente da eletiva, feriados de SP/Marília.
-   - Molde do evoluidor ("Guardar no Drive", leitura no evoluidor, "Apagar molde").
+   - ✅ v85 (em preparo): idade no Atendimento (opcional, fora do texto); suspensão de medicamentos na cirurgia eletiva (sot-med.js) + situação especial; "Encurtamento de membro".
+   - ✅ v86 (em preparo): molde do evoluidor (botão "Molde" no Atendimento, "Moldes guardados" no evoluidor, "Apagar molde" com confirmação depois de copiar, limpeza em 30 dias, Drive moldes.json).
+   - ✅ v87 (em preparo): cirurgia eletiva na ordem do serviço + lado da imobilização (27/11).
+   - Mini-kanban: número de aparelhos variável (não são só 4 PCs); leitura de print já validada (26/11).
    - Mini-kanban (quadro opcional, 4 colunas, print do kanban do hospital, avisos 8 h/24 h, histórico de 21 dias).
 8. Outras ideias que surgirem no uso: entram aqui antes de serem feitas.
 - ✅ v66 (parcial): **Regra de exames:** rotina = pedido hoje, colhido amanhã às 6h; urgência = colhido hoje. No internograma, "dd/mm: labs" = resultado; "dd/mm Solicitar" = deve ser pedido na rotina do dia anterior. App: na véspera, "pedir hoje na rotina"; no dia sem resultado, "atrasado: pedir na urgência?". Contadores pela data: conferir e avisar (quem atualiza é humano).

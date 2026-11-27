@@ -20,6 +20,8 @@ button{cursor:pointer}
 .seg button{min-height:var(--ctl);border:0;background:var(--surface-2);padding:0 12px;font-size:14px;border-right:1px solid var(--line)}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.idade{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.idade input{width:64px;min-height:var(--ctl);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);padding:0 8px;font:inherit;color:var(--ink)}
 .passos{display:flex;gap:6px;flex:1;min-width:260px}
 .passo{flex:1;min-height:var(--ctl);border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;padding:0 8px}
 .passo[aria-current="step"]{border:2px solid var(--accent);background:var(--surface);font-weight:600}
@@ -39,6 +41,12 @@ button{cursor:pointer}
 .chip{min-height:var(--ctl);padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:14px}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border:2px solid var(--accent);font-weight:600}
 .resumo{font-size:14px;line-height:1.5}
+.campo{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:13px;color:var(--muted)}
+.campo input{min-height:var(--ctl);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);padding:0 10px;font:inherit;color:var(--ink);font-size:14px}
+.ev{display:flex;gap:6px;margin-bottom:6px}.ev input:first-child{flex:1}.ev input:nth-child(2){width:120px}
+.ev button{min-width:var(--ctl);min-height:var(--ctl);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+.prev{font-family:var(--f-mono);font-size:12px;line-height:1.5;white-space:pre-wrap;background:var(--surface-2);border-radius:var(--r);padding:10px;margin:0}
+.ok{color:var(--ok)}
 .resumo b{font-weight:600}
 .ficha{border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0}
 .fhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
@@ -70,11 +78,12 @@ button{cursor:pointer}
 <header class="top">
   <h1>Atendimento · PS</h1>
   <div class="seg" role="group" aria-label="Momento"><button data-mom="1" aria-pressed="true">1º momento</button><button data-mom="2" aria-pressed="false">Em tempo</button></div>
+  <label class="idade"><span>Idade</span><input type="number" id="idade" min="0" max="120" inputmode="numeric" placeholder="—" aria-label="Idade (opcional, não vai para o texto)"></label>
   <nav class="passos" aria-label="Passos do atendimento" id="passos"></nav>
 </header>
 <main class="corpo">
   <div class="quadros" id="quadros">
-    <section class="nativo" id="pAnterior" aria-label="Ficha anterior">
+    <section class="nativo" id="pAnterior" data-id="anterior" aria-label="Ficha anterior">
       <div class="cartao"><h2>Continuar atendimento</h2><p class="dica">Cole a ficha anterior (1º momento e em tempos já feitos). O app lê região, lado e o que ficou pedido, e já prepara a Conduta.</p>
         <textarea id="anterior" placeholder="Cole aqui a ficha do sistema"></textarea>
         <div class="linha"><button class="btn pri" id="ler">Ler ficha</button><button class="btn" id="limparAnt">Limpar</button></div>
@@ -82,9 +91,19 @@ button{cursor:pointer}
       <div class="cartao"><h2>Ao reavaliar</h2><p class="dica">Sai no em tempo: "AO REAVALIAR, PACIENTE …" (o mesmo botão do Condutas).</p>
         <div class="chips" id="reav"><button class="chip" data-r="plena" aria-pressed="false">Melhora plena</button><button class="chip" data-r="parcial" aria-pressed="false">Melhora parcial</button><button class="chip" data-r="nega" aria-pressed="false">Nega melhora</button><button class="chip" data-r="" aria-pressed="true">Não escrever</button></div></div>
     </section>
+    <section class="nativo" id="pMolde" data-id="molde" aria-label="Guardar molde do evoluidor">
+      <div class="cartao"><h2>Guardar molde para o evoluidor</h2><p class="dica">O molde é a "evolução anterior" pronta. No evoluidor, de qualquer aparelho, toque em "Usar" e ele entra no lugar do texto colado. Fica guardado no aparelho e no Drive da equipe; some sozinho em 30 dias.</p>
+        <div class="seg" role="group" aria-label="Para onde vai o paciente" id="mTipo"><button data-t="enf" aria-pressed="true">Enfermaria (dia 0)</button><button data-t="amb" aria-pressed="false">Retorno no ambulatório</button></div>
+        <label class="campo"><span>Paciente (nome abreviado + prontuário)</span><input type="text" id="mPac" placeholder="Ex.: ANA P. · P 1000101"></label>
+        <div class="campo"><span>Eventos do cabeçalho (o evoluidor conta os dias pela data)</span><div id="mEvs"></div><button class="btn" id="mEvMais">+ Evento</button></div>
+        <label class="campo"><span>Mecanismo (opcional)</span><input type="text" id="mMec" placeholder="Ex.: QUEDA DA PRÓPRIA ALTURA"></label>
+        <div class="linha"><button class="btn pri" id="mGuardar">Guardar molde</button><button class="btn" id="mVoltar">Voltar</button></div>
+        <div class="resumo" id="mMsg" style="margin-top:8px"></div></div>
+      <div class="cartao"><h2>Como o molde vai ficar</h2><pre id="mPrev" class="prev"></pre></div>
+    </section>
   </div>
   <aside class="ficha" id="painel" aria-label="Ficha">
-    <div class="fhead"><button class="btn abre" id="abre" aria-expanded="false">▲ Ficha</button><b id="ftit">Ficha</b><button class="btn" id="prox">Próximo →</button><button class="btn pri" id="copiar" disabled>Copiar ficha</button></div>
+    <div class="fhead"><button class="btn abre" id="abre" aria-expanded="false">▲ Ficha</button><b id="ftit">Ficha</b><button class="btn" id="bMolde" title="Guardar molde para o evoluidor">Molde</button><button class="btn" id="prox">Próximo →</button><button class="btn pri" id="copiar" disabled>Copiar ficha</button></div>
     <pre id="ficha" aria-live="polite"></pre>
     <div class="avisos" id="avisos"></div>
   </aside>
@@ -92,12 +111,13 @@ button{cursor:pointer}
 <div class="toast" id="toast" role="status"></div>
 <script src="../campos.js"></script>
 <script src="../sot-ficha.js"></script>
+<script src="../sot-moldes.js"></script>
 <script>
 (function(){
 'use strict';
 var PASSOS={'1':[['anamnese','Anamnese'],['exame','Exame'],['condutas','Conduta']],'2':[['anterior','Anterior'],['exame','Exame'],['condutas','Conduta']]};
 var Q=document.getElementById('quadros'), F={}, atual=null, ultimo='', MOM='1';
-var EST={regsPostas:[],exameFoi:'',sug:{},ant:null,reav:'',efBase:null,avisos:[]};
+var EST={mucPosto:'',regsPostas:[],exameFoi:'',sug:{},ant:null,reav:'',efBase:null,avisos:[]};
 function $(s){return document.querySelector(s);}
 var COPIAR_DENTRO={anamnese:'#copyBtn,#copyBtn2',exame:'#copyBtn',condutas:'#copiar,#dockCopiar'};
 function frame(id){
@@ -112,18 +132,20 @@ function ligar(f){
     var st=d.createElement('style'); st.textContent=COPIAR_DENTRO[id]+'{display:none!important}';   // um Copiar só: o da ficha
     d.head.appendChild(st);
   }catch(e){}
+  try{ if(id==='condutas'&&$('#idade').value) w8(function(){ condutasAplicar({idade:$('#idade').value}); }); }catch(e){}
   try{ if(id==='condutas'&&!f.dataset.ini){ f.dataset.ini='1'; var bi=d.querySelector('#faseSeg button[data-v="'+(MOM==='2'?'inter':'inicial')+'"]'); if(bi) bi.click(); } }catch(e){}
   try{ var t=null, h=function(){ clearTimeout(t); t=setTimeout(montar,120); };
     ['input','change','click','keyup'].forEach(function(ev){ d.addEventListener(ev,h,true); }); }catch(e){}
 }
-function painel(id){ return id==='anterior'?$('#pAnterior'):frame(id); }
+function w8(fn){ setTimeout(fn,50); }
+function painel(id){ return id==='anterior'?$('#pAnterior'):id==='molde'?$('#pMolde'):frame(id); }
 function ir(id){
-  var lista=PASSOS[MOM].map(function(p){return p[0];}); if(lista.indexOf(id)<0) id=lista[0];
+  var lista=PASSOS[MOM].map(function(p){return p[0];}); if(id!=='molde'&&lista.indexOf(id)<0) id=lista[0];
   atual=id; painel(id);
-  Q.querySelectorAll('iframe,.nativo').forEach(function(el){ el.classList.toggle('on',(el.dataset.id||'anterior')===id); });
+  Q.querySelectorAll('iframe,.nativo').forEach(function(el){ el.classList.toggle('on',el.dataset.id===id); });
   desenharPassos();
   var i=lista.indexOf(id); $('#prox').textContent= i<2 ? 'Próximo →' : '← '+PASSOS[MOM][0][1];
-  try{ localStorage.setItem('sot-atend-passo',MOM+'|'+id); }catch(e){}
+  if(id!=='molde') try{ localStorage.setItem('sot-atend-passo',MOM+'|'+id); }catch(e){}
   montar();
 }
 function desenharPassos(){
@@ -216,9 +238,16 @@ function juntar2(e,c){   // em tempo = evolução nova: só o que é deste momen
   if(vazio) return '';
   return [SOTFICHA.escrever(m)].concat(et.slice(1).map(function(x){return SOTFICHA.escrever(x);})).join('\n\n');
 }
+function passarMuc(a){
+  if(MOM!=='1'||!a) return;
+  try{ var A=SOTFICHA.ler(a).momentos[0], muc=A&&A.apCampos&&A.apCampos.muc||'', cmb=A&&A.apCampos&&A.apCampos.cmb||'';
+    if(cmb!==EST.cmbPosto&&condutasAplicar({cmb:cmb})) EST.cmbPosto=cmb;   // v87: cardiopata → ECG / avaliação cardiológica
+    if(muc&&muc!==EST.mucPosto&&condutasAplicar({muc:muc,mucAntes:EST.mucPosto})) EST.mucPosto=muc; }catch(e){}
+}
 function montar(){
   descer();
   var a=MOM==='1'?txtAnamnese():'', e=txtExame(), c=txtConduta(), t='';
+  passarMuc(a);
   sugerir(e);
   try{ t=MOM==='1'?juntar1(a,e,c):juntar2(e,c); }catch(err){ t=''; }
   ultimo=t; window.__ficha={momento:MOM,anamnese:a,exame:e,conduta:c,ficha:t};
@@ -251,6 +280,45 @@ function lerAnterior(){
   try{ localStorage.setItem('sot-atend-ant',t); }catch(e){}
   toast('Ficha anterior lida'); montar();
 }
+/* ---- molde do evoluidor (v86) ---- */
+var MOL={tipo:'enf',evs:null,feito:false};
+function hojeBR(){ var d=new Date(); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(); }
+function fichaToda(){ montar(); var a=MOM==='2'&&EST.ant?$('#anterior').value:''; return (a?a+'\n\n':'')+ultimo; }
+function abrirMolde(){
+  var F=SOTFICHA.ler(fichaToda()), U=F.momentos[F.momentos.length-1]||{conduta:[]}, cd=U.conduta.join('\n');
+  MOL.tipo=/INTERNA[ÇC][ÃA]O HOSPITALAR|PROCEDIMENTO CIR[ÚU]RGICO/i.test(cd)?'enf':(/RETORNO/i.test(cd)?'amb':MOL.tipo);
+  MOL.evs=SOTFICHA.eventos(F,hojeBR()); if(!MOL.evs.length) MOL.evs=[{t:'',data:hojeBR()}];
+  if(!$('#mMec').value) $('#mMec').value=SOTFICHA.mecanismo(F);
+  $('#mMsg').textContent=''; MOL.feito=false; desenharMolde(); ir('molde');
+}
+function lerEvs(){ return [].slice.call(document.querySelectorAll('#mEvs .ev')).map(function(r){ var i=r.querySelectorAll('input'); return {t:i[0].value,data:i[1].value}; }); }
+function desenharMolde(){
+  document.querySelectorAll('#mTipo [data-t]').forEach(function(b){ b.setAttribute('aria-pressed',String(b.dataset.t===MOL.tipo)); });
+  var esc=function(x){return String(x).replace(/"/g,'&quot;');};
+  $('#mEvs').innerHTML=MOL.evs.map(function(e,i){ return '<div class="ev"><input type="text" value="'+esc(e.t)+'" aria-label="Evento"><input type="text" value="'+esc(e.data)+'" aria-label="Data" placeholder="dd/mm/aaaa"><button data-rm="'+i+'" aria-label="Tirar evento">×</button></div>'; }).join('');
+  prevMolde();
+}
+function textoMolde(){
+  var F=SOTFICHA.ler(fichaToda()), cd=F.momentos.map(function(m){return m.conduta.join('\n');}).join('\n');
+  var im=(cd.match(/(GESSO|TALA|BOTA)[A-ZÀ-Ú ]*/i)||[''])[0];
+  return SOTFICHA.molde(F,{tipo:MOL.tipo,eventos:lerEvs(),mec:$('#mMec').value,hoje:hojeBR(),imob:im});
+}
+function prevMolde(){ $('#mPrev').textContent=textoMolde(); }
+function guardarMolde(){
+  var pac=$('#mPac').value.trim(), evs=lerEvs().filter(function(e){return e.t.trim();});
+  if(!pac){ $('#mMsg').innerHTML='<span style="color:var(--warn)">Escreva o paciente (nome abreviado + prontuário) para achar o molde depois.</span>'; $('#mPac').focus(); return; }
+  if(!ultimo){ $('#mMsg').innerHTML='<span style="color:var(--warn)">A ficha está vazia.</span>'; return; }
+  var x=SOTMOLDES.salvar({pac:pac,tipo:MOL.tipo,titulo:(evs[0]&&evs[0].t)||'',txt:textoMolde()});
+  MOL.feito=true; $('#mMsg').innerHTML='<span class="ok">Molde guardado ('+(x.tipo==='amb'?'retorno no ambulatório':'enfermaria')+'). Aparece no evoluidor; some sozinho em '+SOTMOLDES.DIAS+' dias.</span>';
+  toast('Molde guardado');
+}
+$('#bMolde').addEventListener('click',abrirMolde);
+$('#mVoltar').addEventListener('click',function(){ ir(PASSOS[MOM][2][0]); });
+$('#mGuardar').addEventListener('click',guardarMolde);
+$('#mEvMais').addEventListener('click',function(){ MOL.evs=lerEvs().concat([{t:'',data:hojeBR()}]); desenharMolde(); });
+$('#mTipo').addEventListener('click',function(e){ var b=e.target.closest('[data-t]'); if(!b) return; MOL.tipo=b.dataset.t; MOL.evs=lerEvs(); desenharMolde(); });
+$('#mEvs').addEventListener('click',function(e){ var b=e.target.closest('[data-rm]'); if(!b) return; MOL.evs=lerEvs(); MOL.evs.splice(+b.dataset.rm,1); desenharMolde(); });
+['#mEvs','#mMec'].forEach(function(s){ $(s).addEventListener('input',prevMolde); });
 function toast(m){ var t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('on');},1800); }
 function copiar(){
   montar(); if(!ultimo) return;
@@ -264,6 +332,7 @@ $('#ler').addEventListener('click',lerAnterior);
 $('#limparAnt').addEventListener('click',function(){ $('#anterior').value=''; $('#resumo').textContent=''; EST.ant=null; try{localStorage.removeItem('sot-atend-ant');}catch(e){} montar(); });
 $('#reav').addEventListener('click',function(ev){ var b=ev.target.closest('[data-r]'); if(!b) return; EST.reav=b.dataset.r; condutasAplicar({reav:EST.reav});   // a reavaliação mora no Condutas (v83): um lugar só
   this.querySelectorAll('[data-r]').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); }); montar(); });
+$('#idade').addEventListener('input',function(){ condutasAplicar({idade:this.value}); montar(); });   // a idade não vai para o texto: só liga as avaliações (> 45) no Condutas
 $('#abre').addEventListener('click',function(){ var p=$('#painel'), on=!p.classList.contains('aberta'); p.classList.toggle('aberta',on); this.setAttribute('aria-expanded',String(on)); this.textContent=on?'▼ Ficha':'▲ Ficha'; });
 setInterval(montar,2000);   // garante a ficha em dia mesmo se algum programa mudar sem evento
 if(window.top!==window) document.querySelector('.top h1').hidden=true;   // dentro do app o título já está na barra de cima
@@ -271,7 +340,7 @@ try{ var guard=localStorage.getItem('sot-atend-ant'); if(guard) $('#anterior').v
 ['anamnese','exame','condutas'].forEach(frame);   // abre os três já: a ficha junta tudo mesmo sem visitar cada passo
 var ini='1|anamnese'; try{ ini=localStorage.getItem('sot-atend-passo')||ini; }catch(e){}
 var pi=ini.split('|'); ir(pi[0]==='1'&&pi[1]?pi[1]:'anamnese');   // sempre abre no 1º momento
-window.SOTATEND={montar:montar,ir:ir,momento:momento,lerAnterior:lerAnterior,texto:function(){montar();return ultimo;},estado:function(){return EST;}};
+window.SOTATEND={abrirMolde:abrirMolde,textoMolde:textoMolde,montar:montar,ir:ir,momento:momento,lerAnterior:lerAnterior,texto:function(){montar();return ultimo;},estado:function(){return EST;}};
 })();
 </script>
 </body></html>

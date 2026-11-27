@@ -614,6 +614,26 @@ var SYNC = (function () {
       });
     }).then(function () { return mudou; });
   }
+  // v86: moldes do evoluidor (um arquivo moldes.json para a equipe; junta pelo id, vale a mudança mais nova)
+  function moldesArquivo() {
+    return raiz().then(function (pid) {
+      return req(API + '/files?q=' + q("name='moldes.json' and '" + pid + "' in parents and trashed=false") + '&fields=files(id,modifiedTime)').then(function (r) { return r.json(); }).then(function (j) { return { pai: pid, f: maisNovo(j) || (idsArq.moldes ? { id: idsArq.moldes } : null) }; });
+    });
+  }
+  function moldesTrocar(juntar) {   // baixa, junta com o do aparelho (juntar devolve {obj, mudou}) e regrava se mudou
+    var res = null;
+    return enfileirar('moldes', function () {
+      return moldesArquivo().then(function (o) {
+        return (o.f ? baixarJSON(o.f.id) : Promise.resolve(null)).then(function (rem) {
+          var r = juntar(rem); res = r.obj;
+          if (!r.mudou || (!o.f && !(r.obj && r.obj.length))) return;   // nada novo: não envia nada
+          var b = new Blob([JSON.stringify(r.obj)], { type: 'application/json' });
+          if (o.f) { idsArq.moldes = o.f.id; return atualizarArquivo(o.f.id, b, 'application/json'); }
+          return criarArquivo('moldes.json', o.pai, b, 'application/json').then(function (x) { if (x && x.id) idsArq.moldes = x.id; });
+        });
+      });
+    }).then(function () { return res; });
+  }
   // mapa das caixinhas de cada folha de visita impressa (para ler a foto em qualquer aparelho)
   function folhaArquivo(id) {
     return sub('folhas').then(function (pid) {
@@ -630,7 +650,7 @@ var SYNC = (function () {
   function ambBaixar(reg) { return ambArquivo(reg).then(function (o) { return o.f ? baixarJSON(o.f.id) : null; }); }
   function ambSalvar(reg, obj) { return salvarPorNome('amb' + reg, null, 'amb-' + reg + '.json', obj, function () { return ambArquivo(reg); }); }
   function mapaSalvar(iso, obj) { return salvarPorNome('mapa' + iso, null, 'mapa-' + iso + '.json', obj, function () { return mapaArquivo(iso); }); }
-  return { copiarInternograma: copiarInternograma, docLer: docLer, docAlterar: docAlterar, folhaSalvar: folhaSalvar, folhaBaixar: folhaBaixar, igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
+  return { moldesTrocar: moldesTrocar, copiarInternograma: copiarInternograma, docLer: docLer, docAlterar: docAlterar, folhaSalvar: folhaSalvar, folhaBaixar: folhaBaixar, igHistTrocar: igHistTrocar, ambBaixar: ambBaixar, ambSalvar: ambSalvar, mapaBaixar: mapaBaixar, mapaSalvar: mapaSalvar, mapaVizinhos: mapaVizinhos, baixarJSON: baixarJSON, temAgenda: temAgenda, pedirAgenda: pedirAgenda, calListar: calListar, calEventos: calEventos, sair: sair, acharFoto: acharFoto, agendar: agendar, agora: agora, conectar: conectar, exportarDoc: exportarDoc, baixarBlob: baixarBlob, backupObj: backupObj,
     status: function () { return st; }, _canon: canon, _arquivar: arquivar, lapides: lapides, apagadaPor: apagadaPor, _contido: contidoNaNuvem, temToken: temToken, configurado: configurado, contarPend: contarPend, _mesclar: mesclar, _mesclarVisita: mesclarVisita, _registro: registro, erro: function () { return ultimoErro; } };
 })();
 

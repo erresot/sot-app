@@ -420,6 +420,7 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
         <label class="fld"><span>Carga</span><select id="carga" class="w-md">
           <option value="">—</option><option>SEM CARGA ATÉ SEGUNDA ORDEM</option><option>CARGA PROPRIOCEPTIVA</option><option>CARGA PARCIAL</option><option>CARGA CONFORME DOR COM ANDADOR</option><option>CARGA TOTAL</option><option>CARGA EM RETROPÉ</option></select></label>
       </div>
+      <div class="row" id="leitoRow"><label class="item" style="font-size:14px"><input type="checkbox" id="leito"><span>Restrito ao leito / maca (sem poder sair) — liga a anticoagulação profilática</span></label></div>
       <div class="row" id="internRow">
         <label class="fld w-lg req" id="cirNomeFld"><span>Cirurgia</span><input type="text" id="cirNome" placeholder="Ex.: osteossíntese de fêmur à direita"></label>
         <label class="item" style="font-family:var(--f-body);font-size:14px"><input type="checkbox" id="urg"><span>Urgência</span></label>
@@ -433,21 +434,34 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
       <div id="intBox">
         <div class="row"><div class="fld"><span>Caminho (um ou mais)</span><div class="seg" id="camSeg"><button data-v="cir">Cirurgia</button><button data-v="eq">Discutir com equipe</button><button data-v="inf">Infecção</button><button data-v="rm">Ressonância</button></div></div></div>
         <div class="row" id="eqProgRow"><label class="fld w-lg req"><span>Equipe para a programação cirúrgica</span><input type="text" id="eqProg" placeholder="Ex.: quadril, joelho"></label></div>
-        <div class="row" id="preparoRow">
-          <label class="fld" style="flex:0 1 120px"><span>Idade</span><span class="un"><input type="number" id="idade" min="0" inputmode="numeric"><i>anos</i></span></label>
-          <div class="fld"><span>RCH</span><div class="seg" id="rchSeg"><button data-v="SOLICITAR">Solicitar</button><button data-v="SOLICITADO">Solicitado</button><button data-v="CHECAR">Checar</button></div></div>
-          <div class="fld" id="ccFld"><span>Aviso CC</span><div class="seg" id="ccSeg"><button data-v="0">Fazer</button><button data-v="1">OK</button></div></div>
-        </div>
-        <div class="row" id="avalRow">
-          <div class="fld"><span>Avaliação cardiológica</span><select id="cardio"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
-          <label class="fld w-md"><span>Observação</span><input type="text" id="cardioObs"></label>
-          <div class="fld"><span>Avaliação anestésica</span><select id="anest"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
-          <label class="fld w-md"><span>Observação</span><input type="text" id="anestObs"></label>
-          <p class="note" style="flex:1 1 100%">Mais de 45 anos: avaliações já vêm marcadas na conduta (dá para desmarcar).</p>
-        </div>
+      </div>
+      <div class="row" id="preparoRow">
+        <label class="fld" style="flex:0 1 120px"><span>Idade</span><span class="un"><input type="number" id="idade" min="0" inputmode="numeric"><i>anos</i></span></label>
+        <div class="fld"><span>ECG</span><div class="seg" id="ecgSeg"><button data-v="SOLICITAR">Solicitar</button><button data-v="SOLICITADO">Solicitado</button><button data-v="CHECAR">Checar</button></div></div>
+        <div class="fld"><span>RX de tórax</span><div class="seg" id="rxtSeg"><button data-v="SOLICITAR">Solicitar</button><button data-v="SOLICITADO">Solicitado</button><button data-v="CHECAR">Checar</button></div></div>
+        <div class="fld"><span>RCH</span><div class="seg" id="rchSeg"><button data-v="SOLICITAR">Solicitar</button><button data-v="SOLICITADO">Solicitado</button><button data-v="CHECAR">Checar</button></div></div>
+        <div class="fld" id="ccFld"><span>Aviso CC</span><div class="seg" id="ccSeg"><button data-v="0">Fazer</button><button data-v="1">OK</button></div></div>
+      </div>
+      <div class="row" id="avalRow">
+        <div class="fld"><span>Avaliação cardiológica</span><select id="cardio"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
+        <label class="fld w-md"><span>Observação</span><input type="text" id="cardioObs"></label>
+        <div class="fld"><span>Avaliação anestésica</span><select id="anest"><option>SOLICITAR</option><option>SOLICITADA</option><option>CHECAR</option><option>BAIXO RISCO</option><option>RISCO MODERADO</option><option>ALTO RISCO</option><option>OK</option></select></div>
+        <label class="fld w-md"><span>Observação</span><input type="text" id="anestObs"></label>
+        <p class="note" style="flex:1 1 100%">Mais de 45 anos ou cardiopatia (CMB/MUC da Anamnese): ECG, RX de tórax e avaliações já vêm marcados na conduta (dá para desmarcar).</p>
       </div>
       <div class="row" id="oeRow"><div class="fld"><span>Fechamento</span><div class="seg" id="oeSeg"><button data-v="nova">Nova solicitação se precisar</button><button data-v="seg">Seguimento em interconsulta</button><button data-v="nada">Nada ortopédico</button></div></div></div>
       <div class="row" id="trRow"><label class="fld w-lg req"><span>Vaga liberada para</span><input type="text" id="transfPara2" placeholder="Serviço de destino"></label></div>
+      <div id="elMedBox">
+        <div class="row"><label class="fld w-lg"><span>Medicamentos em uso (para a suspensão)</span><input type="text" id="mucEl" placeholder="Ex.: varfarina, metformina — vem da Anamnese no Atendimento"></label></div>
+        <p class="note" id="medNote"></p>
+        <label class="item" style="font-size:14px"><input type="checkbox" id="espOn"><span>Situação especial: discutido com anestesista / cardiologista</span></label>
+        <div class="row" id="espRow">
+          <label class="fld"><span>Discutido com</span><select id="espEq"><option>ANESTESIA</option><option>CARDIOLOGIA</option><option>CLÍNICA MÉDICA</option><option>HEMATOLOGIA</option></select></label>
+          <label class="fld"><span>Em</span><input type="date" id="espData"></label>
+          <label class="fld w-md"><span>Suspensão de</span><input type="text" id="espMed" placeholder="Ex.: clopidogrel"></label>
+          <label class="fld"><span>No dia</span><input type="date" id="espDia"></label>
+        </div>
+      </div>
       <div class="row" id="elRow"><div class="fld"><span>Caminho</span><div class="seg" id="elSeg"><button data-v="A">A · AMB Internação na véspera útil</button><button data-v="B">B · PS Internação 07 h</button></div></div></div>
       <div class="row" id="eqRow"><label class="fld w-lg req"><span>Equipe que interna</span><input type="text" id="equipe" list="dlEquipes" placeholder="Ex.: cirurgia geral, neurocirurgia"></label></div>
       <datalist id="dlEquipes"><option value="CIRURGIA GERAL"></option><option value="CIRURGIA VASCULAR"></option><option value="CIRURGIA PLÁSTICA"></option><option value="NEUROCIRURGIA"></option><option value="CLÍNICA MÉDICA"></option><option value="UTI"></option><option value="TRAUMA"></option><option value="PEDIATRIA"></option><option value="UROLOGIA"></option></datalist>
@@ -517,6 +531,7 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../sot-exames.js"></script>
 <script src="../sot-escala.js"></script>
+<script src="../sot-med.js"></script>
 <script>
 (function(){
 "use strict";
@@ -592,7 +607,7 @@ const LACUNA='___';
 
 /* ---------- Estado ---------- */
 function blank(){return{
- regs:[], pedi:false, fase:'final',
+ regs:[], pedi:false, leito:false, fase:'final',
  ini:{exames:['RADIOGRAFIAS'], med:'ANALGESIA EV CONFORME PRESCRIÇÃO'}, expIni:false,
  exs:[],
  ach:[], clin:[], achLivre:'', regras:[], labTxt:'', labOn:false, labExt:false, melhora:false, reav:'', resExtra:'',
@@ -602,7 +617,7 @@ function blank(){return{
  pr:{}, nvPre:'', nvPreTxt:'', nvPos:'', nvPosTxt:'', interc:'', intercTxt:'', prHora:'',
  sol:[], agu:[], aguEq:'',
  discData:'', cirNome:'', preop:'chk', desf:'alta', inter:'', motTipo:'', colRest:'', carga:'', urg:false, cirData:'', equipe:'', motAval:'', obsH:'', transfTipo:'cross', transfPara:'',
- cam:['cir'], eqProg:'', idade:'', rchSt:'SOLICITAR', cardio:'SOLICITAR', cardioObs:'', anest:'SOLICITAR', anestObs:'', ccOk:false, oeFecho:'nova', eletCam:'A',
+ cam:['cir'], eqProg:'', idade:'', cmbEl:'', ecgSt:'SOLICITAR', rxtSt:'SOLICITAR', rchSt:'SOLICITAR', cardio:'SOLICITAR', cardioObs:'', anest:'SOLICITAR', anestObs:'', ccOk:false, oeFecho:'nova', eletCam:'A', mucEl:'', espOn:false, espEq:'ANESTESIA', espData:'', espMed:'', espDia:'',
  ret:{dias:'7', dia:0, amb:'', para:null, discEq:'', foraOff:false, assIdx:0, donoIdx:0, diaEsc:0},
  chk:{}, extras:[], extrasI:[], extrasIni:[], ass:'', discutido:false, dono:'', hifen:true, sepTraco:true
 };}
@@ -622,6 +637,9 @@ const temExposta=()=>!!S.expIni;   // exposta é do exame físico: um marcador s
 const rxAchado=()=>S.exs.some(e=>e.tipo==='RADIOGRAFIAS'&&(e.st==='achado'||e.st==='traco'||e.st==='linha'));
 const temFratura=()=>rxAchado()&&(S.ach.some(a=>/FRATURA|LUXA/.test(a.t))||/FRATURA|LUXA/.test(U(S.achLivre)));
 const temMMII=()=>S.regs.some(r=>REG[r.k].seg==='MMII');
+// v87: lado da imobilização ("TALA SUROPODÁLICA À DIREITA"); dois lados ou sem lado → não escreve
+const imobLado=()=>{const L=[...new Set(S.regs.filter(r=>REG[r.k].lat&&r.side).map(r=>r.side))];return L.length===1?' À '+(L[0]==='D'?'DIREITA':'ESQUERDA'):'';};
+const imobL=t=>t+imobLado();
 
 // número só vale se for maior que zero (0 semanas, 0 horas, 0 tentativas viram lacuna/vazio)
 const pos=n=>{const v=parseFloat(String(n==null?'':n).replace(',','.'));return v>0?String(n).trim():'';};
@@ -644,7 +662,7 @@ function sinaisAlarme(){
   return 'ORIENTAÇÕES GERAIS + SINAIS DE ALARME'+(s.length?' ('+s.join(', ')+')':'');
 }
 // anticoagulação profilática: imobilização de membro inferior na alta (regra do serviço)
-const precisaAntic=()=>!S.pedi&&temMMII()&&(IMOB_MMII_TEV.includes(S.imobTipo)||IMOB_MMII_TEV.includes(S.imob2)||/^SEM CARGA/.test(S.carga));
+const precisaAntic=()=>!S.pedi&&(S.leito||temMMII()&&(IMOB_MMII_TEV.includes(S.imobTipo)||IMOB_MMII_TEV.includes(S.imob2)||/^SEM CARGA/.test(S.carga)));   // v87: restrito ao leito/maca também
 
 /* --- assistentes e escala --- */
 function resolve(txt,idx){
@@ -691,6 +709,13 @@ function retLine(){
   if(para.length) t+=' PARA '+para.join(' + ');
   return t;
 }
+// v85: cirurgia eletiva — texto para o paciente no modelo do Retornos (a suspensão de remédios fica só na ficha)
+function textoEletiva(){
+  if(!S.cirData) return '';
+  const dc=dataBR(S.cirData);
+  if(S.eletCam==='B') return 'Cirurgia marcada para '+dc+'. Comparecer ao PS internação dia '+dc+' às 7 horas, em jejum a partir das 23 horas do dia anterior.';
+  return 'Cirurgia marcada para '+dc+'. Retorno em ambulatório de internação dia '+vesperaUtil(S.cirData)+' às 7 horas.\n\nAmbulatório Mário Covas';
+}
 function textoPaciente(){
   const I=retInfo(); if(!I.dia||!I.data) return '';
   const amb=('ortopedia'+(S.ret.amb?' '+S.ret.amb:'')).toLowerCase();
@@ -712,6 +737,36 @@ function cirLinha(){
   if(S.urg) return 'PROCEDIMENTO CIRÚRGICO DE URGÊNCIA'+nome+(S.cirData?' EM '+dataBR(S.cirData):'');
   return 'PROCEDIMENTO CIRÚRGICO'+nome+' EM '+(S.cirData?dataBR(S.cirData):'DATA A DEFINIR');
 }
+// v85: medicamentos de atenção para a cirurgia (mesmo filtro do AMB Internação)
+const medSusp=()=>window.SOTMED&&U(S.mucEl)?SOTMED.achar(S.mucEl).filter(r=>r.k!=='heparina'):[];
+// v87: linhas de medicamentos para a cirurgia (eletiva e internação) — tudo sugestão; prazo do motor vira data (cirurgia − dias);
+// prazo que não cabe antes da cirurgia → "A PARTIR DE <hoje>" + aviso na tela (MED_AV)
+let MED_AV=[];
+function medLinhas(add,int){
+  MED_AV=[];
+  const U_=SOTMED.A(S.mucEl), hoje=new Date(hojeISO()+'T12:00'), cir=S.cirData?new Date(S.cirData+'T12:00'):null;
+  const quando=(r,nome)=>{
+    if(!r.dias) return 'EM '+LACUNA;
+    if(!cir) return 'EM '+LACUNA+' ('+r.dias+' DIAS ANTES DA CIRURGIA)';
+    const v=new Date(cir); v.setDate(v.getDate()-r.dias);
+    if(v<=hoje){ MED_AV.push(nome+': prazo de '+r.dias+' dias não cabe antes de '+fmtData(cir)+' — avisar anestesia'); return 'A PARTIR DE '+fmtData(hoje); }
+    return 'EM '+fmtData(v);
+  };
+  medSusp().forEach(r=>{
+    const m=U_.match(r.re), nome=m?m[0].trim():r.nome.replace(/\s*\(.*\)/,'').toUpperCase(), k=r.k;
+    let t, on=false;
+    if(k==='aas') t='MANTER '+nome;
+    else if(k==='corticoide') t='MANTER '+nome+' (AVALIAR DOSE DE ESTRESSE COM ANESTESIA)';
+    else if(k==='insulina') t=int?'GLICEMIA CAPILAR + INSULINA CONFORME PROTOCOLO':'AJUSTE DE INSULINA NA VÉSPERA E NO DIA DA CIRURGIA CONFORME ANESTESIA';
+    else if(k==='metformina'){ t='SUSPENDER '+nome+' NO DIA DA CIRURGIA'; on=!int; }
+    else if(k==='sulfonilureia') t='NÃO ADMINISTRAR '+nome+' NO DIA DA CIRURGIA';
+    else if(k==='ieca-bra') t='SUSPENDER '+nome+' NO DIA DA CIRURGIA (CONFORME ANESTESIA)';   // em geral não suspendemos
+    else if(k==='dmard') t='DISCUTIR SUSPENSÃO DE '+nome+' COM A EQUIPE ASSISTENTE';
+    else if(k==='estrogenio'){ t='DISCUTIR SUSPENSÃO DE '+nome+' (RISCO DE TEV)'; on=!int; }
+    else { t='SUSPENDER '+nome+' '+quando(r,nome)+(/clopidogrel|ticagrelor|prasugrel/.test(k)&&cardiop()?' (DISCUTIR COM CARDIOLOGIA)':'')+(/doac|dabigatrana|fondaparinux/.test(k)?' (CONFORME FUNÇÃO RENAL)':''); on=!int; }
+    add('med_'+k,t,on);
+  });
+}   // v87: IECA/BRA fica só como sugestão (vem desligado)
 // v84: avaliações pré-operatórias — SOLICITAR / SOLICITADA / CHECAR, ou a resposta (BAIXO RISCO…, OK) + observação
 function avalTxt(nome,st,obs){
   st=st||'SOLICITAR';
@@ -729,7 +784,10 @@ function labsPreop(){
   const L=labLinhas();
   return L.length?L:['LABS '+LACUNA+': '+LACUNA];
 }
-const labsNaConduta=()=>ehFinal()&&S.desf==='intern'&&S.preop==='ok';
+// v87: ECG e avaliação cardiológica ligados com > 45 anos ou cardiopatia (motor sot-med.js)
+const cardiop=()=>!!(window.SOTMED&&SOTMED.cardiaco(S.cmbEl+' '+S.mucEl));
+const precisaECG=()=>(parseInt(S.idade,10)||0)>45||cardiop();
+const labsNaConduta=()=>ehFinal()&&(S.desf==='intern'||S.desf==='eletiva')&&S.preop==='ok';
 
 /* --- itens --- */
 // paciente ciente: pediátrico = paciente e responsável (familiar / acompanhante)
@@ -793,7 +851,7 @@ function itemsFor(key){
       disc:'AGUARDO DISCUSSÃO COM ASSISTENTE',analg:'REAVALIAÇÃO APÓS ANALGESIA',nv:'AVALIAÇÃO NEUROVASCULAR SERIADA',jejum:'MANTER JEJUM'};
     S.agu.forEach(k=>{if(AG[k]&&!S.sol.includes(k)&&!L.some(x=>x.t===AG[k])) add('agu'+k,AG[k],true);});   // "SOLICITO TC" já basta: não repete "AGUARDO TC"   // não repete o que a situação já escreveu
     colunaItens(add);
-    if(S.imobTipo&&!S.procs.imob) add('imob','MANTER '+S.imobTipo,true);
+    if(S.imobTipo&&!S.procs.imob) add('imob','MANTER '+imobL(S.imobTipo),true);
     add('analgP','ANALGESIA CONFORME PRESCRIÇÃO',['aval','obs','cross'].includes(si));
     if(!si||si==='aval') add('reav','REAVALIAR APÓS',true);
     if(si) add('ciente',cienteTxt(si==='aval'),true);
@@ -866,23 +924,25 @@ function itemsFor(key){
       add('rmsol','SOLICITO RESSONÂNCIA MAGNÉTICA DE '+regsTxt()+' (AGENDAR)',true);
       add('rmag','AGUARDANDO REALIZAÇÃO DE RESSONÂNCIA MAGNÉTICA',true);
     }
-    if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);   // nem todo paciente usa tala
+    if(S.imobTipo) add('tala','MANTER '+imobL(S.imobTipo)+' ATÉ SEGUNDA ORDEM',true);   // nem todo paciente usa tala
     colunaItens(add);
     if(!temReg()||temMMII()) add('carga','SEM CARGA ATÉ SEGUNDA ORDEM',true);
     // heparina pelo dia da cirurgia: hoje/amanhã não passa (não sai); depois → suspender na véspera; fratura de coluna recente → após liberação
     {const colFx=temColuna()&&temFratura();
      const t=colFx?'ANTICOAGULAÇÃO PROFILÁTICA APÓS LIBERAÇÃO':(cir&&(Q.q==='hoje'||Q.q==='amanha'))?'':(cir&&Q.q==='depois')?'ANTICOAGULAÇÃO PROFILÁTICA; SUSPENDER EM '+Q.vespera:'ANTICOAGULAÇÃO PROFILÁTICA';
-     add('antic',t,temMMII()&&!S.pedi||colFx,precisaAntic()?{alerta:true}:null);}
+     add('antic',t,(temMMII()||S.leito)&&!S.pedi||colFx,precisaAntic()?{alerta:true}:null);}
     if(cir&&Q.q==='hoje') add('jej','ORIENTO JEJUM',true);
     else if(cir&&Q.q==='amanha') add('jej','ORIENTO JEJUM A PARTIR DAS 23 HORAS',true);
     else add('jej','ORIENTO JEJUM',false);
+    if(cir&&window.SOTMED) medLinhas(add,true);   // v87: sugestões de medicamentos (vêm desligadas)
     add('analg','ANALGESIA CONFORME PRESCRIÇÃO',true);
     if(cir){
       if(S.preop==='sol') add('preop','PRÉ-OPERATÓRIOS (SOLICITAR)',true);
       else if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
       else add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
       const maior=(parseInt(S.idade,10)||0)>45;
-      add('cardio',avalTxt('AVALIAÇÃO CARDIOLÓGICA',S.cardio,S.cardioObs),maior);
+      add('ecg','ECG ('+(S.ecgSt||'SOLICITAR')+')',precisaECG());add('rxt','RX DE TÓRAX ('+(S.rxtSt||'SOLICITAR')+')',precisaECG());   // v87: RX de tórax logo abaixo do ECG, mesma regra
+      add('cardio',avalTxt('AVALIAÇÃO CARDIOLÓGICA',S.cardio,S.cardioObs),maior||cardiop());
       add('anest',avalTxt('AVALIAÇÃO ANESTÉSICA',S.anest,S.anestObs),maior);
       add('rch','RCH ('+(S.rchSt||'SOLICITAR')+')',true);   // RCH sempre na cirurgia
       add('uti','UTI (SOLICITAR)',false);
@@ -902,7 +962,7 @@ function itemsFor(key){
     } else {
       add('int','PACIENTE SEGUIRÁ AOS CUIDADOS DA EQUIPE DE '+(U(S.equipe)||LACUNA),true);
       comum();
-      if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);
+      if(S.imobTipo) add('tala','MANTER '+imobL(S.imobTipo)+' ATÉ SEGUNDA ORDEM',true);
       if(!temReg()||temMMII()) add('carga',S.carga||'SEM CARGA ATÉ SEGUNDA ORDEM',true);
       let dc='DATA A DEFINIR'; if(S.cirData){const p=S.cirData.split('-');dc=p[2]+'/'+p[1]+'/'+p[0];}
       add('cir','PROCEDIMENTO CIRÚRGICO ORTOPÉDICO EM '+dc+' (APÓS LIBERAÇÃO DA EQUIPE)',false);
@@ -916,23 +976,38 @@ function itemsFor(key){
   if(key==='transf'){   // v84: transferência — fecha a ficha quando o paciente sai do hospital
     add('vaga','VAGA LIBERADA VIA CROSS PARA '+(U(S.transfPara)||LACUNA),true);
     add('eqtr','PACIENTE AOS CUIDADOS DA EQUIPE DE TRANSFERÊNCIA',true);
-    if(S.imobTipo) add('tala','MANTER '+S.imobTipo+' ATÉ SEGUNDA ORDEM',true);
+    if(S.imobTipo) add('tala','MANTER '+imobL(S.imobTipo)+' ATÉ SEGUNDA ORDEM',true);
     colunaItens(add);
     if(!temReg()||temMMII()) add('carga',S.carga||'SEM CARGA ATÉ SEGUNDA ORDEM',true);
     add('cientetr','PACIENTE E FAMILIAR CIENTES DA TRANSFERÊNCIA',true);
   }
-  if(key==='eletiva'){   // v84: cirurgia marcada sem internar agora — A) AMB Internação na véspera útil · B) PS Internação às 07 h
+  if(key==='eletiva'){   // v84/v87: cirurgia marcada sem internar agora — A) AMB Internação na véspera útil · B) PS Internação às 07 h
     const dc=S.cirData?dataBR(S.cirData):LACUNA;
     add('cirag','PROCEDIMENTO CIRÚRGICO ('+(U(S.cirNome)||LACUNA)+') AGENDADO PARA '+dc,true);
+    if(imob) add('imob','MANTER '+imobL(S.imobTipo)+' ATÉ SEGUNDA ORDEM',true);
+    const cg=S.carga||(!temReg()||temMMII()?'SEM CARGA ATÉ SEGUNDA ORDEM':'');
+    if(cg) add('carga',cg,true);
+    // v87: pré-operatórios — colhidos aqui (SOLICITADOS), checar, ou os resultados
+    if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
+    else add('preop',S.preop==='sol'?'PRÉ-OPERATÓRIOS (SOLICITADOS)':'PRÉ-OPERATÓRIOS (CHECAR)',true);
+    const maior=(parseInt(S.idade,10)||0)>45;
+    add('ecg','ECG ('+(S.ecgSt||'SOLICITAR')+')',precisaECG());add('rxt','RX DE TÓRAX ('+(S.rxtSt||'SOLICITAR')+')',precisaECG());   // v87: RX de tórax logo abaixo do ECG, mesma regra
+    add('cardio',avalTxt('AVALIAÇÃO CARDIOLÓGICA',S.cardio,S.cardioObs),maior||cardiop());
+    add('anest',avalTxt('AVALIAÇÃO ANESTÉSICA',S.anest,S.anestObs),maior);
+    add('rch','RCH ('+(S.rchSt||'SOLICITAR')+')',true);
+    // v87: heparina só com imobilização de MMII, carga zero ou restrito ao leito/maca
+    const hep=!S.pedi&&(precisaAntic()||/^SEM CARGA/.test(cg));
+    add('antic','ANTICOAGULAÇÃO PROFILÁTICA',hep);
+    if(S.cirData){const v=new Date(S.cirData+'T12:00'); v.setDate(v.getDate()-1); add('hep','SUSPENSÃO DE HEPARINA PROFILÁTICA EM '+fmtData(v),hep);}
+    // v85/v87: medicamentos pelo motor único (sot-med.js) — remédio como está na MUC; prazo vira data
+    if(window.SOTMED) medLinhas(add,false);
+    if(S.espOn) add('esp','DISCUTIDO COM EQUIPE DE '+(U(S.espEq)||LACUNA)+' EM '+(S.espData?dataBR(S.espData):LACUNA)+', ORIENTADA SUSPENSÃO DE '+(U(S.espMed)||LACUNA)+' EM '+(S.espDia?dataBR(S.espDia):LACUNA),true);
     if(S.eletCam==='B') add('volta','RETORNAR NO PS INTERNAÇÃO EM '+dc+' ÀS 07 HORAS, EM JEJUM A PARTIR DAS 23 HORAS DO DIA ANTERIOR',true);
     else add('volta','RETORNO EM AMBULATÓRIO DE INTERNAÇÃO EM '+(S.cirData?vesperaUtil(S.cirData):LACUNA)+' PARA CONFIRMAR LABORATORIAIS, CHECAR RADIOGRAFIAS, AVALIAÇÕES, AVISO CC, CONDIÇÕES DE PELE E ORIENTAÇÕES',true);
-    if(imob) add('imob','MANTER '+S.imobTipo,true);
-    if(S.carga) add('carga',S.carga,true);
-    if(S.cirData){const v=new Date(S.cirData+'T12:00'); v.setDate(v.getDate()-1); add('hep','SUSPENSÃO DE HEPARINA PROFILÁTICA EM '+fmtData(v),precisaAntic()||temMMII());}
     add('analg','ANALGESIA VO CONFORME DOR',true);
     add('orient',sinaisAlarme(),true);
-    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);
     add('cienteel','PACIENTE CIENTE DO PROCEDIMENTO E DA DATA',true);
+    add('ps','RETORNAR AO PS SE NECESSÁRIO',true);   // última linha antes da assinatura
   }
   return L;
 }
@@ -1042,6 +1117,8 @@ const syncCol=segBind('colSeg',()=>colRest(),v=>S.colRest=v);
 const syncPreop=segBind('preopSeg',()=>S.preop,v=>S.preop=v);
 const syncReav=segBind('reavSeg',()=>S.reav,v=>S.reav=v);
 const syncRch=segBind('rchSeg',()=>S.rchSt,v=>S.rchSt=v);
+const syncEcg=segBind('ecgSeg',()=>S.ecgSt,v=>S.ecgSt=v);
+const syncRxt=segBind('rxtSeg',()=>S.rxtSt,v=>S.rxtSt=v);
 const syncCC=segBind('ccSeg',()=>S.ccOk?'1':'0',v=>S.ccOk=v==='1');
 const syncOe=segBind('oeSeg',()=>S.oeFecho,v=>S.oeFecho=v);
 const syncEl=segBind('elSeg',()=>S.eletCam,v=>S.eletCam=v);
@@ -1049,8 +1126,8 @@ $('camSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-v
 $('transfPara2').addEventListener('input',e=>{S.transfPara=e.target.value;update();});
 const syncRetDia=segBind('retDiaSeg',()=>S.ret.dia,v=>{S.ret.dia=+v;});
 
-const TXT=['eqProg','idade','cardio','cardioObs','anest','anestObs','discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','cirNome','equipe','motAval','obsH','transfPara','ass','dono'];
-const CHK=['labExt','melhora','discutido','hifen','sepTraco','expIni','urg','pedi'];
+const TXT=['mucEl','espEq','espData','espMed','espDia','eqProg','idade','cardio','cardioObs','anest','anestObs','discData','iniMed','achLivre','resExtra','labTxt','imobTipo','imobSem','imobUn','imob2','imob2Sem','imob2Un','nvPre','nvPreTxt','nvPos','nvPosTxt','interc','intercTxt','prHora','aguEq','carga','cirData','cirNome','equipe','motAval','obsH','transfPara','ass','dono'];
+const CHK=['espOn','labExt','melhora','discutido','hifen','sepTraco','expIni','urg','pedi','leito'];
 TXT.forEach(id=>{const el=$(id);const h=(ev)=>{ if(ev&&ev.type==='change'&&el.value===el._ult) return; el._ult=el.value; if(id==='iniMed') S.ini.med=el.value; else S[id]=el.value;
   if(id==='imobTipo'&&el.value&&!S.procs.imob){S.procs.imob=true;}
   if(id==='ass'){S.ret.assIdx=0;guardaPlantao();}
@@ -1208,7 +1285,7 @@ function procLines(){
     if(temNV()||(pOn('gesso')&&S.nvPre)) L.push('EXAME NEUROVASCULAR PRÉ-PROCEDIMENTO'+nv+': '+nvTxt(S.nvPre,S.nvPreTxt));
     on.forEach(p=>p.txt(S.pr[p.k]).forEach(l=>L.push(l)));
   }
-  if(imob) L.push('IMOBILIZAÇÃO COM '+S.imobTipo);
+  if(imob) L.push('IMOBILIZAÇÃO COM '+imobL(S.imobTipo));
   if(S.interc) L.push(S.interc==='SEM'?'SEM INTERCORRÊNCIAS':'INTERCORRÊNCIA: '+L_(S.intercTxt));
   if(temNV()||S.nvPos) L.push('EXAME NEUROVASCULAR PÓS-PROCEDIMENTO'+nv+': '+nvTxt(S.nvPos,S.nvPosTxt));
   return L;
@@ -1490,7 +1567,7 @@ function compat(){
 /* Atualização geral */
 function update(src){
   compat();
-  syncFase();syncDesf();syncInter();syncMot();syncCol();syncPreop();syncReav();syncRch();syncCC();syncOe();syncEl();
+  syncFase();syncDesf();syncInter();syncMot();syncCol();syncPreop();syncReav();syncRch();syncEcg();syncRxt();syncCC();syncOe();syncEl();
   document.querySelectorAll('#camSeg button').forEach(b=>b.setAttribute('aria-pressed',String((S.cam||['cir']).includes(b.dataset.v))));
   $('clinTit').hidden=!$('clinList').querySelector('.chip');
   $('secAss').hidden=!ehFinal(); $('discDataFld').hidden=!S.discutido; if(!S.discData) $('discData').value=hojeISO();
@@ -1532,18 +1609,21 @@ function update(src){
   const d=S.desf;
   const C=S.cam||['cir'];
   $('cargaRow').hidden=d==='intern'||(temReg()&&!temMMII());
+  $('leitoRow').hidden=!ehFinal()||!['intern','eletiva','outraEq','conserv'].includes(d);
   $('internRow').hidden=!(d==='intern'||d==='outraEq'||d==='eletiva')||(d==='intern'&&!C.includes('cir'))||(d==='outraEq'&&S.oeFecho==='nada');
   $('urg').closest('label').hidden=d!=='intern';
-  $('intBox').hidden=d!=='intern'; $('eqProgRow').hidden=!C.includes('eq'); $('preparoRow').hidden=$('avalRow').hidden=!C.includes('cir');
-  $('ccFld').hidden=!(U(S.cirNome)&&(S.cirData||S.urg));
+  $('intBox').hidden=d!=='intern'; $('eqProgRow').hidden=!C.includes('eq'); $('preparoRow').hidden=$('avalRow').hidden=!((d==='intern'&&C.includes('cir'))||d==='eletiva');
+  $('ccFld').hidden=d==='eletiva'||!(U(S.cirNome)&&(S.cirData||S.urg));
   $('oeRow').hidden=d!=='outraEq'; $('trRow').hidden=d!=='transf'; $('elRow').hidden=d!=='eletiva';
+  $('elMedBox').hidden=!(d==='eletiva'||(d==='intern'&&C.includes('cir'))); $('espOn').closest('label').hidden=d!=='eletiva'; $('espRow').hidden=!S.espOn||d!=='eletiva';
   if(document.activeElement!==$('transfPara2')) $('transfPara2').value=S.transfPara||'';
-  $('cirNomeFld').hidden=!(d==='intern'||d==='eletiva'); $('cirNomeFld').classList.toggle('vazio',!U(S.cirNome)); $('preopRow').hidden=d!=='intern'||!(C.includes('cir')||C.includes('rm')); $('preopBox').hidden=!labsNaConduta(); if(document.activeElement!==$('labTxt2')) $('labTxt2').value=S.labTxt;
+  $('cirNomeFld').hidden=!(d==='intern'||d==='eletiva'); $('cirNomeFld').classList.toggle('vazio',!U(S.cirNome)); $('preopRow').hidden=d==='eletiva'?false:(d!=='intern'||!(C.includes('cir')||C.includes('rm'))); $('preopBox').hidden=!labsNaConduta(); if(document.activeElement!==$('labTxt2')) $('labTxt2').value=S.labTxt;
   $('eqRow').hidden=d!=='outraEq'||S.oeFecho==='nada';
   renderAssUI(); renderRet();
   renderItems($('itemsIni'),'inicial');
   renderItems($('itemsInter'),'inter');
   renderItems($('itemsDesf'),S.desf);
+  {const M=medSusp(); $('medNote').innerHTML=(MED_AV.length?'<b style="color:var(--bad,#c0392b)">⚠ '+MED_AV.map(esc).join('<br>⚠ ')+'</b><br>':'')+(M.length?M.map(r=>'<b>'+esc(r.nome)+'</b>: '+esc(r.orient)).join('<br>')+'<br><i>Linhas de medicamentos na conduta são sugestões — marque as que valem.</i>':(U(S.mucEl)?'Nenhum medicamento de atenção encontrado.':''));}   // v87: depois dos itens (MED_AV vem deles)
   $('extras').innerHTML=S.extras.map((e,i)=>'<div class="item"><span>'+esc(e)+'</span><button class="x" data-x="'+i+'" aria-label="Remover linha">×</button></div>').join('');
   $('extrasIni').innerHTML=S.extrasIni.map((e,i)=>'<div class="item"><span>'+esc(e)+'</span><button class="x" data-x="'+i+'" aria-label="Remover linha">×</button></div>').join('');
   $('extrasI').innerHTML=S.extrasI.map((e,i)=>'<div class="item"><span>'+esc(e)+'</span><button class="x" data-x="'+i+'" aria-label="Remover linha">×</button></div>').join('');
@@ -1555,7 +1635,7 @@ function update(src){
   const AV=avisos(); $('avisos').hidden=!AV.length; $('avisos').innerHTML=AV.length?'<b>Confira</b><ul>'+AV.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'';
   if(AV.length) $('dockLac').innerHTML+=' · <b>'+AV.length+(AV.length>1?' avisos':' aviso')+'</b>';
   const retOn=ehFinal()&&d==='conserv'&&itemsFor(d).some(it=>it.id===d+':ret'&&isOn(it));
-  const tp=retOn?textoPaciente():''; $('pacBox').hidden=!tp; $('saidaPac').textContent=tp;
+  const tp=retOn?textoPaciente():(ehFinal()&&S.desf==='eletiva'?textoEletiva():''); $('pacBox').hidden=!tp; $('saidaPac').textContent=tp;
   if(window.__map) window.__map.sync();
 }
 
@@ -1717,6 +1797,9 @@ window.__condutas={gerar:gerar,
     Object.keys(o.chk||{}).forEach(k=>{S.chk[k]=o.chk[k];});
     if(o.exposta!=null)S.expIni=!!o.exposta;
     if(o.reav!=null)S.reav=o.reav;
+    if(o.idade!=null){S.idade=String(o.idade);$('idade').value=S.idade;}
+    if(o.cmb!=null)S.cmbEl=String(o.cmb);   // v87: CMB da Anamnese — só para saber se é cardiopata (ECG / avaliação cardiológica)
+    if(o.muc!=null&&(!U(S.mucEl)||S.mucEl===o.mucAntes)){S.mucEl=o.muc;$('mucEl').value=S.mucEl;}   // não passa por cima do que o médico digitou
     if(o.fase)S.fase=o.fase;
     update();}};
 writeForm();initMap();update();

@@ -138,6 +138,14 @@ html.escuro #ambPainel #amb_alertas .a.i{background:#17263a;border-color:#2c4a6e
   .terms b{color:var(--ink);font-weight:500}
   #custom{min-height:110px}
   .note{font-size:13px;color:var(--muted)}
+  .moldes{border:1px solid var(--line,#d9e1ea);border-radius:10px;padding:8px 10px;margin:0 0 10px}
+  .moldes .mh{margin-bottom:4px}
+  .moldes .ml{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line,#d9e1ea)}
+  .moldes .ml:first-of-type{border-top:0}
+  .moldes .ml .i{flex:1;min-width:0;font-size:14px}
+  .moldes .ml .i small{display:block;color:var(--muted);font-size:12px}
+  .moldes button,#moldeApagar button{min-height:44px}
+  #moldeApagar .perigo{color:#b42318;border-color:#b42318}
   .toast{font-size:13px;color:var(--keep);margin-left:6px}
   .tools{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:14px}
   .tools .why{font-size:12.5px;color:var(--muted)}
@@ -274,6 +282,7 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
       <button id="btnExample">Carregar exemplo</button>
     </div>
     <p class="note" id="embedHint" style="margin:0 0 8px;color:var(--pend)"></p>
+    <div id="moldesBox" class="moldes" hidden><div class="mh"><strong>Moldes guardados</strong> <span class="note">(do Atendimento do PS · somem sozinhos em 30 dias)</span></div><div id="moldesLista"></div></div>
     <textarea id="input" placeholder="Cole aqui a evolução anterior…"></textarea>
     <div class="row" style="margin-top:12px">
       <label class="inl">Data desta evolução <input type="text" class="date" id="evalDate" inputmode="numeric" placeholder="dd/mm/aaaa"></label>
@@ -338,6 +347,7 @@ input.date.naohoje{background:#c92a2a!important;color:#fff!important;font-weight
       <span class="spacer"></span>
       <button id="btnNext" title="Usa o texto atual como base e avança a data em 1 dia">Usar como base do dia seguinte</button>
       <button class="primary" id="btnCopy">Copiar evolução</button><span class="toast" id="toast"></span>
+      <span id="moldeApagar" hidden></span>
     </div>
     <div class="keys" id="keysBar">
       <span><kbd>N</kbd>/<kbd>↓</kbd> próximo pendente</span><span><kbd>M</kbd> manter</span><span><kbd>1</kbd>–<kbd>9</kbd> escolher opção</span>
@@ -453,17 +463,42 @@ const BUILTIN = [
   ["Abdome", ["abdome flácido, indolor, RHA presentes","abdome flácido, indolor à palpação","abdome distendido","abdome doloroso à palpação"]],
 
   // relato / ambulatório
-  ["Local da avaliação", ["avalio paciente em leito de UTI","avalio paciente em leito UTI","avalio paciente em sala vermelha","avalio paciente em sala amarela","avalio paciente em amb ortopedia curativo","avalio paciente em amb ortopedia","avalio paciente em ambulatório de ortopedia","avalio paciente em ambulatório","avalio paciente em leito de enfermaria","avalio paciente em pronto-socorro","avalio paciente em sala de gesso","avalio paciente em sala de curativo","avalio paciente em internação"]],
+  ["Local da avaliação", ["avalio paciente em amb ortopedia gesso","avalio paciente em amb ortopedia pé e tornozelo","avalio paciente em amb ortopedia mão","avalio paciente em amb ortopedia ombro e cotovelo","avalio paciente em amb ortopedia quadril","avalio paciente em amb ortopedia joelho","avalio paciente em amb ortopedia coluna","avalio paciente em amb ortopedia pediátrica","avalio paciente em amb ortopedia tumor","avalio paciente em amb ortopedia trauma","avalio paciente em leito de UTI","avalio paciente em leito UTI","avalio paciente em sala vermelha","avalio paciente em sala amarela","avalio paciente em amb ortopedia curativo","avalio paciente em amb ortopedia","avalio paciente em ambulatório de ortopedia","avalio paciente em ambulatório","avalio paciente em leito de enfermaria","avalio paciente em pronto-socorro","avalio paciente em sala de gesso","avalio paciente em sala de curativo","avalio paciente em internação"]],
   ["Secreção (relato)", ["nega saída de secreção","refere saída de secreção serosa","refere saída de secreção sero-hemática","refere saída de secreção purulenta"]],
-  ["Fisioterapia", ["refere realização de fisioterapia conforme orientado","refere realização parcial de fisioterapia","nega realização de fisioterapia","ainda não iniciou fisioterapia"]],
+  ["Fisioterapia", ["em realização de fisioterapia conforme orientado","refere realização de fisioterapia conforme orientado","refere realização parcial de fisioterapia","nega realização de fisioterapia","ainda não iniciou fisioterapia","aguardando fila de fisioterapia"]],
+  // v86 (27/11): frases do retorno no ambulatório (molde do evoluidor)
+  ["Progresso com fisioterapia", ["refere progresso de amplitude de movimento com fisioterapia","refere pouco progresso de amplitude de movimento com fisioterapia","sem progresso de amplitude de movimento com fisioterapia"]],
+  ["Deambulação", ["deambulando sem auxílio","deambulando com auxílio","deambulando em uso de muletas","deambulando em uso de andador","em cadeira de rodas","em maca"]],
+  ["Resposta à analgesia", ["com melhora completa ao uso de analgesia","com melhora parcial ao uso de analgesia","sem melhora ao uso de analgesia"]],
+  ["Febre (relato)", ["nega febre","refere episódios de febre"]],
+  ["Ferida nas trocas (relato)", ["relata ferida operatória seca durante trocas de curativo","relata ferida operatória com saída de secreção serosa durante trocas de curativo","relata ferida operatória com saída de secreção sero-hemática durante trocas de curativo","relata ferida operatória com saída de secreção sanguinolenta durante trocas de curativo","relata ferida operatória com saída de secreção purulenta durante trocas de curativo","relata ferida operatória com hiperemia durante trocas de curativo","relata ferida operatória com deiscência durante trocas de curativo"]],
+  ["Ferida nas trocas (relato, sem cirurgia)", ["relata ferida seca durante trocas de curativo","relata pontos íntegros durante trocas de curativo","relata hiperemia ao redor dos pontos durante trocas de curativo","relata ferida com saída de secreção serosa durante trocas de curativo","relata ferida com saída de secreção sero-hemática durante trocas de curativo","relata ferida com saída de secreção sanguinolenta durante trocas de curativo","relata ferida com saída de secreção purulenta durante trocas de curativo","relata ferida com hiperemia durante trocas de curativo","relata ferida com deiscência durante trocas de curativo"]],
+  ["Cuidado com a imobilização (relato)", ["refere cuidado adequado com o gesso","refere cuidado inadequado com o gesso","refere cuidado adequado com a tala","refere cuidado inadequado com a tala","refere cuidado adequado com a imobilização","refere cuidado inadequado com a imobilização"]],
+  ["Carga (relato)", ["mantendo-se sem carga","mantendo-se com carga proprioceptiva","mantendo-se com carga parcial","mantendo-se com carga conforme dor","mantendo-se com carga em retropé","mantendo-se com carga total"]],
+  ["Comparecimento", ["comparece acompanhado de familiar","comparece acompanhada de familiar","comparece desacompanhado","comparece desacompanhada","comparece em cadeira de rodas","comparece em maca"]],
+  ["Uso de analgesia", ["em uso de analgesia conforme orientado","em uso de analgesia de horário","em uso de analgesia esporádica","sem necessidade de analgesia","sem uso de analgesia"]],
+  ["Padrão da dor", ["nega dor noturna","refere dor noturna","refere dor aos esforços","refere dor em repouso","refere dor à mobilização","refere dor em melhora progressiva","refere piora da dor"]],
+  ["Parestesia (relato)", ["nega parestesias","refere parestesias em extremidade","refere parestesias em melhora","refere parestesias em piora"]],
+  ["Edema (relato)", ["refere melhora do edema","nega edema em extremidade","refere edema em extremidade","refere edema ao final do dia"]],
+  ["Intercorrências com a imobilização", ["nega intercorrências com a imobilização","nega intercorrências com o gesso","refere gesso apertado","refere gesso frouxo","refere gesso molhado","refere gesso danificado","refere tala frouxa","refere tala danificada","refere prurido sob a imobilização","refere lesão de pele sob a imobilização"]],
+  ["Sinais de TVP (relato)", ["nega dor em panturrilha","refere dor em panturrilha","nega edema assimétrico em membros inferiores","refere edema assimétrico em membros inferiores"]],
+  ["Atividades", ["ainda afastado das atividades laborais","ainda afastada das atividades laborais","retornou às atividades laborais","retornou às atividades habituais","retornou às atividades esportivas","ainda sem retorno às atividades esportivas","realizando atividades de vida diária sem limitações","realizando atividades de vida diária com limitações"]],
+  ["Ganho com fisioterapia", ["refere ganho de força com fisioterapia","refere melhora funcional com fisioterapia","refere melhora da dor com fisioterapia","sem melhora funcional com fisioterapia"]],
+  ["Uso da órtese", ["em uso de órtese conforme orientado","em uso irregular da órtese","sem uso da órtese"]],
+  ["Marcha", ["marcha sem claudicação","marcha claudicante","marcha com auxílio de muletas","marcha com auxílio de andador","marcha antálgica"]],
+  ["Cicatriz", ["cicatriz de bom aspecto","cicatriz hipertrófica","cicatriz com aderência","cicatriz com hiperemia","cicatriz com deiscência"]],
+  ["Ao retirar a imobilização", ["ao retirar a imobilização, pele íntegra","ao retirar a imobilização, pele com escoriações","ao retirar a imobilização, pele com lesão por pressão","ao retirar o gesso, pele íntegra","ao retirar o gesso, pele com escoriações"]],
+  ["Força muscular", ["força grau V","força grau IV","força grau III","força grau II","força preservada","força reduzida"]],
+  ["Dor à palpação do foco", ["sem dor à palpação do foco de fratura","leve dor à palpação do foco de fratura","dor à palpação do foco de fratura"]],
+  ["Mobilidade dos dedos", ["mobilidade dos dedos preservada","mobilidade dos dedos reduzida","mobilidade dos dedos reduzida devido ao edema"]],
   ["Carga", ["nega manter carga em membro","refere manter carga em membro","mantendo carga parcial em membro","mantendo carga total em membro"]],
   ["Demais segmentos", ["nega queixas em demais segmentos","refere queixas em demais segmentos"]],
   ["Orientações", ["seguindo orientações médicas","seguindo parcialmente orientações médicas","não seguindo orientações médicas"]],
   ["Antibiótico", ["realizou antibioticoterapia conforme orientado","realizou antibioticoterapia conforme","em uso de antibioticoterapia conforme orientado","em uso de antibioticoterapia","antibioticoterapia finalizada","sem uso de antibioticoterapia"]],
   ["Heparina", ["em uso de heparina","sem uso de heparina","heparina suspensa"]],
   ["Enoxaparina", ["em uso de enoxaparina","sem uso de enoxaparina","enoxaparina suspensa"]],
-  ["Anticoagulação", ["em uso de terapia anticoagulante","sem uso de terapia anticoagulante","terapia anticoagulante suspensa"]],
-  ["Troca de curativo", ["realizando troca de curativos diários","realizando troca de curativos diária","realizando troca de curativos em dias alternados","realizando troca de curativo","não realizando troca de curativo"]],
+  ["Anticoagulação", ["em uso de anticoagulante conforme orientado","sem uso de anticoagulante","anticoagulante suspenso","em uso de terapia anticoagulante","sem uso de terapia anticoagulante","terapia anticoagulante suspensa"]],
+  ["Troca de curativo", ["realizando troca de curativo em UBS","realizando troca de curativo em domicílio","realizando troca de curativos diários","realizando troca de curativos diária","realizando troca de curativos em dias alternados","realizando troca de curativo","não realizando troca de curativo"]],
   ["Cuidados com imobilização", ["realizando cuidados com a tala","realizando cuidados com o gesso","realizando cuidados com o fixador","não realizando cuidados com a tala","não realizando cuidados com o gesso","não realizando cuidados com o fixador"]],
   ["Sedestação", ["sedestando conforme orientado","sedestando com auxílio","ainda não sedestando"]],
   ["Movimentação em bloco", ["mantendo-se em movimentação em bloco conforme orientado","não mantendo movimentação em bloco"]],
@@ -1507,10 +1542,35 @@ $("evalDate2").onchange=()=>{ pushHistory(); readEval("evalDate2"); recomputeAll
 $("evalDate").value=$("evalDate2").value=fmtBR(EVAL); marcaData();
 $("evalDate").addEventListener("input",()=>{ const d=parseBR($("evalDate").value); if(d){ const v=EVAL; EVAL=d; marcaData(); EVAL=v; } });
 
+/* ===== v86: moldes guardados no Atendimento do PS (motor sot-moldes.js) ===== */
+let MOLDE_USADO=null;
+function moldesDesenhar(){
+  const box=$("moldesBox"); if(!box||typeof SOTMOLDES==="undefined") return;
+  const L=SOTMOLDES.listar(); box.hidden=!L.length;
+  const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  $("moldesLista").innerHTML=L.map(x=>`<div class="ml"><div class="i"><b>${esc(x.pac)}</b> · ${x.tipo==="amb"?"retorno no ambulatório":"enfermaria"}<small>${esc(x.titulo||"")} · ${new Date(x.criado).toLocaleDateString("pt-BR")} · some em ${SOTMOLDES.diasRestantes(x)} dia(s)</small></div><button data-molde="${esc(x.id)}">Usar</button></div>`).join("");
+}
+function moldeUsar(id){
+  const x=SOTMOLDES.listar().find(m=>m.id===id); if(!x) return;
+  $("input").value=x.txt; MOLDE_USADO=x; $("moldeApagar").hidden=true; $("moldeApagar").innerHTML="";
+  $("input").dispatchEvent(new Event("input",{bubbles:true}));
+  $("toast").textContent="Molde de "+x.pac+" na caixa: confira a data e toque em Analisar"; setTimeout(()=>$("toast").textContent="",3000);
+}
+function moldeOferecerApagar(){   // depois de copiar: o molde continua guardado; apagar só com confirmação
+  if(!MOLDE_USADO) return; const el=$("moldeApagar"); el.hidden=false;
+  el.innerHTML=`<button class="perigo" id="mApagar">Apagar molde de ${MOLDE_USADO.pac.replace(/[<>&"]/g,"")}</button>`;
+  $("mApagar").onclick=()=>{ el.innerHTML=`Apagar o molde de ${MOLDE_USADO.pac.replace(/[<>&"]/g,"")} em todos os aparelhos? <button class="perigo" id="mSim">Sim, apagar</button> <button id="mNao">Cancelar</button>`;
+    $("mSim").onclick=()=>{ SOTMOLDES.apagar(MOLDE_USADO.id); MOLDE_USADO=null; el.innerHTML="Molde apagado."; moldesDesenhar(); };
+    $("mNao").onclick=moldeOferecerApagar; };
+}
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-molde]"); if(b) moldeUsar(b.dataset.molde); });
+window.addEventListener("storage",e=>{ if(e.key===(window.SOTMOLDES&&SOTMOLDES.CHAVE)) moldesDesenhar(); });
+window.addEventListener("load",moldesDesenhar);   // sot-moldes.js carrega no fim da página
+window.addEventListener("focus",moldesDesenhar);
 async function doCopy(){
   const t=outputText();
-  try{ await navigator.clipboard.writeText(t); $("toast").textContent="Copiado ✓"; setTimeout(()=>$("toast").textContent="",2000); }
-  catch(e){ const fb=$("fallback"); fb.value=t; fb.classList.remove("hidden"); fb.focus(); fb.select(); $("toast").textContent="Selecione e copie (Ctrl+C)"; }
+  try{ await navigator.clipboard.writeText(t); $("toast").textContent="Copiado ✓"; setTimeout(()=>$("toast").textContent="",2000); moldeOferecerApagar(); }
+  catch(e){ const fb=$("fallback"); fb.value=t; fb.classList.remove("hidden"); fb.focus(); fb.select(); $("toast").textContent="Selecione e copie (Ctrl+C)"; moldeOferecerApagar(); }
 }
 $("btnCopy").onclick=()=>{
   const pend=segs.filter(s=>reviewable(s)&&s.state==="pend").length;
@@ -2218,7 +2278,7 @@ $("drFechar").onclick=()=>$("drenoBox").classList.add("hidden");
 $("drCopy").onclick=async()=>{ const f=drenoFrase(); if(!f) return; try{ await navigator.clipboard.writeText(f); }catch(e){} $("drRes").textContent+=" · copiado"; };
 $("drIns").onclick=()=>{ const f=drenoFrase(); if(!f) return; manualOn(); const ta=$("manualTxt"), p=ta.selectionStart||ta.value.length; ta.value=ta.value.slice(0,p)+(p&&!/\s$/.test(ta.value.slice(0,p))?" ":"")+f+ta.value.slice(p); MANUAL=ta.value; ta.focus(); manualSpell(); manualChanged(); };
 </script>
-<script src="sot-datas.js"></script><script src="sot-exames.js"></script><script src="sot-med.js"></script><script src="pessoa.js"></script><script src="hub/ocr/sot-ocr.js"></script>
+<script src="sot-moldes.js"></script><script src="sot-datas.js"></script><script src="sot-exames.js"></script><script src="sot-med.js"></script><script src="pessoa.js"></script><script src="hub/ocr/sot-ocr.js"></script>
 <script>
 /* SOT — MODO AMB INTERNAÇÃO dentro do evoluidor (evo.html). Painel #ambPainel; ids com prefixo amb_. Ativa com ?modo=amb ou pelo botão. */
 (function(){
@@ -2571,7 +2631,7 @@ var MEDS=[
 ];
 var CHK=[['pele','Pele no sítio cirúrgico íntegra, sem LPP/feridas/infecção ativa'],['gripe','Sem febre, sintomas gripais ou infecção em curso (urinária, dentária…)'],['jejum','Jejum e data/hora de internação orientados (e entendidos)'],['meds','Medicações a suspender/manter orientadas (ver acima)'],
   ['adornos','Sem piercings, unhas/cabelos/cílios postiços (ou orientado a retirar)'],['acomp','Acompanhante garantido (idoso, menor ou dependente)'],['preops','Pré-ops dentro da validade e sem alteração que impeça a cirurgia'],['apa','APA feita / liberado (ou agendada antes da data)'],
-  ['cardio','Avaliação cardiológica quando indicada (idade, cardiopatia, porte)'],['rch','Reserva de sangue (RCH) e UTI conforme porte'],['aviso','Aviso CC / material / OPME conferidos'],['imagem','Exames de imagem disponíveis (RX, TC, RM na pasta ou no sistema)'],['lado','Lado e procedimento conferidos com o paciente']];
+  ['ecg','ECG (todo paciente cirúrgico > 45 anos ou com condição cardíaca)'],['cardio','Avaliação cardiológica quando indicada (idade, cardiopatia, porte)'],['rch','Reserva de sangue (RCH) e UTI conforme porte'],['aviso','Aviso CC / material / OPME conferidos'],['imagem','Exames de imagem disponíveis (RX, TC, RM na pasta ou no sistema)'],['lado','Lado e procedimento conferidos com o paciente']];
 var MARC={};
 /* ---------------- painel de alertas (só o que exige decisão) ---------------- */
 var RE_GRANDE=/(ARTROPL|\bPT[JQOC]\b|\bAT[JQOC]\b|ENDOPR|HEMIARTR|REVIS[AÃ]O DE (ARTROPL|PR[OÓ]TESE|ATQ|ATJ|PTJ|PTQ)|ESPA[CÇ]ADOR|TUMOR|RESSEC[CÇ][AÃ]O (ONCOL|TUMORAL|DE (SARCOMA|TUMOR))|SARCOMA|PELVE|PELVIC|ACET[AÁ]BUL|F[EÊ]MUR|COLO FEMORAL|TROCANT|\bDHS\b|\bPFN\b|\bTFN\b|HASTE (INTRAMEDULAR )?DE F[EÊ]MUR|ARTRODESE (DE )?(COLUNA|LOMBAR|CERVICAL|TORAC|VERTEBRAL)|ESCOLIOSE|DESCOMPRESS[AÃ]O (LOMBAR|CERVICAL|MEDULAR)|\bTLIF\b|\bPLIF\b|\bALIF\b|AMPUTA[CÇ][AÃ]O (DE |TRANS)?(COXA|PERNA|TRANSFEMORAL|TRANSTIBIAL)|DESARTICULA|OSTEOMIELITE|DESBRIDAMENTO EXTENSO|RETALHO|TRANSFER[EÊ]NCIA (LIVRE|MICROCIR)|OSTEOTOMIA (PELVICA|PERIACETABULAR|DE (QUADRIL|FEMUR))|POLITRAUMA)/;
