@@ -2754,7 +2754,7 @@ function sugAtivas(){ var u=A($('proc').value+' '+$('cab').value), o=[]; SUG.for
   var id=parseInt((SEL&&SEL.idade)||'',10); if(id>=80) o.push({t:'Idoso ≥ 80 anos',l:'IDOSO: CONFERIR AVALIAÇÃO GERIÁTRICA/RISCO DE DELIRIUM E ACOMPANHANTE INTEGRAL'});
   if($('menor').checked) o.push({t:'Jejum pediátrico',l:'JEJUM E ANESTESIA PEDIÁTRICOS CONFORME ORIENTAÇÃO DA ANESTESIA'},{t:'Peso registrado',l:'PESO DO PACIENTE REGISTRADO'});
   // medicações de atenção encontradas (módulo único de medicamentos): linha "SUSPENDER … EM __/__"
-  if(window.SOTMED) SOTMED.achar($('muc').value+' '+$('cmb').value).filter(function(r){ return r.anticoag||/metformina|sglt2|glp1|ieca|estrogenio|fito/.test(r.k); }).forEach(function(r){ o.push({t:'Suspender '+r.nome.replace(/\s*\(.*\)/,''),l:'SUSPENDER '+UP(r.nome.replace(/\s*\(.*\)/,''))+' EM __/__'}); });
+  if(window.SOTMED) SOTMED.achar($('muc').value+' '+$('cmb').value).filter(function(r){ return r.anticoag||/metformina|sglt2|glp1|ieca|estrogenio|fito/.test(r.k); }).forEach(function(r){ var m=A($('muc').value+' '+$('cmb').value).match(r.re), nm=m?m[0].trim():UP(r.nome.replace(/\s*\(.*\)/,'')); o.push({t:'Suspender '+nm.toLowerCase(),l:'SUSPENDER '+nm+' EM __/__'}); });   // v87: remédio como está na MUC
   var vis={}; return o.filter(function(x){ var k=x.t||x.l; if(vis[k]) return false; vis[k]=1; return true; }); }
 function desenharSug(){
   var L=sugAtivas(), ex=A($('extras').value), el=$('sug'); el.innerHTML=L.length?L.map(function(x,i){ var on=x.l?ex.indexOf(A(x.l))>=0:(V('sg_uti')==='SOLICITAR'&&x.set&&x.set.uti)||(V('sg_rch')==='SOLICITAR'&&x.set&&x.set.rch);
@@ -2774,7 +2774,8 @@ function rascAviso(){ var reg=String($('reg').value||'').replace(/\D/g,''), r=ra
 document.addEventListener('click',function(ev){ if(ev.target&&ev.target.id==='amb_btRasc'){ var r=rascLer()[String($('reg').value||'').replace(/\D/g,'')]; if(r&&r.form) carregarForm(r.form); ev.target.parentNode.remove(); } });
 function checklist(P){
   var mu=A($('muc').value+' '+$('cmb').value+' '+$('apOutros').value), achou=[];
-  MEDS.forEach(function(m){ if(m[0].test(mu)) achou.push(m); });
+  var LISTA=window.SOTMED?SOTMED.regras.map(function(r){ return [r.re,r.nome,r.orient]; }):MEDS;   // v87: lista única (sot-med.js); MEDS só se o motor não carregar
+  LISTA.forEach(function(m){ if(m[0].test(mu)) achou.push(m); });
   $('meds').innerHTML=(achou.length?achou.map(function(m){ return '<div class="med">💊 <b>'+esc(m[1])+'</b>: '+esc(m[2])+'</div>'; }).join('')+'<p class="mini">Referência geral — confirmar sempre com a anestesia e o protocolo do serviço.</p>':'<p class="mini">Nenhuma medicação de atenção encontrada no MUC.</p>');
   $('chk').innerHTML=CHK.map(function(c){ return '<label class="chk"><input type="checkbox" data-chk="'+c[0]+'"'+(MARC[c[0]]?' checked':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
 }

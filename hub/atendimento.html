@@ -64,12 +64,19 @@ button{cursor:pointer}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 .toast.on{opacity:1}
 .abre{display:none}
+/* v88: mini-kanban (opcional) — pôr/atualizar o cartão ao copiar */
+.kb{border-top:1px solid var(--line);padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.kb label.on{display:flex;align-items:center;gap:8px;min-height:var(--ctl);font-size:14px;color:var(--ink)}
+.kb label.on input{width:22px;height:22px;accent-color:var(--accent)}
+.kb input[type=text]{min-height:var(--ctl);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);padding:0 10px;font:inherit;color:var(--ink);font-size:14px;flex:1;min-width:110px}
+.kb .st{flex-basis:100%;color:var(--muted)}
+.kb .st b{color:var(--ink)}
 @media (max-width:899px){
   .corpo{grid-template-columns:1fr;grid-template-rows:1fr auto}
   .ficha{border-left:0;border-top:1px solid var(--line);max-height:46px;transition:max-height .2s}
   .ficha.aberta{max-height:62vh}
   .abre{display:inline-flex;align-items:center}
-  #ficha,.avisos{display:none}.ficha.aberta #ficha{display:block}.ficha.aberta .avisos:not(:empty){display:flex}
+  #ficha,.avisos,.kb{display:none}.ficha.aberta #ficha{display:block}.ficha.aberta .avisos:not(:empty),.ficha.aberta .kb{display:flex}
   .fhead{padding:0 8px;min-height:46px}
   .fhead b{font-size:0}
   .top{gap:6px}
@@ -106,12 +113,16 @@ button{cursor:pointer}
     <div class="fhead"><button class="btn abre" id="abre" aria-expanded="false">▲ Ficha</button><b id="ftit">Ficha</b><button class="btn" id="bMolde" title="Guardar molde para o evoluidor">Molde</button><button class="btn" id="prox">Próximo →</button><button class="btn pri" id="copiar" disabled>Copiar ficha</button></div>
     <pre id="ficha" aria-live="polite"></pre>
     <div class="avisos" id="avisos"></div>
+    <div class="kb" id="kb"><label class="on"><input type="checkbox" id="kbOn">Pôr no mini-kanban</label>
+      <input type="text" id="kbReg" inputmode="numeric" placeholder="Prontuário" aria-label="Prontuário" hidden><input type="text" id="kbNome" placeholder="Nome" aria-label="Nome (no quadro fica abreviado)" hidden>
+      <span class="st" id="kbSt"></span></div>
   </aside>
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script src="../campos.js"></script>
 <script src="../sot-ficha.js"></script>
 <script src="../sot-moldes.js"></script>
+<script src="../sot-kanban.js"></script>
 <script>
 (function(){
 'use strict';
@@ -324,7 +335,43 @@ function copiar(){
   montar(); if(!ultimo) return;
   var ok=function(){ toast('Ficha copiada'); }, velho=function(){ var ta=document.createElement('textarea'); ta.value=ultimo; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); ok(); };
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ultimo).then(ok,velho); else velho();
+  quadro();
 }
+/* ---- v88: mini-kanban (opcional; caixa desmarcada por padrão) ----
+   Ao copiar com a caixa marcada: 1º momento cria o cartão; em tempo intermediário move (coluna e etiquetas pela conduta);
+   em tempo final (com ASS) tira do quadro com o desfecho. Nada disso vai para o texto do prontuário. */
+var KB={reg:'',nome:''};
+var COLN={atender:'A atender',exames:'Exames, medicação e reavaliação',conduta:'Conduta, procedimento ou CROSS',ic:'Interconsulta',coluna:'Coluna'};
+function kbDesenhar(){
+  var on=$('#kbOn').checked; $('#kbReg').hidden=$('#kbNome').hidden=!on;
+  var st='';
+  if(on&&window.SOTKANBAN){ var reg=$('#kbReg').value.replace(/\D/g,''), c=reg&&SOTKANBAN.doReg(reg);
+    st=!reg?'Escreva o prontuário: o cartão é achado por ele.':c?'No quadro: <b>'+(c.nome||'')+'</b> · '+COLN[c.col]+'. Ao copiar, o cartão anda.':(MOM==='1'?'Ao copiar, o cartão entra no quadro.':'Sem cartão deste prontuário: ao copiar, entra no quadro.'); }
+  $('#kbSt').innerHTML=st;
+}
+function quadro(){
+  if(!$('#kbOn').checked||!window.SOTKANBAN) return;
+  var reg=$('#kbReg').value.replace(/\D/g,''); if(!reg){ toast('Falta o prontuário para o mini-kanban'); return; }
+  var toda=(MOM==='2'&&EST.ant?$('#anterior').value+'\n\n':'')+ultimo;
+  var r=SOTKANBAN.registrarFicha({reg:reg,nome:$('#kbNome').value,idade:$('#idade').value,momento:ultimo,toda:toda});
+  if(r.acao==='criado') toast('Ficha copiada · cartão no mini-kanban');
+  else if(r.acao==='movido') toast('Ficha copiada · cartão: '+COLN[r.cartao.col]);
+  else if(r.acao==='fechado') toast('Ficha copiada · cartão saiu do quadro ('+(r.cartao.desf||'')+')');
+  kbDesenhar();
+}
+$('#kbOn').addEventListener('change',kbDesenhar);
+['#kbReg','#kbNome'].forEach(function(s){ $(s).addEventListener('input',kbDesenhar); });
+// vindo do quadro ("Atender" / "Continuar"): o app guarda o pedido e avisa
+function kbPedido(){
+  var o=null; try{ o=JSON.parse(localStorage.getItem('sot-atend-kanban')||'null'); localStorage.removeItem('sot-atend-kanban'); }catch(e){}
+  if(!o||Date.now()-(o.t||0)>120000) return;
+  $('#kbOn').checked=true; $('#kbReg').value=o.reg||''; $('#kbNome').value=o.nome||'';
+  if(o.idade){ $('#idade').value=o.idade; condutasAplicar({idade:o.idade}); }
+  if(o.mom==='2'&&o.ant){ momento('2'); $('#anterior').value=o.ant; lerAnterior(); ir('anterior'); }
+  else { momento('1'); }
+  kbDesenhar(); montar();
+}
+window.addEventListener('message',function(e){ var m=e.data||{}; if(m.src==='kanban'&&m.type==='atender') kbPedido(); });
 document.querySelectorAll('[data-mom]').forEach(function(b){ b.addEventListener('click',function(){ momento(b.dataset.mom); }); });
 $('#prox').addEventListener('click',function(){ var L=PASSOS[MOM].map(function(p){return p[0];}), i=L.indexOf(atual); ir(L[(i+1)%3]); });
 $('#copiar').addEventListener('click',copiar);
@@ -337,10 +384,12 @@ $('#abre').addEventListener('click',function(){ var p=$('#painel'), on=!p.classL
 setInterval(montar,2000);   // garante a ficha em dia mesmo se algum programa mudar sem evento
 if(window.top!==window) document.querySelector('.top h1').hidden=true;   // dentro do app o título já está na barra de cima
 try{ var guard=localStorage.getItem('sot-atend-ant'); if(guard) $('#anterior').value=guard; }catch(e){}
-['anamnese','exame','condutas'].forEach(frame);   // abre os três já: a ficha junta tudo mesmo sem visitar cada passo
+['anamnese','exame','condutas'].forEach(frame);
+setTimeout(kbPedido,1200);   // v88: aberto pelo mini-kanban   // abre os três já: a ficha junta tudo mesmo sem visitar cada passo
 var ini='1|anamnese'; try{ ini=localStorage.getItem('sot-atend-passo')||ini; }catch(e){}
 var pi=ini.split('|'); ir(pi[0]==='1'&&pi[1]?pi[1]:'anamnese');   // sempre abre no 1º momento
-window.SOTATEND={abrirMolde:abrirMolde,textoMolde:textoMolde,montar:montar,ir:ir,momento:momento,lerAnterior:lerAnterior,texto:function(){montar();return ultimo;},estado:function(){return EST;}};
+kbDesenhar();
+window.SOTATEND={quadro:quadro,kbPedido:kbPedido,abrirMolde:abrirMolde,textoMolde:textoMolde,montar:montar,ir:ir,momento:momento,lerAnterior:lerAnterior,texto:function(){montar();return ultimo;},estado:function(){return EST;}};
 })();
 </script>
 </body></html>

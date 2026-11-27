@@ -427,7 +427,7 @@ details.lab textarea{width:100%;margin-top:6px;padding:8px 10px;font-family:var(
         <label class="fld" id="cirDataFld"><span>Data da cirurgia</span><input type="date" id="cirData"></label>
         <span class="note" id="cirNote">Sem data: "DATA A DEFINIR" · urgência sem data: hoje · urgência com data: "DE URGÊNCIA EM dd/mm/aaaa"</span>
       </div>
-      <div class="row" id="preopRow"><div class="fld"><span>Pré-operatórios (laboratoriais)</span><div class="seg" id="preopSeg"><button data-v="sol">Solicitar</button><button data-v="chk">Já pedidos · checar</button><button data-v="ok">Já saíram</button></div></div></div>
+      <div class="row" id="preopRow"><div class="fld"><span>Pré-operatórios (laboratoriais)</span><div class="seg" id="preopSeg"><button data-v="sol">Solicitar</button><button data-v="sold">Solicitados</button><button data-v="chk">Checar</button><button data-v="ok">Já saíram</button></div></div></div>
       <div class="labrow" id="preopBox" hidden><div class="exh"><b>Laboratoriais do pré-operatório</b></div>
         <textarea id="labTxt2" rows="3" placeholder="Cole o laudo do sistema ou a linha dos exames — sai na conduta: LABS dd/mm/aaaa: …"></textarea>
         <p class="note" id="labNote2"></p></div>
@@ -551,7 +551,7 @@ const REG={
  antebraco:{n:'ANTEBRAÇO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE DIÁFISE DOS OSSOS DO ANTEBRAÇO','FRATURA DE DIÁFISE DO RÁDIO','FRATURA DE DIÁFISE DA ULNA','FRATURA-LUXAÇÃO DE MONTEGGIA','FRATURA-LUXAÇÃO DE GALEAZZI'],clin:['CONTUSÃO','SÍNDROME COMPARTIMENTAL (SUSPEITA)']},
  punho:{n:'PUNHO',g:'m',seg:'MMSS',lat:true,ach:['FRATURA DE RÁDIO DISTAL','FRATURA DE ESTILOIDE ULNAR','FRATURA DE ESCAFOIDE','FRATURA DE PIRAMIDAL','LUXAÇÃO PERILUNAR','LUXAÇÃO DO SEMILUNAR'],clin:['ENTORSE','CONTUSÃO','SUSPEITA CLÍNICA DE FRATURA DE ESCAFOIDE','TENOSSINOVITE DE DE QUERVAIN']},
  mao:{n:'MÃO',g:'f',seg:'MMSS',lat:true,ach:['FRATURA DE 5º METACARPO','FRATURA DE BASE DO 1º METACARPO','FRATURA DE METACARPO','FRATURA DE FALANGE PROXIMAL','FRATURA DE FALANGE MÉDIA','FRATURA DE FALANGE DISTAL','LUXAÇÃO INTERFALANGEANA','LUXAÇÃO METACARPOFALANGEANA'],clin:['CONTUSÃO','FERIMENTO CORTOCONTUSO','LESÃO DE TENDÃO EXTENSOR','LESÃO DE TENDÃO FLEXOR','LESÃO DE LEITO UNGUEAL','PARONÍQUIA','ABSCESSO']},
- quadril:{n:'QUADRIL',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE COLO DO FÊMUR','FRATURA TRANSTROCANTERIANA','FRATURA SUBTROCANTERIANA','FRATURA DE CABEÇA FEMORAL','LUXAÇÃO DE QUADRIL','LUXAÇÃO DE ARTROPLASTIA DE QUADRIL'],clin:['CONTUSÃO','ARTRITE SÉPTICA (SUSPEITA)','SINOVITE TRANSITÓRIA']},
+ quadril:{n:'QUADRIL',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE FÊMUR PROXIMAL','FRATURA DE COLO DO FÊMUR','FRATURA TRANSTROCANTERIANA','FRATURA SUBTROCANTERIANA','FRATURA DE CABEÇA FEMORAL','LUXAÇÃO DE QUADRIL','LUXAÇÃO DE ARTROPLASTIA DE QUADRIL'],clin:['CONTUSÃO','ARTRITE SÉPTICA (SUSPEITA)','SINOVITE TRANSITÓRIA']},
  coxa:{n:'COXA',g:'f',seg:'MMII',lat:true,ach:['FRATURA DE DIÁFISE DO FÊMUR'],clin:['CONTUSÃO','LESÃO MUSCULAR']},
  joelho:{n:'JOELHO',g:'m',seg:'MMII',lat:true,ach:['FRATURA DE PATELA','FRATURA DE PLATÔ TIBIAL','FRATURA DE FÊMUR DISTAL','FRATURA DE ESPINHA TIBIAL','LUXAÇÃO DE PATELA','LUXAÇÃO DE JOELHO','LUXAÇÃO DE ARTROPLASTIA DE JOELHO','DERRAME ARTICULAR'],clin:['ENTORSE','CONTUSÃO','LESÃO LIGAMENTAR (SUSPEITA)','BURSITE PRÉ-PATELAR','ARTRITE SÉPTICA (SUSPEITA)']},
  perna:{n:'PERNA',g:'f',seg:'MMII',lat:true,ach:['FRATURA DE DIÁFISE DA TÍBIA','FRATURA DE DIÁFISE DA FÍBULA','FRATURA DE DIÁFISE DOS OSSOS DA PERNA'],clin:['CONTUSÃO','LESÃO MUSCULAR','SÍNDROME COMPARTIMENTAL (SUSPEITA)']},
@@ -938,6 +938,7 @@ function itemsFor(key){
     add('analg','ANALGESIA CONFORME PRESCRIÇÃO',true);
     if(cir){
       if(S.preop==='sol') add('preop','PRÉ-OPERATÓRIOS (SOLICITAR)',true);
+      else if(S.preop==='sold') add('preop','PRÉ-OPERATÓRIOS (SOLICITADOS)',true);   // v87: mesmos estados das avaliações
       else if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
       else add('preop','PRÉ-OPERATÓRIOS (CHECAR)',true);
       const maior=(parseInt(S.idade,10)||0)>45;
@@ -989,7 +990,7 @@ function itemsFor(key){
     if(cg) add('carga',cg,true);
     // v87: pré-operatórios — colhidos aqui (SOLICITADOS), checar, ou os resultados
     if(S.preop==='ok') labsPreop().forEach((l,i)=>add('preop'+(i||''),l,true));
-    else add('preop',S.preop==='sol'?'PRÉ-OPERATÓRIOS (SOLICITADOS)':'PRÉ-OPERATÓRIOS (CHECAR)',true);
+    else add('preop','PRÉ-OPERATÓRIOS ('+({sol:'SOLICITAR',sold:'SOLICITADOS'}[S.preop]||'CHECAR')+')',true);   // v87: Solicitar · Solicitados · Checar · resultados
     const maior=(parseInt(S.idade,10)||0)>45;
     add('ecg','ECG ('+(S.ecgSt||'SOLICITAR')+')',precisaECG());add('rxt','RX DE TÓRAX ('+(S.rxtSt||'SOLICITAR')+')',precisaECG());   // v87: RX de tórax logo abaixo do ECG, mesma regra
     add('cardio',avalTxt('AVALIAÇÃO CARDIOLÓGICA',S.cardio,S.cardioObs),maior||cardiop());
